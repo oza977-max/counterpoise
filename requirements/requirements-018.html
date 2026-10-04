@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round 018 &middot; Counterpoise &mdash; Requirements</title>
+    <style>
+        /* Tufte/Few Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fffff8;
+            font-family: "ET Book", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Sticky TOC Navigation */
+        .toc-nav {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #fafaf8;
+            border-right: 2px solid #e8e8e0;
+            padding: 2rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .toc-nav h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        .toc-nav ul {
+            list-style: none;
+        }
+
+        .toc-nav li {
+            margin: 0.5rem 0;
+        }
+
+        .toc-nav a {
+            text-decoration: none;
+            color: #666;
+            border-left: 2px solid transparent;
+            display: block;
+            padding: 0.25rem 0 0.25rem 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .toc-nav a:hover {
+            color: #1a1a1a;
+            border-left-color: #4a90e2;
+        }
+
+        .toc-nav a.active {
+            color: #1a1a1a;
+            border-left-color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .main-content {
+            flex: 1;
+            max-width: 960px;
+            padding: 2rem 3rem;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 300;
+            margin: 2rem 0 1rem 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-style: italic;
+            font-weight: 400;
+            margin: 2.5rem 0 1.25rem 0;
+            border-top: 1px solid #e8e8e0;
+            padding-top: 1.5rem;
+        }
+
+        h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.75rem 0;
+            color: #555;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.75rem 0;
+        }
+
+        p {
+            margin-bottom: 0.8rem;
+            text-align: justify;
+        }
+
+        .metadata {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        /* Requirement Block */
+        .requirement {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            background-color: #fafaf8;
+            border-left: 3px solid #ccc;
+        }
+
+        .requirement-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .req-id {
+            display: inline-block;
+            font-family: "Courier New", monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background-color: #e8e8e0;
+            color: #1a1a1a;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            letter-spacing: 0.05em;
+        }
+
+        .priority-chip {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .priority-must {
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+
+        .priority-should {
+            background-color: #4a90e2;
+            color: #fff;
+        }
+
+        .priority-could {
+            background-color: #d9a23c;
+            color: #fff;
+        }
+
+        .priority-wont {
+            background-color: #999;
+            color: #fff;
+        }
+
+        .requirement-text {
+            font-size: 1rem;
+            margin: 0.75rem 0;
+            line-height: 1.6;
+        }
+
+        .fit-criterion {
+            background-color: #fff;
+            border-left: 3px solid #ccc;
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            font-style: italic;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #fff;
+            color: #333;
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e8e8e0;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #f7f7f2;
+        }
+
+        /* Expert Panel Table */
+        .expert-table tbody tr:nth-child(odd) {
+            background-color: #f7f7f2;
+        }
+
+        /* Requirements Index Table */
+        .index-table tbody tr.must {
+            background-color: #fff;
+        }
+
+        .index-table tbody tr.should {
+            background-color: #f0f4fa;
+        }
+
+        .index-table tbody tr.could {
+            background-color: #fdf8f0;
+        }
+
+        .index-table tbody tr.wont {
+            background-color: #f0f0f0;
+        }
+
+        /* Numeric alignment */
+        td:last-child {
+            text-align: right;
+        }
+
+        /* Lists */
+        ol, ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            font-style: italic;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e8e8e0;
+        }
+
+        /* Blockquotes */
+        blockquote {
+            margin-left: 1rem;
+            padding-left: 1rem;
+            border-left: 3px solid #ccc;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Section numbers */
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-num {
+            display: inline-block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        /* Persona box */
+        .persona {
+            background-color: #fafaf8;
+            border-left: 3px solid #4a90e2;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .persona h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        /* Journey box */
+        .journey {
+            background-color: #fafaf8;
+            border-left: 3px solid #d9a23c;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .journey h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .journey ol {
+            margin-left: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .toc-nav {
+                width: 150px;
+                padding: 1.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .main-content {
+                padding: 1.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .toc-nav {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e8e8e0;
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem 1.5rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .toc-nav {
+                display: none;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            body {
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="toc-nav">
+            <h3>Contents</h3>
+            <ul>
+                <li><a href="#round-18-one-set-of-questions-describe-p">Round 18 — One set of questions: describe, pre-fill, confirm</a></li>
+                <li><a href="#provenance">Provenance</a></li>
+                <li><a href="#expert-panel">Expert Panel</a></li>
+                <li><a href="#purpose-vision">Purpose &amp; Vision</a></li>
+                <li><a href="#target-user">Target User</a></li>
+                <li><a href="#user-journey">User Journey</a></li>
+                <li><a href="#1-guided-intake-gi">1. Guided intake (GI)</a></li>
+                <li><a href="#2-model-setting-ms">2. Model setting (MS)</a></li>
+                <li><a href="#3-public-demo-site-ps">3. Public demo site (PS)</a></li>
+                <li><a href="#non-functional-requirements">Non-Functional Requirements</a></li>
+                <li><a href="#assumptions">Assumptions</a></li>
+                <li><a href="#constraints">Constraints</a></li>
+                <li><a href="#out-of-scope">Out of Scope</a></li>
+                <li><a href="#open-questions">Open Questions</a></li>
+                <li><a href="#requirements-index">Requirements Index</a></li>
+                <li><a href="#priority-model">Priority Model</a></li>
+                <li><a href="#changelog">Changelog</a></li>
+            </ul>
+        </nav>
+        <main>
+            <header>
+                <h1>Counterpoise &mdash; Requirements, Round 18</h1>
+                <p class="subtitle">One set of questions: describe, pre-fill, confirm</p>
+                <p class="meta">Round 18 · 4 October 2026 · in elicitation &middot; Generated from requirements-018.md &mdash; do not hand-edit</p>
+            </header>
+            <section id="round-18-one-set-of-questions-describe-p">
+                <h2>Round 18 — One set of questions: describe, pre-fill, confirm</h2>
+                <p><strong>Status: IN ELICITATION (2026-10-04).</strong> Owner-led round after <code>/gvm-test 007</code>. Scope: the written-description path and the guided form become one route (describe → the connected model pre-fills the form's answers, with proof → the person confirms each pre-filled answer and answers the rest → the same engine); a model setting that works with Ollama's free cloud models and with a firm's own model; honest wording wherever a description leaves the computer; what the public demo site tells visitors. Numbered 18 because the R16 prefix is taken by the plain-language intake amendments in <code>requirements.md</code> and R17 by the track-order round (<code>test-cases-017.md</code>).</p>
+            </section>
+            <section id="provenance">
+                <h2>Provenance</h2>
+                <ul><li><code>backtest/model-comparison/README.md</code> (2026-10-04): all 31 corpus descriptions run through the real extractor, question generator and engine on three free models. Fully-right verdicts: <code>qwen3:4b</code> on this computer 6/31; <code>gemma4</code> on Ollama's free cloud 21/31; <code>gpt-oss:120b</code> cloud 16/26. Follow-up questions repeated across cases because the app asks about every detail the description did not state — 13.4 "guessed" details per case with the stronger model, not fewer.</li><li>The guided form already sets every one of the 15 details the rules test (<code>src/engine/build-graph-from-form.ts</code>); every question is required and "Not sure" takes the strictest reading (round 16, UC-8..UC-12).</li><li><code>/gvm-test 007</code> (<code>test/test-007.html</code>): a description that dictated its own rating partly steered the small model; the GT7 light measure (warning, record, docs) is built; the stronger defence was left open.</li><li>Owner decisions this round (2026-10-04): describe first, then the form; gentle nudge for missing facts, never block; each pre-filled answer visibly marked and confirmed one by one; the detailed multi-step map is retired and the form is the record; after editing the description only untouched answers are re-pre-filled; "Not sure" may be pre-filled with a quote; pre-fill accuracy is measured on a standing basis.</li></ul>
+            </section>
+            <section id="expert-panel">
+                <h2>Expert Panel</h2>
+                <table>
+                    <thead><tr><th>Expert</th><th>Work</th><th>Role in this document</th></tr></thead>
+                    <tbody>
+                        <tr><td>Karl Wiegers</td><td><em>Software Requirements</em> (3rd ed.)</td><td>Classification, MoSCoW, fit criteria, ambiguity words</td></tr>
+                        <tr><td>Gause &amp; Weinberg</td><td><em>Exploring Requirements</em></td><td>Context-free questions, assumption surfacing, "how would you know?"</td></tr>
+                        <tr><td>Jeff Patton</td><td><em>User Story Mapping</em></td><td>The describe → pre-fill → confirm journey</td></tr>
+                        <tr><td>Alan Cooper</td><td><em>About Face</em> (4th ed.)</td><td>The submitter and reviewer personas carried from round 16</td></tr>
+                        <tr><td>Christensen / Moesta</td><td><em>Competing Against Luck</em>; <em>Demand-Side Sales 101</em></td><td>The job statement</td></tr>
+                        <tr><td>Suzanne &amp; James Robertson</td><td><em>Mastering the Requirements Process</em> (Volere)</td><td>Non-functional categories: privacy, usability, accessibility, operability (activated: personal data, third-party model service, accessibility)</td></tr>
+                        <tr><td>Janice Redish</td><td><em>Letting Go of the Words</em></td><td>Plain-language wording of the checklist, nudge and marks</td></tr>
+                        <tr><td>Michael Power</td><td><em>The Audit Society</em></td><td>What an audit record must say about where an answer came from</td></tr>
+                        <tr><td>OWASP</td><td>LLM Top 10</td><td>Prompt injection via the description; data leaving the device</td></tr>
+                        <tr><td>NIST AI RMF; EU AI Act; PRA SS1/23</td><td>(project roster, Tier 2b)</td><td>Human oversight of model-suggested answers; record-keeping</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section id="purpose-vision">
+                <h2>Purpose &amp; Vision</h2>
+                <p><em>(written last — see Phase 5)</em></p>
+            </section>
+            <section id="target-user">
+                <h2>Target User</h2>
+                <p>Carried from round 16: <strong>the submitter</strong> (first line — a person with an everyday job who wants to use an AI tool and must find out whether they can, with no training in risk vocabulary) and <strong>the reviewer</strong> (second line — the AI risk team member who signs off and must be able to see exactly what was said, by whom, and what the model contributed). This round adds nothing to who they are; it changes how the submitter's own words reach the form.</p>
+                <p><strong>Job statement.</strong> When I have an AI tool in mind and a page of questions in front of me, I want to say what it does in my own words and have the form filled in from that — with every filled answer shown to me for checking — so I can finish the pre-check quickly without being asked the same things twice, and the reviewer can see which answers were mine.</p>
+            </section>
+            <section id="user-journey">
+                <h2>User Journey</h2>
+                <ol><li>The submitter describes the tool in one box. Beside it, a short checklist of the form's questions ticks itself as the description <em>mentions</em> each one — it claims "mentioned", never "understood".</li><li>On Next, anything not mentioned is listed with a one-click example sentence to add. The person may add or just continue.</li><li>If a model is connected, it reads the description and pre-fills the form's answers — only where it can quote the description's own words, which the app checks really appear there. Everything else stays blank.</li><li>The form opens. Pre-filled answers are visibly marked with their quote and "is this right?"; each needs its own tick or a change. Blank answers are answered as today. The contradiction check still runs.</li><li>Confirm and evaluate, as today. The record says, per answer, whether the person typed it, confirmed a pre-fill, or changed one — with the quote.</li><li>The reviewer sees the description and the per-answer source on the register. Correcting a result returns to the same form, pre-filled with the confirmed answers.</li></ol>
+            </section>
+            <section id="1-guided-intake-gi">
+                <h2>1. Guided intake (GI)</h2>
+                <p>The form is the one set of questions. The description's job is to feed it and to be the record of what the person said; the model's job is to save typing, never to decide. Every rule below protects one of three things: the person is never blocked, nothing is claimed that cannot be shown, and the engine only ever sees answers a person confirmed.</p>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-1</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Every pre-check starts with the description screen: one text box and, beside it, a checklist of the form's questions in the form's own short plain words. Each item ticks itself live as the description mentions it, and reads "mentioned", not "answered".</p>
+                        <div class="fit-criterion">the tick is computed from the text alone by a fixed, deterministic rule (no model, no clock) and is identical for identical text; one test per checklist item shows it ticking on a sentence that mentions it and staying unticked on one that does not; no item's label uses engine vocabulary (NF-11); the checklist is announced to assistive technology as a status region and does not rely on colour alone.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-2</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">When the person presses Next with items unmentioned, the app lists them ("Your description doesn't mention: …") with a one-click example sentence for each, and lets the person continue regardless. Nothing is required at this step; the form asks every question anyway.</p>
+                        <div class="fit-criterion">with every item mentioned no note shows; with two unmentioned the note names exactly those two; clicking an example appends its sentence to the description (and the item ticks); Next is never disabled by this rule.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-3</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">If a model is connected, it reads the description and pre-fills form answers — only where it can cite words from the description as proof. The app checks each cited quote actually occurs in the description (exact, after whitespace normalisation); a pre-fill whose quote does not occur, or that cites nothing, is discarded and the question stays blank. "Not sure" may be pre-filled on the same terms. The countries list may be pre-filled on the same terms. The GT7 rating-instruction warning still shows when the description tries to dictate its own rating.</p>
+                        <div class="fit-criterion">a description with a verifiable sentence per question pre-fills those questions and no others; a model reply whose quote is not in the text leaves that question blank and writes nothing; the engine's input is built only from confirmed form answers, never from the model's reply directly (a test shows the model's reply cannot reach <code>evaluate()</code> without passing through a confirmed form).</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-4</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">On the form, every pre-filled answer is visibly marked "from your description: “…quote…” — is this right?" and needs its own confirmation (a tick, or a change, which counts as confirmation). There is no accept-all. Continue stays disabled until every pre-filled answer is confirmed or changed and every blank answer is answered.</p>
+                        <div class="fit-criterion">a form with three pre-filled answers and one blank enables Continue only after three confirmations/changes and one answer; the mark shows the quote verbatim; the newcomer test (NF-12) covers the marked form.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-5</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">The record of a confirmed pre-check states, per answer, where it came from — typed by the person, pre-filled by the model and confirmed, or pre-filled and changed (with the model's quote and the model's name) — and the reviewer sees this on the register alongside the description. The hand-off file carries it. Records from before this round, and records with no pre-fill, still open and read exactly as today.</p>
+                        <div class="fit-criterion">the register detail for a pre-filled case shows the source per answer; a hand-off round trip keeps it; a bundle without it imports; an old multi-node record opens unchanged.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-6</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">The contradiction check (UC-5) still compares the description with the confirmed answers, pre-filled or typed, and asks the person to explain before confirming.</p>
+                        <div class="fit-criterion">"no client data at all" in the description plus a confirmed "information about people" answer stops at the explanation step, whether that answer was typed or a changed pre-fill.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-7</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">The model never blocks. If it is not connected, is slow beyond a stated limit, fails, or returns nothing usable, the form opens blank with one plain sentence saying so, the description is kept, and the person continues as today.</p>
+                        <div class="fit-criterion">with no model configured, with a model that times out, and with a model that returns an unreadable reply, the form opens blank within the limit and shows the sentence; no error word from the model reaches the screen; nothing is written to the trail by the failed attempt.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-8</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">If the person goes back and edits the description after pre-fill, only answers they have not yet confirmed or changed are re-pre-filled from the new text; confirmed and changed answers are kept.</p>
+                        <div class="fit-criterion">confirm one pre-fill, change another, leave a third unconfirmed, edit the description, return: the first two are unchanged and still marked as confirmed/changed; the third is re-pre-filled (or blank) from the new text.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-9</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">The description, the pre-filled answers, their quotes and the person's confirmations survive a reload, as drafts do today, and are cleared when the pre-check completes or the person starts over.</p>
+                        <div class="fit-criterion">reload at the description step and at the half-confirmed form step restores both; "Start over" clears both.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-10</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">One route. The detailed multi-step map screen ("Check what we read from your description") is retired; the form's one-input, one-AI-step, one-output shape is the record for every case. Correcting a result returns to the form pre-filled with the confirmed answers. Cases already on the register that carry the older multi-step map stay readable and correctable.</p>
+                        <div class="fit-criterion">no screen in the new build renders the retired card review; the 11 worked examples and the 31-case corpus still produce their pinned verdicts through the form; an old multi-node case opens on the register and its verdict screen renders.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-11</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">The newcomer comprehension gate (NF-12) applies to the description screen with its checklist and nudge, and to the pre-filled form with its marks, before they ship.</p>
+                        <div class="fit-criterion">the recorded newcomer test includes at least one persona who describes first and confirms pre-fills, one who ignores the nudge, and one who changes a wrong pre-fill; 0 "didn't understand", 0 less-strict answers.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-12</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Pre-fill accuracy is measured, not assumed. A repeatable script in the project runs the 31-case corpus through the connected model and reports, per question, how often the pre-fill was right, left blank, or wrong, plus verdict agreement; the result is recorded under <code>backtest/model-comparison/</code> with the model's name and date. The recommended model is changed only with a recorded result. It is not a build-breaking test (models change; it needs a network).</p>
+                        <div class="fit-criterion">running the script against the recommended model writes a dated result file with the per-question table; the docs name the recommended model and point to its latest result.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-GI-13</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Wrong is worse than blank. The checklist, the nudge, the pre-fill marks and the record never claim more than the code can show: "mentioned" not "understood"; "from your description" only with a verified quote; "confirmed by you" only after the person's own tick or change.</p>
+                        <div class="fit-criterion">every rendered sentence introduced by this round is covered by a test that renders the state in which it would be false and asserts it is absent (BC-005).</div>
+                    </div>
+            </section>
+            <section id="2-model-setting-ms">
+                <h2>2. Model setting (MS)</h2>
+                <p><em>(next domain — to be elicited)</em></p>
+            </section>
+            <section id="3-public-demo-site-ps">
+                <h2>3. Public demo site (PS)</h2>
+                <p><em>(to be elicited)</em></p>
+            </section>
+            <section id="non-functional-requirements">
+                <h2>Non-Functional Requirements</h2>
+                <p><em>(to be elicited with domains 2 and 3)</em></p>
+            </section>
+            <section id="assumptions">
+                <h2>Assumptions</h2>
+                <ul><li>The guided form's questions do not change in this round; only how they are reached and pre-filled does.</li><li>A firm that connects its own model accepts that descriptions are sent to it; the app's job is to say so plainly (domain 2).</li></ul>
+            </section>
+            <section id="constraints">
+                <h2>Constraints</h2>
+                <ul><li>Engine purity (NF-1): nothing in this round may put a model, a clock or randomness into the deterministic engine.</li><li>The verdict screen must never render the reserved words of the status label outside it (CLAUDE.md).</li><li>Honesty (NF-2/NF-7, BC-005) is a functional requirement.</li></ul>
+            </section>
+            <section id="out-of-scope">
+                <h2>Out of Scope</h2>
+                <ul><li>A stronger defence against a description that dictates its own rating beyond R18-GI-3's proof rule and the GT7 warning (recorded open in <code>test/test-007.html</code>).</li><li>A hosted relay that holds a shared model key for the public site (domain 3 states the alternative).</li></ul>
+            </section>
+            <section id="open-questions">
+                <h2>Open Questions</h2>
+                <p><em>(logged as they arise)</em></p>
+            </section>
+            <section id="requirements-index">
+                <h2>Requirements Index</h2>
+                <p><em>(generated at finalisation)</em></p>
+            </section>
+            <section id="priority-model">
+                <h2>Priority Model</h2>
+                <table>
+                    <thead><tr><th>Level</th><th>Meaning</th></tr></thead>
+                    <tbody>
+                        <tr><td>Must</td><td>Non-negotiable. The round fails its purpose without this.</td></tr>
+                        <tr><td>Should</td><td>Expected. Omit only with a stated reason.</td></tr>
+                        <tr><td>Could</td><td>Desirable if the effort is low.</td></tr>
+                        <tr><td>Won't</td><td>Deferred to a later round, on the record.</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section id="changelog">
+                <h2>Changelog</h2>
+                <table>
+                    <thead><tr><th>Date</th><th>Change</th></tr></thead>
+                    <tbody>
+                        <tr><td>2026-10-04</td><td>Round 18 opened after <code>/gvm-test 007</code>; domain 1 (Guided intake, R18-GI-1..13) drafted from the owner's decisions and the model comparison.</td></tr>
+                    </tbody>
+                </table>
+                <p><em>Developed using the Grounded Vibe Methodology</em></p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
