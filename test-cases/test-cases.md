@@ -73,7 +73,7 @@ Then the system accepts the description and advances to the graph extraction ste
 And the description is displayed back to the submitter for reference
 And the system does NOT require any form fields to be completed
 [Requirement: UC-1] [Priority: MUST]
-[Trace: src/components/__tests__/WalkingSkeleton.test.tsx]
+[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
 
 ### TC-UC-1-02: Five-sentence description accepted at upper boundary [EXAMPLE]
@@ -121,8 +121,10 @@ And displays UC-001's tier (High), track (Track III), and verdict (Approved with
 And the output MUST contain: "Similar use case found"
 And the output MUST NOT contain the intake question flow
 [Requirement: UC-2] [Priority: MUST]
-[Trace: src/engine/duplicate.test.ts]
+[Trace: src/engine/duplicate.test.ts; src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the duplicate-check screen was redesigned (R16-W §4, D-74; CR7-10 / BC-V12C-02). The card is titled "Something similar has been checked before", not "Similar use case found". A 2LoD reader sees the earlier case's name and tier ("tier High"); a 1LoD reader sees only "A similar use is already on your firm's register" — label and tier are redacted. Track and verdict are NOT shown on the card: adopting ("Use the earlier result") copies tier and track onto the new record, which carries no verdict of its own (register-lifecycle.md §15.2). Current Then: before any intake question, the 2LoD reader sees the title, the earlier case, its tier, and the two choices "Use the earlier result" / "Mine is different — continue →"; no question of the intake is shown.
 
 ### TC-UC-2-02: Submitter adopts existing classification from duplicate match
 ```
@@ -161,8 +163,10 @@ When a submitter submits the first use case description
 Then the system proceeds directly to graph extraction
 And does NOT display an error or duplicate prompt
 [Requirement: UC-2] [Priority: MUST]
-[Trace: src/engine/duplicate.test.ts]
+[Trace: src/engine/duplicate.test.ts; src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the app does not skip the duplicate screen silently (R16-W §4, D-74). With nothing on the register it shows a status line "Nothing similar found — we looked through 0 earlier checks." and one "Continue →" button; one click proceeds to graph extraction. Current Then: no error and no duplicate prompt, and the flow reaches extraction after that one click. (On a first launch Counterpoise's own self-assessment is already on the register, so the count shown is whatever is there.)
 
 ---
 
@@ -289,8 +293,10 @@ Then the questions presented for A and B are different
 And B's questions include at least one question about client data handling or market-sensitive output
 And A's questions do NOT include market-sensitive output questions if no such signal was detected
 [Requirement: UC-4] [Priority: MUST]
-[Trace: src/engine/question-generator.test.ts]
+[Trace: src/llm/v1-closeout-0.test.ts]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the question list is no longer a fixed list plus a risk filter. Since R6 (R6-QN-1, R6-PV-2) a field is asked about when the description gives no word-for-word basis for it, and the number of questions is capped by the provisional tier (5 / 10 / 15, UC-4). Two descriptions that state different things therefore get different questions. Current Then: for (A) an internal summariser whose description states every checked field, no question is asked; for (B) a client-facing trading assistant described in one sentence, the questions are about what data it uses and where it goes (data class, data zone) and what it helps decide (decision type); (B)'s stated fields (client-facing, suggests trades) are not asked about, and (A) is asked about none of the market-sensitive fields.
 
 ---
 
@@ -379,7 +385,7 @@ Given a submitter makes corrections to three graph nodes (data class, autonomy l
 When all three corrections are saved and the graph is confirmed
 Then the audit trail shows all three corrections, each with before/after values, identity, and timestamp
 [Requirement: UC-7] [Priority: MUST]
-[Trace: src/components/intake-state.test.ts]
+[Trace: src/components/intake-state.test.ts; src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
 
 ### TC-UC-7-03: Correcting a node updates the displayed graph immediately
@@ -443,7 +449,7 @@ Then the verdict shows Track III
 And the output MUST contain: "Track III" and the SR 26-2 exclusion rule referenced
 And the output MUST NOT contain: "Track I" or "Track II"
 [Requirement: PE-2] [Priority: MUST]
-[Trace: src/engine/track.test.ts]
+[Trace: src/engine/track.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ### TC-PE-2-03: Track assignment short-circuits at first matching rule
@@ -489,7 +495,7 @@ When the engine assigns tier
 Then the tier is Low or Medium
 And the tier-triggering rule is named in the verdict output
 [Requirement: PE-3] [Priority: MUST]
-[Trace: src/engine/tier.test.ts]
+[Trace: src/engine/tier.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ---
@@ -539,7 +545,7 @@ Then the SS1/23 pack is activated
 And the output MUST contain: "SS1/23" in the active packs list and its version
 And the output MUST NOT contain: only SR 26-2 applied when the use case is UK-entity
 [Requirement: PE-5] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/evaluate.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ### TC-PE-5-02: EU entity with credit scoring triggers EU AI Act Annex III critical override
@@ -598,7 +604,7 @@ Then the verdict record contains policy_version: "1.3"
 And the output MUST contain: the policy version field populated with "1.3"
 And the output MUST NOT contain: a verdict record with a missing or null policy_version field
 [Requirement: PE-7] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ### TC-PE-7-02: Updated policy file version does not change previously issued verdicts
@@ -666,6 +672,8 @@ And the output MUST NOT contain: controls beyond what the target requires
 [Requirement: CS-1] [Priority: MUST]
 [Trace: src/engine/safety-margin.test.ts]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the solver deliberately does NOT pad the minimal cover to reach a margin. Oracle round 001 (commit df0551b, "CS-1 margin measures the library, not the selection") made the margin a diagnostic about the appetite: coverage depth counts the controls in the LIBRARY that resolve each tripped invariant, and the cover stays minimal, because padding demanded redundant (even contradictory) controls and contradicted the "minimal control set" claim the verdict rests on. Current Then: the solver returns the minimal cover [C-A1, C-B1] (C-A2 is an alternative to C-A1, not a supplement, and is NOT added); margin achieved is 0.5 (INV-A has an alternative, INV-B does not) and INV-B is listed as single-covered. Proved by src/engine/safety-margin.test.ts (describe 'TC-CS-1-02': the minimal-cover, margin and single-point-of-failure tests).
 
 > **The metric is a recorded design decision, not derived from CS-1.** CS-1's
 > fit criterion says "10% of the distance from the appetite boundary". Control
@@ -740,8 +748,10 @@ Then the verdict includes "InfoSec review required" as a mandatory next step
 And the output MUST contain: "InfoSec review" in the downstream_reviews list and the policy rule that triggered it
 And the output MUST NOT contain: InfoSec review listed as optional or advisory
 [Requirement: CS-3] [Priority: MUST]
-[Trace: src/engine/downstream-reviews.test.ts]
+[Trace: src/engine/downstream-reviews.test.ts; src/engine/v1-closeout-0.test.ts; src/components/__tests__/V1Closeout-0.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): MNPI in Zone B is a hard line (HL-002 — MNPI may sit only in Zone C), so this case's own input is now rejected, and a rejected verdict lists downstream reviews as a forward path ("If this use case is re-scoped", round 4 user decision 2026-08-05), not as obligations. The case is therefore exercised on its in-appetite form: MNPI, Zone C, autonomy L2. Current Then: the verdict carries "Information security review" in downstream_reviews, downstream_review_sources names the rule that required it (DR-INFOSEC-01), and the verdict screen lists it under "Downstream reviews" as "required by DR-INFOSEC-01", with nothing optional or advisory about it. The rejected (Zone B) form is covered by 'Downstream reviews survive a rejection' in src/engine/downstream-reviews.test.ts.
 
 ### TC-CS-3-02: Vendor risk review triggered for third-party model use case
 ```
@@ -807,7 +817,7 @@ Given a submitter makes a graph correction
 When the correction is saved
 Then the audit trail record for the correction includes: the corrector's identity, the timestamp, the field corrected, the old value, and the new value
 [Requirement: VD-3] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
 
 ---
@@ -849,8 +859,10 @@ Then the verdict record includes a conditions block with: model_drift_threshold,
 And the output MUST contain: a conditions block in the verdict JSON/record with at least the above fields
 And the output MUST NOT contain: a verdict record with conditions block absent or empty
 [Requirement: VD-7] [Priority: MUST]
-[Trace: src/components/__tests__/VerdictDisplay.test.tsx]
+[Trace: src/components/__tests__/VerdictDisplay.test.tsx; src/engine/v1-closeout-0.test.ts]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the conditions block is `conditions: { hypotheses: string[] }` — lines built from the policy's KRI thresholds and the graph's own pins (V1.2-B, design-gap A8; src/engine/conditions.ts). There are no separately named fields model_drift_threshold / override_rate_minimum / zone / model_version, and a rejected verdict carries none (nothing was accepted to condition). Current Then: for a High-tier approved-with-controls verdict, hypotheses is non-empty and contains the drift bands ("Model drift since validation: green … amber … red …"), the high-risk override band ("Human override rate (HITL, high risk band) …"), "Data zone pinned: <zone>" and "Model version staleness: green … days".
 
 ---
 
@@ -906,8 +918,10 @@ Then the use case advances to "Approved" immediately with no 2LoD notification r
 And the output MUST contain: status "Approved" and the governance path "self-service — Low tier"
 And the output MUST NOT contain: a pending 2LoD approval gate for a Low-tier use case
 [Requirement: LC-2] [Priority: MUST]
-[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/engine/workflow-router.test.ts]
+[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/engine/workflow-router.test.ts; src/components/__tests__/V1Closeout-0.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the screen never prints the words "Approved" or "self-service — Low tier": the reserved-word guard (BC-V12B-03, CLAUDE.md) forbids the first, and CR7-09 / CR8-02 made the self-service wording conditional on a DETERMINED route (an explicit stage plus a policy whose tier_workflow routes the tier to self-service). Current Then: routeToWorkflow('Low') returns lifecycle_stage 'approved' with no 2LoD action; at that stage the verdict screen's stage note reads "Saved to register — self-service final." and the first screen answers "Yes — you can start."; no "awaiting 2LoD sign-off" gate is shown (the same screen does show it for a Medium case at pre_checked). The end-to-end skeleton fixture is a Medium case (material output) and lands at pre_checked, which is why the proof of the Low path is the router test plus the screen test.
 
 ### TC-LC-2-02: High-tier use case requires active 2LoD approval before advancing [EXAMPLE]
 ```
@@ -953,7 +967,7 @@ Then the Counterpoise system itself appears as a use case entry with its own ver
 And the output MUST contain: an entry for Counterpoise with tier, track, and verdict populated
 And the output MUST NOT contain: Counterpoise absent from its own register
 [Requirement: LC-6] [Priority: MUST]
-[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/seeds/aigate-self-assessment.test.ts]
+[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/seeds/aigate-self-assessment.test.ts; src/components/__tests__/V1Closeout-0.test.tsx]
 ```
 
 ---
@@ -1152,7 +1166,7 @@ Given a confirmed graph specifying US jurisdiction only
 When the engine resolves active packs
 Then SR 26-2 is activated and SS1/23, EU AI Act, OSFI E-23 are NOT activated
 [Requirement: RA-1] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts]
+[Trace: src/engine/jurisdiction.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ### TC-RA-1-03: Multi-jurisdiction use case activates all applicable packs [EXAMPLE]
@@ -1180,7 +1194,7 @@ And the reasoning chain names every pack rule that fired, each with its own sour
 And the track assigned by the firm's rules is not altered by either pack
 And the output MUST NOT contain: an obligation from one pack silently dropped in favour of the other
 [Requirement: RA-2] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts — "TC-PE-6-01 / TC-RA-2-01 — most demanding governs across jurisdictions"]
+[Trace: src/engine/jurisdiction.test.ts — "TC-PE-6-01 / TC-RA-2-01 — most demanding governs across jurisdictions"; src/engine/v1-closeout-0.test.ts]
 ```
 
 > **Rewritten 2026-08-08**, for the same reason as TC-PE-6-01 — see the note
@@ -1308,7 +1322,7 @@ Then the registry is available to evaluation
 And the output MUST contain: the platform id, its envelope dimensions, and its satisfied control ids
 And the output MUST NOT contain: a validation error for a policy that declares no registry at all
 [Requirement: PV-1] [Priority: MUST]
-[Trace: src/engine/try-these.test.ts]
+[Trace: src/engine/try-these.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 ### TC-PV-2-01: A vendor absent from the registry is treated as a new vendor [EXAMPLE]
@@ -1360,7 +1374,7 @@ Then autonomy 1 fits, autonomy 2 fits (the ceiling is inclusive), autonomy 3 doe
 And the output MUST contain: fits=true at the ceiling value itself
 And the output MUST NOT contain: fits=true one level above the ceiling
 [Requirement: PV-3] [Priority: MUST]
-[Trace: src/engine/envelope.test.ts; src/engine/try-these.test.ts]
+[Trace: src/engine/envelope.test.ts; src/engine/try-these.test.ts; src/engine/v1-closeout-0.test.ts]
 ```
 
 > Boundary value analysis (Copeland Ch. 5). `max_` semantics are inclusive;
@@ -1471,7 +1485,7 @@ Then no "Delete", "Edit", or "Modify" control is present on any audit record
 And the output MUST contain: read-only audit records accessible to 2LoD
 And the output MUST NOT contain: any UI element that enables modification of an audit record
 [Requirement: NF-2] [Priority: MUST] [Note: V1 application-layer immutability — see NF-2 provisional caveat]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/components/__tests__/V1Closeout-0.test.tsx]
 ```
 
 ---
@@ -1527,8 +1541,10 @@ Then the verdict is marked "Provisional — [rule ID] has not been signed off by
 And the output MUST contain: the specific unsigned rule ID in the provisional warning
 And the output MUST NOT contain: the verdict marked as final when an unsigned rule determined it
 [Requirement: NF-7] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts]
+[Trace: src/engine/jurisdiction.test.ts; src/components/__tests__/V1Closeout-0.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): the verdict does not print the single sentence "Provisional — [rule ID] has not been signed off". The same facts are carried in three places (R3-JU-6, R12-BD-3, V2-E): (1) provisional_reasons contains 'unsigned_pack_rules' and confidence_caveats carries a low-confidence caveat whose ruleId is the unsigned rule; (2) the banner reads "Provisional — review required before this is final" with the cause "proposed readings of the law that your firm has not yet adopted", and the heading carries "Provisional"; (3) the regulatory-chain entry for that rule shows its rule id with "SIGN-OFF … pending firm adoption". Current Then: all three for the unsigned rule (PE-JUR-UK-3); once the rule is signed off, none of them appears.
 
 ---
 
@@ -1655,7 +1671,11 @@ Then the extracted graph attributes are determined from operational signals in t
 And the verdict is determined by the engine from the graph, not from the description's instructions
 And the audit trail records the raw description alongside the extracted graph for reviewer comparison
 [Requirement: UC-3, NF-1] [Priority: MUST] [SECURITY]
+[Trace: src/components/__tests__/V1Closeout-0b.test.tsx]
 ```
+
+> Amended (gvm-test 007, 2026-10-04): (a) "the audit trail records the raw description alongside the extracted graph": the trail records the raw description verbatim (use_case_created) and the graph's id, version and every correction (graph_confirmed, graph_corrected); the full extracted graph is deliberately not persisted (ADR-RL-R3-1), so "alongside the graph" means that record. (b) That the language model itself ignores the steering is model behaviour, not code — see the manual evidence below. Current Then (automated): the verdict is decided by the engine from the confirmed graph and is not the Low tier / Track III the description asked for, and the raw steering description is on the trail unchanged.
+> Manual evidence (gvm-test 007): with a real model (an API key, or the local model), submit the Input description with a few operational facts added; check that the extracted cards state those facts rather than the description's own claims (Zone A, autonomy 0, low risk), or mark what the description does not support as "Not in your description" so it becomes a question; and that the verdict follows the cards. The mechanical guard that is automated: a value with no word-for-word quote in the description is "guessed" and becomes a question (R6-PV-2).
 
 ### TC-VD-8-02: LLM reasoning trace rendered as text, never HTML [SECURITY]
 ```

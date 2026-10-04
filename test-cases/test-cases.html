@@ -404,6 +404,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> a submitter submits the identical description</p>
         <p><strong>Then</strong> the system surfaces UC-001 before showing intake questions, displays UC-001's tier and track, and outputs do NOT contain the intake question flow</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the duplicate-check screen was redesigned (R16-W §4, D-74; CR7-10 / BC-V12C-02). The card is titled "Something similar has been checked before", not "Similar use case found". A 2LoD reader sees the earlier case's name and tier ("tier High"); a 1LoD reader sees only "A similar use is already on your firm's register" — label and tier are redacted. Track and verdict are NOT shown on the card: adopting ("Use the earlier result") copies tier and track onto the new record, which carries no verdict of its own (register-lifecycle.md §15.2). Current Then: before any intake question, the 2LoD reader sees the title, the earlier case, its tier, and the two choices "Use the earlier result" / "Mine is different — continue →"; no question of the intake is shown.</div>
       <div class="tc-trace">Requirement: UC-2 | [EXAMPLE]</div>
     </div>
 
@@ -448,6 +449,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> a submitter submits the first use case description</p>
         <p><strong>Then</strong> the system proceeds directly to graph extraction and does NOT display an error or duplicate prompt</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the app does not skip the duplicate screen silently (R16-W §4, D-74). With nothing on the register it shows a status line "Nothing similar found — we looked through 0 earlier checks." and one "Continue →" button; one click proceeds to graph extraction. Current Then: no error and no duplicate prompt, and the flow reaches extraction after that one click. (On a first launch Counterpoise's own self-assessment is already on the register, so the count shown is whatever is there.)</div>
       <div class="tc-trace">Requirement: UC-2 | [EXAMPLE]</div>
     </div>
 
@@ -575,6 +577,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the system generates questions for each</p>
         <p><strong>Then</strong> the questions presented for A and B are different, B includes questions about client data handling, and A does NOT include market-sensitive output questions</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the question list is no longer a fixed list plus a risk filter. Since R6 (R6-QN-1, R6-PV-2) a field is asked about when the description gives no word-for-word basis for it, and the number of questions is capped by the provisional tier (5 / 10 / 15, UC-4). Two descriptions that state different things therefore get different questions. Current Then: for (A) an internal summariser whose description states every checked field, no question is asked; for (B) a client-facing trading assistant described in one sentence, the questions are about what data it uses and where it goes (data class, data zone) and what it helps decide (decision type); (B)'s stated fields (client-facing, suggests trades) are not asked about, and (A) is asked about none of the market-sensitive fields.</div>
       <div class="tc-trace">Requirement: UC-4 | [EXAMPLE]</div>
     </div>
 
@@ -941,6 +944,7 @@ reads only the markdown and cannot see this page.
       </div>
       <div class="tc-detail">**The metric is a recorded design decision, not derived from CS-1.** CS-1's &gt; fit criterion says "10% of the distance from the appetite boundary". Control &gt; solving is discrete set cover; there is no continuous distance to take a &gt; percentage of. The implemented metric is coverage depth — an invariant &gt; covered by exactly one control is at the boundary (remove it and the use &gt; case falls out of appetite); depth 2 or more has margin; achieved margin is &gt; the fraction of tripped invariants at depth 2 or more. A reviewer should &gt; challenge this metric on its merits rather than assume CS-1 specified it.</div>
       <div class="tc-detail">**HR-14:** this test case previously described behaviour that did not &gt; exist. `safety_margin` was validated, threaded into the solver as `_margin` &gt; and discarded, while this id was simultaneously in use in &gt; `greedy-solver.test.ts` for an unrelated burden tie-break — so the suite &gt; passed and the traceability matrix reported CS-1 covered. Implemented &gt; 2026-07-26.</div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the solver deliberately does NOT pad the minimal cover to reach a margin. Oracle round 001 (commit df0551b, "CS-1 margin measures the library, not the selection") made the margin a diagnostic about the appetite: coverage depth counts the controls in the LIBRARY that resolve each tripped invariant, and the cover stays minimal, because padding demanded redundant (even contradictory) controls and contradicted the "minimal control set" claim the verdict rests on. Current Then: the solver returns the minimal cover [C-A1, C-B1] (C-A2 is an alternative to C-A1, not a supplement, and is NOT added); margin achieved is 0.5 (INV-A has an alternative, INV-B does not) and INV-B is listed as single-covered. Proved by src/engine/safety-margin.test.ts (describe 'TC-CS-1-02': the minimal-cover, margin and single-point-of-failure tests).</div>
       <div class="tc-trace">Requirement: CS-1 | [EXAMPLE]</div>
     </div>
     <div class="test-case">
@@ -992,6 +996,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the verdict is produced</p>
         <p><strong>Then</strong> the verdict includes "InfoSec review required" as a mandatory next step with the policy rule that triggered it</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): MNPI in Zone B is a hard line (HL-002 — MNPI may sit only in Zone C), so this case's own input is now rejected, and a rejected verdict lists downstream reviews as a forward path ("If this use case is re-scoped", round 4 user decision 2026-08-05), not as obligations. The case is therefore exercised on its in-appetite form: MNPI, Zone C, autonomy L2. Current Then: the verdict carries "Information security review" in downstream_reviews, downstream_review_sources names the rule that required it (DR-INFOSEC-01), and the verdict screen lists it under "Downstream reviews" as "required by DR-INFOSEC-01", with nothing optional or advisory about it. The rejected (Zone B) form is covered by 'Downstream reviews survive a rejection' in src/engine/downstream-reviews.test.ts.</div>
       <div class="tc-trace">Requirement: CS-3 | [EXAMPLE]</div>
     </div>
 
@@ -1095,6 +1100,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the verdict is saved</p>
         <p><strong>Then</strong> the verdict record includes a conditions block with model_drift_threshold, override_rate_minimum, zone, and model_version fields all populated</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the conditions block is `conditions: { hypotheses: string[] }` — lines built from the policy's KRI thresholds and the graph's own pins (V1.2-B, design-gap A8; src/engine/conditions.ts). There are no separately named fields model_drift_threshold / override_rate_minimum / zone / model_version, and a rejected verdict carries none (nothing was accepted to condition). Current Then: for a High-tier approved-with-controls verdict, hypotheses is non-empty and contains the drift bands ("Model drift since validation: green … amber … red …"), the high-risk override band ("Human override rate (HITL, high risk band) …"), "Data zone pinned: &lt;zone&gt;" and "Model version staleness: green … days".</div>
       <div class="tc-trace">Requirement: VD-7 | [EXAMPLE]</div>
     </div>
 
@@ -1148,6 +1154,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the submitter confirms the verdict</p>
         <p><strong>Then</strong> the use case advances to "Approved" immediately with no 2LoD notification required, with governance path "self-service — Low tier"</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the screen never prints the words "Approved" or "self-service — Low tier": the reserved-word guard (BC-V12B-03, CLAUDE.md) forbids the first, and CR7-09 / CR8-02 made the self-service wording conditional on a DETERMINED route (an explicit stage plus a policy whose tier_workflow routes the tier to self-service). Current Then: routeToWorkflow('Low') returns lifecycle_stage 'approved' with no 2LoD action; at that stage the verdict screen's stage note reads "Saved to register — self-service final." and the first screen answers "Yes — you can start."; no "awaiting 2LoD sign-off" gate is shown (the same screen does show it for a Medium case at pre_checked). The end-to-end skeleton fixture is a Medium case (material output) and lands at pre_checked, which is why the proof of the Low path is the router test plus the screen test.</div>
       <div class="tc-trace">Requirement: LC-2 | [EXAMPLE]</div>
     </div>
 
@@ -1721,6 +1728,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the rule fires in a verdict</p>
         <p><strong>Then</strong> the verdict is marked "Provisional — [rule ID] has not been signed off by a qualified reviewer" with the specific unsigned rule ID in the warning</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): the verdict does not print the single sentence "Provisional — [rule ID] has not been signed off". The same facts are carried in three places (R3-JU-6, R12-BD-3, V2-E): (1) provisional_reasons contains 'unsigned_pack_rules' and confidence_caveats carries a low-confidence caveat whose ruleId is the unsigned rule; (2) the banner reads "Provisional — review required before this is final" with the cause "proposed readings of the law that your firm has not yet adopted", and the heading carries "Provisional"; (3) the regulatory-chain entry for that rule shows its rule id with "SIGN-OFF … pending firm adoption". Current Then: all three for the unsigned rule (PE-JUR-UK-3); once the rule is signed off, none of them appears.</div>
       <div class="tc-trace">Requirement: NF-7 | [EXAMPLE]</div>
     </div>
 
@@ -1750,6 +1758,8 @@ reads only the markdown and cannot see this page.
         <p><strong>And</strong> the verdict is determined by the engine from the graph, not from the description's instructions</p>
         <p><strong>And</strong> the audit trail records the raw description alongside the extracted graph for reviewer comparison</p>
       </div>
+      <div class="tc-detail">Amended (gvm-test 007, 2026-10-04): (a) "the audit trail records the raw description alongside the extracted graph": the trail records the raw description verbatim (use_case_created) and the graph's id, version and every correction (graph_confirmed, graph_corrected); the full extracted graph is deliberately not persisted (ADR-RL-R3-1), so "alongside the graph" means that record. (b) That the language model itself ignores the steering is model behaviour, not code — see the manual evidence below. Current Then (automated): the verdict is decided by the engine from the confirmed graph and is not the Low tier / Track III the description asked for, and the raw steering description is on the trail unchanged.</div>
+      <div class="tc-detail">Manual evidence (gvm-test 007): with a real model (an API key, or the local model), submit the Input description with a few operational facts added; check that the extracted cards state those facts rather than the description's own claims (Zone A, autonomy 0, low risk), or mark what the description does not support as "Not in your description" so it becomes a question; and that the verdict follows the cards. The mechanical guard that is automated: a value with no word-for-word quote in the description is "guessed" and becomes a question (R6-PV-2).</div>
       <div class="tc-trace">Requirement: UC-3, NF-1 | [SECURITY]</div>
     </div>
     <div class="test-case">
