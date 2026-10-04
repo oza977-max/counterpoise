@@ -98,8 +98,9 @@ independent checks. Counterpoise runs that loop end to end:
    name on the record, and hands the case back the same way.
 
 Every step lands on an append-only audit trail in which each entry is
-chained to the one before it, so an edited, deleted or reordered record
-shows up as a break.
+chained to the one before it, so an edited entry, or a deleted one with later
+entries after it, shows up as a break. (Removing the newest entries would not,
+and someone who rewrote every entry consistently would not be caught either.)
 
 ## Two ways to describe a use case
 
@@ -300,12 +301,12 @@ Since v0.17.0 the loop closes after the verdict too:
 - **Controls get owners** — each outstanding control can be assigned to a named person with a target date; the page counts down, and flags it overdue.
 - **Controls get attested** — a reviewer records a control as in place with an evidence note. The sign-off checklist counts three tiers separately — *marked verified in your firm's policy file*, *attested by a reviewer (not verified)*, *outstanding* — so a claim is never counted as a check.
 - **Cases move between machines** — **Export hand-off bundle** writes the register and the full audit trail into one hand-off file; **Import hand-off bundle** on another machine re-verifies every audit entry and re-walks the chain before writing anything (see honest limits below for what that check can and can't prove).
-- **The audit trail is tamper-evident** — each entry carries a hash of the one before it, and the sign-off page shows whether the chain is intact.
+- **The audit trail is tamper-evident** — each entry carries a hash of the one before it, and a case's audit trail shows the result of re-checking the chain — "No break found in the N events present." An edited entry, or a deleted one with later entries after it, shows as a break; removing the newest entries does not.
 
 **Honest limits, stated in the UI itself**:
 
 - Verdicts are provisional until the firm's CRO adopts the framework and signs the pack rules.
-- The audit trail lives in the browser — proof-of-concept grade, not a system of record (that is V1.5). Tamper-*evident*, not tamper-*proof*: someone able to rewrite every entry consistently would not be caught without an external anchor.
+- The audit trail lives in the browser — proof-of-concept grade, not a system of record (that is V1.5). Tamper-*evident*, not tamper-*proof*: someone able to rewrite every entry consistently, or to remove the newest entries, would not be caught without an external anchor.
 - Names are typed, not authenticated — there is no sign-in, and every name on the record says "not verified".
 - **Hand-off merges only a continuation.** The first time a reviewer receives a case, their browser already holds its own demo history, so the import reports different histories — normal here, since every browser seeds its own demo cases — and offers **Save a backup of mine first** (a backup file downloads; browsers can sometimes block this, so it asks you to confirm it saved), then **I have my backup — replace my register**. After that, each return trip merges cleanly. On import the app re-checks every entry: accidental damage or a simple edit is caught and the import refuses. It can't prove who made the file — anyone holding it could rebuild it to pass these checks — so exchange bundles only with people you trust, by a route you trust. (The same limit the audit trail states for itself: tamper-evident, not tamper-proof.) If the submitter *also* keeps working while the reviewer has the case, a later import reporting different histories is shown as a warning, not treated as routine — check with the sender before replacing — and it still refuses to merge rather than guessing which to keep. The safe pattern: one side works at a time. Giving each case its own history (so unrelated work never collides) is next.
 - Artifact binding (reading deployment configs instead of trusting descriptions) and live post-approval monitoring are V1.5/V2.
@@ -482,8 +483,8 @@ wired into it:
   your description of the system, it reads the infrastructure and shows you
   the difference.
 - Sign-off is a typed name today. **V1.5 makes it an identity**, with
-  segregation of duties — the record that currently *discloses* a
-  self-approved case will *prevent* one.
+  segregation of duties. Today nothing stops a submitter approving their own
+  case and nothing flags it; the sign-off shows a typed, unverified name.
 
 The order is deliberate: first judge honestly (V1), then verify what you
 were told (V1.5), then monitor what you approved (V2). Each stage keeps the

@@ -160,7 +160,7 @@ mechanism, and none of them is a bug.
 | **name not verified** | Sign-off record | The name on a sign-off was typed, not authenticated. There is no login behind it. |
 | **ACTION REQUIRED — Starter config in use** | Appetite framework | You are running the shipped template, not your framework. |
 | **declared — no pack file loaded** | Jurisdiction packs | That jurisdiction is in scope but has no assessed rules, so nothing activates for it. |
-| **self-service final** | Register record | Nobody other than the submitter signed this off. |
+| **self-service final** | Result screen (stage note) | The firm's policy routes this case to self-service; nobody else needs to sign it off. |
 
 ---
 
@@ -234,9 +234,10 @@ the application.
 
 **Be aware of two V1 limits before you rely on this.** The role selector is a
 dropdown, not a login — your name is recorded and labelled unverified. And
-nothing stops a submitter approving their own use case; the record discloses it
-as *self-service final*, but it does not prevent it. Real identity and
-segregation of duties need a backend this build does not have.
+nothing stops a submitter approving their own use case, and nothing flags it —
+the record shows that sign-off like any other, with the typed name labelled
+*name not verified*. Real identity and segregation of duties need a backend
+this build does not have.
 
 ---
 

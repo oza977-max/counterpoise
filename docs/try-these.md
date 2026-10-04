@@ -342,7 +342,9 @@ Not scripted — poke at these.
 - **Contradict yourself.** Say "no personal data" in the description, then tick
   *Information about people* in the questions.
 - **Sign off on your own submission.** Approve as 2LoD a case you just
-  submitted, then read what the record says about it.
+  submitted, then read the audit trail. Nothing stops you and nothing flags
+  it — the sign-off looks like any other, with your typed name marked not
+  verified.
 - **Try to edit the audit trail.** There is no way to. That is the feature.
 - **Empty the name field** on a sign-off and press Approve.
 - **Read the Appetite framework** page, change a materiality threshold in the

@@ -55,8 +55,11 @@ regulatory pack active at evaluation time. A later policy change does not
 rewrite an earlier verdict. The event trail is append-only by construction —
 the application exposes no update or delete path, which is itself asserted
 by test. (Limitation, stated plainly: in this proof-of-concept the trail is
-held client-side and is therefore not tamper-evident against an actor with
-access to the machine. A server-side system of record is future scope.)
+held client-side, so its tamper-evidence has limits: an edited entry, or a
+deleted one with later entries after it, shows as a break in the hash chain;
+removing the newest entries does not, and neither would someone with access
+to the machine rewriting every entry consistently. A server-side system of
+record is future scope.)
 
 **How does the encoding of regulation stay honest?**
 Each pack rule quotes the verbatim regulatory text it derives from and
@@ -112,9 +115,9 @@ path. Dissent is captured as evidence, never as override.
 - It does not monitor deployed systems. Each verdict records the operating
   bounds it assumed; those are checked at re-review, not watched live.
 - It does not detect AI systems that bypass intake.
-- It has no user authentication or segregation of duties in this version;
-  the record disclosing a self-approved case is the control, and it is a
-  disclosure, not a prevention.
+- It has no user authentication or segregation of duties in this version.
+  Nothing stops a submitter approving their own case and nothing flags it;
+  the sign-off on the record shows a typed name, labelled as not verified.
 
 ## Correspondence to supervisory expectations
 
