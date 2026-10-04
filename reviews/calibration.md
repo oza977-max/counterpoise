@@ -44,6 +44,7 @@ against.
 | — | 2026-10-04 | build loop | CR7 fix round — /gvm-build Hard Gate 3, fresh Sonnet reviewer per pass per chunk; plan checked before code (24 problems in v1) | 0 | 7 | — | FX7-1 `[(1,3),(2,1),(3,1),(4,0)]`; FX7-2 `[(1,1),(2,0)]`; FX7-3 `[(1,0)]`; FX7-4 `[(1,1),(2,1),(3,0)]`; FX7-6 `[(1,0)]` — every loop converged; all Minors fixed; 3 merge-time defects caught by the main loop (cross-builder fixture clash, reused test ids, register snapshot on the raw policy). Owner asleep: product questions took the cautious option, listed in build/handovers/CR7-fixes.md for confirmation. Next: review of the fix round, then /gvm-test |
 | 8 | 2026-10-04 | code | A,B,C,D,E,G ×2 (DUAL: calibrated + blind) + F (assembled stub prompt, valid allowlist) + EBT linter + 2 fresh-context verifiers | 0 | 5 | 15 | **Merge with caveats** (review of the CR7 fix round bdb5d50..ea01a1a, 80 commits / 34 production files. 7 code C/I claims verified: 4 Important, 3 downgraded to Minor, 0 disproven; most proved by probes running the real reducer/view-model/audit store; capture-recapture ≈52%. Owner triage: fix all 4 Important + 15 Minor in a CR8 fix round before /gvm-test; publish the CR7-12 docs draft with 2 outcome corrections; stub flags dismissed; 37 test spies accepted and to be labelled) |
 | — | 2026-10-04 | build loop | CR8 fix round — plan checked before code (17 problems in v1); fresh Sonnet reviewer per pass per chunk | 0 | 1 | — | FX8-1 `[(1,0)]`; FX8-2 `[(1,0)]`; FX8-3 `[(1,1),(2,0)]` — converged; all Minors fixed; builders stated the P1–P5 properties in code and the reviewers attacked them (a 2000-run planner probe, a 192-combination sign-off probe). One chair instruction reverted on builder evidence (O(n) check per append) |
+| 9 | 2026-10-04 | code | A,B,C,D,E,G ×2 (DUAL: calibrated + blind) + F (assembled stub prompt) + EBT linter + 1 fresh-context verifier | 0 | 2 | 13 | **Merge with caveats** (review of the CR8 fix round 4aea27e..a2fe323, 45 commits / 20 production files + docs. P1–P5 held under attack by every panel; E, F and the EBT view found nothing. 2 Important: the user guide's false "self-service final" self-approval claim (6 panels) and "What you need to do: Nothing." under a confirm-the-sign-off headline (4 panels, 2 render probes). 13 Minor: O-4/O-5 promised in the plan and dropped (chair's miss), README chain over-claim, guide/tester-guide claims the app does not show, 2 spec html twins, Clear-all incomplete path, a try-these pin. 1 disputed Important sent to a verifier with a reducer probe → unreachable → Observation. Capture-recapture ≈98% (shared prompts; small population). Owner triage: fix both I, all 13 M, and OB-1 properly (drop, not narrow); OB-2..9 recorded) |
 
 ## Round 1 measurements
 
@@ -1027,6 +1028,35 @@ independently found the same stale-assumption defect (CR8-01); three proved the 
 - RF-2 (twin drift): CR8-15 — the parity script still reads .md only.
 - New candidate: "a fix's own residual list understates reach" — CR8-07 was stated as a rare identical-
   count case; it is the normal Clear-all-data + re-seed tester flow.
+
+## Code review round 9 (2026-10-04) — review of the CR8 fix round
+
+**Shape.** 4aea27e..a2fe323, strict, dual review (12 Sonnet panels) + Panel F + EBT linter + 1 fresh
+verifier. 0 Critical, 2 Important, 13 Minor, 9 observations. One reported Important disproven on reach
+(verifier probe: the stale multi-field "Not sure" sentence is unreachable from the app) → OB-1.
+
+**Capture-recapture.** Calibrated set 12 distinct, blind 14, shared 11 → N̂ ≈ 15, found 15 (≈98%;
+round 8 ≈52%). Both sets used the same common prompt, so treat as "small remaining population".
+
+**Anchor examples:**
+- Best, fix quality: every panel attacked P1–P5 directly (planner batches, the Back guard to depth 7,
+  tier × stage × signed-off enumeration) and none broke. Writing the properties into the contract made
+  the fix round reviewable.
+- Worst, honesty (6 panels): the published user guide says a self-approval is disclosed as
+  "self-service final"; the app shows "signed off by your AI risk team". The docs were re-verified for
+  outcomes only, not for every claim.
+- Worst, surfaces (4 panels, 2 probes): P4 listed headline, next steps, who-signs-off and stage note;
+  the always-rendered "What you need to do" box was a fifth surface of the same fact.
+- Worst, process (7 panels): O-4 and O-5, taken by the main loop in the plan, were neither done nor in
+  the handover's not-taken list.
+- Best, verification: a 2-vs-3 panel split on reach settled by one verifier enumerating every way a
+  graph_review state can be built, with a reducer probe for the mechanism.
+
+**Recurring / promotions.**
+- BC-005 fired a third round (CR9-01, CR9-02, CR9-05): its "every surface" criterion now names the
+  published docs (README, user guide, tester guide) as surfaces of the same fact.
+- RF-2 twin drift again (CR9-08, CR9-09): the parity script still reads .md only — third round.
+- New BC-006: every plan item ends in the handover as done (with its test) or not taken (with a reason).
 
 ## Parity Check History
 

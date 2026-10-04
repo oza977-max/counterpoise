@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counterpoise — Code Review 009</title>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:'IBM Plex Serif',Georgia,serif;line-height:1.6;color:#111;background:#fffef8;padding:3rem 2rem 6rem}
+@media(prefers-color-scheme:dark){body{color:#e8e8e8;background:#1a1a18}}
+main{max-width:900px;margin:0 auto}
+h1{font-size:2rem;font-weight:400;margin-bottom:.3rem}
+h2{font-size:1.3rem;font-weight:400;margin:2.6rem 0 .8rem;padding-bottom:.3rem;border-bottom:1px solid #ddd}
+@media(prefers-color-scheme:dark){h2{border-bottom-color:#444}}
+h3{font-size:1rem;font-weight:600;margin:1.6rem 0 .5rem}
+p{margin-bottom:.9rem;max-width:68ch}
+.date{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:.5rem}
+@media(prefers-color-scheme:dark){.date{color:#999}}
+.subtitle{font-size:1.05rem;color:#555;max-width:68ch;margin-bottom:2rem}
+@media(prefers-color-scheme:dark){.subtitle{color:#aaa}}
+code{font-family:'IBM Plex Mono',monospace;font-size:.82em;background:#f4f2ea;padding:.1rem .3rem;border-radius:2px}
+@media(prefers-color-scheme:dark){code{background:#2a2a28;color:#e8e8e8}}
+table{border-collapse:collapse;width:100%;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:.85rem;margin:1rem 0 1.6rem}
+th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#888;border-bottom:2px solid #333;padding:.4rem .5rem}
+@media(prefers-color-scheme:dark){th{border-bottom-color:#666;color:#999}}
+td{padding:.4rem .5rem;border-bottom:1px solid #eee;vertical-align:top}
+@media(prefers-color-scheme:dark){td{border-bottom-color:#333}}
+tbody tr:nth-child(even){background:#faf9f3}
+@media(prefers-color-scheme:dark){tbody tr:nth-child(even){background:#1f1f1d}}
+.verdict{border:2px solid #333;padding:1.2rem 1.5rem;margin:2rem 0;max-width:700px}
+@media(prefers-color-scheme:dark){.verdict{border-color:#666}}
+.verdict-label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:.3rem}
+@media(prefers-color-scheme:dark){.verdict-label{color:#999}}
+.verdict-text{font-size:1.3rem;margin-bottom:.4rem}
+.verdict-basis{font-size:.88rem;color:#555}
+@media(prefers-color-scheme:dark){.verdict-basis{color:#aaa}}
+.verdict.caveats{border-color:#e67e22;background:#fef8f0}
+.verdict.caveats .verdict-text{color:#e67e22}
+@media(prefers-color-scheme:dark){.verdict.caveats{background:#3a2a1a;border-color:#d68a2c}}
+.issue{border-left:3px solid;padding:.8rem 1rem;margin:.8rem 0;max-width:72ch}
+.issue.critical{border-left-color:#c0392b;background:#fdf0ef}
+@media(prefers-color-scheme:dark){.issue.critical{background:#3a1d1a;border-left-color:#e55353}}
+.issue.important{border-left-color:#e67e22;background:#fef8f0}
+@media(prefers-color-scheme:dark){.issue.important{background:#3a2a1a;border-left-color:#e8a84d}}
+.issue.minor{border-left-color:#7f8c8d;background:#f7f7f4}
+@media(prefers-color-scheme:dark){.issue.minor{background:#1f1f1d;border-left-color:#8a8a8a}}
+.issue.observation{border-left-color:#95a5a6;background:#f5f5f3}
+@media(prefers-color-scheme:dark){.issue.observation{background:#1d1d1b;border-left-color:#666}}
+.issue-title{font-weight:600;margin-bottom:.3rem}
+.issue-severity{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#666;margin-bottom:.3rem}
+@media(prefers-color-scheme:dark){.issue-severity{color:#888}}
+.issue-detail{font-size:.92rem;color:#444;margin-bottom:.3rem}
+@media(prefers-color-scheme:dark){.issue-detail{color:#ccc}}
+.issue-location{font-size:.78rem;color:#999;font-style:italic}
+@media(prefers-color-scheme:dark){.issue-location{color:#777}}
+.issue-disposition{font-size:.85rem;color:#666;border-top:1px solid rgba(0,0,0,.1);padding-top:.4rem;margin-top:.4rem;font-style:italic}
+@media(prefers-color-scheme:dark){.issue-disposition{border-top-color:rgba(255,255,255,.1);color:#888}}
+.tally{display:flex;gap:1.5rem;flex-wrap:wrap;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:.9rem;margin:1rem 0 1.5rem}
+.tally b{font-size:1.4rem;font-weight:600;display:block}
+.tally div{display:flex;flex-direction:column}
+.themes-section{background:#f9f9f4;padding:1rem 1.2rem;margin:1rem 0 1.5rem;border-left:3px solid #999}
+@media(prefers-color-scheme:dark){.themes-section{background:#1f1f1d;border-left-color:#666}}
+.theme-item{margin-bottom:1rem}
+.theme-title{font-weight:600;margin-bottom:.3rem}
+.coverage-table{font-size:.85rem;margin:1rem 0}
+.coverage-table td:first-child{font-weight:500}
+.coverage-table td:last-child{text-align:right}
+.minor-findings-table td{font-size:.88rem}
+.minor-findings-table td:nth-child(2){max-width:40ch}
+.panel-row{margin-bottom:.8rem;font-size:.88rem}
+.panel-name{font-weight:600;color:#333}
+@media(prefers-color-scheme:dark){.panel-name{color:#e8e8e8}}
+.expert-list{font-size:.88rem;line-height:1.5;margin:1rem 0}
+.gvm-attribution{font-size:.75rem;color:#999;font-style:italic;text-align:center;margin-top:3rem;max-width:none}
+@media(prefers-color-scheme:dark){.gvm-attribution{color:#666}}
+  </style>
+</head>
+<body>
+
+<main>
+
+<p class="date">4 October 2026 — Code Review 009</p>
+<h1>Counterpoise</h1>
+<p class="subtitle">Round 9 (strict), review of the CR8 fix round. Commit range <code>4aea27e..a2fe323</code>, 45 commits, 20 production files, 25 test files, docs, 4 spec twin pairs, test-cases-030. Chair: Opus 5.5. Dual review: calibrated and blind panels.</p>
+
+<div class="verdict caveats">
+  <div class="verdict-label">Verdict</div>
+  <div class="verdict-text">Merge with caveats — 0 Critical; both Important findings and all 13 Minor go into a CR9 fix round before /gvm-test (owner triage, 2026-10-04)</div>
+  <p class="verdict-basis">0 Critical, 2 Important, 13 Minor, 9 Observations. Every Important verified by independent render probes with the real VerdictDisplay and shipped policy. Disposition recorded after owner review of findings.</p>
+</div>
+
+<h2 id="summary">1. Summary</h2>
+<table>
+  <thead>
+    <tr><th>Critical</th><th>Important</th><th>Minor</th><th>Observations</th><th>Coverage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>0</td><td>2</td><td>13</td><td>9</td><td>≈98%</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Scope and method.</strong> Thirteen panels (12 lens panels + stub prompt), EBT linter, 1 fresh-context verifier. Calibrated panels A, B, C, D, E, G and blind panels A, B, C, D, E, G both run. Capture-recapture on calibrated vs blind (non-observation findings): 12 calibrated items, 14 blind items, 11 shared → estimated ≈15 distinct defects, found 15 → ≈98% coverage. Every Important finding proved by two independent render probes. Panel F: 0 findings (2 pre-existing intended matches). Panel E: 0 findings — lock ordering acyclic, policy save under case lock correct. EBT linter: 42 mock-budget hits; 37 are round-8 labelled exceptions, 5 are new fault injections or console spies, none hide a contract break.</p>
+
+<h2 id="headline">2. Headline</h2>
+
+<p>The CR8 code fixes held: every panel attacked the five contracted properties (correction planner, "Not sure" notes, Back guard, sign-off wording, audit-chain wording) and concurrency, contract and stub panels found nothing in the new mechanisms. What did not hold: (1) one more screen surface of the sign-off fact—"What you need to do: Nothing" under a "confirm the sign-off first" headline; (2) two plan items promised in CR8 (O-4, O-5) were neither done nor listed as not done; (3) published docs still claim capabilities the app does not have—most seriously that a self-approved case is flagged "self-service final".</p>
+
+<h2 id="coverage">3. Coverage</h2>
+
+<p><em>Capture-recapture analysis</em></p>
+
+<table class="coverage-table">
+  <thead>
+    <tr><th>Panel set</th><th>Count</th><th>Shared</th><th>Est. total</th><th>Found</th><th>Coverage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Calibrated (A, B, C, D, E, G)</td><td>12</td><td rowspan="2">11</td><td rowspan="2">≈15</td><td rowspan="2">15</td><td rowspan="2">≈98%</td></tr>
+    <tr><td>Blind (A, B, C, D, E, G)</td><td>14</td></tr>
+  </tbody>
+</table>
+
+<p>High overlap indicates a small defect population. Both sets shared prompts, so read as "the population is small and well-characterized," not as proof of completeness.</p>
+
+<h2 id="themes">4. Cross-cutting themes</h2>
+
+<div class="themes-section">
+<div class="theme-item">
+<div class="theme-title">BC-005: every surface of one fact</div>
+<p>The sign-off fact had one more surface (WhatToDo) the contract's list did not name; the audit-chain fact had one more (README). Props P1–P5 must name every screen path the fact reaches.</p>
+</div>
+<div class="theme-item">
+<div class="theme-title">Docs vs outcomes</div>
+<p>Published docs were checked for correctness of the 11 try-these cases (all re-verified by three panels through the real mapping and engine—all correct) but not for every other claim: counts, headings, labels, the self-approval disclosure, the sample table. A handover obligation.</p>
+</div>
+<div class="theme-item">
+<div class="theme-title">Plan items orphaned</div>
+<p>O-4 and O-5 fell between the builders' task lists and the handover's not-taken list—the chair's own miss. Handovers must record outcomes.</p>
+</div>
+</div>
+
+<h2 id="important">5. Important findings (CR9-01 &ndash; CR9-02)</h2>
+
+<div class="issue important">
+  <div class="issue-severity">CR9-01 &mdash; Important</div>
+  <div class="issue-title">The user guide says a self-approved case is flagged "self-service final"; the app shows it as a normal sign-off</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/user-guide.md</code>:236–238, table row :163 (twins <code>docs/user-guide.html</code>:490, :428); <code>docs/try-these.md</code>:344.</p>
+  <p class="issue-detail"><strong>Found by:</strong> blind G, calibrated G, blind A, blind D, calibrated D (Important); calibrated A (Minor). 6 panels.</p>
+  <p class="issue-detail"><strong>Issue:</strong> The guide states "nothing stops a submitter approving their own use case; the record discloses it as <em>self-service final</em>". In the app, a 2LoD approval writes <code>twoloD_reviewed</code>, <code>signedOff</code> becomes true, and the stage note reads "Saved to register — signed off by your AI risk team." The phrase "self-service final" is shown only for a case the policy routes to self-service. Nothing compares submitter and reviewer identity.</p>
+  <p class="issue-detail"><strong>Impact:</strong> A risk reader or 2LoD reviewer relying on the guide would believe a self-approved case is visibly marked, when it reads exactly like an independent sign-off (only the typed name is labelled "not verified").</p>
+  <p class="issue-detail"><strong>Fix:</strong> Reword both twins: nothing stops or flags a self-approval; the record shows the sign-off with the typed, unverified name; segregation of duties needs a backend. Correct the table row to "a case the policy routes to self-service". Adjust try-these line 344.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix (docs, both twins).</p>
+</div>
+
+<div class="issue important">
+  <div class="issue-severity">CR9-02 &mdash; Important</div>
+  <div class="issue-title">"What you need to do: Nothing." under a headline that says to confirm the sign-off first</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/components/VerdictDisplay.tsx</code>:480–485 (WhatToDo zero-controls, zero-reviews branch; also the "Then a second-line reviewer signs off" row ~:636).</p>
+  <p class="issue-detail"><strong>Found by:</strong> blind B (Important, proved), blind C (Minor, proved), calibrated G (Minor), calibrated C (Minor). 4 panels → elevated to Important (it is CR8-02 property P4 on one more surface).</p>
+  <p class="issue-detail"><strong>Issue:</strong> The branch adds a sign-off caveat only for <code>needsSignOff</code>; <code>signOffMissing</code> and <code>signOffUnknown</code> are never passed in.</p>
+  <p class="issue-detail"><strong>Impact:</strong> A submitter would read "No sign-off from your AI risk team is on record … confirm with them before you start" (or "We can't tell … whether your AI risk team must sign this off") and directly beneath it "What you need to do — Nothing. This use case sits inside appetite as described…", when a Medium/High case with no controls or reviews has no approving review on record, or at intake before the stage lands.</p>
+  <p class="issue-detail"><strong>Evidence:</strong> Two probes rendered the real VerdictDisplay with the shipped policy: Medium and High at stage approved, empty trail → headline/next step say confirm, todo says "Nothing."; no stage → "We can't tell…" over "Nothing.". TC-CR8-02a–j assert headline, next steps, who-signs-off and stage note, never the WhatToDo lead.</p>
+  <p class="issue-detail"><strong>Fix:</strong> Pass the view into WhatToDo; when <code>signOffMissing || signOffUnknown</code> say e.g. "Nothing to put in place — but your AI risk team still needs to confirm the sign-off (see the steps above)."; same for the "Then" row; add render tests for both states and add WhatToDo to the P4 sweep.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix.</p>
+</div>
+
+<h2 id="minor">6. Minor findings (CR9-03 &ndash; CR9-15)</h2>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-03 &mdash; Minor</div>
+  <div class="issue-title">Policy save that fails while queuing leaves the app on the old rules (O-5 promised, not done)</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/components/PolicyEditor.tsx</code>:137–141.</p>
+  <p class="issue-detail"><strong>Issue:</strong> The catch branch sets 'save-failed' but never calls <code>onSaved</code>; App's <code>policyResult</code> (App.tsx:56, memoised on policyRevision, bumped only by onSaved at :405) stays on the old policy. The YAML is already stored.</p>
+  <p class="issue-detail"><strong>Impact:</strong> A 2LoD editor is told "The policy was saved, but queuing … did not finish" while the header badge, register version and new pre-checks in this tab keep using the old rules until a reload.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — call <code>onSaved?.()` in the catch; test that onSaved fires when onPolicyUpdated rejects.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-04 &mdash; Minor</div>
+  <div class="issue-title">"No model was named" still shown when the model question was never asked (O-4 promised, not done)</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/components/VerdictDisplay.tsx</code>:1526; <code>build/handovers/CR8-fixes.md</code>.</p>
+  <p class="issue-detail"><strong>Issue:</strong> A submitter whose AI was built by a team in the firm (the form never asks for a model) is told "No model was named — your AI risk team may ask which one it uses", implying they skipped something.</p>
+  <p class="issue-detail"><strong>Impact:</strong> A developer reading the handover would assume both O-4 and O-5 were done.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — gate the line on <code>q3ShowsModelQuestion</code> (from the confirmed plain answers) or neutral wording; record O-4/O-5 outcome in the handover.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-05 &mdash; Minor</div>
+  <div class="issue-title">README still over-claims the audit-chain check</div>
+  <p class="issue-detail"><strong>File:</strong> <code>README.md</code>:101 ("an edited, deleted or reordered record shows up as a break"), :303 ("shows whether the chain is intact"), :308 (limits list omits newest-entry removal).</p>
+  <p class="issue-detail"><strong>Impact:</strong> A bank reader would believe any deletion is caught; removing the newest entries is not (TC-CR8-04b).</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — use the tester-guide wording on all three lines.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-06 &mdash; Minor</div>
+  <div class="issue-title">User guide says "18 invariants"; the policy has 23</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/user-guide.md</code>:99, :171 (html :361, :436). The quoted footer wording also differs ("firm rules (invariants)").</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — use 23 (or no hard number) and the real footer wording, both twins.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-07 &mdash; Minor</div>
+  <div class="issue-title">User guide says saving the appetite file makes "the policy version increments"; nothing increments it</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/user-guide.md</code>:283–287 (html :511).</p>
+  <p class="issue-detail"><strong>Impact:</strong> An editor would save changed rules without changing <code>version:</code>, so new verdicts carry the old version string and the record cannot tell the two rule sets apart.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — reword to "change the version field yourself when you change the rules — saving does not".</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-08 &mdash; Minor</div>
+  <div class="issue-title">specs/verdict-audit.html lacks the CR8-02 "four states" amendment</div>
+  <p class="issue-detail"><strong>File:</strong> <code>specs/verdict-audit.md</code>:431 vs <code>.html</code> ~484–499. The html's CR7-09 bullet points to "the CR8 amendments below" which are not there; parity script reads .md only.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — port the bullet.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-09 &mdash; Minor</div>
+  <div class="issue-title">specs/register-lifecycle.html §9 describes a self-assessment design that does not exist</div>
+  <p class="issue-detail"><strong>File:</strong> <code>specs/register-lifecycle.html</code> §9 (~:677). The .md §9 and the code describe the seed. The CR8-10 "use-case node written last" note cannot apply.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — replace html §9 with the .md text.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-10 &mdash; Minor</div>
+  <div class="issue-title">Tester guide's sample-case table contradicts what "Load sample use cases" produces</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/tester-guide.md</code>:89–97. Proved by blind D and calibrated D (seeding probes): deal memo is Out of appetite, Critical / Track I, hard line HL-002 (guide: High / II); both rejections are hard lines (guide: "one hits an absolute prohibition, the other has a requirement no available control can satisfy"); all six samples are provisional (guide marks one).</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — correct the row, the sentence and the Provisional column.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-11 &mdash; Minor</div>
+  <div class="issue-title">Tester guide quotes labels and a stage name the app does not show</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/tester-guide.md</code>:225–260. Labels quoted: "What kind of decision does it feed?" (app: "What kind of decision is it?"), "Something else — let me describe" (app: "Something else — describe it"), "What would make this verdict expire" (app: "What could go wrong — and when this expires"), "Anything the reviewer should know?" (app: "Anything your AI risk team should know? (optional)"); step 3 "pre-checked" (register shows "Awaiting 2LoD sign-off").</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — replace with the app's labels.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-12 &mdash; Minor</div>
+  <div class="issue-title">User guide's "How to read a verdict" uses headings the screen does not have</div>
+  <p class="issue-detail"><strong>File:</strong> <code>docs/user-guide.md</code>:103, :110, :137 (html :363, :366, :377). Headings quoted: "Governance margin", "no headroom list", "Standing conditions". Screen actually shows: "How fragile is this approval?", "What could go wrong — and when this expires", "Platform & supplier inheritance".</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — rename to the on-screen titles; add the first screen section.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-13 &mdash; Minor</div>
+  <div class="issue-title">An incomplete "Clear all data" says the role was cleared while the header still shows the old role</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/components/SettingsPanel.tsx</code>:113–122 with <code>App.tsx</code>:37 (<code>useState(getRole())</code> never refreshed).</p>
+  <p class="issue-detail"><strong>Impact:</strong> A 2LoD reviewer whose delete is blocked by another tab sees "selected role … cleared" but still "2LoD" in the header with reviewer actions; intake events then record actor 1LoD (<code>getRole()</code>) while register approvals record 2LoD — a mixed trail.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — on the incomplete path, reset the app's role state to 1LoD (or reload), or say the role resets on reload.</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-14 &mdash; Minor</div>
+  <div class="issue-title">The incomplete Clear-all message prints internal database names</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/components/SettingsPanel.tsx</code>:117 with <code>src/store/reset.ts</code>:56 → "aigate-audit (blocked), aigate-register (error)".</p>
+  <p class="issue-detail"><strong>Impact:</strong> A tester sees internal ids under the retired product name and cannot tell what was kept.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — map to "your audit trail" / "your register of use cases".</p>
+</div>
+
+<div class="issue minor">
+  <div class="issue-severity">CR9-15 &mdash; Minor</div>
+  <div class="issue-title">try-these test does not pin case 7's two reviews; stale test title</div>
+  <p class="issue-detail"><strong>File:</strong> <code>src/engine/try-these.test.ts</code>:117–137.</p>
+  <p class="issue-detail"><strong>Found by:</strong> blind A (probe: the test's hand-built values give 1 review; the page's answers through the real mapping give 2), blind D (title "costs 8 controls" asserts 6).</p>
+  <p class="issue-detail"><strong>Impact:</strong> A developer would trust the page's "pinned by try-these.test.ts" and could break case 7's outcome with the suite green. The page itself is correct today.</p>
+  <p class="issue-detail"><strong>Recommend:</strong> fix — drive case 7 (ideally every case) through <code>plainAnswersToFormValues</code> and assert <code>downstream_reviews</code>; fix the title.</p>
+</div>
+
+<h2 id="observations">7. Observations (gate nothing)</h2>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-1 — Observation</div>
+  <div class="issue-title">narrowAssumptions keeps a multi-field assumption's fixed sentence after narrowing (Q6 "acts entirely by itself")</div>
+  <p class="issue-detail">Verifier: mechanism real, unreachable from the app; only a stale cross-build session draft could reach it. TC-CR8-01f pins it on a non-form graph the app cannot produce. Option: drop a multi-field assumption on any edit of a field it covers, or comment the reliance.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-2 — Observation</div>
+  <div class="issue-title">ib-portfolio: a reload between the scripted twoloD_reviewed append and its lifecycle_stage_changed recovers the case at the router stage with an approval on its trail</div>
+  <p class="issue-detail">Found by blind E.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-3 — Observation</div>
+  <div class="issue-title">evaluationError can carry raw storage text ("by construction a plain sentence" comment is not true for audit/register write failures)</div>
+  <p class="issue-detail">Found by blind G.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-4 — Observation</div>
+  <div class="issue-title">try-these "Try to edit the audit trail. There is no way to." / regulator-brief "no update or delete path" ignore Clear all data and hand-off replace</div>
+  <p class="issue-detail">Found by blind G.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-5 — Observation</div>
+  <div class="issue-title">Specs name a usePolicy hook that does not exist</div>
+  <p class="issue-detail"><code>cross-cutting.md</code>:132, :182, :293; <code>intake-flow.md</code>:215. Found by calibrated A.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-6 — Observation</div>
+  <div class="issue-title">Register banner "No break found in the N events present" counts every case's events, not this case's</div>
+  <p class="issue-detail">Found by calibrated C.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-7 — Observation</div>
+  <div class="issue-title">A legacy assumption without fields is dropped on any edit (hides a possibly-true "Not sure")</div>
+  <p class="issue-detail">Found by calibrated C.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-8 — Observation</div>
+  <div class="issue-title">Two prefixes for one failed-evaluation fact (form vs description path); header badge "AI use-case pre-approval for banks" vs "Not a final approval. It's a pre-check"</div>
+  <p class="issue-detail">Found by blind D.</p>
+</div>
+
+<div class="issue observation">
+  <div class="issue-severity">OB-9 — Observation</div>
+  <div class="issue-title">App.tsx:160 `.catch(() => {})` on the register-count badge matches the stub rule loosely; pre-existing, intended, not allowlisted</div>
+  <p class="issue-detail">Found by Panel F.</p>
+</div>
+
+<h2 id="checked-sound">8. Checked and sound (panel consensus)</h2>
+
+<p><strong>Properties P1–P5 verified:</strong> P1 planner (running map; A→B→A, [B→C,C→B], retries, reversal), P3 Back guard (traced every action; TC-CR8-03d explores to depth 7), P4 view-model enumeration (tier × stage × signed-off × policy) clean, P5 chain wording on every screen surface, tip hint, policy save under case lock (no lock inversion anywhere), seed recovery four-case rule (real seeds, real DB), usedStaleSources, reviewWords, Clear-all wording vs reset.ts, all 11 try-these outcomes re-run through the real mapping and engine (correct), every TC-CR8 id named by a test, header contrast 8.1:1, no reserved words added.</p>
+
+<h2 id="owner-triage">9. Owner triage</h2>
+
+<p><strong>Owner triage (2026-10-04):</strong></p>
+<ul>
+<li><strong>Important (CR9-01, CR9-02):</strong> fix both. CR9-01 by rewording the docs to what the app does (no self-approval flag is built).</li>
+<li><strong>Minor (CR9-03 … CR9-15):</strong> fix all 13.</li>
+<li><strong>Observations:</strong> OB-1 fixed properly — a "Not sure" assumption is dropped whenever any field it covers is edited (not narrowed). OB-2 … OB-9 recorded only.</li>
+<li><strong>Verdict:</strong> Merge with caveats — no Critical findings; every Important and Minor finding is scheduled into the CR9 fix round, built under the GVM build discipline and reviewed, before <code>/gvm-test</code>.</li>
+</ul>
+
+<p class="gvm-attribution">Developed using the Grounded Vibe Methodology</p>
+
+</main>
+
+</body>
+</html>

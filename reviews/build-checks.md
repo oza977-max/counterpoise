@@ -153,12 +153,38 @@ describes data the screen never reads.
 |---|---|
 | code review 005/006 | CR6-15's "probably confirmed in another tab or window" for a same-tab completion; earlier "immutable" trail copy. |
 | code review 008 (2026-10-04) | CR8-02 "You can start" in next steps under a "no sign-off on record" headline; CR8-04 "verified … unbroken" / "would show as a break" when deleting the newest entries passes the check. |
+| code review 009 (2026-10-04) | CR9-02 "What you need to do: Nothing." under a "confirm the sign-off first" headline (a fifth surface P4 did not list); CR9-01 the user guide's "discloses it as self-service final"; CR9-05 README "a deleted record shows up as a break". |
 | code review 007 (2026-10-03) | CR7-09 "no sign-off needed — self-service" on a case 2LoD signed off; CR7-22 "corrections are preserved in the audit trail" when only a count is written; CR7-40 "machine-verified" for evidence typed into the policy file; CR7-38 "not yet signed off" hard-coded for every pack. |
 
 **Acceptance criterion.** Every new or changed user-visible sentence that asserts a fact about the case, the trail or the
 policy names (in a code comment or the spec) the field or event it is derived from, and a test renders it in the state where
 the claim would be FALSE and asserts it is absent. Fixed strings that describe data are computed from that data.
 Every surface that renders the same fact (headline, next steps, stage note, banner, confirm notice) is checked
-together — CR8-02's next steps contradicted the fixed headline.
+together — CR8-02's next steps contradicted the fixed headline; CR9-02's to-do box was a fifth surface. The published
+docs (README, docs/user-guide, docs/tester-guide, docs/try-these) are surfaces too: a fix that changes what a screen
+claims greps the docs for the old claim, and a docs publish checks every factual sentence against the app, not only the
+worked outcomes.
 
-**Last triggered:** code review 008, 2026-10-04 (CR8-02, CR8-04).
+**Last triggered:** code review 009, 2026-10-04 (CR9-01, CR9-02, CR9-05).
+
+## BC-006 — Every plan item ends in the handover as done or not taken
+
+**Class:** permanent (tier 1).
+**Promoted:** 2026-10-04, after code review 009.
+**Diagnosing framework:** Fagan, inspection exit criteria — an item without a recorded disposition is an
+unchecked exit; Keeling, *Design It!* — a decision that is not written down is not a decision.
+
+**The defect class.** A fix plan assigns an item (often to the chair / main loop rather than a builder), the item is
+neither built nor listed as not taken, and the handover reads as if it were done. A reader trusts the handover.
+
+**Evidence of recurrence.**
+
+| Round | Instance |
+|---|---|
+| code review 009 (2026-10-04) | O-4 ("No model was named" only when asked) and O-5 (refresh the app after a part-failed policy save) — "Taken" in build/prompts/CR8-fixes.md, absent from the code and from the handover's not-taken list; 7 panels found O-5. |
+
+**Acceptance criterion.** Before the handover is written, every finding id and every "taken" observation id in the
+contract is listed in the handover with one of: done (commit + test id) / not taken (reason). Items assigned to the main
+loop are tracked like a builder's. A grep of the contract's ids against the handover returns no id missing.
+
+**Last triggered:** code review 009, 2026-10-04 (CR9-03, CR9-04).
