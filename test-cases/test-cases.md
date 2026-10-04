@@ -83,8 +83,10 @@ Given a submitter is on the intake screen
 When they enter a five-sentence description and submit
 Then the system accepts the description and proceeds to graph extraction
 [Requirement: UC-1] [Priority: MUST]
-[Trace: src/components/__tests__/IntakeFlow.back.test.tsx]
+[Trace: src/components/__tests__/V1Closeout-1.test.tsx]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** after submit the flow shows the duplicate check ("Has this been checked before?", R16-W §4, D-74) and the model reads the description once the submitter continues from it; the description reaches extraction unchanged.
 
 ### TC-UC-1-03: Empty submission blocked
 ```
@@ -132,8 +134,10 @@ Then the system creates a new use case record linked to UC-001's classification
 And the new record is added to the register with status "Classification adopted from UC-001"
 And the submitter is not asked intake questions
 [Requirement: UC-2] [Priority: MUST]
-[Trace: src/components/__tests__/IntakeFlow.resume.test.tsx]
+[Trace: src/components/__tests__/IntakeFlow.resume.test.tsx; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** the new record's status is its audit line "Classification adopted from <earlier case name> (<id prefix>…) — tier X, track Y. No evaluation was run for this record." (RegisterDetail `eventDetail`; 2LoD sees the earlier case's name, 1LoD sees "a similar use case" — CR7-10c), and the button reads "Use the earlier result" (R16-W §4, D-74).
 
 ### TC-UC-2-03: Submitter confirms use case is new, intake proceeds
 ```
@@ -176,8 +180,10 @@ And the graph shows: input node (transaction history, data class labelled), proc
 And the output MUST contain: a visual or structured representation of at least one input node, one processing node, and one output node
 And the output MUST NOT contain: intake questions before the submitter has reviewed the graph
 [Requirement: UC-3] [Priority: MUST]
-[Trace: src/llm/graph-extractor.test.ts]
+[Trace: src/components/__tests__/V1Closeout-1.test.tsx]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** since R16-E the graph review shows every value in plain words, not engine terms: the data class reads "Information about people — clients, applicants, staff or anyone else who can be identified"; the autonomy level reads, for example, "A person checks or approves each thing before it happens"; the action type reads, for example, "It carries out actions — …". The graph is still shown before any question, and questions arrive only after every card has been checked and the submitter continues.
 
 ### TC-UC-3-02: Graph extraction with ambiguous description produces labelled nodes
 ```
@@ -256,7 +262,7 @@ Then no more than 5 questions are presented to the submitter
 And the output MUST contain: at most 5 question prompts
 And the output MUST NOT contain: 6 or more distinct question prompts in the intake sequence
 [Requirement: UC-4] [Priority: MUST]
-[Trace: src/engine/question-generator.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ### TC-UC-4-02: Critical-tier use case receives no more than 15 questions [EXAMPLE]
@@ -303,8 +309,10 @@ Then the system flags: "Contradiction detected — your description stated no cl
 And the output MUST contain: the two specific conflicting statements
 And the output MUST NOT contain: a continuation to the next question before the contradiction is resolved
 [Requirement: UC-5] [Priority: MUST]
-[Trace: src/engine/contradiction.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** since R16-E §6 (D-105) the contradiction is two plain sentences, not a quoted line: "Your description says no personal information is involved." and "but your answers say it uses information about people." (contradiction.ts). Both are shown on a screen titled "Your description and your answers don't match", and Continue stays disabled until the person writes which is right.
 
 ### TC-UC-5-02: No false contradiction flagged when answers are consistent
 ```
@@ -389,7 +397,7 @@ When the correction is saved
 Then the displayed graph updates to show L3 immediately
 And the submitter can see the corrected value before confirming
 [Requirement: UC-7] [Priority: SHOULD]
-[Trace: src/components/intake-state.test.ts]
+[Trace: src/components/intake-state.test.ts; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
 
 ---
@@ -405,7 +413,7 @@ And the submitter can see the corrected value before confirming
 Property: For any confirmed data-flow graph G and policy version V, evaluate(G, V) returns the same verdict on every invocation — same status, same tier, same track, same binding constraint.
 Counterexample strategy: run the same graph against the same policy version 10 times; verify the verdict is byte-identical on each run. Include graphs that are borderline cases (close to a tier boundary).
 [Requirement: PE-1] [Priority: MUST]
-[Trace: src/engine/backtest-corpus.test.ts; src/engine/evaluate.test.ts; src/engine/properties.test.ts]
+[Trace: src/engine/backtest-corpus.test.ts; src/engine/evaluate.test.ts; src/engine/properties.test.ts; src/engine/v1-closeout-1.test.ts]
 ```
 
 ### TC-PE-1-02: Verdict produced for valid confirmed graph [EXAMPLE]
@@ -454,7 +462,7 @@ When the engine assigns track
 Then Track I is assigned (Rule A, first match)
 And Rule C is not evaluated
 [Requirement: PE-2] [Priority: MUST]
-[Trace: src/engine/track.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -549,7 +557,7 @@ When jurisdiction packs are applied
 Then the EU AI Act pack fires its Annex III §5(b) override
 And the tier is forced to Critical regardless of internal tiering outcome
 [Requirement: PE-5, PE-3] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -608,7 +616,7 @@ When the policy file is updated to version 1.4
 Then the existing verdict still shows policy_version: "1.3"
 And the verdict record is not modified or re-evaluated automatically
 [Requirement: PE-7] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -692,8 +700,10 @@ Then no redundant control can be added and the solver stops rather than looping
 And the output MUST contain: margin achieved 0, and every tripped invariant listed as single-covered
 And the output MUST NOT contain: a result presented as though the margin target had been met
 [Requirement: CS-1] [Priority: MUST]
-[Trace: src/engine/safety-margin.test.ts]
+[Trace: src/engine/safety-margin.test.ts; src/engine/v1-closeout-1.test.ts; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** the note below is out of date — oracle round 001 added CTRL-INDEP-VAL-01 (it resolves three invariants), so the shipped policy now offers real alternatives (see safety-margin.test.ts). The case keeps its explicit one-control-per-invariant input; the verdict reports margin 0, "— below target", every tripped invariant as single-covered, and the "How fragile is this approval?" panel says the rulebook is the limit.
 
 > This is the shipped policy's real state: all 13 resolvable invariants have
 > exactly one resolving control, so no margin is reachable at any target. The
@@ -750,7 +760,7 @@ When the verdict is produced
 Then "vendor risk assessment required" is listed as a mandatory downstream step
 And the vendor name is identified in the triggered review
 [Requirement: CS-3] [Priority: MUST]
-[Trace: src/engine/downstream-reviews.test.ts]
+[Trace: src/engine/downstream-reviews.test.ts; src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -821,7 +831,7 @@ Then there is no "Delete", "Edit", or "Modify" button or link on any audit recor
 And the output MUST contain: read-only audit records with timestamps, identities, and content
 And the output MUST NOT contain: any mechanism to delete, modify, or hide an audit record
 [Requirement: VD-4] [Priority: MUST] [Note: application-layer immutability only — V1 provisional, per HR-08]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
 
 ---
@@ -920,6 +930,8 @@ And the output MUST NOT contain: "Approved" status before 2LoD has acted
 [Requirement: LC-2] [Priority: MUST]
 [Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/engine/workflow-router.test.ts]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** the stage is now worded "Awaiting 2LoD sign-off" (`STAGE_LABELS.pre_checked`, field-copy.ts), and the cleared stage reads "Cleared", not "Approved" — R15 chunk 1's reserved-word gate keeps "approved"/"rejected" out of rendered stage chips. Then: the register row and the use case page read "Awaiting 2LoD sign-off", never "Cleared", until 2LoD has acted, and the page offers 2LoD the Approve action (the 2LoD review requirement; the workflow router sets `requires_twoLoD_action`). The output MUST NOT contain a "Cleared" stage before 2LoD has acted.
 
 ### TC-LC-2-03: Critical-tier governance path requires 2LoD approval — verified in policy mapping
 ```
@@ -1064,7 +1076,7 @@ Then validation rejects it, naming the version field
 And every verdict records the policy version in force when it was produced
 And the output MUST NOT contain: a verdict produced under an unversioned policy
 [Requirement: CF-3] [Priority: MUST]
-[Trace: src/store/policy.test.ts]
+[Trace: src/store/policy.test.ts; src/engine/v1-closeout-1.test.ts]
 ```
 
 > **Rewritten 2026-08-15.** The original asserted that saving a change
@@ -1123,7 +1135,7 @@ When the application starts
 Then no error is shown
 And evaluation is available immediately
 [Requirement: CF-5] [Priority: MUST]
-[Trace: src/store/policy.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts; src/components/__tests__/V1Closeout-1.test.tsx]
 ```
 
 ---
@@ -1165,7 +1177,7 @@ And no pack activates for Canada, which is declared with no pack file
 And the output MUST contain: every matching jurisdiction's pack in the active packs set
 And the output MUST NOT contain: only the first matching jurisdiction's pack applied
 [Requirement: RA-1] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -1199,8 +1211,10 @@ Then the record shows pack_versions: {"ss1-23": "2.0", "eu-ai-act": "1.1"} with 
 And the output MUST contain: each active pack version recorded in the verdict
 And the output MUST NOT contain: only "SS1/23" without a version number
 [Requirement: RA-3] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
+
+> **Amended (gvm-test 007, 2026-10-04):** `pack_versions` is keyed by the pack_id exactly as authored (for example "SS1-23", "EU-AIACT") and carries that pack's own version string (for example "0.3-draft"). The evaluation date is the `occurred_at` of the `verdict_produced` audit event that carries the verdict; the verdict object itself holds no date.
 
 ---
 
@@ -1320,7 +1334,7 @@ Then no controls are inherited from that vendor
 And the output MUST contain: the unapproved vendor named explicitly in a downstream review
 And the output MUST NOT contain: any inherited control attributed to that vendor
 [Requirement: PV-2, PV-5] [Priority: MUST]
-[Trace: src/engine/envelope.test.ts]
+[Trace: src/engine/envelope.test.ts; src/engine/v1-closeout-1.test.ts]
 ```
 
 ### TC-PV-3-01: Inherited platform controls reduce the required control set [EXAMPLE]
@@ -1428,7 +1442,7 @@ Then at least one platform covers a sample use case and at least one case exceed
 And the output MUST contain: a worked example of inheritance reducing controls
 And the output MUST NOT contain: a registry entry presented as a real firm approval rather than a template
 [Requirement: PV-8] [Priority: SHOULD]
-[Trace: src/engine/try-these.test.ts]
+[Trace: src/engine/try-these.test.ts; src/engine/v1-closeout-1.test.ts]
 ```
 
 ### TC-PV-A-01: Declaring no platform changes nothing [EXAMPLE]
@@ -1457,7 +1471,7 @@ And the output MUST NOT contain: a fabricated inheritance record asserting that 
 Property: For all (graph, policy_version) pairs, evaluate(graph, policy_version) is a pure function — no randomness, no timestamp-dependence in the verdict logic, no external state affecting the core result.
 Counterexample strategy: run 20 evaluations of the same (graph, policy_version) pair at different times; verify verdict is identical on every run. Include borderline-tier cases.
 [Requirement: NF-1] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/v1-closeout-1.test.ts]
 ```
 
 ---
@@ -1485,7 +1499,7 @@ Then zero outbound network requests are made during the evaluation
 And the output MUST contain: a complete verdict produced without any network activity
 And the output MUST NOT contain: any network call to an external service during the evaluation phase
 [Requirement: NF-3] [Priority: MUST]
-[Trace: src/engine/non-functional.test.ts]
+[Trace: src/engine/non-functional.test.ts; src/components/__tests__/WalkingSkeleton.test.tsx]
 ```
 
 ---
