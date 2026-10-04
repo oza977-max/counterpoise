@@ -57,7 +57,7 @@ function withModelType(modelType: string) {
 }
 
 describe('assignTrack', () => {
-  it('matches the first rule in order (short-circuit) [TC-PE-2-03]', () => {
+  it('matches the first rule in order (short-circuit)', () => {
     const result = assignTrack(withModelType('statistical'), TRACKS);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.track).toBe('I');

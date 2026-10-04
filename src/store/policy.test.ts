@@ -68,7 +68,7 @@ function withYamlPatch(base: string, patch: (yaml: string) => string): string {
 }
 
 describe('loadPolicy', () => {
-  it('returns valid: true with the parsed policy for a well-formed YAML file [TC-CF-5-03]', () => {
+  it('returns valid: true with the parsed policy for a well-formed YAML file', () => {
     const result = loadPolicy(VALID_YAML);
     expect(result.valid).toBe(true);
     if (result.valid) {

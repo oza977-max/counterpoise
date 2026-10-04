@@ -257,7 +257,7 @@ describe('C-3/C-4 — each declared component is resolved and reported independe
     expect(r.value.downstream_reviews.join(' ')).toMatch(/VENDOR-NOT-REGISTERED/);
   });
 
-  it('a declared vendor absent from a non-empty registry is still reported (C-4) [TC-PV-2-01]', () => {
+  it('a declared vendor absent from a non-empty registry is still reported (C-4)', () => {
     const p = policyWith([], [VENDOR]);
     const g = graph({ vendor: 'VENDOR-NOT-REGISTERED' });
 

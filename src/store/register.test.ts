@@ -216,7 +216,7 @@ describe('register store', () => {
     );
   });
 
-  it('getUseCase() computes current_verdict_status/last_evaluated_at/policy_version_at_evaluation from the audit trail, not from RegisterNodeMetadata (verdict-audit.md §8) [TC-PE-7-01] [TC-PE-7-02]', async () => {
+  it('getUseCase() computes current_verdict_status/last_evaluated_at/policy_version_at_evaluation from the audit trail, not from RegisterNodeMetadata (verdict-audit.md §8) [TC-PE-7-01]', async () => {
     const nodeId = crypto.randomUUID();
     const node = makeUseCaseNode({ node_id: nodeId, label: 'Verdict-scan probe' });
     await addNode(node);

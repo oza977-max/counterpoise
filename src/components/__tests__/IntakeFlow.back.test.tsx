@@ -141,7 +141,7 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('a five-sentence description is accepted and advances [TC-UC-1-02]', async () => {
+  it('a five-sentence description is accepted and advances', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
