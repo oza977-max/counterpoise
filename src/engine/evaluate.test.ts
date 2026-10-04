@@ -334,7 +334,7 @@ const CLEAN_OUTPUT = {
   scale: 'limited' as const,
 };
 
-describe('evaluate — jurisdiction pass-through (TC-PE-5-01 structure)', () => {
+describe('evaluate — jurisdiction pass-through', () => {
   it('does not crash with jurisdictions present and applies no overrides', () => {
     const g = graph({
       processing_nodes: [TRACK_I_PROCESSING],

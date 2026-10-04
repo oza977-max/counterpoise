@@ -543,6 +543,33 @@ describe('the shipped policy file is the CF-1/CF-3 evidence', () => {
     expect((raw.match(/^\s*#/gm) ?? []).length).toBeGreaterThan(20);
     // No minified content: real line structure, no absurdly long lines.
     expect(raw.split('\n').every((l) => l.length < 400)).toBe(true);
+
+    // gvm-test 007 close-out: the Then also forbids "binary encoding" and
+    // "developer-only syntax", and says every rule, threshold and tier is
+    // readable as plain English. Asserted over the whole file, not a sample.
+    // No control characters (a binary or corrupted file would have them).
+    expect(raw).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    // No YAML tags (!!), merge keys (<<:), anchors (&x) or aliases (*x) outside
+    // comments and quoted strings — the constructs a non-developer cannot read.
+    const code = raw
+      .split('\n')
+      .filter((l) => !/^\s*#/.test(l))
+      .map((l) => l.replace(/"(?:[^"\\]|\\.)*"/g, '""'))
+      .join('\n');
+    expect(code).not.toMatch(/!!|<<:|(^|\s)&[A-Za-z]|(^|\s)\*[A-Za-z]/m);
+    // Every hard line, invariant, tier and control has a plain-English sentence.
+    const loaded = loadPolicy(raw);
+    if (!loaded.valid) throw new Error('shipped policy invalid');
+    const p = loaded.policy;
+    const sentences = [
+      ...p.hard_lines.map((h) => h.description),
+      ...p.invariants.map((i) => i.description),
+      ...p.controls.map((c) => c.description),
+    ];
+    expect(sentences.length).toBeGreaterThan(20);
+    expect(sentences.every((d) => typeof d === 'string' && d.trim().split(/\s+/).length >= 3)).toBe(true);
+    expect(p.tiers.length).toBeGreaterThan(0);
+    expect(p.tiers.every((t) => t.name.trim().length > 0)).toBe(true);
   });
 
   it('a policy with a blank version cannot be used at all [TC-CF-3-01]', () => {
