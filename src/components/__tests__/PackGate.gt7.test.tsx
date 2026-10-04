@@ -192,6 +192,24 @@ describe('GT7 D-1b — a broken pack joins the start-up gate (CF-5)', () => {
     expect(screen.queryByRole('region', { name: /classification adopted/i })).not.toBeInTheDocument();
   });
 
+  it('TC-CF-5-02i: with a broken pack, "Mine is different" writes no duplicate_dismissed event and shows the plain message (GB pass-2 M2)', async () => {
+    breakAPack();
+    await addNode({
+      node_id: 'uc-seeded-match-2',
+      node_type: 'use_case',
+      label: 'Peer desk summariser',
+      created_at: '2026-01-01T00:00:00.000Z',
+      metadata: { node_type: 'use_case', submitted_by: '1LoD', lifecycle_stage: 'approved', current_verdict_id: null, tier: 'High', track: 'II' },
+    });
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Peer desk summariser' }));
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /mine is different/i }));
+    expect((await screen.findAllByText(/rules file has a problem/i)).length).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, 150));
+    expect(await getAllForExport()).toEqual([]);
+  });
+
   it('TC-CF-5-02e: with the shipped (valid) packs there is no banner and loadPackSet reports no errors', () => {
     const set = packSource.loadPackSet(packSource.getPackSources());
     expect(set.errors).toEqual([]);

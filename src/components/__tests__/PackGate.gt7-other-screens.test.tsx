@@ -4,7 +4,9 @@ import userEvent from '@testing-library/user-event';
 import SettingsPanel from '../SettingsPanel';
 import RegisterDetail from '../RegisterDetail';
 import * as packSource from '../../store/pack-source';
-import { getAllForExport } from '../../store/audit';
+import { getAllForExport, append } from '../../store/audit';
+import type { AuditEvent } from '../../store/types';
+import type { JurisdictionPack } from '../../engine/types';
 import { addNode, exportAll } from '../../store/register';
 import { setRole } from '../../store/role';
 
@@ -21,6 +23,14 @@ vi.mock('../../store/pack-source', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../store/pack-source')>();
   return { ...actual, getPackSources: vi.fn(actual.getPackSources) };
 });
+
+const seenPacks: JurisdictionPack[][] = [];
+vi.mock('../VerdictDisplay', () => ({
+  default: (props: { packs?: JurisdictionPack[] }) => {
+    seenPacks.push(props.packs ?? []);
+    return null;
+  },
+}));
 
 const REAL_SOURCES = { ...packSource.getPackSources() };
 
@@ -79,20 +89,41 @@ describe('GT7 pass-1 E — other pack loaders agree with the gate', () => {
     expect((await exportAll()).nodes).toEqual([]);
   });
 
-  it('TC-CF-5-02h: the register detail loads via loadPackSet and does not crash on a broken pack (the broken pack is simply absent)', async () => {
+  it('TC-CF-5-02h: RegisterDetail hands its verdict view only the packs that loaded — the broken pack is absent (GB pass-2 M3)', async () => {
     breakAPack();
-    const set = packSource.loadPackSet(packSource.getPackSources());
-    expect(set.messages.length).toBeGreaterThan(0);
-    expect(set.packs.map((p) => p.pack_id)).not.toContain('BAD-PACK');
-    expect(set.packs.length).toBeGreaterThan(0);
+    seenPacks.length = 0;
     await addNode({
       node_id: 'uc-pack-detail',
       node_type: 'use_case',
       label: 'Detail under a broken pack',
       created_at: '2026-01-01T00:00:00.000Z',
-      metadata: { node_type: 'use_case', submitted_by: '1LoD', lifecycle_stage: 'pre_checked', current_verdict_id: null, tier: 'High', track: 'II' },
+      metadata: { node_type: 'use_case', submitted_by: '1LoD', lifecycle_stage: 'pre_checked', current_verdict_id: 'v-pd', tier: 'High', track: 'II' },
     });
+    await append({
+      event_id: 'e-pd-1',
+      use_case_id: 'uc-pack-detail',
+      event_type: 'verdict_produced',
+      occurred_at: '2026-01-01T00:00:01.000Z',
+      actor: '1LoD',
+      payload: { type: 'verdict_produced', verdict: {
+        status: 'approved_with_controls', tier: 'High', track: 'II', binding_constraint: 'INV-X', binding_path: 'a → b',
+        controls: [], downstream_reviews: [], conditions: { hypotheses: [] }, policy_version: '1.0', pack_versions: {},
+        applied_overrides: [], confidence_caveats: [], provisional_reasons: [], boundary_proximity: false,
+        margin_achieved: 0, margin_target: 0.1, single_covered_invariants: [],
+        explanation: {
+          tier_rationale: null, track_rationale: null, hard_lines_checked: 0, invariants_checked: 0,
+          tripped_invariants: [], binding_reason: null, binding_regulatory_basis: null, regulatory_chain: [],
+        },
+        id: 'v-pd', use_case_id: 'uc-pack-detail', living_status: 'approved', living_status_updated_at: '2026-01-01T00:00:00.000Z',
+        attested_by: '1LoD', attested_at: '2026-01-01T00:00:00.000Z', graph_version: 1, corrections: [],
+      } },
+    } as unknown as AuditEvent);
     render(<RegisterDetail useCaseId="uc-pack-detail" role="1LoD" onBack={vi.fn()} />);
     expect(await screen.findByText(/Detail under a broken pack/)).toBeInTheDocument();
+    await vi.waitFor(() => expect(seenPacks.length).toBeGreaterThan(0));
+    const ids = seenPacks[seenPacks.length - 1]!.map((p) => p.pack_id);
+    expect(ids).not.toContain('BAD-PACK');
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids).toEqual(packSource.loadPackSet(REAL_SOURCES).packs.map((p) => p.pack_id));
   });
 });
