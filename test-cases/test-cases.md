@@ -93,8 +93,10 @@ When they submit with an empty description field
 Then the system prevents submission and displays: "Please describe your AI use case before submitting."
 And the system does NOT advance to graph extraction
 [Requirement: UC-1] [Priority: MUST]
-[Trace: src/components/__tests__/IntakeFlow.back.test.tsx]
+[Trace: src/components/__tests__/IntakeFlow.back.test.tsx; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
+
+Amended (gvm-test 007, 2026-10-04): the app blocks an empty description by disabling the Next control rather than showing the quoted message; no such message string exists. Current Then: Next is disabled while the description is empty or only spaces, pressing it does nothing, and the flow stays on the description step (never reaching the duplicate check or graph extraction). Proved by `src/components/__tests__/V1Closeout-2.test.tsx`, "TC-UC-1-03".
 
 ### TC-UC-1-04: Description containing special characters and non-ASCII accepted [SECURITY]
 ```
@@ -190,6 +192,8 @@ And these nodes are highlighted for submitter review
 [Trace: src/llm/graph-extractor.test.ts]
 ```
 
+Amended (gvm-test 007, 2026-10-04): the label "unclassified — please confirm" does not exist. The model's schema forces a legal value for every field, so it flags what it is unsure of with `uncertain: true` while still naming a best guess (`src/llm/graph-extractor.ts`), and the review screen highlights each flagged node. Current Then: the extractor keeps `uncertain: true` on nodes the model flagged (`src/llm/graph-extractor.test.ts`, "TC-UC-3-02"), and the review screen shows a not-confident alert on that node's card with its own "I've checked this — it's right" confirm (`src/components/__tests__/GraphReview.r5.test.tsx`, "TC-R5-GR-3-01 ... [TC-UC-3-02]").
+
 ### TC-UC-3-03: Graph extraction is structurally consistent — same description, same graph structure [PROPERTY]
 ```
 Property: For any given description, the extracted graph must contain the same set of node types (input, processing, output) regardless of when extraction is run or how many times it is re-run.
@@ -268,7 +272,7 @@ Then no more than 15 questions are presented
 And the output MUST contain: at least 3 and at most 15 question prompts
 And the output MUST NOT contain: 16 or more distinct question prompts
 [Requirement: UC-4] [Priority: MUST]
-[Trace: src/engine/question-generator.test.ts]
+[Trace: src/engine/question-generator.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ### TC-UC-4-03: Question count boundary — exactly 5 questions for Low-tier borderline case
@@ -313,7 +317,7 @@ When they answer "yes" to "does the tool process internal transaction records?"
 Then the system does NOT flag a contradiction
 And proceeds to the next question normally
 [Requirement: UC-5] [Priority: MUST]
-[Trace: src/engine/contradiction.test.ts]
+[Trace: src/engine/contradiction.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ### TC-UC-5-03: Multiple contradictions in one session — all flagged before proceeding
@@ -417,8 +421,10 @@ Then the system returns a verdict with status (Approved / Approved with controls
 And the output MUST contain: status, tier, and track fields all populated
 And the output MUST NOT contain: a verdict with any field left empty or "undefined"
 [Requirement: PE-1] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/evaluate.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
+
+Amended (gvm-test 007, 2026-10-04): when nothing trips, `binding_constraint` is an empty string by design (P3-C01 code-review finding: it must not leak the track rule id; asserted in `evaluate.test.ts`, "leaves binding_constraint empty when nothing tripped"). Current Then: status, tier and track are always populated, `binding_constraint` is populated when an invariant is the deciding rule and empty when nothing tripped, and no field is `undefined` or the string "undefined". Proved by `src/engine/v1-closeout-2.test.ts`, "TC-PE-1-02".
 
 ---
 
@@ -468,7 +474,7 @@ Then the tier is Critical
 And the output MUST contain: "Critical" tier and the EU AI Act Annex III §5(b) rule as the trigger
 And the output MUST NOT contain: "High" or lower tier as the final assignment
 [Requirement: PE-3] [Priority: MUST]
-[Trace: src/engine/try-these.test.ts]
+[Trace: src/engine/try-these.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ### TC-PE-3-02: High-impact trigger always produces Critical or High regardless of other scores
@@ -515,7 +521,7 @@ Then the verdict is Rejected with the data-zone hard line cited
 And the output MUST contain: the path "MNPI → external Zone A model" and the rule that prohibits it
 And the output MUST NOT contain: a control set that would resolve this
 [Requirement: PE-4] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/evaluate.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ### TC-PE-4-03: Hard lines evaluated before control solving — controls not proposed for hard-line violations
@@ -565,7 +571,7 @@ And any tier floor either pack sets is applied if it RAISES the tier, never if i
 And the output MUST contain: both SR 26-2 and SS1/23 listed as active packs
 And the output MUST NOT contain: a control or review that one pack demanded and the verdict dropped
 [Requirement: PE-6] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts — "TC-PE-6-01 / TC-RA-2-01 — most demanding governs across jurisdictions"]
+[Trace: src/engine/jurisdiction.test.ts; src/engine/v1-closeout-2.test.ts — "TC-PE-6-01 / TC-RA-2-01 — most demanding governs across jurisdictions"]
 ```
 
 > **Rewritten 2026-08-08.** This case previously asserted that a UK Track II
@@ -622,7 +628,7 @@ Then the system produces a verdict (Approved / Approved with controls / Rejected
 And the output MUST contain: a complete verdict with status, tier, track, and binding constraint
 And the output MUST NOT contain: an error about missing policy fields or [FIRM] placeholders blocking evaluation
 [Requirement: PE-8] [Priority: MUST]
-[Trace: src/engine/try-these.test.ts]
+[Trace: src/engine/try-these.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ### TC-PE-8-02: Starter config covers all seven jurisdiction packs
@@ -784,7 +790,7 @@ Then the verdict shows: rule ID "PE-DATA-3", the violated graph path "client_ema
 And the output MUST contain: the specific rule ID and the specific graph path that triggered it
 And the output MUST NOT contain: only a generic "policy violation" message without identifying the rule and path
 [Requirement: VD-2] [Priority: MUST]
-[Trace: src/components/__tests__/VerdictDisplay.test.tsx]
+[Trace: src/components/__tests__/VerdictDisplay.test.tsx; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
 
 ---
@@ -835,7 +841,7 @@ Then the verdict record contains: policy_version: "1.3", pack_versions: {ss1-23:
 And the output MUST contain: policy_version and all active pack versions in the record
 And the output MUST NOT contain: only the policy version with pack versions omitted
 [Requirement: VD-5] [Priority: MUST]
-[Trace: src/engine/evaluate.test.ts]
+[Trace: src/engine/evaluate.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ---
@@ -883,8 +889,10 @@ Then the lifecycle stage advances to "Pre-checked"
 And the output MUST contain: the stage transition recorded with timestamp and actor identity
 And the output MUST NOT contain: the use case jumping directly from "Idea" to "Approved" without a "Pre-checked" stage
 [Requirement: LC-1] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
+
+Amended (gvm-test 007, 2026-10-04): the register node does not exist until the first verdict (`build/prompts/P6-C02.md` deviation #4; `specs/register-lifecycle.md` §6 as built), so the Idea and Exploring stages are unobservable and the node is created directly at the stage the verdict's tier routes to — Pre-checked for Medium, High and Critical, Approved for Low (self-service, TC-LC-2-01). Every later stage change is a `lifecycle_stage_changed` audit event carrying actor, from-stage, to-stage and timestamp. Current Then: stages advance in order, each move is recorded with actor and timestamp, and no move on the trail jumps from Idea to Approved; a Low-tier first verdict lands at Approved because the tier router says so, not because a stage was skipped on the trail. Proved by `src/engine/v1-closeout-2.test.ts`, "TC-LC-1-01".
 
 ### TC-LC-1-02: Stage transitions are recorded with timestamp and actor
 ```
@@ -973,8 +981,10 @@ Then Azure OpenAI appears as a single shared node connected to all three use cas
 And the output MUST contain: one platform node referenced by three use case nodes (not three separate copies)
 And the output MUST NOT contain: three independent copies of the Azure OpenAI platform entry
 [Requirement: RG-1] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/store/register.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
+
+Amended (gvm-test 007, 2026-10-04): intake creates no `platform` nodes; the shared component the register actually holds is the `ai_model` node, keyed by the declared model id so any number of use cases declaring the same model resolve to one node (R11-MG-3, ADR-RL-R11-1; `specs/register-lifecycle.md` §16). Current Then: three use cases declaring the same model leave one `ai_model` node with three `uses_model` edges into it, and no second copy. Proved by `src/engine/v1-closeout-2.test.ts`, "TC-RG-1-01".
 
 ### TC-RG-1-02: Graph query — "which use cases share this vendor model?" returns complete results
 ```
@@ -1018,7 +1028,7 @@ When a 2LoD user applies the filter "tier = Critical"
 Then exactly 5 use cases are shown
 And no High, Medium, or Low tier use cases appear in the filtered view
 [Requirement: RG-3] [Priority: SHOULD]
-[Trace: src/components/__tests__/RegisterView.test.tsx]
+[Trace: src/components/__tests__/RegisterView.test.tsx; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
 
 ---
@@ -1087,7 +1097,7 @@ Then the main policy file version is still v1.3 (unchanged)
 And the output MUST contain: EU AI Act pack version "1.2" in the verdict's pack_versions field for new verdicts
 And the output MUST NOT contain: the main policy file version changed as a side effect of the pack update
 [Requirement: CF-4] [Priority: MUST]
-[Trace: src/store/packs.test.ts]
+[Trace: src/store/packs.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 ---
@@ -1270,8 +1280,10 @@ Then a caveat is displayed: "This verdict relies on [rule ID], which involves in
 And the output MUST contain: the rule ID and the word "Medium" in the caveat text
 And the output MUST NOT contain: a Medium-confidence verdict displayed without any caveat
 [Requirement: RA-11] [Priority: MUST]
-[Trace: src/components/__tests__/VerdictDisplay.test.tsx]
+[Trace: src/components/__tests__/VerdictDisplay.test.tsx; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
+
+Amended (gvm-test 007, 2026-10-04): the exact caveat sentence was replaced when the verdict screen moved to plain language (R16 chunk D1, VD-9/VD-10; `specs/verdict-audit.md` §5.3, §5.5). Current Then: the reviewer section shows an alert naming the rule id and its reason, the first screen says "Some rules it used are worded with less certainty than usual — check this result with your compliance team before relying on it.", the word "Medium" is not shown, and the verdict is not marked provisional. Proved by `src/components/__tests__/V1Closeout-2.test.tsx`, "TC-RA-11-01".
 
 ### TC-RA-11-02: Verdict with Low-confidence rule routes to legal team [EXAMPLE]
 ```
@@ -1440,7 +1452,7 @@ Then the verdict is byte-identical to the pre-PV behaviour
 And the output MUST contain: no inheritance block at all
 And the output MUST NOT contain: a fabricated inheritance record asserting that nothing was inherited
 [Requirement: PV-3, NF-1] [Priority: MUST]
-[Trace: src/engine/envelope.test.ts]
+[Trace: src/engine/envelope.test.ts; src/engine/v1-closeout-2.test.ts]
 ```
 
 > The safety rail. Regression risk for PV is not that inheritance fails — it
@@ -1499,8 +1511,10 @@ Then the application loads and functions without any npm install, Docker, or con
 And the output MUST contain: a complete verdict displayed in the browser
 And the output MUST NOT contain: any "install required" prompt or console error preventing use
 [Requirement: NF-4] [Priority: MUST]
-[Trace: src/components/__tests__/WalkingSkeleton.test.tsx]
+[Trace: src/components/__tests__/WalkingSkeleton.test.tsx; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
+
+Amended (gvm-test 007, 2026-10-04): opening the built `index.html` by double-click from `file://` does not work — the page loads as a JavaScript module and browsers block that from a `file://` path (`docs/tester-guide.md`, V2-D handover packaging, commit f58d1f5). What NF-4 asks for holds in the served form: the build is a static `dist/` folder (`base: './'`, relative paths) that any static server can serve, with no install step for the user. Current Then: the app mounts with no console error and no install prompt, and completes an evaluation to a complete verdict with no model key (`WalkingSkeleton.test.tsx`; mount and relative-path check in `src/components/__tests__/V1Closeout-2.test.tsx`). Manual evidence (gvm-test 007): in the latest Chrome, serve the built `dist/` with `npx serve dist`, complete one evaluation end to end, and confirm a complete verdict is shown and the browser console holds no error.
 
 ---
 
@@ -1541,8 +1555,10 @@ Then the verdict is labelled: "Translation fidelity unattested — the encoded r
 And the output MUST contain: the "translation fidelity unattested" label on the verdict
 And the output MUST NOT contain: a verdict displaying as fully authoritative when the attestation is missing
 [Requirement: NF-10] [Priority: MUST]
-[Trace: src/engine/attestation.test.ts]
+[Trace: src/engine/attestation.test.ts; src/components/__tests__/V1Closeout-2.test.tsx]
 ```
+
+Amended (gvm-test 007, 2026-10-04): the label is the app header's chip "translation fidelity: unattested" (R15-C4, proposal §3.8), on every screen including the verdict, with the plain-English reason one click away under "details"; the long sentence in the original Then is not rendered verbatim. The chip is computed from the policy's attestation (a placeholder, an expired date, or no block at all — which fails policy validation — all read "unattested"; only a current, filled-in attestation reads "attested"). Current Then: that chip, never "attested", whenever the attestation is missing, a placeholder or stale. Proved by `src/components/__tests__/V1Closeout-2.test.tsx`, "TC-NF-10-01".
 
 ---
 
@@ -1676,6 +1692,8 @@ And no system command is executed
 And the error message identifies the pack ID and the invalid content type
 [Requirement: CF-5] [Priority: MUST] [SECURITY]
 ```
+
+Amended (gvm-test 007, 2026-10-04): the loader that reads a pack is `loadPacks` in `src/store/packs.ts` (there is no `policy-loader.ts`). A pack that does not parse is refused with a `YAML parse error` naming the pack's source file and the offending tag; its `pack_id` cannot be read out of a document that fails to parse, so for that case the source file key is the identity the error carries. A pack that parses but carries the wrong content type is refused naming its pack id. Current Then: the loader rejects the file with a parse error, nothing from it is loaded, no command is executed (the safe YAML schema refuses the tag), and the error names the pack file (or the pack id, once the document parses) and what was invalid. Proved by `src/engine/v1-closeout-2.test.ts`, "TC-CF-5-04".
 
 ### TC-NF-11-01: API key absent from exports [SECURITY]
 ```

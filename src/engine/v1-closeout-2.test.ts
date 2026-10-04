@@ -202,7 +202,7 @@ describe('a valid confirmed graph yields a complete verdict', () => {
         inputDataClass: 'Internal',
         modelType: 'llm',
         autonomyLevel: 1,
-        outputActionType: 'answer',
+        outputActionType: 'inform',
         outputExposure: 'internal-only',
         decisionBindingness: 'non-binding',
         outputScale: 'limited',
@@ -382,7 +382,7 @@ describe('the unmodified starter policy produces a complete verdict', () => {
       form({
         inputDataClass: 'Internal',
         modelType: 'llm',
-        outputActionType: 'answer',
+        outputActionType: 'inform',
         outputExposure: 'internal-only',
         decisionBindingness: 'non-binding',
         outputScale: 'limited',

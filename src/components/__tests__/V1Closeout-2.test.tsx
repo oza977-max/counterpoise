@@ -184,7 +184,7 @@ describe('verdict display: the rule and the path behind a decision', () => {
     expect(screen.queryByText(/^policy violation$/i)).not.toBeInTheDocument();
   });
 
-  it('TC-VD-2-01: a controlled case names its binding rule id, what the rule says in words, and the path', () => {
+  it('a controlled case names its binding rule id, what the rule says in words, and the path', () => {
     const policy = shippedPolicy();
     const description = policy.invariants.find((i) => i.id === 'INV-DATA-01')?.description;
     expect(description).toBeTruthy();
