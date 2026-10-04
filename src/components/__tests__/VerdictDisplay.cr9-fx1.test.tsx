@@ -106,4 +106,15 @@ describe('VerdictDisplay — CR9-02: the "What you need to do" box under an uncl
       }
     }
   });
+
+  it('TC-CR9-02e: stage in_production with a missing or unknown sign-off — the stage note says so instead of only "in production"', () => {
+    const missing = renderIt({ tier: 'High', controls: 0, stage: 'in_production' });
+    const m = missing.container.querySelector('.verdict__stage-note')!.textContent ?? '';
+    expect(missing.container.textContent).toContain(SIGNOFF_MISSING_CONFIRM);
+    expect(m).toMatch(/no sign-off from your AI risk team is recorded/i);
+    missing.unmount();
+    const unknown = renderIt({ tier: 'Low', controls: 0, stage: 'in_production' });
+    expect(unknown.container.textContent).toContain(SIGNOFF_UNKNOWN_CONFIRM);
+    expect(unknown.container.querySelector('.verdict__stage-note')!.textContent).toMatch(/not known from this screen/i);
+  });
 });
