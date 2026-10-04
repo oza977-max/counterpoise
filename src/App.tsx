@@ -82,6 +82,13 @@ export default function App() {
 
   function handleRoleChange(next: string) {
     setRole(next);
+    applyRole(next);
+  }
+
+  // CR9-13: the state half of a role change, without writing the stored role. Clear all data
+  // (incomplete path) has already removed the stored role, so the header just has to follow it
+  // back to the default — and a reviewer-only screen must not be left open under 1LoD.
+  function applyRole(next: string) {
     setRoleState(next);
     // R12-AD-2: the reviewer-only surface disappears for 1LoD — if it was
     // open when the role switches, fall back to intake rather than leaving
@@ -329,7 +336,7 @@ export default function App() {
             ? About
           </button>
           <div className="app-sidebar__settings">
-            <SettingsPanel />
+            <SettingsPanel onRoleReset={() => applyRole('1LoD')} />
           </div>
         </nav>
 

@@ -9,7 +9,7 @@ import VerdictDisplay from '../VerdictDisplay';
 import { SIGNOFF_MISSING_CONFIRM, SIGNOFF_UNKNOWN_CONFIRM } from '../verdict-view-model';
 import type { DataFlowGraph, PolicyFile } from '../../engine/types';
 import type { Verdict } from '../../types/verdict';
-import type { LifecycleStage } from '../../types/register';
+import type { LifecycleStage } from '../../store/types';
 
 // FX9-1 / code review 009 — CR9-02 (P6): one sign-off fact on every surface of the verdict screen.
 // Real shipped policy, real evaluate() output (BC-003); the verdict's tier / controls are overridden
