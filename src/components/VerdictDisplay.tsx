@@ -175,7 +175,7 @@ function reviewWords(review: string, verdict: Verdict, policy: PolicyFile | unde
 function stageNote(stage: LifecycleStage, view: VerdictView): string | undefined {
   if (stage === 'approved') {
     if (view.signedOff) return 'Saved to register — signed off by your AI risk team.';
-    if (view.signOffRequired) return 'Saved to register — final; no sign-off from your AI risk team is recorded on this version.';
+    if (view.signOffRequired) return 'Saved to register — no sign-off from your AI risk team is recorded on this version.';
     // P4 (CR8-02): "self-service final" only where self-service is DETERMINED (explicit stage + policy routing).
     if (view.signOffUnknown) return 'Saved to register — whether your AI risk team had to sign this off is not known from this screen.';
     return STAGE_NOTE.approved;

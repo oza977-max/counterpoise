@@ -96,6 +96,8 @@ describe('VerdictDisplay — CR9-02: the "What you need to do" box under an uncl
         const text = container.textContent ?? '';
         if (s.unclear) {
           expect(text, `${s.name}/${controls}`).not.toMatch(PERMISSIVE);
+          // the stage note must not call an unconfirmed case "final" (the appetite line says it is not confirmed)
+          expect(container.querySelector('.verdict__stage-note')?.textContent ?? '', `${s.name}/${controls} stage note`).not.toMatch(/\bfinal\b/i);
           expect(text, `${s.name}/${controls}`).toContain(s.unclear === 'missing' ? SIGNOFF_MISSING_CONFIRM : SIGNOFF_UNKNOWN_CONFIRM);
         } else if (s.name === 'determined self-service') {
           expect(text, `${s.name}/${controls}`).toMatch(/you can start/i);

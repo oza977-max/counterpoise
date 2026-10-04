@@ -1996,7 +1996,7 @@ describe('planCorrectionWrites — which corrections are already on the trail, a
 // ---------------------------------------------------------------------------
 // FX8-1 (CR8-fixes.md) — CR8-01 (P2): an assumption is listed back only while
 // the graph still holds the value it assumed. BC-004 converse: every action
-// that can make a carried assumption untrue must remove or narrow it.
+// that can make a carried assumption untrue must remove it whole.
 // ---------------------------------------------------------------------------
 describe('intakeReducer — a card edit removes the assumption it makes untrue (CR8-01, P2; whole, CR9 OB-1)', () => {
   const corrected = (node_id: string, field: string): GraphCorrection => ({
@@ -2093,13 +2093,14 @@ describe('intakeReducer — a card edit removes the assumption it makes untrue (
     expect(listed(after)).toEqual([A_JUR, A_REV]);
     // CR9 OB-1 (countries clause of TC-CR9-OB1): question 11 survives a countries edit even when other
     // assumptions are dropped whole around it.
-    const withQ6 = intakeReducer(confirmation([A_JUR, A_Q6]), { type: 'CHANGE_ANSWER' });
+    const other: Assumption = { ...A_JUR, questionId: 'x-other', fields: ['jurisdictions', 'scale'] };
+    const withQ6 = intakeReducer(confirmation([A_JUR, other]), { type: 'CHANGE_ANSWER' });
     const after2 = intakeReducer(withQ6, {
       type: 'JURISDICTIONS_SET',
       correction: corrected('graph', 'jurisdictions'),
       updatedGraph: graph({ version: 2, jurisdictions: ['UK'] }),
     });
-    expect(listed(after2).map((a) => a.questionId)).toEqual(['11', '6']);
+    expect(listed(after2).map((a) => a.questionId)).toEqual(['11']);
   });
 
   it('TC-CR8-01j: a different assumption that lists the jurisdictions field is dropped whole by a countries edit; only question 11 stays (CR9 OB-1)', () => {

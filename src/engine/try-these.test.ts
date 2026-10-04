@@ -253,6 +253,7 @@ describe('try-these cases driven from the page\u2019s plain answers (CR9-15)', (
     expect(v.binding_constraint).toBe('INV-AUTONOMY-01');
     expect(v.controls).toHaveLength(7);
     expect(v.downstream_reviews).toHaveLength(2);
+    expect([...v.downstream_reviews].sort()).toEqual(['Independent model validation (2LoD)', 'Information security review']);
     expect(v.provisional_reasons).toContain('unsigned_pack_rules');
   });
 });
