@@ -106,7 +106,7 @@ Then the system accepts the description without error
 And any HTML tags in the description are treated as literal text, not rendered as markup
 And the system does NOT execute any embedded script content
 [Requirement: UC-1] [Priority: MUST]
-[Trace: src/components/__tests__/IntakeFlow.back.test.tsx]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ---
@@ -150,8 +150,9 @@ And the near-match is recorded as "similar use case reviewed and dismissed" in t
 Given the register contains no use cases similar to the submitted description
 When the submitter submits a description (similarity score below 0.80 against all existing records)
 Then the system proceeds directly to graph extraction without surfacing any duplicate prompt
+Amended (gvm-test 007, 2026-10-04): (1) the similarity measure is word overlap (Jaccard) with a threshold of 0.4, not 0.80; the spec named no value and 0.4 is the recorded judgment call (src/engine/duplicate.ts, DUPLICATE_THRESHOLD). (2) The no-match outcome is a screen, not a silent pass-through (R16-W section 4, D-74; UC-2 "both decisions side by side"): it reads "Nothing similar found" with the number of earlier checks looked through, and a single "Continue" button; extraction starts when the submitter presses it. Current Then: with nothing similar, no duplicate card, no "Use the earlier result" option and no alert appear, and one Continue goes straight to graph extraction.
 [Requirement: UC-2] [Priority: MUST]
-[Trace: src/engine/duplicate.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-UC-2-05: Empty register — duplicate check skipped gracefully
@@ -194,8 +195,9 @@ And these nodes are highlighted for submitter review
 ```
 Property: For any given description, the extracted graph must contain the same set of node types (input, processing, output) regardless of when extraction is run or how many times it is re-run.
 Counterexample strategy: run extraction on the same description five times with a low-temperature model; verify node types and edge directions are consistent across runs.
+Manual evidence (gvm-test 007): the automated test proves the app side only: five extractions of one description through the real extractor (model SDK mocked to one fixed reply) give identical node-type counts, edge directions and request, the model is forced to the single structured tool, and a malformed shape is refused. It cannot prove the REAL model gives the same graph structure across five live runs. By hand: with a real key, run the same description five times and compare node types and edge directions on the review screen. Note: the extractor does not set a temperature, so the model default applies; the "low-temperature model" in the strategy is not something the app configures.
 [Requirement: UC-3] [Priority: MUST]
-[Trace: src/llm/graph-extractor.test.ts]
+[Trace: src/llm/v1-closeout-3.test.ts]
 ```
 
 ---
@@ -278,7 +280,7 @@ When the system generates questions
 Then exactly 5 or fewer questions are presented
 And the system does not add a 6th question for "just in case" completeness
 [Requirement: UC-4] [Priority: MUST]
-[Trace: src/engine/question-generator.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-UC-4-04: Questions are specific to the detected risk signals — not a fixed universal list
@@ -323,7 +325,7 @@ When both contradictions have been detected
 Then the system presents both contradictions together (not one at a time with the second hidden)
 And requires resolution of all contradictions before graph confirmation
 [Requirement: UC-5] [Priority: MUST]
-[Trace: src/engine/contradiction.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ---
@@ -370,7 +372,7 @@ Then the correction is saved with: field changed ("data class"), original value 
 And the output MUST contain: both the original extracted value and the corrected value in the audit trail
 And the output MUST NOT contain: only the corrected value with the original discarded
 [Requirement: UC-7] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-UC-7-02: Multiple corrections in one session all recorded
@@ -431,7 +433,7 @@ Then the verdict shows Track I
 And the output MUST contain: "Track I" and the rule ID that matched
 And the output MUST NOT contain: "Track II" or "Track III" as the primary track assignment
 [Requirement: PE-2] [Priority: MUST]
-[Trace: src/engine/track.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-PE-2-02: Track III assigned to GenAI copilot with no quantitative output [EXAMPLE]
@@ -478,7 +480,7 @@ When the engine assigns tier using impact-dominant rules
 Then the tier is Critical or High
 And no combination of low complexity or low reliance scores can produce Medium or Low
 [Requirement: PE-3] [Priority: MUST]
-[Trace: src/engine/tier.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-PE-3-03: Low-impact use case correctly assigned Low tier
@@ -631,8 +633,9 @@ Given the starter policy file is loaded
 When the system is inspected for available jurisdiction packs
 Then all four AUTHORED packs are present and loadable: SR 26-2, SS1/23, EU AI Act, DORA
 And CA, SG and JP are declared jurisdictions with no pack file, so no pack activates for them
+Amended (gvm-test 007, 2026-10-04): the heading still says "seven"; v1.3 deleted the OSFI-E23, MAS-FEAT and FSA-JP packs (their rule text was illustrative, not retrieved, and a rule citing an unretrieved source is worse than none). The Then above already states the current position, and that is what is asserted: four authored packs, plus CA, SG and JP declared with no pack file.
 [Requirement: PE-8] [Priority: MUST]
-[Trace: src/store/packs.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ---
@@ -652,7 +655,7 @@ Then the verdict proposes [C-ENC-1, C-ZONE-2] — not [C-ENC-2, C-ZONE-2]
 And the output MUST contain: exactly the controls needed to satisfy all tripped invariants
 And the output MUST NOT contain: additional controls not required to satisfy the invariants
 [Requirement: CS-1] [Priority: MUST]
-[Trace: src/engine/greedy-solver.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-CS-1-02: Safety margin honoured during control selection [EXAMPLE]
@@ -726,7 +729,7 @@ Then the verdict is Rejected
 And the output MUST contain: the specific unsatisfiable invariant named ("Level 4 autonomy on irreversible client-facing action — hard line, no control resolves")
 And the output MUST NOT contain: a partial control set or a suggestion that controls could help
 [Requirement: CS-2] [Priority: MUST]
-[Trace: src/engine/greedy-solver.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ---
@@ -798,7 +801,7 @@ Then the system re-evaluates and produces a new verdict
 And the output MUST contain: both the original verdict (Rejected) and the new verdict (Approved with controls) in the audit trail
 And the output MUST NOT contain: the original verdict deleted or overwritten
 [Requirement: VD-3] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-VD-3-02: Correction record includes corrector identity and timestamp
@@ -892,7 +895,7 @@ Given a use case advances from Pre-checked to Approved (2LoD action)
 When the transition is recorded
 Then the record shows: previous stage, new stage, actor identity, and timestamp
 [Requirement: LC-1] [Priority: MUST]
-[Trace: src/store/register.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ---
@@ -1029,8 +1032,9 @@ Given the register contains 10 use cases with full verdict records
 When a 2LoD user triggers a JSON export
 Then the exported file contains all 10 use case records
 And each record includes: use case ID, tier, track, status, verdict, audit trail reference, policy version
+Amended (gvm-test 007, 2026-10-04): the shipped design (specs/register-lifecycle.md section 10.3, built in P6-C01; RG-5 asks only for "a machine-readable format") exports the register itself, every node and edge, as {exported_at, nodes, edges}. A use case record there carries its use case id (node_id), tier, track, status (lifecycle_stage) and its verdict reference (current_verdict_id). The verdict body, the audit trail and the policy version are not copied into each record; they travel in the hand-off bundle (RG-8, store/handoff.ts exportBundle), whose audit_events hold each use case's verdict_produced event (verdict.id is the reference, verdict.policy_version the policy version). Current Then: the export holds all 10 records with id, tier, track, status and verdict reference, and the hand-off bundle holds, for each of the 10, the verdict and its policy version keyed to the same ids.
 [Requirement: RG-5] [Priority: COULD]
-[Trace: src/components/__tests__/RegisterView.test.tsx]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ---
@@ -1101,7 +1105,7 @@ Then evaluation is disabled
 And the output MUST contain: an error message identifying "hard_lines" as the missing required field
 And the output MUST NOT contain: the application starting normally and attempting evaluation with no hard_lines defined
 [Requirement: CF-5] [Priority: MUST]
-[Trace: src/components/__tests__/PolicyEditor.test.tsx]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-CF-5-02: Pack rule missing source citation rejected on load [EXAMPLE]
@@ -1143,7 +1147,7 @@ Then the SS1/23 pack is activated
 And the output MUST contain: "SS1/23" in the active packs with its version
 And the output MUST NOT contain: SS1/23 absent when UK is in scope
 [Requirement: RA-1] [Priority: MUST]
-[Trace: src/engine/jurisdiction.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-RA-1-02: US-only jurisdiction activates SR 26-2 pack only
@@ -1282,8 +1286,9 @@ Then the verdict status shows "Provisional — legal review required"
 And a notice reads: "[Rule ID] covers contested regulatory territory. Your legal team must determine the applicable interpretation before this verdict is final."
 And the output MUST contain: "Provisional" status indicator and the legal team routing instruction
 And the output MUST NOT contain: the verdict marked as final when a Low-confidence rule was the basis
+Amended (gvm-test 007, 2026-10-04): the wording above was replaced by the user report of 2026-08-15 ("is it always legal?"). It is not: packs are signed by Legal/Compliance, Model Risk or Technology Risk, and an unlisted decision type is an appetite-policy question. The screen now reads "Provisional — review required before this is final" (no function named; who is outstanding is named against each rule in the reasoning chain), the heading carries a "· Provisional" qualifier beside the status, and the notice lists each Low-confidence rule's own explanation, which names the regulation and section it rests on (for example "EU AI Act Annex III §5(b) — proposed interpretation, pending firm adoption"). The "[Rule ID] covers contested regulatory territory ... legal team" sentence no longer exists. Current Then: the banner reads as above and shows every Low-confidence rule explanation, never says "legal review required", the heading says Provisional and never "final", and the rule id appears in the chain.
 [Requirement: RA-11] [Priority: MUST]
-[Trace: src/components/__tests__/VerdictDisplay.test.tsx]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ---
@@ -1348,7 +1353,7 @@ Then the data-class dimension reports as outside the envelope
 And the output MUST contain: CTRL-ENC-01 in the required controls, evaluated directly rather than inherited
 And the output MUST NOT contain: a claim that the platform covered the exceeded dimension
 [Requirement: PV-3] [Priority: MUST]
-[Trace: src/engine/envelope.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-PV-3-03: Ordinal envelope ceilings are inclusive at the boundary [EXAMPLE]
@@ -1400,7 +1405,7 @@ Then the chain names what was declared, what was inherited, and every dimension 
 And the output MUST contain: each dimension with a fits/does-not-fit determination and the approved value
 And the output MUST NOT contain: an inherited control with no envelope stated to justify it
 [Requirement: PV-6] [Priority: MUST]
-[Trace: src/engine/envelope.test.ts]
+[Trace: src/engine/v1-closeout-3.test.ts]
 ```
 
 ### TC-PV-6-02: The inheritance chain survives a rejection [EXAMPLE]
@@ -1513,7 +1518,7 @@ Then the verdict is displayed within 30 seconds of the confirmation action
 And the output MUST contain: verdict displayed within the 30-second window
 And the output MUST NOT contain: a loading state persisting beyond 30 seconds before the verdict appears
 [Requirement: NF-5] [Priority: SHOULD] [Baseline: M2 MacBook Air 8GB — per HR-02 acknowledgement]
-[Trace: src/engine/non-functional.test.ts]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ---
@@ -1695,6 +1700,7 @@ Then the verdict MUST contain: living_status = "approved"
 And the verdict MUST contain: living_status_updated_at = a valid ISO 8601 timestamp
 And the VerdictDisplay component shows the living status badge
 [Requirement: VD-6] [Priority: MUST] [EXAMPLE]
+[Trace: src/components/__tests__/V1Closeout-3.test.tsx]
 ```
 
 ### TC-PE-PROPERTY-01: Jurisdiction monotonicity [PROPERTY]
