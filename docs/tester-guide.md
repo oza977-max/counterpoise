@@ -256,8 +256,9 @@ Worth deliberately exercising, newest first:
 - **"What kind of decision is it?"** has *Something else — describe it*.
   Type one; the verdict should name your words and say the
   policy has no rule for them.
-- **The verdict screen was rewritten for a business reader** — "What you
-  need to do" at the top, controls by name, "How fragile is this approval?",
+- **The verdict screen was rewritten for a business reader** — a first
+  screen headed by "Your next steps", then, in the full reasoning, "What you
+  need to do", controls by name, "How fragile is this approval?",
   "What could go wrong — and when this expires". Judge whether someone outside risk
   could act on it.
 - **"Anything your AI risk team should know? (optional)"** at the confirmation

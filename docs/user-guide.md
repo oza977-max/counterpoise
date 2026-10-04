@@ -99,7 +99,7 @@ its window allows. See *[What "provisional" means](#what-provisional-means)*.
 
 ### 3. The verdict line
 
-The **Verdict** heading gives one of three outcomes — Approved, Approved with
+The heading gives one of three outcomes — Approved, Approved with
 controls, or Rejected — plus the tier and the track, and a **Decided by** line
 naming the **binding constraint**: the rule that decided the case (the hard
 line that was crossed, or the most severe rule that tripped). If you only read
