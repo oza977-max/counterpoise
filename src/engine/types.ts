@@ -434,6 +434,11 @@ export interface RegulatoryChainEntry {
   basis: PackBasis;
   derived: string;
   sign_off: string;
+  // GT7 D-3 (P11): which use-case attribute(s) set this rule off — the
+  // condition fields with the graph's actual matching value(s), sorted.
+  // Optional: stored verdicts from before this field lack it, and an
+  // unconditional rule has none. Every reader guards with `?? []`.
+  triggered_by?: Array<{ field: string; value: string | number | boolean }>;
 }
 
 // UC-7 correction recording (intake-flow.md §8).

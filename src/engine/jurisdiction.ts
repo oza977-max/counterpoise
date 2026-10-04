@@ -1,4 +1,4 @@
-import { matchesCondition, describeGraphPath } from './condition';
+import { matchesCondition, matchedConditionValues, describeGraphPath } from './condition';
 import type {
   AppliedOverride,
   ConfidenceCaveat,
@@ -120,7 +120,12 @@ export function caveatForFiredRule(rule: PackRule, pack?: PackSignOff): Confiden
   return null;
 }
 
-export function chainEntryFor(rule: PackRule, derived: string, pack?: PackSignOff): RegulatoryChainEntry {
+export function chainEntryFor(
+  rule: PackRule,
+  derived: string,
+  pack: PackSignOff | undefined,
+  graph: DataFlowGraph,
+): RegulatoryChainEntry {
   const name = rule.reviewer_name ?? pack?.reviewer_name ?? 'not yet adopted';
   const date = rule.sign_off_date ?? pack?.sign_off_date;
   const scope = rule.reviewer_name ? 'this rule' : 'pack';
@@ -131,6 +136,7 @@ export function chainEntryFor(rule: PackRule, derived: string, pack?: PackSignOf
     source_text: rule.source.text,
     basis: rule.basis,
     derived,
+    triggered_by: matchedConditionValues(rule.condition, graph),
     sign_off: isUnsigned(rule, pack)
       ? `${name} · pending firm adoption`
       : `${name} · ${date} (adopted at ${scope} level)`,
@@ -229,7 +235,7 @@ export function applyJurisdictionOverrides(
       }
 
       appliedOverrides.push({ packCode: pack.pack_id, ruleId: rule.id, effect: derived });
-      chain.push(chainEntryFor(rule, derived, pack));
+      chain.push(chainEntryFor(rule, derived, pack, graph));
       const caveat = caveatForFiredRule(rule, pack);
       if (caveat) caveats.push(caveat);
     }

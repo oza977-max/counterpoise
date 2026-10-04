@@ -189,7 +189,7 @@ export function evaluate(
           tripped_invariants: [],
           binding_reason: reason,
           binding_regulatory_basis: `${rule.source.document} ${rule.source.section}`,
-          regulatory_chain: [chainEntryFor(rule, `Hard-line rejection: ${reason}`, packHardLine.pack)],
+          regulatory_chain: [chainEntryFor(rule, `Hard-line rejection: ${reason}`, packHardLine.pack, graph)],
         },
       }, graph),
     };

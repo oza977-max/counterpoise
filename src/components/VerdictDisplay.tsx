@@ -16,6 +16,7 @@ import { STATUS_LABEL, GRAPH_FIELD_LABELS } from './field-copy';
 import { supplierDisplayName, approvedModelBaseLabelFor } from './plain-copy';
 import { resolveApprovedModel } from '../engine/evaluate';
 import { Fold } from './Fold';
+import { triggerPhrase } from './trigger-copy';
 // R16 chunk D1 (build/prompts/R16.md v2.1 §4.1): the one view-model behind
 // the verdict's first screen AND the four readers that need a safeguard's
 // status (this first screen, WhatToDo, SignOffChecklist, the evidence
@@ -1893,6 +1894,14 @@ export default function VerdictDisplay({ verdict, auditEvents, policy, graph, re
                 </span>
               </div>
               <blockquote className="verdict__chain-quote">“{entry.source_text}”</blockquote>
+              {(entry.triggered_by ?? []).length > 0 && (
+                // GT7 D-3 (P11): what set this rule off, in plain words. Hidden when
+                // absent/empty (old stored verdicts, unconditional rules).
+                <p className="verdict__chain-trigger">
+                  Applies because{' '}
+                  {[...new Set((entry.triggered_by ?? []).map((t) => triggerPhrase(t.field, t.value)))].join('; ')}.
+                </p>
+              )}
               <p className="verdict__chain-derived">Derived:&ensp;{entry.derived}</p>
               <p className="verdict__chain-signoff">SIGN-OFF&ensp;{entry.sign_off}</p>
               <p className="verdict__chain-basis-help">{BASIS_HELP[entry.basis]}</p>

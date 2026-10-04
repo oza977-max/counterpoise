@@ -51,6 +51,40 @@ export function matchesCondition(condition: Condition, graph: DataFlowGraph): bo
   return true;
 }
 
+// GT7 D-3 (P11): for each field of a rule's condition, the distinct graph
+// values that actually satisfied it — "what set this rule off". Pure and
+// deterministic (NF-1): fields and values are sorted with a fixed,
+// non-locale comparison. An unconditional rule gives []. Only scalar values
+// (string | number | boolean) are reported; arrays such as `jurisdictions`
+// are flattened to their elements.
+export type MatchedConditionValue = { field: string; value: string | number | boolean };
+
+function compareScalar(a: string | number | boolean, b: string | number | boolean): number {
+  const ka = `${typeof a}:${String(a)}`;
+  const kb = `${typeof b}:${String(b)}`;
+  return ka < kb ? -1 : ka > kb ? 1 : 0;
+}
+
+export function matchedConditionValues(condition: Condition, graph: DataFlowGraph): MatchedConditionValue[] {
+  const out: MatchedConditionValue[] = [];
+  for (const field of Object.keys(condition).sort()) {
+    const expected = condition[field] as ConditionValue;
+    const seen = new Set<string>();
+    const values: Array<string | number | boolean> = [];
+    for (const candidate of collectFieldValues(graph, field).flat()) {
+      if (typeof candidate !== 'string' && typeof candidate !== 'number' && typeof candidate !== 'boolean') continue;
+      if (!matchesOperator(candidate, expected)) continue;
+      const key = `${typeof candidate}:${String(candidate)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      values.push(candidate);
+    }
+    values.sort(compareScalar);
+    for (const value of values) out.push({ field, value });
+  }
+  return out;
+}
+
 // Shared graph-path description (VD-2 binding_path) used by hard-line and
 // invariant evaluation. Best-effort — names every node on the graph, since
 // the condition language doesn't track which specific node satisfied a
