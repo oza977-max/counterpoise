@@ -46,7 +46,7 @@ describe('detectContradictions', () => {
     expect(result[0]?.field).toBe('autonomy_level');
   });
 
-  it('TC-UC-5-02 (no contradiction case): returns [] when description and graph agree', () => {
+  it('no-contradiction case: returns [] when description and graph agree', () => {
     const g = graph({
       input_nodes: [{ id: 'i1', label: 'notes', data_class: 'Internal', data_zone: 'Zone C' }],
     });

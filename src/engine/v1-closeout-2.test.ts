@@ -91,7 +91,7 @@ function emptyOrUndefinedPaths(value: unknown, path = '$'): string[] {
   return [];
 }
 
-describe('TC-CF-4-01: a pack update is independent of the main policy file', () => {
+describe('a pack update is independent of the main policy file', () => {
   const euYaml = (version: string) =>
     PACK_FILES['eu-ai-act']!.replace(/^version: .*$/m, `version: "${version}"`);
 
@@ -119,7 +119,7 @@ describe('TC-CF-4-01: a pack update is independent of the main policy file', () 
   });
 });
 
-describe('TC-CF-5-04: a hostile pack file is rejected on load, never executed', () => {
+describe('a hostile pack file is rejected on load, never executed', () => {
   it('TC-CF-5-04: a pack carrying a code-execution tag is refused as a parse error naming the pack file and the tag, and nothing from it loads', () => {
     const hostile = [
       'pack_id: "EVIL-PACK"',
@@ -139,7 +139,7 @@ describe('TC-CF-5-04: a hostile pack file is rejected on load, never executed', 
     expect(errors[0]?.reason).toMatch(/python\/object\/apply:os\.system/);
   });
 
-  it('TC-CF-5-04: a pack that parses but carries the wrong content type is refused naming its pack id', () => {
+  it('a pack that parses but carries the wrong content type is refused naming its pack id', () => {
     const wrongType = ['pack_id: "WRONG-TYPE"', 'version: "1.0"', 'rules: "not a list of rules"'].join('\n');
 
     const { packs: loaded, errors } = loadPacks({ 'wrong-type': wrongType });
@@ -151,7 +151,7 @@ describe('TC-CF-5-04: a hostile pack file is rejected on load, never executed', 
   });
 });
 
-describe('TC-LC-1-01: lifecycle stage changes are ordered and recorded with who and when', () => {
+describe('lifecycle stage changes are ordered and recorded with who and when', () => {
   function useCaseNode(nodeId: string): RegisterNode {
     return {
       node_id: nodeId,
@@ -195,7 +195,7 @@ describe('TC-LC-1-01: lifecycle stage changes are ordered and recorded with who 
   });
 });
 
-describe('TC-PE-1-02: a valid confirmed graph yields a complete verdict', () => {
+describe('a valid confirmed graph yields a complete verdict', () => {
   it('TC-PE-1-02: the internal HR FAQ chatbot verdict has status, tier and track populated and nothing undefined', () => {
     const v = run(
       form({
@@ -242,7 +242,7 @@ describe('TC-PE-1-02: a valid confirmed graph yields a complete verdict', () => 
   });
 });
 
-describe('TC-PE-3-01: a credit-scoring use case with EU borrowers is Critical whatever its complexity', () => {
+describe('a credit-scoring use case with EU borrowers is Critical whatever its complexity', () => {
   it('TC-PE-3-01: a low-complexity EU credit decision is Critical, and Annex III 5(b) is named as the reason', () => {
     // As little complexity as the form allows: statistical model, no autonomy,
     // internal-only, advisory, reversible, limited scale.
@@ -285,7 +285,7 @@ describe('TC-PE-3-01: a credit-scoring use case with EU borrowers is Critical wh
   });
 });
 
-describe('TC-PE-4-02: MNPI reaching a model outside the controlled zone is rejected on the hard line', () => {
+describe('MNPI reaching a model outside the controlled zone is rejected on the hard line', () => {
   it('TC-PE-4-02: the verdict is rejected, names the data-zone hard line, its reason and the MNPI path, and offers no controls', () => {
     const g: DataFlowGraph = {
       id: 'g-mnpi',
@@ -335,7 +335,7 @@ describe('TC-PE-4-02: MNPI reaching a model outside the controlled zone is rejec
   });
 });
 
-describe('TC-PE-6-01: the most demanding standard governs by supplementing obligations', () => {
+describe('the most demanding standard governs by supplementing obligations', () => {
   it('TC-PE-6-01: a UK + US use case lists both packs as active, keeps the track, and drops no pack obligation', () => {
     // LLM with a material decision trips one required review in each pack:
     // SS1-UK-REV-01 (decision bindingness) and SR262-US-REV-01 (model type).
@@ -372,7 +372,7 @@ describe('TC-PE-6-01: the most demanding standard governs by supplementing oblig
   });
 });
 
-describe('TC-PE-8-01: the unmodified starter policy produces a complete verdict', () => {
+describe('the unmodified starter policy produces a complete verdict', () => {
   it('TC-PE-8-01: the shipped policy still carries its [FIRM] placeholders and an HR FAQ chatbot evaluates cleanly against it', () => {
     // "Unmodified starter": the file's own placeholders are still there.
     expect(policy.firm_name).toBe('[FIRM]');
@@ -403,7 +403,7 @@ describe('TC-PE-8-01: the unmodified starter policy produces a complete verdict'
   });
 });
 
-describe('TC-PV-A-01: declaring no platform changes nothing', () => {
+describe('declaring no platform changes nothing', () => {
   const PLATFORM = {
     id: 'PLAT-INTERNAL-01',
     name: 'Internal model platform',
@@ -449,7 +449,7 @@ describe('TC-PV-A-01: declaring no platform changes nothing', () => {
   });
 });
 
-describe('TC-RG-1-01: a shared component is one node referenced by every use case that declares it', () => {
+describe('a shared component is one node referenced by every use case that declares it', () => {
   function useCaseNode(nodeId: string, label: string): RegisterNode {
     return {
       node_id: nodeId,
@@ -507,7 +507,7 @@ describe('TC-RG-1-01: a shared component is one node referenced by every use cas
   });
 });
 
-describe('TC-UC-4-02: a Critical-tier use case is asked no more than 15 questions', () => {
+describe('a Critical-tier use case is asked no more than 15 questions', () => {
   function creditScoringGraph(): DataFlowGraph {
     return {
       id: 'g-credit',
@@ -560,7 +560,7 @@ describe('TC-UC-4-02: a Critical-tier use case is asked no more than 15 question
     expect(new Set(questions.map((q) => q.field)).size).toBe(questions.length);
   });
 
-  it('TC-UC-4-02: the budget is enforced by trimming, not just by there happening to be few candidates', () => {
+  it('the budget is enforced by trimming, not just by there happening to be few candidates', () => {
     // A Low-tier graph (budget 5) with an uncertain node on every question
     // field: more candidates than the budget, so the cap is what limits it.
     const g = creditScoringGraph();
@@ -601,7 +601,7 @@ describe('TC-UC-4-02: a Critical-tier use case is asked no more than 15 question
   });
 });
 
-describe('TC-UC-5-02: consistent answers are not flagged as a contradiction', () => {
+describe('consistent answers are not flagged as a contradiction', () => {
   it('TC-UC-5-02: a description that does reach the denial patterns, with a graph that agrees, flags nothing', () => {
     // The old case passed a description that matched no pattern at all, so it
     // could not fail. These DO match the two patterns, against a graph that is
@@ -634,7 +634,7 @@ describe('TC-UC-5-02: consistent answers are not flagged as a contradiction', ()
   });
 });
 
-describe('TC-VD-5-01: policy and every active pack version are recorded in the verdict and on the trail', () => {
+describe('policy and every active pack version are recorded in the verdict and on the trail', () => {
   it('TC-VD-5-01: a verdict under policy X with SS1-23 2.0 and EU-AIACT 1.1 carries them, and they survive onto the audit trail', async () => {
     const withVersion = (yaml: string, version: string) => yaml.replace(/^version: .*$/m, `version: "${version}"`);
     const set = loadPacks({

@@ -590,7 +590,7 @@ describe('Register and audit guarantees that were untested (round 4)', () => {
     expect(wasLogged).toBe(true);
   });
 
-  it('TC-RG-1-02: a blast-radius query returns exactly the referencing use cases at scale [TC-RG-1-01]', async () => {
+  it('TC-RG-1-02: a blast-radius query returns exactly the referencing use cases at scale', async () => {
     // RG-1's scale half. 200 unrelated entries alongside two that share a
     // component: the query must return the two and nothing else, and do it
     // without walking into quadratic behaviour.

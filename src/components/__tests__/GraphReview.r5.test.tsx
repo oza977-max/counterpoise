@@ -88,7 +88,7 @@ describe('R5-GR-1 — every decision-bearing field explains itself', () => {
 });
 
 describe('R5-GR-3 — uncertainty is loud (GraphView)', () => {
-  it('TC-R5-GR-3-01: an uncertain node renders the warning and its own confirm action', () => {
+  it('TC-R5-GR-3-01: an uncertain node renders the warning and its own confirm action [TC-UC-3-02]', () => {
     const g = makeGraph();
     g.processing_nodes[0]!.uncertain = true;
     const { container } = render(
