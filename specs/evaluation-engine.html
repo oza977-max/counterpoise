@@ -563,7 +563,7 @@ interface TrippedInvariant {
     unsatisfied = unsatisfied MINUS best.resolves
 
   RETURN { satisfiable: true, controls: selected }</code></pre>
-    <p><strong>Safety margin application:</strong> After finding the minimal set, the solver checks whether the use case sits within the safety margin. In MVP, the margin is applied as a flag: if the use case is approved but no control provides headroom above the minimum (all invariants are satisfied at exactly 0 headroom), the verdict includes <code>boundary_proximity: true</code> (VD-6 / CS-4). Full margin-aware solving is V1.5.</p>
+    <p><strong>Safety margin application:</strong> The solver reports the margin the control library offers (<code>margin_achieved</code>, the share of tripped invariants the library can resolve in two or more ways — measured over the library, not the chosen set) and which tripped invariants only one control can resolve (<code>single_covered_invariants</code>). The engine, not the solver, compares that with the policy's <code>safety_margin</code>: when anything trips and the achieved margin is below the target, the verdict carries <code>boundary_proximity: true</code> (VD-6 / CS-4); nothing tripped, or a margin at or above the target, gives <code>false</code>. Full margin-aware solving is V1.5. <em>(Amended gvm-test 007, 2026-10-04: the earlier "no headroom above the minimum" wording predates oracle round 001 and HR-14; see <code>evaluate.ts</code> and MUT-1a..1d / <code>safety-margin.test.ts</code>.)</em></p>
 
     <h3 id="solver-unsatisfiable">Unsatisfiable Invariant Naming (CS-2)</h3>
     <p>When <code>candidates is empty</code> at any iteration, the unsatisfiable invariant is returned with:</p>
