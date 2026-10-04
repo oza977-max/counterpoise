@@ -1,0 +1,61 @@
+// Throwaway model-comparison harness (NOT part of the product). Runs every
+// backtest corpus description through the app's real extractor with the model
+// named in MT_MODEL, then the real question generator and the real engine.
+import { it } from 'vitest';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { loadPolicy } from './store/policy';
+import { loadPacks } from './store/packs';
+import { getPackSources } from './store/pack-source';
+import { evaluate } from './engine/evaluate';
+import { generateQuestions, questionsForGuessedFields } from './engine/question-generator';
+import { extractGraph } from './llm/graph-extractor';
+import { findRatingInstructions } from './engine/rating-instructions';
+
+const MODEL = process.env.MT_MODEL ?? 'qwen3:4b';
+const OUT = process.env.MT_OUT ?? '/tmp/mt-out.json';
+const ONLY = process.env.MT_ONLY ? process.env.MT_ONLY.split(',') : null;
+
+it('model comparison run', async () => {
+  localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
+  localStorage.setItem('aigate:local-llm-model', MODEL);
+  const pr = loadPolicy(readFileSync(resolve(__dirname, '../policy/appetite.yaml'), 'utf-8'));
+  if (!pr.valid) throw new Error('policy invalid');
+  const policy = pr.policy;
+  const packs = loadPacks(getPackSources()).packs;
+  const cases = JSON.parse(readFileSync(resolve(__dirname, '../backtest/cases.json'), 'utf-8')).cases;
+  const expected = JSON.parse(readFileSync(resolve(__dirname, '../backtest/engine-verdicts.json'), 'utf-8')).verdicts;
+  const results: unknown[] = [];
+  for (const c of cases) {
+    if (ONLY && !ONLY.includes(c.id)) continue;
+    const t0 = Date.now();
+    const r = await extractGraph(c.prose);
+    const ms = Date.now() - t0;
+    if (!r.ok) { results.push({ id: c.id, ok: false, error: r.error, ms }); writeFileSync(OUT, JSON.stringify(results, null, 1)); continue; }
+    const g = { ...r.value.graph, jurisdictions: c.graph.jurisdictions };
+    const budgeted = generateQuestions(g, policy, []);
+    const guessedQ = questionsForGuessedFields(r.value.guessed ?? {}, g);
+    const seen = new Set(budgeted.map((q) => q.id));
+    const questions = [...budgeted, ...guessedQ.filter((q) => !seen.has(q.id))];
+    const ev = evaluate(g, policy, packs);
+    const v = ev.ok ? ev.value : null;
+    const pick = (n: Record<string, unknown> | undefined, ks: string[]) => Object.fromEntries(ks.map((k) => [k, n?.[k]]));
+    results.push({
+      id: c.id, title: c.title, ok: true, ms,
+      truth: c.graph,
+      extracted: {
+        counts: [g.input_nodes.length, g.processing_nodes.length, g.output_nodes.length],
+        input: pick(g.input_nodes[0] as never, Object.keys(c.graph.input)),
+        processing: pick(g.processing_nodes[0] as never, Object.keys(c.graph.processing)),
+        output: pick(g.output_nodes[0] as never, Object.keys(c.graph.output)),
+        uncertain: [...g.input_nodes, ...g.processing_nodes, ...g.output_nodes].filter((n) => (n as { uncertain?: boolean }).uncertain).length,
+      },
+      guessed: r.value.guessed,
+      questions: questions.map((q) => q.field),
+      verdict: v ? { status: v.status, tier: v.tier, track: v.track, binding: v.binding_constraint } : { error: ev.ok ? null : ev.error },
+      expected: expected[c.id] ? { status: expected[c.id].status, tier: expected[c.id].tier, track: expected[c.id].track } : null,
+      steering: findRatingInstructions(c.prose),
+    });
+    writeFileSync(OUT, JSON.stringify(results, null, 1));
+  }
+}, 3_600_000);

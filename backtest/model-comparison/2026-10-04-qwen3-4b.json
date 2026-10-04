@@ -1,0 +1,2807 @@
+[
+ {
+  "id": "A-01",
+  "title": "Daily VaR and IRC commentary",
+  "ok": true,
+  "ms": 19338,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "read",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-DRIFT-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "A-02",
+  "title": "The same commentary tool, with private-side names in the input",
+  "ok": true,
+  "ms": 14749,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "vendor",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_node_1": [
+    "data_class",
+    "data_zone"
+   ],
+   "processing_node_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_node_1": [
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "rejected",
+   "tier": "Critical",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "B-01",
+  "title": "Coding assistant for risk analysts",
+  "ok": true,
+  "ms": 23478,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "agentic",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "agentic",
+    "autonomy_level": 0,
+    "data_zone": "Zone C",
+    "vendor": "None",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "data_zone",
+    "vendor",
+    "system_access_scope",
+    "multi_instance_coordination"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "vendor",
+   "system_access_scope",
+   "multi_instance_coordination"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III"
+  },
+  "steering": []
+ },
+ {
+  "id": "B-02",
+  "title": "Internal policy document search and summarisation",
+  "ok": true,
+  "ms": 15203,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "read",
+    "exposure": "internal-shared",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 0,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-CITE-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "III"
+  },
+  "steering": []
+ },
+ {
+  "id": "B-03",
+  "title": "Client-facing wealth chatbot",
+  "ok": true,
+  "ms": 14683,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "generative-ai",
+    "autonomy_level": 2,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "client-facing",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "Internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_class",
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "III",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "B-04",
+  "title": "Autonomous client communications",
+  "ok": true,
+  "ms": 21671,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "generative-ai",
+    "autonomy_level": 4,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "client-facing",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "at_scale",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "Internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "process_1": [
+    "data_zone"
+   ]
+  },
+  "questions": [
+   "data_zone"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "rejected",
+   "tier": "Critical",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "C-01",
+  "title": "Retail credit scorecard (traditional)",
+  "ok": true,
+  "ms": 14710,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "credit-decision",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "None",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "C-02",
+  "title": "Credit review drafting and covenant monitoring",
+  "ok": true,
+  "ms": 15721,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "credit-decision",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "C-03",
+  "title": "Autonomous credit-line reduction",
+  "ok": true,
+  "ms": 18238,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 4,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "client-facing",
+    "decision_bindingness": "binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "credit-decision",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "deep-learning",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "autonomy_level"
+   ]
+  },
+  "questions": [
+   "autonomy_level"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "rejected",
+   "tier": "Critical",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "C-04",
+  "title": "Collections prioritisation",
+  "ok": true,
+  "ms": 18184,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "lending-decision",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "N/A",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_class"
+   ],
+   "process_1": [
+    "vendor"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "vendor"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "C-05",
+  "title": "Replacing an existing PD model with a gradient-boosted one",
+  "ok": true,
+  "ms": 17771,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": true
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "credit-decision",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": true
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "vendor"
+   ]
+  },
+  "questions": [
+   "vendor"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "II",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "D-01",
+  "title": "Execution-cost and market-impact estimation",
+  "ok": true,
+  "ms": 15191,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "trading",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "traditional-ml",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "trade",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_class",
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-AUTONOMY-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "D-02",
+  "title": "Autonomous execution agent",
+  "ok": true,
+  "ms": 17323,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 4,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "trade",
+    "exposure": "market-facing",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "at_scale",
+    "decision_type": "trading",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "traditional-ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "trade",
+    "exposure": "market-facing",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "I",
+   "binding": "INV-CONDUCT-01"
+  },
+  "expected": {
+   "status": "rejected",
+   "tier": "Critical",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "D-03",
+  "title": "Research summarisation for portfolio managers",
+  "ok": true,
+  "ms": 14965,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "agentic",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "Internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model",
+    "system_access_scope",
+    "multi_instance_coordination"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "system_access_scope",
+   "multi_instance_coordination",
+   "action_type",
+   "exposure",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "III",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "E-01",
+  "title": "Operational-risk event classification and RCSA drafting",
+  "ok": true,
+  "ms": 20498,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    3,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 0,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "input_2": [
+    "data_zone"
+   ],
+   "input_3": [
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "data_zone",
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "I",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "E-02",
+  "title": "Reconciliation break investigation",
+  "ok": true,
+  "ms": 20606,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    3,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "input_2": [
+    "data_zone"
+   ],
+   "input_3": [
+    "data_class",
+    "data_zone"
+   ],
+   "process_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "data_zone",
+   "data_class",
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-DRIFT-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "E-03",
+  "title": "Payment exception auto-repair",
+  "ok": true,
+  "ms": 20149,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 3,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "internal-shared",
+    "decision_bindingness": "binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "operational",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Public",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "None",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "vendor"
+   ]
+  },
+  "questions": [
+   "vendor"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II",
+   "binding": "INV-IRREV-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "E-04",
+  "title": "Automated data deletion for retention compliance",
+  "ok": true,
+  "ms": 18142,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "traditional-ml",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "internal-only",
+    "decision_bindingness": "binding",
+    "output_reversibility": "irreversible",
+    "scale": "at_scale",
+    "decision_type": "operational",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 0,
+    "data_zone": "Zone C",
+    "vendor": "N/A",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "node_1": [
+    "data_class"
+   ],
+   "node_2": [
+    "vendor"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "vendor"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "F-01",
+  "title": "AML transaction-monitoring alert triage",
+  "ok": true,
+  "ms": 16096,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 3,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "internal-shared",
+    "decision_bindingness": "binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "fraud-detection",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "Internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "trade",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "replaces_prior_model"
+   ]
+  },
+  "questions": [
+   "replaces_prior_model"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "II",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "F-02",
+  "title": "KYC document extraction and verification",
+  "ok": true,
+  "ms": 14688,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "deep-learning",
+    "autonomy_level": 2,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "operational",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "deep-learning",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "execute",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "at_scale"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "Low",
+   "track": "II",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "F-03",
+  "title": "Regulatory reporting narrative drafting",
+  "ok": true,
+  "ms": 15437,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "market-facing",
+    "decision_bindingness": "material",
+    "output_reversibility": "irreversible",
+    "scale": "limited",
+    "decision_type": "regulatory-reporting",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Public",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-CITE-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "F-04",
+  "title": "Trade-surveillance alert review",
+  "ok": true,
+  "ms": 15698,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "III",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-01",
+  "title": "EU retail credit scoring",
+  "ok": true,
+  "ms": 16459,
+  "truth": {
+   "jurisdictions": [
+    "EU"
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "credit-decision",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "III",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-02",
+  "title": "UK-only quantitative model",
+  "ok": true,
+  "ms": 15442,
+  "truth": {
+   "jurisdictions": [
+    "UK"
+   ],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "limited",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "Low",
+   "track": "I",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "I"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-03",
+  "title": "US generative-AI drafting assistant",
+  "ok": true,
+  "ms": 19606,
+  "truth": {
+   "jurisdictions": [
+    "US"
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "generative-ai",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "generative-ai",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "None",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "draft",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "data_zone"
+   ]
+  },
+  "questions": [
+   "data_zone"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved",
+   "tier": "Low",
+   "track": "III"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-04",
+  "title": "Canadian model at autonomy level 2",
+  "ok": true,
+  "ms": 14713,
+  "truth": {
+   "jurisdictions": [
+    "CA"
+   ],
+   "input": {
+    "data_class": "Confidential",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 2,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": false
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "model_type",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility"
+   ]
+  },
+  "questions": [
+   "model_type",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "III",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-05",
+  "title": "Singapore and Japan client-facing assistant",
+  "ok": true,
+  "ms": 15862,
+  "truth": {
+   "jurisdictions": [
+    "SG",
+    "JP"
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "client-facing",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 0,
+    "data_zone": "Zone B",
+    "vendor": "unknown",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "vendor"
+   ]
+  },
+  "questions": [
+   "vendor"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "G-06",
+  "title": "EU CV-screening tool",
+  "ok": true,
+  "ms": 15226,
+  "truth": {
+   "jurisdictions": [
+    "EU"
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "material",
+    "output_reversibility": "reversible",
+    "scale": "at_scale",
+    "decision_type": "hiring",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "statistical",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "vendor",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "vendor",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "I",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Critical",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "H-01",
+  "title": "Internal-platform model, inside the approved envelope",
+  "ok": true,
+  "ms": 17885,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false,
+    "platform": "PLAT-INTERNAL-ML"
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "limited",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 0,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_class"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_class",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved",
+   "tier": "High",
+   "track": "II",
+   "binding": ""
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "H-02",
+  "title": "The same model, one envelope dimension exceeded",
+  "ok": true,
+  "ms": 15562,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Client PII",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 1,
+    "data_zone": "Zone C",
+    "vendor": "internal",
+    "replaces_prior_model": false,
+    "platform": "PLAT-INTERNAL-ML"
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "limited",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 0,
+    "data_zone": "Zone B",
+    "vendor": "approved internal platform",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "approved_with_controls",
+   "tier": "Low",
+   "track": "III",
+   "binding": "INV-VENDOR-01"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "High",
+   "track": "II"
+  },
+  "steering": []
+ },
+ {
+  "id": "H-03",
+  "title": "Model on an unlisted third-party service",
+  "ok": true,
+  "ms": 15014,
+  "truth": {
+   "jurisdictions": [],
+   "input": {
+    "data_class": "Internal",
+    "data_zone": "Zone B"
+   },
+   "processing": {
+    "model_type": "llm",
+    "autonomy_level": 1,
+    "data_zone": "Zone B",
+    "vendor": "VENDOR-NOT-LISTED",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "recommend",
+    "exposure": "internal-shared",
+    "decision_bindingness": "advisory",
+    "output_reversibility": "reversible",
+    "scale": "limited",
+    "hitl": true
+   }
+  },
+  "extracted": {
+   "counts": [
+    1,
+    1,
+    1
+   ],
+   "input": {
+    "data_class": "MNPI",
+    "data_zone": "Zone C"
+   },
+   "processing": {
+    "model_type": "ml",
+    "autonomy_level": 0,
+    "data_zone": "Zone B",
+    "vendor": "third-party service",
+    "replaces_prior_model": false
+   },
+   "output": {
+    "action_type": "inform",
+    "exposure": "internal-only",
+    "decision_bindingness": "non-binding",
+    "output_reversibility": "irreversible",
+    "scale": "limited"
+   },
+   "uncertain": 0
+  },
+  "guessed": {
+   "input_1": [
+    "data_zone"
+   ],
+   "processing_1": [
+    "model_type",
+    "autonomy_level",
+    "data_zone",
+    "replaces_prior_model"
+   ],
+   "output_1": [
+    "action_type",
+    "exposure",
+    "decision_bindingness",
+    "output_reversibility",
+    "scale"
+   ]
+  },
+  "questions": [
+   "data_zone",
+   "model_type",
+   "autonomy_level",
+   "data_zone",
+   "replaces_prior_model",
+   "action_type",
+   "exposure",
+   "decision_bindingness",
+   "output_reversibility",
+   "scale"
+  ],
+  "verdict": {
+   "status": "rejected",
+   "tier": "Critical",
+   "track": "I",
+   "binding": "HL-002"
+  },
+  "expected": {
+   "status": "approved_with_controls",
+   "tier": "Medium",
+   "track": "II"
+  },
+  "steering": []
+ }
+]
