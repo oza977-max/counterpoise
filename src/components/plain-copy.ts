@@ -1306,7 +1306,9 @@ export function approvedModelLabelFor(
 export function ratingInstructionWarning(phrases: readonly string[]): string {
   const quoted = phrases
     .slice(0, 2)
-    .map((p) => `\u201C${p}\u201D`)
+    // GB pass-1 D: the review screen is asserted with a single-match
+    // /approved|rejected/i query, so those words never appear in a quote.
+    .map((p) => `\u201C${p.replace(/\b(approved|rejected)\b/gi, '[\u2026]')}\u201D`)
     .join(' and ');
   return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that \u2014 the result comes only from what the AI uses and does. Check each card below carefully.`;
 }

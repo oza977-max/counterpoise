@@ -91,8 +91,17 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
 // GT7 L-1 (P12). Rating instructions are looked for on the DESCRIPTION path
 // only — a graph a model read out of the typed description. The form path's
 // "In a sentence or two" text is never read by a model, so it gets no warning.
+// GB pass-1 C: called up to three times per render, so the (pure) result is
+// remembered for the last description seen.
+let lastRatingKey: string | undefined;
+let lastRatingFound: string[] = [];
 function ratingInstructionsFor(graph: { intake_method: string }, description: string | undefined): string[] {
-  return graph.intake_method === 'llm' && description ? findRatingInstructions(description) : [];
+  if (graph.intake_method !== 'llm' || !description) return [];
+  if (description !== lastRatingKey) {
+    lastRatingFound = findRatingInstructions(description);
+    lastRatingKey = description;
+  }
+  return lastRatingFound;
 }
 
 export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?: number } = {}) {
@@ -1486,6 +1495,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           ...(reviewerNote ? { submitter_note: reviewerNote } : {}),
           ...(contradictionResolutions.length > 0 ? { contradiction_resolutions: contradictionResolutions } : {}),
           ...(answerContexts.length > 0 ? { answer_contexts: answerContexts } : {}),
+          // GB pass-1 M2: a failed-evaluation retry writes a SECOND
+          // graph_confirmed, which also carries this field — harmless and
+          // intended (each confirmation record states what the description
+          // said). The review/confirmation warnings show on every pass.
           // GT7 L-1 (P12): the description path only — the form's sentence is
           // never read by a model. Written here, on the first confirmation; a
           // correction pass (the isCorrection branch above) does not re-flag,
