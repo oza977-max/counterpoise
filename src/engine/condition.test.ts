@@ -220,10 +220,13 @@ describe('matchedConditionValues (GT7 D-3, P11)', () => {
     ]);
   });
 
-  it('TC-RA-9-01e: an unconditional rule gives an empty list; a value-equality condition reports the matching value; array fields are flattened', () => {
+  it('TC-RA-9-01e: an unconditional rule gives an empty list; a value-equality condition reports the matching value; the jurisdictions array is one candidate, as in the engine', () => {
     expect(matchedConditionValues({}, oneNode())).toEqual([]);
     expect(matchedConditionValues({ exposure: 'client-facing' }, oneNode())).toEqual([{ field: 'exposure', value: 'client-facing' }]);
-    expect(matchedConditionValues({ jurisdictions: { in: ['EU', 'JP'] } }, oneNode())).toEqual([{ field: 'jurisdictions', value: 'EU' }]);
+    // The jurisdictions ARRAY is one candidate to the engine (matchesCondition), so a
+    // membership test on it never fires — and the helper must not report one either.
+    expect(matchesCondition({ jurisdictions: { in: ['EU', 'JP'] } }, oneNode())).toBe(false);
+    expect(matchedConditionValues({ jurisdictions: { in: ['EU', 'JP'] } }, oneNode())).toEqual([]);
     // Several satisfying candidates are all listed, sorted by value (fixed, non-locale order).
     expect(matchedConditionValues({ model_type: { in: ['ml', 'llm'] } }, oneNode())).toEqual([
       { field: 'model_type', value: 'llm' },
@@ -231,5 +234,18 @@ describe('matchedConditionValues (GT7 D-3, P11)', () => {
     ]);
     // A condition that does not match contributes nothing.
     expect(matchedConditionValues({ exposure: 'internal-only' }, oneNode())).toEqual([]);
+  });
+
+  it('TC-RA-9-01m: gte, lte and not_in report the satisfying values too (and only those)', () => {
+    const g = graph({
+      processing_nodes: [
+        { id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 2, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false },
+        { id: 'p2', label: 'y', model_type: 'ml', autonomy_level: 4, data_zone: 'Zone A', vendor: 'internal', replaces_prior_model: false },
+      ],
+    });
+    expect(matchedConditionValues({ autonomy_level: { gte: 3 } }, g)).toEqual([{ field: 'autonomy_level', value: 4 }]);
+    expect(matchedConditionValues({ autonomy_level: { lte: 3 } }, g)).toEqual([{ field: 'autonomy_level', value: 2 }]);
+    expect(matchedConditionValues({ data_zone: { not_in: ['Zone A'] } }, g)).toEqual([{ field: 'data_zone', value: 'Zone B' }]);
+    expect(matchedConditionValues({ autonomy_level: { gte: 9 } }, g)).toEqual([]);
   });
 });
