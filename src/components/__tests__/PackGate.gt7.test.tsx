@@ -5,7 +5,7 @@ import App from '../../App';
 import * as packSource from '../../store/pack-source';
 import { loadPacks } from '../../store/packs';
 import { getAllForExport } from '../../store/audit';
-import { exportAll } from '../../store/register';
+import { exportAll, addNode } from '../../store/register';
 import { setRole } from '../../store/role';
 import { POLICY_PROBLEM_MESSAGE } from '../plain-copy';
 
@@ -163,6 +163,33 @@ describe('GT7 D-1b — a broken pack joins the start-up gate (CF-5)', () => {
     expect((await screen.findAllByText(/rules file has a problem/i)).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument();
     expect(POLICY_PROBLEM_MESSAGE).toMatch(/rules file has a problem/);
+  });
+
+  it('TC-CF-5-02f: with a broken pack, "Use the earlier result" refuses with the plain message and writes nothing (no record, no audit events)', async () => {
+    breakAPack();
+    await addNode({
+      node_id: 'uc-seeded-match',
+      node_type: 'use_case',
+      label: 'Peer desk summariser',
+      created_at: '2026-01-01T00:00:00.000Z',
+      metadata: {
+        node_type: 'use_case',
+        submitted_by: '1LoD',
+        lifecycle_stage: 'approved',
+        current_verdict_id: null,
+        tier: 'High',
+        track: 'II',
+      },
+    });
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Peer desk summariser' }));
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /use the earlier result/i }));
+    expect((await screen.findAllByText(/rules file has a problem/i)).length).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, 150));
+    expect(await getAllForExport()).toEqual([]);
+    expect((await exportAll()).nodes.map((n) => n.node_id)).toEqual(['uc-seeded-match']);
+    expect(screen.queryByRole('region', { name: /classification adopted/i })).not.toBeInTheDocument();
   });
 
   it('TC-CF-5-02e: with the shipped (valid) packs there is no banner and loadPackSet reports no errors', () => {
