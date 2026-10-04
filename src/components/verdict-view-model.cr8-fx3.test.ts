@@ -47,7 +47,7 @@ describe('FX8-3 CR8-02 — P4: nothing permissive when the sign-off is missing o
       const view = buildVerdictView(makeVerdict({ controls }), policy, undefined, undefined, undefined, 'approved', { auditEvents: [] });
       expect(view.signOffMissing).toBe(true);
       expect(view.nextSteps.join('\n')).not.toMatch(/you can start/i);
-      expect(view.nextSteps.join('\n')).toMatch(/confirm the sign-off before you start/i);
+      expect(view.nextSteps.join('\n')).toMatch(/confirm with them before you start/i);
       for (const t of allText(view)) expect(t).not.toMatch(PERMISSIVE);
     }
   });

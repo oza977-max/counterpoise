@@ -918,7 +918,7 @@ describe('VerdictDisplay — What you need to do', () => {
         auditEvents={[]}
       />,
     );
-    expect(document.querySelector('.verdict__todo')?.textContent).toMatch(/^What you need to do\s*Nothing\./);
+    expect(document.querySelector('.verdict__todo')?.textContent).toMatch(/^What you need to do\s*Nothing to put in place/);
   });
 
   it('names the 2LoD sign-off as an outstanding item when the case is awaiting one', () => {

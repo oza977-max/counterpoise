@@ -608,6 +608,14 @@ function buildReviewInstances(verdict: Verdict, policy: PolicyFile | undefined, 
 // ---------------------------------------------------------------------------
 // §4.2 copy templates.
 
+// CR9-02 (P6): the ONE wording of "the sign-off is not confirmed", per state. Used by the next step, the
+// "What you need to do" box (zero branch, lead and "Then" row). Lower-case, so each use reads in its own
+// sentence: after a dash, after "Also, ", or capitalised as a step.
+export const SIGNOFF_MISSING_CONFIRM =
+  'no sign-off from your AI risk team is on record for this version, so confirm with them before you start.';
+export const SIGNOFF_UNKNOWN_CONFIRM =
+  "we can't tell yet whether your AI risk team must sign this off, so check with them before you start.";
+
 function headlineText(status: Verdict['status'], needsSignOff: boolean, n: number, signedOff = false, signOffMissing = false, signOffUnknown = false): string {
   if (status === 'rejected') return 'No — not as described.';
   if (signedOff) {
@@ -677,7 +685,7 @@ function buildNextSteps(args: {
   }
 
   if (signOffMissing) {
-    steps.push('Ask your AI risk team to confirm the sign-off before you start — none is on record for this version of the result.');
+    steps.push(SIGNOFF_MISSING_CONFIRM.charAt(0).toUpperCase() + SIGNOFF_MISSING_CONFIRM.slice(1));
   }
 
   if (outstandingSafeguards.length > 0) {

@@ -20,7 +20,7 @@ import { Fold } from './Fold';
 // the verdict's first screen AND the four readers that need a safeguard's
 // status (this first screen, WhatToDo, SignOffChecklist, the evidence
 // panel below) — "one computation per fact" (principle 0.5).
-import { buildVerdictView, joinWithAnd, usedStaleSources, type SafeguardStatus, type SafeguardView, type VerdictView } from './verdict-view-model';
+import { buildVerdictView, joinWithAnd, SIGNOFF_MISSING_CONFIRM, SIGNOFF_UNKNOWN_CONFIRM, usedStaleSources, type SafeguardStatus, type SafeguardView, type VerdictView } from './verdict-view-model';
 
 // verdict-audit.md §5. Rule 4 (cross-cutting.md §7): presentation-only —
 // static policy-description lookup for the reasoning-trace fallback is
@@ -444,6 +444,8 @@ function WhatToDo({
   controlEvidenceErrors?: ReadonlyMap<string, string>;
 }) {
   const rejected = verdict.status === 'rejected';
+  // CR9-02 (P6): missing / unknown sign-off — the one shared wording, never "Nothing." or a start signal.
+  const signOffConfirm = view.signOffMissing ? SIGNOFF_MISSING_CONFIRM : view.signOffUnknown ? SIGNOFF_UNKNOWN_CONFIRM : null;
   const controls = verdict.controls ?? [];
   const allReviews = verdict.downstream_reviews ?? [];
   // R16-D1: was describesSameObligation's significant-word text heuristic —
@@ -479,8 +481,8 @@ function WhatToDo({
         </>
       ) : controls.length === 0 && reviews.length === 0 ? (
         <p className="verdict__todo-lead">
-          Nothing. This use case sits inside appetite as described, with no controls required and no further
-          reviews triggered.
+          {signOffConfirm ? `Nothing to put in place — ${signOffConfirm}` : 'Nothing.'} This use case sits inside
+          appetite as described, with no controls required and no further reviews triggered.
           {needsSignOff && ' It still needs a second-line sign-off before it is final.'}
         </p>
       ) : (
@@ -500,7 +502,8 @@ function WhatToDo({
               : controls.length > 0
                 ? `Put ${controls.length} control${controls.length === 1 ? '' : 's'} in place.`
                 : `${reviews.length} separate review${reviews.length === 1 ? '' : 's'} that other teams own still appl${reviews.length === 1 ? 'ies' : 'y'}.`}
-            {needsSignOff && ' Then a second-line reviewer signs off.'}{' '}
+            {needsSignOff && ' Then a second-line reviewer signs off.'}
+            {signOffConfirm && ` Also, ${signOffConfirm}`}{' '}
             Each item below says what it is, why this case needs it, and what "in place" looks like.
           </p>
 
@@ -633,7 +636,7 @@ function WhatToDo({
             </>
           )}
 
-          {needsSignOff && (
+          {(needsSignOff || signOffConfirm) && (
             <>
               <h4 className="verdict__todo-group">Then</h4>
               <ul className="verdict__todo-list verdict__todo-list--reviews">
@@ -641,8 +644,9 @@ function WhatToDo({
                   <strong>Second-line sign-off</strong>
                   <span className="verdict__todo-status">
                     {' '}
-                    — this use case is above the self-service threshold, so it is not final until a second-line
-                    reviewer (2LoD) approves it
+                    {needsSignOff
+                      ? '— this use case is above the self-service threshold, so it is not final until a second-line reviewer (2LoD) approves it'
+                      : `— ${signOffConfirm}`}
                   </span>
                 </li>
               </ul>
@@ -1656,6 +1660,9 @@ export default function VerdictDisplay({ verdict, auditEvents, policy, graph, re
           needsSignOff &&
           ' Not final until a second-line reviewer (2LoD) signs off.'}
         {verdict.status !== 'rejected' && view.signedOff && ' Signed off by your AI risk team.'}
+        {verdict.status !== 'rejected' &&
+          (view.signOffMissing || view.signOffUnknown) &&
+          ' Whether it is final is not confirmed yet — see your next steps.'}
       </p>
 
       {/* design-review round 3 (2026-08-31, Panels A+D — beat 1, "the
