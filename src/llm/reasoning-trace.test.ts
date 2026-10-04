@@ -151,11 +151,15 @@ describe('generateReasoningTrace', () => {
     expect(sent).toContain(verdict.explanation.track_rationale!.rule_id);
     expect(sent).toContain(verdict.explanation.tier_rationale!.rule_id);
     expect(sent).toContain('tier_rationale');
-    // The pack-forced tier's citation lives in the chain.
-    expect(sent).toContain(chain[0]!.document);
-    expect(sent).toContain(chain[0]!.section);
-    expect(sent).toContain(chain[0]!.derived);
-    expect(sent).toContain(chain[0]!.rule_id);
+    // The pack-forced tier's citation lives in the chain. The prompt carries
+    // JSON, so compare against each value as JSON would escape it.
+    const inJson = (v: string) => JSON.stringify(v).slice(1, -1);
+    for (const c of chain) {
+      expect(sent).toContain(inJson(c.rule_id));
+      expect(sent).toContain(inJson(c.document));
+      expect(sent).toContain(inJson(c.section));
+      expect(sent).toContain(inJson(c.derived));
+    }
   });
 
   it('TC-VD-8-01b: a hard-line verdict (no tier/track rationale) still hands the model the binding reason and its regulatory basis, and the call allows 1024 tokens', async () => {

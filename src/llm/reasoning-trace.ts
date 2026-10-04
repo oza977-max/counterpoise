@@ -1,6 +1,6 @@
 import { getApiKey, createClient } from './client';
 import type { LlmResult } from './types';
-import type { AppliedOverride, Control, ConfidenceCaveat, Tier, Track } from '../engine/types';
+import type { AppliedOverride, Control, ConfidenceCaveat, RuleRationale, Tier, Track } from '../engine/types';
 import type { Verdict } from '../types/verdict';
 
 // verdict-audit.md §7. Rule 2 (cross-cutting.md §7): src/llm/* is the ONLY
@@ -26,6 +26,25 @@ export interface ControlDetail {
   description: string;
 }
 
+// D-2 (P10): why the track and tier are what they are, and which pack rules
+// (with their source) forced anything beyond the firm's own base tier.
+export interface RationaleSummary {
+  rule_id: string;
+  rule_name?: string;
+  regulatory_basis?: string;
+  // Present on tier_rationale only: states that this is the BASE tier before
+  // any jurisdiction-pack floor, so the model does not read it as the final one.
+  note?: string;
+}
+
+export interface ChainEntrySummary {
+  rule_id: string;
+  document: string;
+  section: string;
+  source_text: string;
+  derived: string;
+}
+
 export interface VerdictTraceData {
   status: Verdict['status'];
   tier: Tier;
@@ -34,12 +53,29 @@ export interface VerdictTraceData {
   binding_constraint_description: string;
   binding_path: string;
   tripped_invariants: TrippedInvariantSummary[];
+  // Hard-line verdicts skip tier/track assignment, so these are null there;
+  // binding_reason / binding_regulatory_basis then carry the why.
+  track_rationale: RationaleSummary | null;
+  tier_rationale: RationaleSummary | null;
+  regulatory_chain: ChainEntrySummary[];
+  binding_reason: string | null;
+  binding_regulatory_basis: string | null;
   controls_required: ControlDetail[];
   downstream_reviews: string[];
   applied_overrides: AppliedOverride[];
   confidence_caveats: ConfidenceCaveat[];
   policy_version: string;
   pack_versions: Record<string, string>;
+}
+
+function summariseRationale(r: RuleRationale | null | undefined, note?: string): RationaleSummary | null {
+  if (!r) return null;
+  return {
+    rule_id: r.rule_id,
+    ...(r.rule_name ? { rule_name: r.rule_name } : {}),
+    ...(r.regulatory_basis ? { regulatory_basis: r.regulatory_basis } : {}),
+    ...(note ? { note } : {}),
+  };
 }
 
 export function buildTraceData(verdict: Verdict, controlLibrary: Control[], bindingDescription: string): VerdictTraceData {
@@ -63,6 +99,20 @@ export function buildTraceData(verdict: Verdict, controlLibrary: Control[], bind
         : verdict.binding_constraint
           ? [{ invariantId: verdict.binding_constraint, graphPath: verdict.binding_path }]
           : [],
+    track_rationale: summariseRationale(verdict.explanation?.track_rationale),
+    tier_rationale: summariseRationale(
+      verdict.explanation?.tier_rationale,
+      'BASE tier from the firm rules, before any jurisdiction-pack floor; a tier raised by a pack is explained in regulatory_chain',
+    ),
+    regulatory_chain: (verdict.explanation?.regulatory_chain ?? []).map((c) => ({
+      rule_id: c.rule_id,
+      document: c.document,
+      section: c.section,
+      source_text: c.source_text,
+      derived: c.derived,
+    })),
+    binding_reason: verdict.explanation?.binding_reason ?? null,
+    binding_regulatory_basis: verdict.explanation?.binding_regulatory_basis ?? null,
     controls_required: verdict.controls
       .map((id) => controlsById.get(id))
       .filter((c): c is Control => c !== undefined)
@@ -93,7 +143,7 @@ export async function generateReasoningTrace(traceData: VerdictTraceData, apiKey
     const response = await client.messages.create(
       {
         model: 'claude-sonnet-4-6',
-        max_tokens: 512,
+        max_tokens: 1024,
         messages: [
           {
             role: 'user',
