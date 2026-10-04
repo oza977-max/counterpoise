@@ -118,6 +118,9 @@ describe('Walking Skeleton', () => {
     // R9: the checklist header also names the card, so the label appears
     // twice by design — assert at least one, not exactly one.
     expect((await screen.findAllByText(/email drafting model/i)).length).toBeGreaterThan(0);
+    // gvm-test 007 (real-chain check): the graph came through the real
+    // extractor and the mocked SDK boundary — not a silent fallback.
+    expect(mockCreate).toHaveBeenCalledTimes(1);
 
     // Step 3: proceed — zero uncertain fields means no questions, so the
     // flow lands directly on the real confirmation/attestation screen
