@@ -178,7 +178,7 @@ describe('RegisterView', () => {
     expect(await screen.findByText(/no use cases submitted yet/i)).toBeInTheDocument();
   });
 
-  it('TC-RG-5-01: "Export JSON" button (2LoD only) triggers a download whose Blob contains exported_at, nodes, and edges', async () => {
+  it('"Export JSON" button (2LoD only) triggers a download whose Blob contains exported_at, nodes, and edges', async () => {
     const user = userEvent.setup();
     const node = makeUseCaseNode({ node_id: crypto.randomUUID(), label: 'Export target case' });
     await addNode(node);

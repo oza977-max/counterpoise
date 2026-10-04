@@ -134,7 +134,7 @@ describe('PolicyEditor', () => {
     expect(await screen.findByText(/is valid/i)).toBeInTheDocument();
   });
 
-  it('BC-P7C03-02: invalid YAML shows field errors and does not save or call onSaved [TC-CF-5-01]', async () => {
+  it('BC-P7C03-02: invalid YAML shows field errors and does not save or call onSaved', async () => {
     const user = userEvent.setup();
     const onSaved = vi.fn();
     render(<PolicyEditor onSaved={onSaved} />);
