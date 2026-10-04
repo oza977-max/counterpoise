@@ -277,7 +277,7 @@ describe('TC-PE-6-01 / TC-RA-2-01 — most demanding governs across jurisdiction
 
   const multi = graph({ jurisdictions: ['UK', 'US'] });
 
-  it('applies BOTH packs — obligations are unioned, not chosen between [TC-RA-1-03]', () => {
+  it('applies BOTH packs — obligations are unioned, not chosen between', () => {
     const result = applyJurisdictionOverrides(multi, 'Medium', 'III', [ukPack, usPack]);
     // The US control survives alongside the UK review. Dropping either would
     // be the failure mode the old "governing standard" wording invited.

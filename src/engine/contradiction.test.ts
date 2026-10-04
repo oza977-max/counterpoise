@@ -18,7 +18,7 @@ function graph(overrides: Partial<DataFlowGraph> = {}): DataFlowGraph {
 }
 
 describe('detectContradictions', () => {
-  it('TC-UC-5-01: flags a contradiction when description denies client data but the graph has a Client PII node', () => {
+  it('flags a contradiction when description denies client data but the graph has a Client PII node', () => {
     const g = graph({
       input_nodes: [{ id: 'i1', label: 'notes', data_class: 'Client PII', data_zone: 'Zone A' }],
     });
