@@ -383,12 +383,12 @@ describe('Walking Skeleton', () => {
     expect(events.map((e) => e.event_type)).toEqual(['use_case_created', 'graph_confirmed', 'verdict_produced']);
     expect(new Date(events[1]!.occurred_at).getTime()).toBeLessThanOrEqual(new Date(events[2]!.occurred_at).getTime());
 
-    expect(events[0]!.actor).toBe('1LoD'); // TC-UC-6-03, against the documented hardcoded-role placeholder
+    expect(events[0]!.actor).toBe('1LoD'); // actor is the documented hardcoded-role placeholder (identity on the creation record)
 
     const verdictPayload = events[2]!.payload;
     expect(verdictPayload.type).toBe('verdict_produced');
     if (verdictPayload.type === 'verdict_produced') {
-      expect(verdictPayload.verdict.use_case_id).toBe(useCase!.use_case_id); // TC-UC-6-02: full Verdict object
+      expect(verdictPayload.verdict.use_case_id).toBe(useCase!.use_case_id); // the stored verdict_produced payload is the full Verdict object
       expect(verdictPayload.verdict.status).toBeDefined();
       expect(verdictPayload.verdict.attested_by).toBe('1LoD');
     }
@@ -551,6 +551,147 @@ describe('Walking Skeleton', () => {
       expect(confirmedEvent.payload.corrections_count).toBe(1);
     }
   });
+
+  it('TC-UC-6-02: with every question answered but the graph unconfirmed, no verdict is produced until the explicit Confirm click', async () => {
+    const uniqueLabel = 'confirmation gate model';
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          name: 'extract_graph',
+          input: {
+            input_nodes: [],
+            processing_nodes: [
+              {
+                id: 'p1',
+                label: 'confirmation gate model',
+                model_type: 'traditional-ml',
+                autonomy_level: 0,
+                data_zone: 'Zone C',
+                vendor: 'internal',
+                replaces_prior_model: false,
+                basis_quotes: PROCESSING_QUOTES,
+              },
+            ],
+            output_nodes: [
+              {
+                id: 'o1',
+                label: 'output',
+                action_type: 'recommend',
+                exposure: 'internal-only',
+                decision_bindingness: 'material',
+                output_reversibility: 'reversible',
+                scale: 'limited',
+                basis_quotes: OUTPUT_QUOTES,
+              },
+            ],
+            edges: [],
+            jurisdictions: [],
+          },
+        },
+      ],
+    });
+
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+
+    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmation gate probe: sits at the final step waiting for a human to press the confirm control before any classification is computed, stored, or displayed to anyone' + DETAIL);
+    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
+    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
+    await confirmAllNodes(user);
+    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+
+    // Awaiting confirmation: the Confirm control is offered, nothing has run.
+    const confirm = await screen.findByRole('button', { name: /confirm and evaluate/i });
+    await new Promise((r) => setTimeout(r, 300));
+    expect(screen.queryByText('Verdict', { selector: '.verdict__eyebrow' })).not.toBeInTheDocument();
+
+    const { getUseCases } = await import('../../store/register');
+    const { getAll } = await import('../../store/audit');
+    const before = (await getUseCases('all')).find((u) => u.label === uniqueLabel);
+    // Nothing may be written for this case before the click (no use case row,
+    // so certainly no verdict_produced event).
+    expect(before).toBeUndefined();
+
+    // Explicit Confirm: now a verdict exists, so the checks above can tell the difference.
+    await user.click(confirm);
+    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+    const useCase = (await getUseCases('all')).find((u) => u.label === uniqueLabel);
+    expect(useCase).toBeDefined();
+    const events = await getAll(useCase!.use_case_id);
+    expect(events.map((e) => e.event_type)).toContain('verdict_produced');
+  }, SLOW_FLOW_MS);
+
+  it('TC-UC-6-03: the graph_confirmed event carries the corrected graph version (2), not the original (1)', async () => {
+    const uniqueLabel = 'confirmed version model';
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: 'tool_use',
+          name: 'extract_graph',
+          input: {
+            input_nodes: [],
+            processing_nodes: [
+              {
+                id: 'p1',
+                label: 'confirmed version model',
+                model_type: 'traditional-ml',
+                autonomy_level: 0,
+                data_zone: 'Zone C',
+                vendor: 'internal',
+                replaces_prior_model: false,
+                basis_quotes: PROCESSING_QUOTES,
+              },
+            ],
+            output_nodes: [
+              {
+                id: 'o1',
+                label: 'output',
+                action_type: 'recommend',
+                exposure: 'internal-only',
+                decision_bindingness: 'material',
+                output_reversibility: 'reversible',
+                scale: 'limited',
+                basis_quotes: OUTPUT_QUOTES,
+              },
+            ],
+            edges: [],
+            jurisdictions: [],
+          },
+        },
+      ],
+    });
+
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+
+    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmed version probe: records which numbered edition of the reviewed picture a human signed off, after exactly one reviewer correction was applied to the first extraction' + DETAIL);
+    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
+    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
+
+    // Exactly one correction on the review screen (version 1 -> 2).
+    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[0]!);
+    await user.selectOptions(await screen.findByLabelText(`${uniqueLabel} — where your information goes`), 'Zone B');
+
+    await confirmAllNodes(user);
+    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
+    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+
+    const { getUseCases } = await import('../../store/register');
+    const { getAll } = await import('../../store/audit');
+    const useCase = (await getUseCases('all')).find((u) => u.label === uniqueLabel);
+    expect(useCase).toBeDefined();
+    const events = await getAll(useCase!.use_case_id);
+    const confirmed = events.find((e) => e.event_type === 'graph_confirmed');
+    expect(confirmed).toBeDefined();
+    if (confirmed?.payload.type !== 'graph_confirmed') throw new Error('wrong payload type');
+    expect(confirmed.payload.corrections_count).toBe(1);
+    expect(confirmed.payload.graph_version).toBe(2);
+    expect(confirmed.payload.graph_version).not.toBe(1);
+  }, SLOW_FLOW_MS);
 
   it('P5-C01: "Correct this classification?" re-enters graph_review, reuses the same use case, and appends graph_corrected/verdict_corrected without touching the original verdict_produced event', async () => {
     const uniqueLabel = 'correction flow check model';
