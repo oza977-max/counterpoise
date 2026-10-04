@@ -88,13 +88,20 @@ a tool that says the same thing to everything is worthless:
 | Coding assistant for risk analysts | In appetite, with controls | Low / III |
 | Daily VaR & IRC commentary | In appetite, with controls | Medium / II |
 | Credit review drafting | In appetite, with controls | High / II |
-| Client-facing wealth chatbot | **Provisional** — in appetite with controls, but the verdict depends on jurisdiction rules nobody has signed off yet | High / II |
-| Deal memo drafting on cloud LLM | Out of appetite | High / II |
+| Client-facing wealth chatbot | In appetite, with controls | High / II |
+| Deal memo drafting on cloud LLM | Out of appetite | Critical / I |
 | Autonomous credit-line reduction | Out of appetite | Critical / I |
 
-The two rejections fail for *different* reasons — one hits an absolute
-prohibition, the other has a requirement no available control can satisfy.
+Both rejections hit a hard line — an absolute prohibition no control can fix.
+The deal memo crosses the hard line on price-sensitive information processed
+outside the firm's controlled zone; the credit-line reduction crosses the one
+on fully autonomous, irreversible actions in front of clients or the market.
 Open both and check the reasons make sense to you.
+
+All six carry the **Provisional** banner, for two different causes: five were
+scored with no jurisdiction pack applied, so no country rulebook was used; the
+wealth chatbot's verdict relies on jurisdiction-pack rules nobody at the firm
+has signed off yet. Open the full reasoning on any of them to see which.
 
 ### 2. Run your own use cases (the actual task)
 
@@ -108,7 +115,7 @@ very little.
 
 ### 3. Review as 2LoD
 
-Switch the role to 2LoD, open something sitting at "pre-checked", and
+Switch the role to 2LoD, open something showing **Awaiting 2LoD sign-off**, and
 approve it or send it back. Check the audit trail on the detail view
 afterwards — every step should be there, in order, including the things
 you'd rather it didn't record.
@@ -246,15 +253,15 @@ Worth deliberately exercising, newest first:
   (demo runs a local open model); there is no vendor key field.
 - **← Back** now exists on intake steps before attestation — try going back
   and forward; the duplicate check should re-run, never hang.
-- **"What kind of decision does it feed?"** has *Something else — let me
-  describe it*. Type one; the verdict should name your words and say the
+- **"What kind of decision is it?"** has *Something else — describe it*.
+  Type one; the verdict should name your words and say the
   policy has no rule for them.
 - **The verdict screen was rewritten for a business reader** — "What you
   need to do" at the top, controls by name, "How fragile is this approval?",
-  "What would make this verdict expire". Judge whether someone outside risk
+  "What could go wrong — and when this expires". Judge whether someone outside risk
   could act on it.
-- **"Anything the reviewer should know?"** at the confirmation step — write
-  a note, then find it as 2LoD on the sign-off page.
+- **"Anything your AI risk team should know? (optional)"** at the confirmation
+  step — write a note, then find it as 2LoD on the sign-off page.
 - **About** in the sidebar, and eleven worked cases with pinned expected
   outcomes in [`try-these.md`](try-these.md) — case 5 (two hard lines) and
   cases 6+7 (inheritance pair) are the most instructive.
