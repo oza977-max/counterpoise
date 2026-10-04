@@ -67,6 +67,9 @@ function compareScalar(a: string | number | boolean, b: string | number | boolea
 }
 
 export function matchedConditionValues(condition: Condition, graph: DataFlowGraph): MatchedConditionValue[] {
+  // Conditions are ANDed: a rule that did not fire has no trigger to report,
+  // even if some of its fields happen to be satisfied.
+  if (!matchesCondition(condition, graph)) return [];
   const out: MatchedConditionValue[] = [];
   for (const field of Object.keys(condition).sort()) {
     const expected = condition[field] as ConditionValue;

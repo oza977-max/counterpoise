@@ -249,3 +249,15 @@ describe('matchedConditionValues (GT7 D-3, P11)', () => {
     expect(matchedConditionValues({ autonomy_level: { gte: 9 } }, g)).toEqual([]);
   });
 });
+
+describe('matchedConditionValues needs the whole condition to match (GT7 D-3)', () => {
+  it('TC-RA-9-01o: a partly satisfied condition (one field met, another not) reports nothing', () => {
+    const g = graph({
+      processing_nodes: [
+        { id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false },
+      ],
+    });
+    expect(matchedConditionValues({ model_type: { in: ['llm'] }, data_zone: { in: ['Zone A'] } }, g)).toEqual([]);
+    expect(matchedConditionValues({ model_type: { in: ['llm'] }, data_zone: { in: ['Zone B'] } }, g)).toHaveLength(2);
+  });
+});
