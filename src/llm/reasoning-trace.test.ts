@@ -150,7 +150,12 @@ describe('generateReasoningTrace', () => {
     expect(sent).toContain(trackName);
     expect(sent).toContain(verdict.explanation.track_rationale!.rule_id);
     expect(sent).toContain(verdict.explanation.tier_rationale!.rule_id);
-    expect(sent).toContain('tier_rationale');
+    // Parse the JSON the model was actually handed and check the tier rationale
+    // is there, names its rule, and says it is the BASE tier (not the final one).
+    const jsonText = sent.slice(sent.indexOf('{'), sent.lastIndexOf('}') + 1);
+    const payload = JSON.parse(jsonText) as { tier_rationale: { rule_id: string; note?: string } };
+    expect(payload.tier_rationale.rule_id).toBe(verdict.explanation.tier_rationale!.rule_id);
+    expect(payload.tier_rationale.note).toMatch(/BASE tier/);
     // The pack-forced tier's citation lives in the chain. The prompt carries
     // JSON, so compare against each value as JSON would escape it.
     const inJson = (v: string) => JSON.stringify(v).slice(1, -1);
