@@ -49,7 +49,7 @@ describe('generateQuestions', () => {
     expect(questions.some((q) => q.field === 'data_zone')).toBe(true);
   });
 
-  it('Low-tier question count never exceeds its budget of 5 [TC-UC-4-03]', () => {
+  it('Low-tier question count never exceeds its budget of 5', () => {
     // Force a Low provisional tier (no processing/output nodes triggering
     // higher tiers) with several uncertain-node candidate fields.
     const g = graph({

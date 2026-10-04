@@ -75,7 +75,7 @@ describe('VerdictDisplay', () => {
     expect(screen.queryByText(/provisional/i)).not.toBeInTheDocument();
   });
 
-  it('TC-RA-11-02: a Low confidence caveat renders the Provisional warning without presuming WHO reviews', () => {
+  it('a Low confidence caveat renders the Provisional warning without presuming WHO reviews', () => {
     const verdict = makeVerdict({
       confidence_caveats: [
         { ruleId: 'HL-003', field: 'decision_type', reason: 'Ambiguous regulatory text.', confidence: 'low' },
@@ -987,7 +987,7 @@ describe('VerdictDisplay — the provisional banner names who, when it knows', (
 
 // VD-6 and VD-8 traceability close-out (2026-08-15).
 describe('VerdictDisplay — living status and trace safety', () => {
-  it('renders the living status the engine has always written [TC-VD-6-01]', () => {
+  it('renders the living status the engine has always written', () => {
     render(<VerdictDisplay verdict={makeVerdict()} auditEvents={[]} />);
     const el = document.querySelector('.verdict__living-status');
     // The field was computed on every verdict since V1 and rendered nowhere —

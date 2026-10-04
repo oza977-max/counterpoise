@@ -436,6 +436,7 @@ reads only the markdown and cannot see this page.
         <p><strong>Given</strong> the register contains no use cases similar to the submitted description (similarity score below 0.80 against all existing records)</p>
         <p><strong>When</strong> the submitter submits a description</p>
         <p><strong>Then</strong> the system proceeds directly to graph extraction without surfacing any duplicate prompt</p>
+        <p><strong>Amended (gvm-test 007, 2026-10-04)</strong>: (1) the similarity measure is word overlap (Jaccard) with a threshold of 0.4, not 0.80; the spec named no value and 0.4 is the recorded judgment call (src/engine/duplicate.ts, DUPLICATE_THRESHOLD). (2) The no-match outcome is a screen, not a silent pass-through (R16-W section 4, D-74; UC-2 &quot;both decisions side by side&quot;): it reads &quot;Nothing similar found&quot; with the number of earlier checks looked through, and a single &quot;Continue&quot; button; extraction starts when the submitter presses it. Current Then: with nothing similar, no duplicate card, no &quot;Use the earlier result&quot; option and no alert appear, and one Continue goes straight to graph extraction.</p>
       </div>
       <div class="tc-trace">Requirement: UC-2 | [EXAMPLE]</div>
     </div>
@@ -482,6 +483,7 @@ reads only the markdown and cannot see this page.
         <p><strong>Given</strong> a description is submitted for extraction</p>
         <p><strong>When</strong> extraction is run multiple times (5 runs with low-temperature model)</p>
         <p><strong>Then</strong> the extracted graph contains the same set of node types (input, processing, output) and edge directions across all runs</p>
+        <p><strong>Manual evidence (gvm-test 007)</strong>: the automated test proves the app side only: five extractions of one description through the real extractor (model SDK mocked to one fixed reply) give identical node-type counts, edge directions and request, the model is forced to the single structured tool, and a malformed shape is refused. It cannot prove the REAL model gives the same graph structure across five live runs. By hand: with a real key, run the same description five times and compare node types and edge directions on the review screen. Note: the extractor does not set a temperature, so the model default applies; the &quot;low-temperature model&quot; in the strategy is not something the app configures.</p>
       </div>
       <div class="tc-trace">Requirement: UC-3 | [PROPERTY]</div>
     </div>
@@ -908,6 +910,7 @@ reads only the markdown and cannot see this page.
         <p><strong>When</strong> the system is inspected for available jurisdiction packs</p>
         <p><strong>Then</strong> all four AUTHORED packs are present and loadable: SR 26-2, SS1/23, EU AI Act, DORA</p>
         <p><strong>And</strong> CA, SG and JP are declared jurisdictions with no pack file, so no pack activates for them</p>
+        <p><strong>Amended (gvm-test 007, 2026-10-04)</strong>: the heading still says &quot;seven&quot;; v1.3 deleted the OSFI-E23, MAS-FEAT and FSA-JP packs (their rule text was illustrative, not retrieved, and a rule citing an unretrieved source is worse than none). The Then above already states the current position, and that is what is asserted: four authored packs, plus CA, SG and JP declared with no pack file.</p>
       </div>
       <div class="tc-trace">Requirement: PE-8 | [EXAMPLE]</div>
     </div>
@@ -1272,6 +1275,7 @@ reads only the markdown and cannot see this page.
         <p><strong>Given</strong> the register contains 10 use cases with full verdict records</p>
         <p><strong>When</strong> a 2LoD user triggers a JSON export</p>
         <p><strong>Then</strong> the exported file contains all 10 use case records with use case ID, tier, track, status, verdict, audit trail reference, and policy version</p>
+        <p><strong>Amended (gvm-test 007, 2026-10-04)</strong>: the shipped design (specs/register-lifecycle.md section 10.3, built in P6-C01; RG-5 asks only for &quot;a machine-readable format&quot;) exports the register itself, every node and edge, as {exported_at, nodes, edges}. A use case record there carries its use case id (node_id), tier, track, status (lifecycle_stage) and its verdict reference (current_verdict_id). The verdict body, the audit trail and the policy version are not copied into each record; they travel in the hand-off bundle (RG-8, store/handoff.ts exportBundle), whose audit_events hold each use case&#x27;s verdict_produced event (verdict.id is the reference, verdict.policy_version the policy version). Current Then: the export holds all 10 records with id, tier, track, status and verdict reference, and the hand-off bundle holds, for each of the 10, the verdict and its policy version keyed to the same ids.</p>
       </div>
       <div class="tc-trace">Requirement: RG-5 | [EXAMPLE]</div>
     </div>
@@ -1488,6 +1492,7 @@ reads only the markdown and cannot see this page.
         <p><strong>Given</strong> a verdict is produced relying on a Low-confidence rule</p>
         <p><strong>When</strong> the verdict is displayed</p>
         <p><strong>Then</strong> the verdict status shows "Provisional — legal review required" with notice that the legal team must determine the applicable interpretation before finality</p>
+        <p><strong>Amended (gvm-test 007, 2026-10-04)</strong>: the wording above was replaced by the user report of 2026-08-15 (&quot;is it always legal?&quot;). It is not: packs are signed by Legal/Compliance, Model Risk or Technology Risk, and an unlisted decision type is an appetite-policy question. The screen now reads &quot;Provisional — review required before this is final&quot; (no function named; who is outstanding is named against each rule in the reasoning chain), the heading carries a &quot;· Provisional&quot; qualifier beside the status, and the notice lists each Low-confidence rule&#x27;s own explanation, which names the regulation and section it rests on (for example &quot;EU AI Act Annex III §5(b) — proposed interpretation, pending firm adoption&quot;). The &quot;[Rule ID] covers contested regulatory territory ... legal team&quot; sentence no longer exists. Current Then: the banner reads as above and shows every Low-confidence rule explanation, never says &quot;legal review required&quot;, the heading says Provisional and never &quot;final&quot;, and the rule id appears in the chain.</p>
       </div>
       <div class="tc-trace">Requirement: RA-11 | [EXAMPLE]</div>
     </div>

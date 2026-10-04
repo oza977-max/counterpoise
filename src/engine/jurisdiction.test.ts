@@ -61,7 +61,7 @@ function pack(rules: PackRule[], overrides: Partial<JurisdictionPack> = {}): Jur
 }
 
 describe('resolveActivePacks (V2-A)', () => {
-  it('activates only packs whose jurisdiction is on the graph, sorted by pack_id [TC-RA-1-01] [TC-RA-1-02]', () => {
+  it('activates only packs whose jurisdiction is on the graph, sorted by pack_id [TC-RA-1-02]', () => {
     const eu = pack([rule()]);
     const uk = pack([rule({ id: 'UK-1' })], { pack_id: 'SS1-23', jurisdiction: 'UK' });
     expect(resolveActivePacks(['EU'], [], [uk, eu]).map((p) => p.pack_id)).toEqual(['EU-AIACT']);

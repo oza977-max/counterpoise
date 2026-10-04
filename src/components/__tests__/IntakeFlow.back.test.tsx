@@ -157,7 +157,7 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     await screen.findAllByText(/has this been checked before/i);
   });
 
-  it('HTML in a description is literal text, never markup [TC-UC-1-04]', async () => {
+  it('HTML in a description is literal text, never markup', async () => {
     const user = userEvent.setup({ delay: null });
     const hostile = 'Ein Tool für Kundendaten — parses <img src=x onerror="alert(1)"> fields.';
     render(<App />);

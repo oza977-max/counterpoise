@@ -10,7 +10,7 @@ describe('findPossibleDuplicates', () => {
     expect(result[0]?.id).toBe('u1');
   });
 
-  it('does not flag an unrelated description [TC-UC-2-04]', () => {
+  it('does not flag an unrelated description', () => {
     const result = findPossibleDuplicates('Fraud detection model for card transactions', [
       { id: 'u1', label: 'Internal chatbot for HR policy questions' },
     ]);
