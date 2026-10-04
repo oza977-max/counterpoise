@@ -14,7 +14,7 @@ Test files: `src/components/intake-state.test.ts`,
 `src/components/__tests__/app-css.cr8-fx3.test.ts`,
 `src/store/cr8-store.test.ts`, `src/seeds/cr8-seed-recovery.test.ts`.
 
-## §1 — A card edit narrows the "Not sure" assumptions (CR8-01)
+## §1 — A card edit removes the "Not sure" assumptions it contradicts (CR8-01; amended CR9: drops, no longer narrows)
 
 | ID | Asserts |
 |---|---|
@@ -23,11 +23,11 @@ Test files: `src/components/intake-state.test.ts`,
 | TC-CR8-01c | The same for a correction from the result (`CORRECT_VERDICT`) — `intake-state.test.ts` |
 | TC-CR8-01d | A countries edit keeps the "somewhere else, or not sure" assumption, because the panel cannot say "somewhere else", and leaves the other assumptions as they were — `intake-state.test.ts` |
 | TC-CR8-01e | An edit to a different field keeps the assumption, with its fields untouched — `intake-state.test.ts` |
-| TC-CR8-01f | A question-6 assumption plus one autonomy edit keeps the other three fields listed — `intake-state.test.ts` |
-| TC-CR8-01g | A question-3 assumption plus a supplier edit keeps the data-zone field listed — `intake-state.test.ts` |
+| TC-CR8-01f | A question-6 assumption plus one autonomy edit: the whole assumption is dropped, none of its other three fields stays listed (amended CR9; this row used to say the other three fields stay listed) — `intake-state.test.ts` |
+| TC-CR8-01g | A question-3 assumption plus a supplier edit: the whole assumption is dropped, the data-zone field is no longer listed (amended CR9; this row used to say the data-zone field stays listed) — `intake-state.test.ts` |
 | TC-CR8-01h | An assumption from an older draft that lists no fields cannot be matched, so any card edit drops it — `intake-state.test.ts` |
 | TC-CR8-01i | Not sure, Change an answer, edit the assumed field's card, Confirm: the recorded confirmation on the real trail carries no assumption for that field — `IntakeFlow.cr7-fx1.test.tsx` |
-| TC-CR8-01j | A different assumption that lists the countries field is still narrowed by a countries edit; only question 11 is exempt — `intake-state.test.ts` |
+| TC-CR8-01j | A different assumption that lists the countries field is dropped by a countries edit; only question 11 is exempt (amended CR9; this row used to say it is narrowed) — `intake-state.test.ts` |
 
 ## §2 — Sign-off is only claimed where it can be determined (CR8-02)
 

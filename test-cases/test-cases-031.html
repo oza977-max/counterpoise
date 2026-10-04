@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Round CR9 (code review 009 fixes) &middot; Counterpoise &mdash; Test Cases</title>
+    <style>
+        /* Tufte/Few Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fffff8;
+            font-family: "ET Book", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Sticky TOC Navigation */
+        .toc-nav {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #fafaf8;
+            border-right: 2px solid #e8e8e0;
+            padding: 2rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .toc-nav h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        .toc-nav ul {
+            list-style: none;
+        }
+
+        .toc-nav li {
+            margin: 0.5rem 0;
+        }
+
+        .toc-nav a {
+            text-decoration: none;
+            color: #666;
+            border-left: 2px solid transparent;
+            display: block;
+            padding: 0.25rem 0 0.25rem 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .toc-nav a:hover {
+            color: #1a1a1a;
+            border-left-color: #4a90e2;
+        }
+
+        .toc-nav a.active {
+            color: #1a1a1a;
+            border-left-color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .main-content {
+            flex: 1;
+            max-width: 960px;
+            padding: 2rem 3rem;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 300;
+            margin: 2rem 0 1rem 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-style: italic;
+            font-weight: 400;
+            margin: 2.5rem 0 1.25rem 0;
+            border-top: 1px solid #e8e8e0;
+            padding-top: 1.5rem;
+        }
+
+        h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.75rem 0;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 0.8rem;
+            text-align: justify;
+        }
+
+        .metadata {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Code block */
+        code {
+            font-family: "Courier New", monospace;
+            background-color: #f7f7f2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #fff;
+            color: #333;
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e8e8e0;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #f7f7f2;
+        }
+
+        /* Lists */
+        ol, ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            font-style: italic;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e8e8e0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .toc-nav {
+                width: 150px;
+                padding: 1.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .main-content {
+                padding: 1.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .toc-nav {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e8e8e0;
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem 1.5rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .toc-nav {
+                display: none;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            body {
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<nav class="toc-nav"><h3>Contents</h3><ul>
+                <li><a href="#1-a-missing-or-unknown-sign-off-is-said-on-every">&sect;1 &mdash; A missing or unknown sign-off is said on every verdict-screen surface (CR9-02)</a></li>
+                <li><a href="#2-a-part-failed-policy-save-tells-the-app-about-">&sect;2 &mdash; A part-failed policy save tells the app about the stored rules (CR9-03)</a></li>
+                <li><a href="#3-the-no-model-sentence-is-neutral-cr9-04">&sect;3 &mdash; The no-model sentence is neutral (CR9-04)</a></li>
+                <li><a href="#4-clear-all-data-ending-incomplete-cr9-13-cr9-14">&sect;4 &mdash; Clear all data ending incomplete (CR9-13, CR9-14)</a></li>
+                <li><a href="#5-try-these-cases-are-pinned-through-the-real-an">&sect;5 &mdash; Try-these cases are pinned through the real answer mapping (CR9-15)</a></li>
+                <li><a href="#6-a-card-edit-drops-the-whole-not-sure-assumptio">&sect;6 &mdash; A card edit drops the whole "Not sure" assumption it contradicts (OB-1)</a></li>
+                <li><a href="#amended-existing-cases">Amended existing cases</a></li>
+</ul></nav>
+<main class="main-content">
+<header>
+<h1>Counterpoise &mdash; Test Cases, Round CR9 (code review 009 fixes)</h1>
+<p class="metadata">4 October 2026 &middot; Generated from test-cases-031.md &mdash; do not hand-edit</p>
+</header>
+<p><em>Written 2026-10-04. Code review 009 found that the verdict screen's "What you need to do" box still read "Nothing." under a headline asking the person to confirm the sign-off, that a part-failed policy save left the app on the old rules, that "No model was named" implied a question the person had skipped, that an incomplete Clear all data left the old role in the header and printed internal database ids, that one of the try-these walkthrough cases was not pinned through the real answer mapping, and that a "Not sure" note could stay listed after the person changed a value it names. The amended spec sections are marked "(CR9, 2026-10-04)" in <code>specs/intake-flow</code>, <code>specs/verdict-audit</code>, <code>specs/register-lifecycle</code>, <code>specs/cross-cutting</code> and <code>specs/policy-schema</code>.</em></p>
+<p>Test files: <code>src/components/__tests__/VerdictDisplay.cr9-fx1.test.tsx</code>, <code>src/components/__tests__/PolicyEditor.cr7.test.tsx</code>, <code>src/components/__tests__/VerdictDisplay.cr7-fx4.test.tsx</code>, <code>src/components/__tests__/App.cr9-fx1.test.tsx</code>, <code>src/components/__tests__/SettingsPanel.cr8.test.tsx</code>, <code>src/components/__tests__/SettingsPanel.cr7.test.tsx</code>, <code>src/engine/try-these.test.ts</code>, <code>src/components/intake-state.test.ts</code>.</p>
+
+<section id="1-a-missing-or-unknown-sign-off-is-said-on-every">
+<h2>&sect;1 &mdash; A missing or unknown sign-off is said on every verdict-screen surface (CR9-02)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-02a</td><td>A Medium case at stage "approved" with no audit events and no controls: the "What you need to do" box does not open with "Nothing." alone and carries the sentence asking the person to confirm the sign-off with their AI risk team &mdash; <code>VerdictDisplay.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-02b</td><td>No stage at all: the box carries the "we can't tell yet whether your AI risk team must sign this off" sentence &mdash; <code>VerdictDisplay.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-02c</td><td>A missing sign-off with controls to put in place: the "Then" group has a second-line sign-off row worded as the shared confirm sentence, not the pre-check text "above the self-service threshold" &mdash; <code>VerdictDisplay.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-02d</td><td>The whole screen is rendered for signed off, needs a sign-off now, missing, unknown and determined self-service, each with 0 and with 1 control, and its full text swept: for missing and unknown nothing says "you can start", "Nothing." on its own, "no sign-off needed" or "nobody &mdash;"; for determined self-service the permissive wording is still there &mdash; <code>VerdictDisplay.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-02e</td><td>A case at stage "in production" with a missing or unknown sign-off: the stage note says the sign-off is not on record or not known, instead of only "in production" &mdash; <code>VerdictDisplay.cr9-fx1.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="2-a-part-failed-policy-save-tells-the-app-about-">
+<h2>&sect;2 &mdash; A part-failed policy save tells the app about the stored rules (CR9-03)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-03</td><td>Saving the policy when queuing the re-evaluations fails: the "did not finish" message is shown and the app is told about the saved rules exactly once, so the header and new pre-checks use them at once &mdash; <code>PolicyEditor.cr7.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="3-the-no-model-sentence-is-neutral-cr9-04">
+<h2>&sect;3 &mdash; The no-model sentence is neutral (CR9-04)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-04</td><td>A form case built in the firm, with no model recorded, shows "No AI model is recorded for this use case &mdash; your AI risk team may ask which one it uses." and never the old "No model was named" nor any "was named" wording &mdash; <code>VerdictDisplay.cr7-fx4.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="4-clear-all-data-ending-incomplete-cr9-13-cr9-14">
+<h2>&sect;4 &mdash; Clear all data ending incomplete (CR9-13, CR9-14)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-13</td><td>Role 2LoD, Clear all data ends incomplete: the header's role selector shows 1LoD at once and the message says the role was cleared &mdash; <code>App.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-13-1</td><td>The same on a reviewer-only screen: the incomplete reset falls back to the intake screen rather than leaving it open under 1LoD &mdash; <code>App.cr9-fx1.test.tsx</code></td></tr>
+<tr><td>TC-CR9-14</td><td>Both the audit and register stores report incomplete: the message names "your audit trail" and "your register of use cases" and prints no <code>aigate-</code> database id &mdash; <code>SettingsPanel.cr8.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="5-try-these-cases-are-pinned-through-the-real-an">
+<h2>&sect;5 &mdash; Try-these cases are pinned through the real answer mapping (CR9-15)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-15a</td><td>Case 7, driven from the page's plain answers through the real mapping, graph build and evaluation: High tier, nothing inherited, exactly 6 controls and both downstream reviews &mdash; <code>try-these.test.ts</code></td></tr>
+<tr><td>TC-CR9-15b</td><td>Case 10 the same way: Critical, Track II, bound by autonomy, 7 controls, both downstream reviews, and a provisional verdict &mdash; <code>try-these.test.ts</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="6-a-card-edit-drops-the-whole-not-sure-assumptio">
+<h2>&sect;6 &mdash; A card edit drops the whole "Not sure" assumption it contradicts (OB-1)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CR9-OB1</td><td>A four-field question-6 assumption is gone after an autonomy edit; an edit to an unrelated field leaves every assumption whole &mdash; <code>intake-state.test.ts</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="amended-existing-cases">
+<h2>Amended existing cases</h2>
+<p>These cases keep their ids. Their assertions or fixtures changed because they pinned the old behaviour; each change is a deliberate part of this round, not a weakening.</p>
+<table>
+<thead><tr><th>ID</th><th>What changed</th></tr></thead>
+<tbody>
+<tr><td>TC-CR7-06b</td><td>A failing queuing step used to assert the app was NOT told about the saved policy; it now asserts it is told exactly once, because the rules are stored (CR9-03) &mdash; <code>PolicyEditor.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11a</td><td>The sentence it looks for is now "No AI model is recorded for this use case &mdash; &hellip;" (CR9-04) &mdash; <code>VerdictDisplay.cr7-fx4.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11b</td><td>Same: the absent-case guard is re-pointed at the new sentence and its class, so it cannot pass vacuously (CR9-04) &mdash; <code>VerdictDisplay.cr7-fx4.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11c</td><td>Same (CR9-04) &mdash; <code>VerdictDisplay.cr7-fx4.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11d</td><td>Same: the register's no-link case shows the new sentence (CR9-04) &mdash; <code>RegisterDetail.nomodel.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11e</td><td>Same: the guard for a linked model is re-pointed at the new sentence and its class (CR9-04) &mdash; <code>RegisterDetail.nomodel.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11f</td><td>Same: an old case that cannot be told apart claims nothing (CR9-04) &mdash; <code>RegisterDetail.nomodel.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11g</td><td>Same: a model named in a later correction claims nothing (CR9-04) &mdash; <code>RegisterDetail.nomodel.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11h</td><td>Same: after a failed link write the register never says the new sentence (CR9-04) &mdash; <code>ModelLinkFailure.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR7-11i</td><td>Its title now says "never 'no AI model is recorded'" instead of "never 'no model was named'"; the assertion is unchanged (CR9-04) &mdash; <code>verdict-view-model.cr7-fx4.test.ts</code></td></tr>
+<tr><td>TC-CR8-16b</td><td>The incomplete message now names the stores in plain words, not database ids (CR9-14) &mdash; <code>SettingsPanel.cr8.test.tsx</code></td></tr>
+<tr><td>TC-CR7-15-3</td><td>The incomplete message now reads "your audit trail" where it used to print "aigate-audit (blocked)", and no database id appears (CR9-14) &mdash; <code>SettingsPanel.cr7.test.tsx</code></td></tr>
+<tr><td>TC-CR8-02a</td><td>A required sign-off with none on record: the next step is checked against the shared confirm wording, "confirm with them before you start" (CR9-02) &mdash; <code>verdict-view-model.cr8-fx3.test.ts</code></td></tr>
+<tr><td>TC-CR8-01d</td><td>Extended: a countries edit keeps the question-11 assumption and now also drops another assumption that lists the countries field (CR9, OB-1) &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01f</td><td>A question-6 assumption plus one autonomy edit now drops the whole assumption instead of keeping the other three fields (CR9, OB-1) &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01g</td><td>A question-3 assumption plus a supplier edit now drops the whole assumption instead of keeping the data-zone field (CR9, OB-1) &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01j</td><td>A different assumption that lists the countries field is now dropped by a countries edit, not narrowed; question 11 stays (CR9, OB-1) &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>(unnamed test, no TC id: "says plainly when there is nothing to do at all")</td><td>With no controls and no reviews and no stage, the box now opens "Nothing to put in place" (the sign-off is unknown) instead of "Nothing." (CR9-02) &mdash; <code>VerdictDisplay.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+</main>
+</div>
+</body>
+</html>

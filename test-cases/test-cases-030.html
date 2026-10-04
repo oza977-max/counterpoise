@@ -234,7 +234,7 @@
 <body>
 <div class="container">
 <nav class="toc-nav"><h3>Contents</h3><ul>
-                <li><a href="#1-a-card-edit-narrows-the-not-sure-assumptions-c">&sect;1 &mdash; A card edit narrows the "Not sure" assumptions (CR8-01)</a></li>
+                <li><a href="#1-a-card-edit-removes-the-not-sure-assumptions-i">&sect;1 &mdash; A card edit removes the "Not sure" assumptions it contradicts (CR8-01; amended CR9: drops, no longer narrows)</a></li>
                 <li><a href="#2-sign-off-is-only-claimed-where-it-can-be-deter">&sect;2 &mdash; Sign-off is only claimed where it can be determined (CR8-02)</a></li>
                 <li><a href="#3-back-stays-refused-after-a-failed-evaluation-t">&sect;3 &mdash; Back stays refused after a failed evaluation, through the confirmation (CR8-03)</a></li>
                 <li><a href="#4-the-audit-chain-what-is-claimed-and-what-is-de">&sect;4 &mdash; The audit chain: what is claimed and what is detectable (CR8-04)</a></li>
@@ -259,8 +259,8 @@
 <p><em>Written 2026-10-04. Code review 008 found places where the screens said more than the code could prove or less than it did: a review-card edit left a stale "Not sure" disclosure behind, Back could still walk out of an attested case through the confirmation step, a result with no stage claimed nobody had to sign off, the audit chain was described as revealing every deletion, a model-review sentence was garbled, the "overdue" line counted packs the result never used, and a few stores could write twice or half a seed. The amended spec sections are marked "(CR8, 2026-10-04)" in <code>specs/intake-flow</code>, <code>specs/verdict-audit</code>, <code>specs/register-lifecycle</code> and <code>specs/cross-cutting</code>.</em></p>
 <p>Test files: <code>src/components/intake-state.test.ts</code>, <code>src/components/__tests__/IntakeFlow.cr7-fx1.test.tsx</code>, <code>src/components/__tests__/ConfirmationStep.test.tsx</code>, <code>src/components/verdict-view-model.cr8-fx3.test.ts</code>, <code>src/components/__tests__/VerdictDisplay.cr8-fx3.test.tsx</code>, <code>src/components/__tests__/RegisterDetail.cr8-fx3.test.tsx</code>, <code>src/components/__tests__/SettingsPanel.cr8.test.tsx</code>, <code>src/components/__tests__/App.r16a1.test.tsx</code>, <code>src/components/__tests__/IntakeFlow.r16a1.test.tsx</code>, <code>src/components/__tests__/IntakeFlow.r16f.test.tsx</code>, <code>src/components/__tests__/app-css.cr8-fx3.test.ts</code>, <code>src/store/cr8-store.test.ts</code>, <code>src/seeds/cr8-seed-recovery.test.ts</code>.</p>
 
-<section id="1-a-card-edit-narrows-the-not-sure-assumptions-c">
-<h2>&sect;1 &mdash; A card edit narrows the "Not sure" assumptions (CR8-01)</h2>
+<section id="1-a-card-edit-removes-the-not-sure-assumptions-i">
+<h2>&sect;1 &mdash; A card edit removes the "Not sure" assumptions it contradicts (CR8-01; amended CR9: drops, no longer narrows)</h2>
 <table>
 <thead><tr><th>ID</th><th>Asserts</th></tr></thead>
 <tbody>
@@ -269,11 +269,11 @@
 <tr><td>TC-CR8-01c</td><td>The same for a correction from the result (<code>CORRECT_VERDICT</code>) &mdash; <code>intake-state.test.ts</code></td></tr>
 <tr><td>TC-CR8-01d</td><td>A countries edit keeps the "somewhere else, or not sure" assumption, because the panel cannot say "somewhere else", and leaves the other assumptions as they were &mdash; <code>intake-state.test.ts</code></td></tr>
 <tr><td>TC-CR8-01e</td><td>An edit to a different field keeps the assumption, with its fields untouched &mdash; <code>intake-state.test.ts</code></td></tr>
-<tr><td>TC-CR8-01f</td><td>A question-6 assumption plus one autonomy edit keeps the other three fields listed &mdash; <code>intake-state.test.ts</code></td></tr>
-<tr><td>TC-CR8-01g</td><td>A question-3 assumption plus a supplier edit keeps the data-zone field listed &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01f</td><td>A question-6 assumption plus one autonomy edit: the whole assumption is dropped, none of its other three fields stays listed (amended CR9; this row used to say the other three fields stay listed) &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01g</td><td>A question-3 assumption plus a supplier edit: the whole assumption is dropped, the data-zone field is no longer listed (amended CR9; this row used to say the data-zone field stays listed) &mdash; <code>intake-state.test.ts</code></td></tr>
 <tr><td>TC-CR8-01h</td><td>An assumption from an older draft that lists no fields cannot be matched, so any card edit drops it &mdash; <code>intake-state.test.ts</code></td></tr>
 <tr><td>TC-CR8-01i</td><td>Not sure, Change an answer, edit the assumed field's card, Confirm: the recorded confirmation on the real trail carries no assumption for that field &mdash; <code>IntakeFlow.cr7-fx1.test.tsx</code></td></tr>
-<tr><td>TC-CR8-01j</td><td>A different assumption that lists the countries field is still narrowed by a countries edit; only question 11 is exempt &mdash; <code>intake-state.test.ts</code></td></tr>
+<tr><td>TC-CR8-01j</td><td>A different assumption that lists the countries field is dropped by a countries edit; only question 11 is exempt (amended CR9; this row used to say it is narrowed) &mdash; <code>intake-state.test.ts</code></td></tr>
 </tbody>
 </table>
 </section>
