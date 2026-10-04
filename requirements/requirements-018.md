@@ -331,7 +331,70 @@ the rulebooks. Scoring uses the corpus's known correct answers.
 
 ## 3. Public demo site (PS)
 
-*(to be elicited)*
+The public site runs entirely inside each visitor's own browser. It can
+reach a model only if the visitor has Ollama running on their own computer
+(locally or signed in to Ollama's cloud); it cannot use the owner's sign-in,
+and no shared key may ever be shipped in a public page. So the public site
+is built to work fully with no model, and to make connecting one easy,
+honest and optional.
+
+**R18-PS-1 (Must):** A first-time visitor with no model set up can complete
+a pre-check at once: describe, see the checklist and the nudge, answer the
+form, get a verdict. Nothing in the first screen asks them to set anything
+up first.
+
+> Fit criterion: with empty browser storage, the description screen renders
+> and a full pre-check completes through the form with no model; no screen
+> before the first description is a set-up screen.
+
+**R18-PS-2 (Must):** A clearly visible "Make it smarter" panel on the
+description screen explains, in plain words, that a connected model can fill
+in the form from the description, and how to connect one: Ollama on the
+visitor's own computer, or Ollama's free cloud after one `ollama signin`. It
+shows only the stable commands (`ollama signin`, the allowed-origins
+setting), links Ollama's own current documentation for everything else, and
+shows the date the link was last checked. It uses the same where-it-goes
+sentences as R18-MS-2.
+
+> Fit criterion: the panel renders when no model is configured and collapses
+> to the model's one-line status when one is; it contains exactly the stable
+> commands and a dated link; a docs test keeps the commands identical in the
+> app, the user guide, the tester guide and the README.
+
+**R18-PS-3 (Must):** "Try an example" on the description screen offers the
+eleven worked cases from the user guide as one-click example descriptions
+(a click fills the description box and ticks the checklist). The eleven are
+the cases already pinned to their outcomes by tests (`docs/try-these.md`).
+
+> Fit criterion: each example's text is byte-identical to the corresponding
+> description in the guide; the example list is generated from the same
+> source the guide's test reads, so the two cannot drift; each example run
+> through the form reaches the guide's stated outcome.
+
+**R18-PS-4 (Must):** A standing notice on the description screen whenever
+the model is anywhere other than this computer, and in the docs: this is a
+demonstration; use made-up or public descriptions, not confidential
+details; a firm should use its own model on its own network. The notice is
+plain, not a banner that must be dismissed.
+
+> Fit criterion: renders under "my firm's server" and "Ollama's cloud",
+> never under "this computer" or with no model; present in all four doc
+> copies.
+
+**R18-PS-5 (Must):** No key, token or sign-in of the owner's is ever
+included in the public site. The app stores no model credentials of its own:
+a model that needs a key is reached through the visitor's own Ollama app.
+
+> Fit criterion: a scan of the production bundle finds no key or token
+> pattern; the Settings screen has no field for a model key.
+
+**R18-PS-6 (Should):** Where the browser blocks the visitor's own Ollama
+(allowed-origins not set, or the browser asking permission for local
+network access), the panel says which of the two it is and what to do, in
+one sentence each, instead of a generic "couldn't read your description".
+
+> Fit criterion: a test per failure shape (server unreachable, origin not
+> allowed) asserts the specific sentence; neither blocks the form (R18-GI-7).
 
 ## Non-Functional Requirements
 
@@ -370,13 +433,17 @@ own mapping and compare that with the case's graph (the method the
 2026-10-04 comparison used). For the tech spec; either must give a
 deterministic per-question table.
 
-**OQ-2 — Untested models in real use.** Drafted as: allowed, labelled
-"untested" on the description screen. The alternative is to refuse pre-fill
-until a test is recorded. Owner to confirm with domain 2.
+**OQ-2 — Untested models in real use.** RESOLVED (owner, 2026-10-04):
+allowed, labelled "untested" on the description screen; nothing is blocked.
 
-**OQ-3 — Plain-http firm addresses.** Drafted as: allowed with an
-unencrypted-connection line (R18-MS-6). The alternative is to refuse plain
-http outside this computer. Owner to confirm with domain 2.
+**OQ-3 — Plain-http firm addresses.** RESOLVED (owner, 2026-10-04): allowed
+with an unencrypted-connection line (R18-MS-6).
+
+**OQ-4 — Examples and the checklist.** The eleven worked cases are written
+in the guide as plain descriptions; whether each one mentions all of the
+form's questions is not yet known. For the tech spec: measure how many
+examples tick all checklist items, and word the examples (guide and app
+together) so the demonstration of the checklist is honest.
 
 ## Requirements Index
 
@@ -397,6 +464,7 @@ http outside this computer. Owner to confirm with domain 2.
 |---|---|
 | 2026-10-04 | Round 18 opened after `/gvm-test 007`; domain 1 (Guided intake, R18-GI-1..13) drafted from the owner's decisions and the model comparison. |
 | 2026-10-04 | Domain 1 confirmed by the owner. Domain 2 (Model setting, R18-MS-1..8) drafted: three declared places, honest notice, any model with an in-app 31-case test instead of a recommended model (owner's call), automatic format fallback, firm-server connection honesty, plain words for server failures. R18-GI-12 amended to point at the in-app test. OQ-1..3 logged. |
+| 2026-10-04 | Domain 2 confirmed (OQ-2, OQ-3 resolved). Domain 3 (Public demo site, R18-PS-1..6) drafted: works with no model, "Make it smarter" panel with two stable commands and a dated link, "Try an example" from the eleven worked cases, standing demo-only notice, no keys in the public bundle, specific browser-block messages. OQ-4 logged. |
 
 ---
 
