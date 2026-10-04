@@ -180,6 +180,11 @@ function stageNote(stage: LifecycleStage, view: VerdictView): string | undefined
     if (view.signOffUnknown) return 'Saved to register — whether your AI risk team had to sign this off is not known from this screen.';
     return STAGE_NOTE.approved;
   }
+  // P6 (CR9 review): any later stage says the same unconfirmed-sign-off fact, never just the stage.
+  if (stage === 'in_production') {
+    if (view.signOffMissing) return `${STAGE_NOTE.in_production!.slice(0, -1)} — no sign-off from your AI risk team is recorded on this version.`;
+    if (view.signOffUnknown) return `${STAGE_NOTE.in_production!.slice(0, -1)} — whether your AI risk team had to sign this off is not known from this screen.`;
+  }
   return STAGE_NOTE[stage];
 }
 

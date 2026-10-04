@@ -21,12 +21,6 @@ import { ibCaseCount, seedIbPortfolio } from '../seeds/ib-portfolio';
 
 type Busy = 'none' | 'seeding' | 'seeding-ib' | 'clearing';
 
-// Demo-space model configuration (user decision 2026-08-17): ONE generic
-// model slot, no vendor-specific key field. The cloud-SDK code path still
-// exists behind getApiKey() but has no UI — it never ran live, the local
-// open model has, and a demo should show the thing that works. A firm
-// deployment points the same slot at a stronger model inside its own
-// boundary (design-vision: models are swappable, the corpus is the moat).
 // CR9-14: a person reads "your audit trail", never a database id. reset.ts keeps its result shape
 // (`<database id> (<outcome>)`); the mapping lives here, where the words are chosen. An id this map does
 // not know prints as "some stored data" — a raw id can never reach the screen.
@@ -39,6 +33,12 @@ function plainStoreName(entry: string): string {
   return PLAIN_STORE_NAMES[id] ?? 'some stored data';
 }
 
+// Demo-space model configuration (user decision 2026-08-17): ONE generic
+// model slot, no vendor-specific key field. The cloud-SDK code path still
+// exists behind getApiKey() but has no UI — it never ran live, the local
+// open model has, and a demo should show the thing that works. A firm
+// deployment points the same slot at a stronger model inside its own
+// boundary (design-vision: models are swappable, the corpus is the moat).
 export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => void } = {}) {
   const [busy, setBusy] = useState<Busy>('none');
   // Local open-model provider (2026-08-16). URL presence IS the enabled flag.

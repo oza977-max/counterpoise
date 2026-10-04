@@ -45,12 +45,12 @@ const SIGNED_OFF_EVENT = {
   payload: { type: 'twoloD_reviewed', action: 'approved', verdict_id: 'v1', attested_by_name: 'R' }, prev_hash: null, hash: 'h',
 } as never;
 
-function renderIt(opts: { tier: string; controls: number; stage?: LifecycleStage; signedOff?: boolean }) {
+function renderIt(opts: { tier: string; controls: number; stage?: LifecycleStage; signedOff?: boolean; noPolicy?: boolean }) {
   const policy = realPolicy();
   const ids = policy.controls.slice(0, opts.controls).map((c) => c.id);
   const verdict = verdictFrom(policy, { tier: opts.tier as Verdict['tier'], controls: ids });
   return render(
-    <VerdictDisplay verdict={verdict} auditEvents={opts.signedOff ? [SIGNED_OFF_EVENT] : []} policy={policy} registerStage={opts.stage} onCorrect={vi.fn()} />,
+    <VerdictDisplay verdict={verdict} auditEvents={opts.signedOff ? [SIGNED_OFF_EVENT] : []} policy={opts.noPolicy ? undefined : policy} registerStage={opts.stage} onCorrect={vi.fn()} />,
   );
 }
 const todoText = (c: HTMLElement) => c.querySelector('#verdict-todo-section')!.textContent ?? '';
@@ -113,7 +113,7 @@ describe('VerdictDisplay — CR9-02: the "What you need to do" box under an uncl
     expect(missing.container.textContent).toContain(SIGNOFF_MISSING_CONFIRM);
     expect(m).toMatch(/no sign-off from your AI risk team is recorded/i);
     missing.unmount();
-    const unknown = renderIt({ tier: 'Low', controls: 0, stage: 'in_production' });
+    const unknown = renderIt({ tier: 'Low', controls: 0, stage: 'in_production', noPolicy: true });
     expect(unknown.container.textContent).toContain(SIGNOFF_UNKNOWN_CONFIRM);
     expect(unknown.container.querySelector('.verdict__stage-note')!.textContent).toMatch(/not known from this screen/i);
   });
