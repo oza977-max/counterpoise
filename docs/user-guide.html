@@ -525,6 +525,7 @@
       <li><strong>That an AI system exists at all, if it never came through intake.</strong> Shadow-AI discovery is V2.</li>
       <li><strong>How to resolve genuine legal ambiguity.</strong> When regulatory text is contested, Counterpoise marks the rule as resting on judgement, renders the verdict provisional, and routes it to Legal. It does not pretend to settle what qualified lawyers disagree about.</li>
       <li><strong>Anything about InfoSec, vendor risk, cloud security or FinOps.</strong> It triggers those as mandatory downstream reviews when a use case requires them; it does not perform them.</li>
+      <li><strong>A description can mislead the free local demo model.</strong> The description reader that runs on your own computer is a small free model. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into drawing the wrong cards. Counterpoise flags the rating instructions it can spot, and the rules engine only ever rates what is on the cards, never the description’s own words. So check every card on the review screen against what the tool really does, and correct any that are wrong. The stronger defence is not built yet.</li>
     </ul>
 
     <h2 id="where-to-go-next">Where to go next</h2>
