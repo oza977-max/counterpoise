@@ -290,6 +290,8 @@ const auditPayloadSchema = z.discriminatedUnion('type', [
     submitter_note: z.string().optional(),
     contradiction_resolutions: z.array(z.string()).optional(),
     answer_contexts: z.array(z.string()).optional(),
+    // GT7 L-1 (P12): optional — a bundle from before this field still imports.
+    rating_instructions: z.array(z.string()).optional(),
     // R16-D2 §1/§4 (D-95, D-81): see assumptionSchema's own comment above.
     assumptions: z.array(assumptionSchema).optional(),
   }).passthrough(),

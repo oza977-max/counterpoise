@@ -180,6 +180,7 @@ These are deliberate for this stage. Flag them only if you think one makes
 testing impossible.
 
 - **No accounts or identity.** The role switch is a dropdown.
+- **A description can mislead the free local demo model.** The description reader that runs on your own computer is a small free model. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into drawing the wrong cards. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates what is on the cards, never the description’s own words. So check every card on the review screen against what the tool really does, and correct any that are wrong. The stronger defence is not built yet.
 - **Sharing is by file, one side at a time.** Testers swap registers with
   the hand-off bundle — no live shared copy. On import the app re-checks
   every entry: accidental damage or a simple edit is caught and the import

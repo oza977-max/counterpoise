@@ -2767,7 +2767,9 @@ details input {
   color: var(--low);
 }
 
-.intake-flow__gate-error {
+.intake-flow__gate-error,
+.intake-flow__rating-warning,
+.confirmation__rating-warning {
   border: 1px solid var(--warn-border);
   background: var(--warn-bg);
   color: var(--warn-text);

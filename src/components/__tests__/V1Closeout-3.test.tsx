@@ -403,7 +403,8 @@ describe('TC-RG-5-01 — the register exports to JSON', () => {
       const user = userEvent.setup();
       render(<RegisterViewHarness role="2LoD" currentPolicyVersion="1.0" />);
       await user.click(await screen.findByRole('button', { name: /export json/i }));
-      expect(capturedJson).toBeDefined();
+      // The export reads the register asynchronously; wait for it instead of racing it (flaked once under full-suite load, GT7 GB ritual).
+      await waitFor(() => expect(capturedJson).toBeDefined());
     } finally {
       globalThis.Blob = OriginalBlob;
       URL.createObjectURL = originalCreateObjectURL;

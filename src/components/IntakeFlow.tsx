@@ -9,8 +9,7 @@ import { findPossibleDuplicates, matchCorpus } from '../engine/duplicate';
 import { loadPolicy } from '../store/policy';
 import { checkPolicyReferences } from '../store/policy-references';
 import { getCurrentPolicyYaml } from '../store/policy-source';
-import { loadPacks } from '../store/packs';
-import { getPackSources } from '../store/pack-source';
+import { getPackSources, loadPackSet } from '../store/pack-source';
 import { selfAssessmentSeeded } from '../seeds/aigate-self-assessment';
 import { addNode, addUseCaseModelLink, confirmationPrecondition, getUseCase, getUseCases, updateUseCaseVerdictSummary, updateLifecycleStage, findLatestVerdictEvent } from '../store/register';
 import { withCaseLock } from '../store/db';
@@ -48,7 +47,9 @@ import {
   vendorNotOnListValue,
   VENDOR_UNSURE_VALUE,
   VENDOR_UNSURE_ASSUMPTION,
+  ratingInstructionWarning,
 } from './plain-copy';
+import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
 import GraphView from './GraphView';
 import StepTracker, { describeStep } from './StepTracker';
@@ -86,6 +87,22 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
 
 // CR7-21/22 and the count of corrections on the trail: planCorrectionWrites
 // (intake-state.ts, pure and unit-tested).
+
+// GT7 L-1 (P12). Rating instructions are looked for on the DESCRIPTION path
+// only — a graph a model read out of the typed description. The form path's
+// "In a sentence or two" text is never read by a model, so it gets no warning.
+// GB pass-1 C: called up to three times per render, so the (pure) result is
+// remembered for the last description seen.
+let lastRatingKey: string | undefined;
+let lastRatingFound: string[] = [];
+function ratingInstructionsFor(graph: { intake_method: string }, description: string | undefined): string[] {
+  if (graph.intake_method !== 'llm' || !description) return [];
+  if (description !== lastRatingKey) {
+    lastRatingFound = findRatingInstructions(description);
+    lastRatingKey = description;
+  }
+  return lastRatingFound;
+}
 
 export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?: number } = {}) {
   // explore-001 D-002/D-003: restore any in-flight draft so a refresh,
@@ -421,7 +438,11 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // V2-A: jurisdiction packs — bundled files, parsed once. Invalid packs
   // are dropped by the loader (whole-pack rejection, CF-5/RA-7) and shown
   // on the Appetite screen; evaluation proceeds with the valid ones.
-  const loadedPacks = useMemo(() => loadPacks(getPackSources()).packs, []);
+  // GT7 D-1b (CF-5): a pack that fails to load refuses evaluation here too —
+  // both gates below (checkPolicyGate, the Confirm throw) check packLoadErrors.
+  const packSet = useMemo(() => loadPackSet(getPackSources()), []);
+  const loadedPacks = packSet.packs;
+  const packLoadErrors = packSet.messages;
   // R11-KL-1: parsed once, entirely separate from policy/packs — this is
   // advisory-only and never touched by evaluate().
   const knowledgeLensResult = useMemo(() => loadKnowledgeLens(getCurrentKnowledgeLensYaml()), []);
@@ -629,6 +650,17 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
 
   async function handleConfirmNewUseCase() {
     if (state.step !== 'duplicate_check') return;
+    // GB pass-2 M2: dismissing a match writes duplicate_dismissed to the
+    // append-only trail. While a rulebook is broken the person cannot get a
+    // verdict anyway, so nothing is written (same gate as evaluation/adoption).
+    // Checked before the in-flight flag so a refusal leaves the button usable.
+    if (duplicateMatch) {
+      const gateError = checkPolicyGate();
+      if (gateError) {
+        setDecisionError(gateError);
+        return;
+      }
+    }
     if (confirmNewInFlight.current) return;
     confirmNewInFlight.current = true;
     setDecisionPending(true);
@@ -647,6 +679,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // genuinely new use case from a duplicate waved through. Written against
     // the CANDIDATE's trail, because that is the record a later reader is
     // looking at when they ask why there are two of these.
+    // GB pass-2 M2: behind the same policy/pack gate (checked at the top of this function).
     if (duplicateMatch) {
       const candidate = duplicateMatch;
       // Final review M-1: only THIS single append can fail as "your choice
@@ -734,6 +767,15 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
 
   async function handleAdoptClassification() {
     if (state.step !== 'duplicate_check' || !duplicateMatch) return;
+    // GB pass-1 I1: adopting writes a register record and verdict-bearing
+    // audit events, so it sits behind the same gate as evaluation — a broken
+    // rules file or pack means nothing is written. Checked before the
+    // in-flight flag is set, so a refusal leaves the button usable.
+    const gateError = checkPolicyGate();
+    if (gateError) {
+      setDecisionError(gateError);
+      return;
+    }
     // The audit trail is append-only; a double-click cannot be cleaned up
     // afterwards (same guard as the 2LoD actions, RegisterDetail.tsx:76).
     if (adoptInFlight.current) return;
@@ -955,6 +997,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         'Counterpoise: the firm policy is invalid:',
         policyResult.errors.map((e) => `${e.field}: ${e.reason}`).join('; '),
       );
+      return POLICY_PROBLEM_MESSAGE;
+    }
+    if (packLoadErrors.length > 0) {
+      console.error('Counterpoise: a regulatory rules pack failed to load:', packLoadErrors.join(' | '));
       return POLICY_PROBLEM_MESSAGE;
     }
     const referenceCheck = checkPolicyReferences(policyResult.policy, loadedPacks);
@@ -1349,6 +1395,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       );
       throw new Error(POLICY_PROBLEM_MESSAGE);
     }
+    if (packLoadErrors.length > 0) {
+      console.error('Counterpoise: a regulatory rules pack failed to load:', packLoadErrors.join(' | '));
+      throw new Error(POLICY_PROBLEM_MESSAGE);
+    }
     const confirmReferenceCheck = checkPolicyReferences(policyResult.policy, loadedPacks);
     if (confirmReferenceCheck.errors.length > 0) {
       console.error('Counterpoise: the firm policy has a broken reference:', confirmReferenceCheck.errors.join(' '));
@@ -1455,6 +1505,17 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           ...(reviewerNote ? { submitter_note: reviewerNote } : {}),
           ...(contradictionResolutions.length > 0 ? { contradiction_resolutions: contradictionResolutions } : {}),
           ...(answerContexts.length > 0 ? { answer_contexts: answerContexts } : {}),
+          // GB pass-1 M2: a failed-evaluation retry writes a SECOND
+          // graph_confirmed, which also carries this field — harmless and
+          // intended (each confirmation record states what the description
+          // said). The review/confirmation warnings show on every pass.
+          // GT7 L-1 (P12): the description path only — the form's sentence is
+          // never read by a model. Written here, on the first confirmation; a
+          // correction pass (the isCorrection branch above) does not re-flag,
+          // by design: the first record already carries it. Spread-if-present.
+          ...(ratingInstructionsFor(graph, typedDescription).length > 0
+            ? { rating_instructions: ratingInstructionsFor(graph, typedDescription) }
+            : {}),
           // R16-D2 §4 (D-81, DR7-16): the "Not sure" answers this
           // confirmation was based on — written only when non-empty, same
           // spread-if-present discipline as the three fields above.
@@ -2292,6 +2353,18 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                 <p>{state.description}</p>
               </div>
             )}
+            {/* GT7 L-1 (P12): a description that dictates its own rating is flagged,
+                never obeyed. A status region (not an alert — nothing is blocked) with a
+                visible "Warning:" lead-in so it is not colour alone. Display only: the
+                graph, the engine input and the verdict never see this list. */}
+            {(() => {
+              const found = ratingInstructionsFor(state.graph, state.description);
+              return found.length > 0 ? (
+                <p role="status" className="intake-flow__rating-warning">
+                  <strong>Warning:</strong> {ratingInstructionWarning(found)}
+                </p>
+              ) : null;
+            })()}
             {evaluationError && (
               <p role="alert">
                 {/* CR8-14: prefix kept (tests and the form path's wrapper read the
@@ -2519,6 +2592,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               // destination zone to an explicit 3platformZone answer.
               description={state.description}
               plainAnswers={formInitialAnswers}
+              ratingInstructionsFound={ratingInstructionsFor(state.graph, state.description).length > 0}
               onChangeAnswer={() => dispatch({ type: 'CHANGE_ANSWER' })}
               onConfirm={(note) => void handleConfirmAndEvaluate(note)}
               // A refusal that will repeat disables Confirm; a failed record

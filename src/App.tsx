@@ -12,8 +12,7 @@ import { loadPolicy } from './store/policy';
 import { checkPolicyReferences } from './store/policy-references';
 import { getCurrentPolicyYaml } from './store/policy-source';
 import { translationAttestationStatus } from './engine/attestation';
-import { loadPacks } from './store/packs';
-import { getPackSources } from './store/pack-source';
+import { getPackSources, loadPackSet } from './store/pack-source';
 import { seedAigateSelfAssessment } from './seeds/aigate-self-assessment';
 import BrandMark from './components/BrandMark';
 import { seedIbPortfolio } from './seeds/ib-portfolio';
@@ -177,7 +176,12 @@ export default function App() {
   // seedAigateSelfAssessment() is idempotent and race-safe (P7-C01).
   // P8-C04: seeded WITHOUT packs until now, so Counterpoise's own self-assessment
   // was scored ignoring the UK pack its graph declares.
-  const loadedPacks = useMemo(() => loadPacks(getPackSources()).packs, []);
+  // GT7 D-1b (CF-5): a pack that fails to load is a start-up error exactly like
+  // a broken policy — it joins startupPolicyErrors below, and the seeding guard
+  // refuses to write anything while one is outstanding.
+  const packSet = useMemo(() => loadPackSet(getPackSources()), []);
+  const loadedPacks = packSet.packs;
+  const packLoadErrors = packSet.messages;
 
   // R16-A1 (§1.4, CF-5-style). The app start-up gate: checkPolicyReferences
   // catches what loadPolicy()/loadPacks() structurally cannot — a
@@ -190,9 +194,12 @@ export default function App() {
     () => (policyResult.valid ? checkPolicyReferences(policyResult.policy, loadedPacks).errors : []),
     [policyResult, loadedPacks],
   );
-  const startupPolicyErrors: string[] = policyResult.valid
-    ? policyReferenceErrors
-    : policyResult.errors.map((e) => `${e.field}: ${e.reason}`);
+  // Pack reasons are shown verbatim (the loader already names the pack and the rule).
+  // The banner heading and the plain sentence for submitters are unchanged.
+  const startupPolicyErrors: string[] = [
+    ...(policyResult.valid ? policyReferenceErrors : policyResult.errors.map((e) => `${e.field}: ${e.reason}`)),
+    ...packLoadErrors,
+  ];
 
   // O-002 (charter 005). Started during the FIRST RENDER, not in an effect.
   // React runs a child's effect before its parent's, so IntakeFlow's register
@@ -206,7 +213,9 @@ export default function App() {
   // concurrent callers onto one execution via an in-flight promise cache, and
   // StrictMode's double render was the case it was written to survive.
   const seedStarted = useRef(false);
-  if (!seedStarted.current && policyResult.valid) {
+  // GT7 D-1b: no seeded verdicts on the append-only trail while a rulebook is broken
+  // (they would be evaluated without that pack and could not be taken back).
+  if (!seedStarted.current && policyResult.valid && packLoadErrors.length === 0) {
     seedStarted.current = true;
     seedAigateSelfAssessment(policyResult.policy, loadedPacks).catch((err) => {
       console.warn('Counterpoise self-assessment seeding failed:', err);

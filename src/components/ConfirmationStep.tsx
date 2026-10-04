@@ -3,6 +3,7 @@ import type { DataFlowGraph, GraphCorrection, PolicyFile } from '../engine/types
 import type { Assumption, PlainAnswers } from './plain-copy';
 import UnderstoodSummary from './UnderstoodSummary';
 import SimilarCases from './SimilarCases';
+import { RATING_INSTRUCTION_CONFIRM_LINE } from './plain-copy';
 import type { EnrichedPrecedent } from './SimilarCases';
 
 // UC-6 (intake-flow.md §9). Rule 4 (cross-cutting.md §7): presentation-only.
@@ -39,6 +40,9 @@ interface ConfirmationStepProps {
    *  before the optional note, same collapsed panel and posture line as
    *  graph_review's. */
   precedents?: EnrichedPrecedent[];
+  /** GT7 L-1 (P12): the typed description (description path only — IntakeFlow
+   *  never sets this on the form path) tried to set its own rating. Display only. */
+  ratingInstructionsFound?: boolean;
   /** "Change an answer" on the summary — navigates back to the question
    *  (form path) or into the existing correction flow (description path,
    *  UC-7). Not a write; the one write stays onConfirm below. */
@@ -74,6 +78,7 @@ export default function ConfirmationStep({
   onConfirm,
   confirmDisabled = false,
   pending = false,
+  ratingInstructionsFound = false,
 }: ConfirmationStepProps) {
   const [note, setNote] = useState('');
 
@@ -95,6 +100,12 @@ export default function ConfirmationStep({
         can&rsquo;t rule out someone with access to this computer rewriting all of it. If something
         turns out to be wrong later, you can correct it — the correction is recorded too.
       </p>
+
+      {ratingInstructionsFound && (
+        <p role="status" className="confirmation__rating-warning">
+          <strong>Warning:</strong> {RATING_INSTRUCTION_CONFIRM_LINE}
+        </p>
+      )}
 
       <UnderstoodSummary
         graph={graph}

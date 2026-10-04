@@ -331,6 +331,7 @@ the boundary is worth more than another feature.
 - **Anything about InfoSec, vendor risk, cloud security or FinOps.** It
   triggers those as mandatory downstream reviews when a use case requires them;
   it does not perform them.
+- **A description can mislead the free local demo model.** The description reader that runs on your own computer is a small free model. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into drawing the wrong cards. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates what is on the cards, never the description’s own words. So check every card on the review screen against what the tool really does, and correct any that are wrong. The stronger defence is not built yet.
 
 ---
 

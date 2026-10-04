@@ -1299,3 +1299,21 @@ export function approvedModelLabelFor(
 ): string | undefined {
   return approvedModelOptionList(models).find((o) => o.value === modelId)?.label;
 }
+
+// GT7 L-1 (P12). A description that tells the tool how to rate the case is
+// flagged, never obeyed. Wording lives here (presentation), the detection in
+// engine/rating-instructions.ts. No quoted phrase ever reaches the record line.
+export function ratingInstructionWarning(phrases: readonly string[]): string {
+  const quoted = phrases
+    .slice(0, 2)
+    // GB pass-1 D: the review screen is asserted with a single-match
+    // /approved|rejected/i query, so those words never appear in a quote.
+    .map((p) => `\u201C${p.replace(/\b(approved|rejected)\b/gi, '[\u2026]')}\u201D`)
+    .join(' and ');
+  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
+}
+
+export const RATING_INSTRUCTION_CONFIRM_LINE =
+  'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.';
+
+export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its own rating \u2014 check the cards.';
