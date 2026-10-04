@@ -9,8 +9,7 @@ import { findPossibleDuplicates, matchCorpus } from '../engine/duplicate';
 import { loadPolicy } from '../store/policy';
 import { checkPolicyReferences } from '../store/policy-references';
 import { getCurrentPolicyYaml } from '../store/policy-source';
-import { loadPacks } from '../store/packs';
-import { getPackSources } from '../store/pack-source';
+import { getPackSources, loadPackSet } from '../store/pack-source';
 import { selfAssessmentSeeded } from '../seeds/aigate-self-assessment';
 import { addNode, addUseCaseModelLink, confirmationPrecondition, getUseCase, getUseCases, updateUseCaseVerdictSummary, updateLifecycleStage, findLatestVerdictEvent } from '../store/register';
 import { withCaseLock } from '../store/db';
@@ -421,7 +420,11 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // V2-A: jurisdiction packs — bundled files, parsed once. Invalid packs
   // are dropped by the loader (whole-pack rejection, CF-5/RA-7) and shown
   // on the Appetite screen; evaluation proceeds with the valid ones.
-  const loadedPacks = useMemo(() => loadPacks(getPackSources()).packs, []);
+  // GT7 D-1b (CF-5): a pack that fails to load refuses evaluation here too —
+  // both gates below (checkPolicyGate, the Confirm throw) check packLoadErrors.
+  const packSet = useMemo(() => loadPackSet(getPackSources()), []);
+  const loadedPacks = packSet.packs;
+  const packLoadErrors = packSet.messages;
   // R11-KL-1: parsed once, entirely separate from policy/packs — this is
   // advisory-only and never touched by evaluate().
   const knowledgeLensResult = useMemo(() => loadKnowledgeLens(getCurrentKnowledgeLensYaml()), []);
@@ -957,6 +960,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       );
       return POLICY_PROBLEM_MESSAGE;
     }
+    if (packLoadErrors.length > 0) {
+      console.error('Counterpoise: a regulatory rules pack failed to load:', packLoadErrors.join(' | '));
+      return POLICY_PROBLEM_MESSAGE;
+    }
     const referenceCheck = checkPolicyReferences(policyResult.policy, loadedPacks);
     if (referenceCheck.errors.length > 0) {
       console.error('Counterpoise: the firm policy has a broken reference:', referenceCheck.errors.join(' '));
@@ -1347,6 +1354,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         'Counterpoise: the firm policy is invalid:',
         policyResult.errors.map((e) => `${e.field}: ${e.reason}`).join('; '),
       );
+      throw new Error(POLICY_PROBLEM_MESSAGE);
+    }
+    if (packLoadErrors.length > 0) {
+      console.error('Counterpoise: a regulatory rules pack failed to load:', packLoadErrors.join(' | '));
       throw new Error(POLICY_PROBLEM_MESSAGE);
     }
     const confirmReferenceCheck = checkPolicyReferences(policyResult.policy, loadedPacks);

@@ -5,7 +5,7 @@ import App from '../../App';
 import * as packSource from '../../store/pack-source';
 import { loadPacks } from '../../store/packs';
 import { getAllForExport } from '../../store/audit';
-import { getUseCases } from '../../store/register';
+import { exportAll } from '../../store/register';
 import { setRole } from '../../store/role';
 import { POLICY_PROBLEM_MESSAGE } from '../plain-copy';
 
@@ -128,7 +128,7 @@ describe('GT7 D-1b — a broken pack joins the start-up gate (CF-5)', () => {
     // Let any (wrongly) started seeding settle, then prove the trail and register are empty.
     await new Promise((r) => setTimeout(r, 150));
     expect(await getAllForExport()).toEqual([]);
-    expect(await getUseCases()).toEqual([]);
+    expect((await exportAll()).nodes).toEqual([]);
   });
 
   it('TC-CF-5-02c: a 1LoD submitter sees the plain sentence, never the raw pack reason', () => {

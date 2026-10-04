@@ -9,8 +9,7 @@ import {
   localLlmEnabled,
   probeLocalLlm,
 } from '../llm/local-provider';
-import { loadPacks } from '../store/packs';
-import { getPackSources } from '../store/pack-source';
+import { getPackSources, loadPackSet } from '../store/pack-source';
 import { loadPolicy } from '../store/policy';
 import { checkPolicyReferences } from '../store/policy-references';
 import { getCurrentPolicyYaml } from '../store/policy-source';
@@ -52,7 +51,8 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   const policyResult = useMemo(() => loadPolicy(getCurrentPolicyYaml()), []);
-  const packs = useMemo(() => loadPacks(getPackSources()).packs, []);
+  const packSet = useMemo(() => loadPackSet(getPackSources()), []);
+  const packs = packSet.packs;
   // R16-A1 (§1.4): computed once, reused by both seed actions below — an
   // honest, specific message beats letting the seed function silently
   // refuse and report "nothing added" for the wrong reason (NF-2).
@@ -64,6 +64,10 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
   async function handleSeed() {
     if (!policyResult.valid) {
       setMessage('Cannot load samples — the current policy is invalid.');
+      return;
+    }
+    if (packSet.messages.length > 0) {
+      setMessage('Cannot load samples — a regulatory rules file failed to load. See the Appetite framework screen.');
       return;
     }
     if (policyReferenceErrors.length > 0) {
@@ -89,6 +93,10 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
   async function handleSeedIb() {
     if (!policyResult.valid) {
       setMessage('Cannot load the portfolio — the current policy is invalid.');
+      return;
+    }
+    if (packSet.messages.length > 0) {
+      setMessage('Cannot load the portfolio — a regulatory rules file failed to load. See the Appetite framework screen.');
       return;
     }
     if (policyReferenceErrors.length > 0) {

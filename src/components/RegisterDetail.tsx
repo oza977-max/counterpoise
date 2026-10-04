@@ -6,8 +6,7 @@ import VerdictDisplay from './VerdictDisplay';
 import type { AssumptionRecord, AuditEvent, RegisterEdge, UseCaseSummary } from '../store/types';
 import { registerSaysNoModelNamed } from './verdict-view-model';
 import type { PolicyFile } from '../engine/types';
-import { loadPacks } from '../store/packs';
-import { getPackSources } from '../store/pack-source';
+import { getPackSources, loadPackSet } from '../store/pack-source';
 import type { Verdict } from '../types/verdict';
 import { TIER_MEANINGS, TRACK_MEANINGS, STAGE_LABELS, ACTION_LABEL, STATUS_LABEL } from './field-copy';
 import { findRuleDescription } from '../engine/find-rule-description';
@@ -265,7 +264,7 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
   // needed only to resolve a pack hard line's plain_reason/plain_change
   // and jurisdiction name on a "No" screen, never to re-decide anything
   // evaluate() already settled.
-  const loadedPacks = useMemo(() => loadPacks(getPackSources()).packs, []);
+  const loadedPacks = useMemo(() => loadPackSet(getPackSources()).packs, []);
 
   // R16-D2 §6 (DR7-09, D2 part). How many times this case has been
   // corrected — every version stays in the record below; this just makes
