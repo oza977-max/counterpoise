@@ -123,7 +123,7 @@ describe('PV-A acceptance — a covering platform reduces the required control s
     expect(withPlatform.length).toBeLessThan(withoutPlatform.length);
   });
 
-  it('names what was inherited and from which envelope, never silently (PV-6) [TC-PV-6-01]', () => {
+  it('names what was inherited and from which envelope, never silently (PV-6)', () => {
     const r = evaluate(graph({ platform: 'PLAT-INTERNAL-01' }), policyWithRegistry);
     if (!r.ok) throw new Error('evaluation failed');
 
@@ -139,7 +139,7 @@ describe('PV-A acceptance — a covering platform reduces the required control s
 });
 
 describe('PV-3 — inheritance is per-dimension, not all-or-nothing', () => {
-  it('a use case exceeding one dimension does not inherit that dimension’s clearance [TC-PV-3-02]', () => {
+  it('a use case exceeding one dimension does not inherit that dimension’s clearance', () => {
     // Client PII exceeds the platform's max_data_class of Internal.
     const r = evaluate(graph({ platform: 'PLAT-INTERNAL-01', dataClass: 'Client PII' }), policyWithRegistry);
     if (!r.ok) throw new Error('evaluation failed');

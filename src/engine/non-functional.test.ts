@@ -96,7 +96,7 @@ describe('TC-NF-3-01: evaluation makes no network request', () => {
   });
 });
 
-describe('TC-NF-11-01: the API key cannot reach an export', () => {
+describe('the API key cannot reach a register export', () => {
   it('an export of the register contains no trace of a configured key', async () => {
     // A distinctive value, so a substring search cannot pass by accident.
     const key = 'sk-ant-TESTKEY-do-not-export-me-6f3a91';
@@ -155,7 +155,7 @@ hard_lines: []
   });
 });
 
-describe('TC-NF-5-01: a verdict is produced well within the 30-second budget', () => {
+describe('the engine alone is far inside the 30-second budget', () => {
   it('evaluates a realistic graph in under a second', () => {
     // NF-5 allows 30 seconds from graph confirmation. The engine is pure and
     // synchronous, so the honest assertion is a generous ceiling that would

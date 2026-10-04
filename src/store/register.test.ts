@@ -298,7 +298,7 @@ describe('register store', () => {
     expect(summary?.provisional).toBe(true);
   });
 
-  it('a verdict_corrected event supersedes an earlier verdict_produced event for the computed summary [TC-VD-3-01]', async () => {
+  it('a verdict_corrected event supersedes an earlier verdict_produced event for the computed summary', async () => {
     const nodeId = crypto.randomUUID();
     const node = makeUseCaseNode({ node_id: nodeId, label: 'Correction-supersedes probe' });
     await addNode(node);
@@ -432,7 +432,7 @@ describe('findLatestVerdictEvent (exported for P8-C07)', () => {
 // Round 4, step 5. Build verification 003 found these correct by inspection
 // with no test naming their scenario — true by construction, undefended.
 describe('Register and audit guarantees that were untested (round 4)', () => {
-  it('TC-VD-3-02: a correction record carries who, when, which field, and both values [TC-UC-7-01]', async () => {
+  it('TC-VD-3-02: a correction record carries who, when, which field, and both values', async () => {
     const nodeId = crypto.randomUUID();
     await addNode(makeUseCaseNode({ node_id: nodeId, label: 'Correction record probe' }));
 
@@ -472,7 +472,7 @@ describe('Register and audit guarantees that were untested (round 4)', () => {
     expect(c.corrected_at).toBe('2026-08-05T10:00:00.000Z');
   });
 
-  it('TC-LC-1-02: a lifecycle change records both ends of the transition, so a skip is visible', async () => {
+  it('a lifecycle change records both ends of the transition, so a skip is visible', async () => {
     const nodeId = crypto.randomUUID();
     await addNode(makeUseCaseNode({ node_id: nodeId, label: 'Stage transition probe' }));
 

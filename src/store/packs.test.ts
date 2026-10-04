@@ -3,7 +3,7 @@ import { loadPacks } from './packs';
 import { getPackSources } from './pack-source';
 
 describe('loadPacks (V2-A)', () => {
-  it('loads the four AUTHORED packs from the real files, sorted by pack_id [TC-PE-8-02] [TC-RA-7-02]', () => {
+  it('loads the four AUTHORED packs from the real files, sorted by pack_id [TC-RA-7-02]', () => {
     const { packs, errors } = loadPacks(getPackSources());
     expect(errors).toEqual([]);
     // Four, not seven. v1.3 deleted OSFI-E23, MAS-FEAT and FSA-JP: their rule

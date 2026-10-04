@@ -51,7 +51,7 @@ describe('extractGraph', () => {
     localStorage.clear();
   });
 
-  it('TC-UC-3-01: calls the Anthropic API with a forced tool_use and returns a correctly structured DataFlowGraph [TC-UC-3-03]', async () => {
+  it('TC-UC-3-01: calls the Anthropic API with a forced tool_use and returns a correctly structured DataFlowGraph', async () => {
     localStorage.setItem('aigate:api-key', 'test-key');
 
     const result = await extractGraph('drafts client emails using relationship notes');

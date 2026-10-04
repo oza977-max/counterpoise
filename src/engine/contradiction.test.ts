@@ -65,7 +65,7 @@ describe('detectContradictions', () => {
 // Traceability close-out (2026-08-15). The existing cases each produce one
 // contradiction; UC-5-03's claim is that BOTH are surfaced together rather
 // than one at a time with the second hidden.
-it('returns every contradiction at once, not just the first [TC-UC-5-03]', () => {
+it('returns every contradiction at once, not just the first', () => {
   // Phrasings reused from the two single-contradiction cases above, so this
   // fails only if MULTIPLE detection breaks — not if a pattern rewords.
   const description = 'This tool processes no client data at all. A human approves every action, no autonomy.';

@@ -23,7 +23,7 @@ describe('solvControls', () => {
     if (result.ok) expect(result.controls).toEqual([]);
   });
 
-  it('TC-CS-1-01: picks the single control that covers the most invariants over two narrower ones', () => {
+  it('picks the single control that covers the most invariants over two narrower ones', () => {
     const library = [
       control({ id: 'C-BOTH', resolves: ['INV-1', 'INV-2'], burden: 2 }),
       control({ id: 'C-ONE', resolves: ['INV-1'], burden: 1 }),
@@ -54,7 +54,7 @@ describe('solvControls', () => {
     if (result.ok) expect(result.controls).toEqual(['C-ALPHA']);
   });
 
-  it('TC-CS-2-01: reports the unsatisfiable invariant when no control resolves it', () => {
+  it('reports the unsatisfiable invariant when no control resolves it', () => {
     const library = [control({ id: 'C-1', resolves: ['INV-OTHER'], burden: 1 })];
     const result = solvControls(['INV-UNRESOLVED'], library, []);
     expect(result).toEqual({ ok: false, unsatisfiableInvariant: 'INV-UNRESOLVED' });
