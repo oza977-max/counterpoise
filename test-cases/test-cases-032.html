@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Round GT7 (defects found by /gvm-test 007) &middot; Counterpoise &mdash; Test Cases</title>
+    <style>
+        /* Tufte/Few Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fffff8;
+            font-family: "ET Book", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Sticky TOC Navigation */
+        .toc-nav {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #fafaf8;
+            border-right: 2px solid #e8e8e0;
+            padding: 2rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .toc-nav h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        .toc-nav ul {
+            list-style: none;
+        }
+
+        .toc-nav li {
+            margin: 0.5rem 0;
+        }
+
+        .toc-nav a {
+            text-decoration: none;
+            color: #666;
+            border-left: 2px solid transparent;
+            display: block;
+            padding: 0.25rem 0 0.25rem 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .toc-nav a:hover {
+            color: #1a1a1a;
+            border-left-color: #4a90e2;
+        }
+
+        .toc-nav a.active {
+            color: #1a1a1a;
+            border-left-color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .main-content {
+            flex: 1;
+            max-width: 960px;
+            padding: 2rem 3rem;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 300;
+            margin: 2rem 0 1rem 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-style: italic;
+            font-weight: 400;
+            margin: 2.5rem 0 1.25rem 0;
+            border-top: 1px solid #e8e8e0;
+            padding-top: 1.5rem;
+        }
+
+        h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.75rem 0;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 0.8rem;
+            text-align: justify;
+        }
+
+        .metadata {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Code block */
+        code {
+            font-family: "Courier New", monospace;
+            background-color: #f7f7f2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #fff;
+            color: #333;
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e8e8e0;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #f7f7f2;
+        }
+
+        /* Lists */
+        ol, ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            font-style: italic;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e8e8e0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .toc-nav {
+                width: 150px;
+                padding: 1.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .main-content {
+                padding: 1.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .toc-nav {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e8e8e0;
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem 1.5rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .toc-nav {
+                display: none;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            body {
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<nav class="toc-nav"><h3>Contents</h3><ul>
+                <li><a href="#1-a-rules-pack-that-fails-to-load-names-the-rule">&sect;1 &mdash; A rules pack that fails to load names the rule and stops the checking (P9: CF-5, RA-7)</a></li>
+                <li><a href="#2-the-explanation-is-told-the-track-reason-the-t">&sect;2 &mdash; The explanation is told the track reason, the tier reason and the citation (P10: VD-8)</a></li>
+                <li><a href="#3-every-regulation-shown-says-what-set-it-off-p1">&sect;3 &mdash; Every regulation shown says what set it off (P11: RA-9)</a></li>
+                <li><a href="#4-a-description-that-dictates-its-own-rating-is-">&sect;4 &mdash; A description that dictates its own rating is flagged, never obeyed (P12: UC-3, L-1 light measure)</a></li>
+                <li><a href="#amended-existing-cases">Amended existing cases</a></li>
+</ul></nav>
+<main class="main-content">
+<header>
+<h1>Counterpoise &mdash; Test Cases, Round GT7 (defects found by /gvm-test 007)</h1>
+<p class="metadata">4 October 2026 &middot; Generated from test-cases-032.md &mdash; do not hand-edit</p>
+</header>
+<p><em>Written 2026-10-04. The acceptance close-out (/gvm-test 007) found four cases whose clauses the build did not meet and one live-model weakness: a broken rules pack was named without its rule id and did not stop checking (TC-CF-5-02, TC-RA-7-01); the AI-written explanation was never told the track reason or the tier reason, and its test only read back its own mock (TC-VD-8-01); the regulatory reasoning did not say which attribute of the case set a rule off (TC-RA-9-01); and a description that dictated its own rating partly steered the demo model (TC-UC-3-04). This round fixes the first four and takes the light measure for the fifth: a warning, a note in the record and an honest statement in the docs. The stronger defence is not built and stays open. Build contract: <code>build/prompts/GT7-fixes.md</code> (v2); spec: <code>specs/cross-cutting.md</code> &sect;5, <code>specs/verdict-audit.md</code> &sect;5.7 and &sect;7, <code>specs/intake-flow.md</code> &sect;26, <code>specs/policy-schema.md</code> &sect;6, <code>specs/evaluation-engine.md</code> &sect;3.9. IDs are the ones the tests carry in their titles.</em></p>
+<p>Test files: <code>src/store/packs.test.ts</code>, <code>src/llm/reasoning-trace.test.ts</code>, <code>src/engine/evaluate.test.ts</code>, <code>src/engine/condition.test.ts</code>, <code>src/engine/condition.triggered-by.test.ts</code>, <code>src/engine/rating-instructions.test.ts</code>, <code>src/engine/mutation-gaps.test.ts</code>, <code>src/components/trigger-copy.test.ts</code>, <code>src/components/plain-copy.rating.test.ts</code>, <code>src/components/__tests__/PackGate.gt7.test.tsx</code>, <code>src/components/__tests__/PackGate.gt7-other-screens.test.tsx</code>, <code>src/components/__tests__/PolicyEditor.packerror.test.tsx</code>, <code>src/components/__tests__/VerdictDisplay.ga-trigger.test.tsx</code>, <code>src/components/__tests__/RatingInstructions.gt7.test.tsx</code>, <code>src/store/handoff.chain.test.ts</code>, <code>src/store/docs-limits.gt7.test.ts</code>.</p>
+<p>Note on kind: the pack-failure tests (TC-CF-5-02b to -02i) inject a broken rules pack at the one module boundary that supplies pack sources (<code>getPackSources()</code> in <code>src/store/pack-source.ts</code>) &mdash; the owner-accepted fault-injection kind of test, not a real broken file.</p>
+
+<section id="1-a-rules-pack-that-fails-to-load-names-the-rule">
+<h2>&sect;1 &mdash; A rules pack that fails to load names the rule and stops the checking (P9: CF-5, RA-7)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-CF-5-02b</td><td>A pack that fails to load: the "Policy file invalid" banner shows the loader's reason to the 2LoD role, Confirm is refused, and nothing is written to the audit trail &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02c</td><td>A 1LoD submitter sees the plain sentence, never the raw pack reason &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02d</td><td>The first evaluation gate (Continue on the review screen) refuses with the plain policy-problem message &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02e</td><td>With the shipped, valid packs there is no banner and <code>loadPackSet</code> reports no errors &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02f</td><td>With a broken pack, "Use the earlier result" refuses with the plain message and writes nothing (no record, no audit events) &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02g</td><td>Settings refuses both sample-data seeds on a broken pack and writes nothing &mdash; <code>PackGate.gt7-other-screens.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02h</td><td>The register's case page hands its verdict view only the packs that loaded; the broken pack is absent &mdash; <code>PackGate.gt7-other-screens.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02i</td><td>With a broken pack, "Mine is different" (when a match is shown) writes no dismissed-match event and shows the plain message &mdash; <code>PackGate.gt7.test.tsx</code></td></tr>
+<tr><td>TC-CF-5-02j</td><td>The Appetite framework screen shows the load error in full as visible text: the pack, the rule id and the field path &mdash; <code>PolicyEditor.packerror.test.tsx</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="2-the-explanation-is-told-the-track-reason-the-t">
+<h2>&sect;2 &mdash; The explanation is told the track reason, the tier reason and the citation (P10: VD-8)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-VD-8-01b</td><td>A hard-line verdict (no tier or track reason) still hands the model the binding reason and its regulatory basis, and the call allows 1024 tokens &mdash; <code>reasoning-trace.test.ts</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="3-every-regulation-shown-says-what-set-it-off-p1">
+<h2>&sect;3 &mdash; Every regulation shown says what set it off (P11: RA-9)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-RA-9-01b</td><td>A UK/EU credit case against the real EU pack: the credit-scoring rule's chain entry carries the decision type "credit-decision" &mdash; <code>evaluate.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01c</td><td>A pack hard-line rejection's chain entry also says what set it off &mdash; <code>evaluate.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01d</td><td>The helper returns, per condition field, only the case's values that satisfy it, fields sorted, values distinct &mdash; <code>condition.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01e</td><td>An unconditional rule gives an empty list; a value-equality condition reports the matching value; the jurisdictions list counts as one candidate, as in the engine &mdash; <code>condition.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01f</td><td>The fields the shipped packs test read as plain sentence fragments &mdash; <code>trigger-copy.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01g</td><td>Never shows a raw field code or enum value, mapped or not (NF-11) &mdash; <code>trigger-copy.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01h</td><td>A chain entry with <code>triggered_by</code> shows "Applies because" in plain words, never the raw field or value &mdash; <code>VerdictDisplay.ga-trigger.test.tsx</code></td></tr>
+<tr><td>TC-RA-9-01i</td><td>An unmapped field renders a generic plain sentence, with no snake_case and no raw enum (NF-11) &mdash; <code>VerdictDisplay.ga-trigger.test.tsx</code></td></tr>
+<tr><td>TC-RA-9-01j</td><td>An old stored verdict (no <code>triggered_by</code>), or an empty one, renders the entry with no "Applies because" line &mdash; <code>VerdictDisplay.ga-trigger.test.tsx</code></td></tr>
+<tr><td>TC-RA-9-01k</td><td>A hand-off bundle exported from real <code>evaluate()</code> output keeps <code>triggered_by</code> through import, chain intact &mdash; <code>handoff.chain.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01l</td><td>An old bundle whose chain entries lack <code>triggered_by</code> still imports &mdash; <code>handoff.chain.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01m</td><td>"At least", "at most" and "is not one of" conditions report the satisfying values too, and only those &mdash; <code>condition.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01n</td><td>For every shipped pack rule and a set of cases: <code>triggered_by</code> is non-empty exactly when the rule fired &mdash; <code>condition.triggered-by.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01o</td><td>A condition met on one field but not another reports nothing &mdash; <code>condition.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01q</td><td><code>evaluate()</code>'s regulatory chain <code>triggered_by</code> equals the helper's answer for the rule, end to end &mdash; <code>condition.triggered-by.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01r</td><td>A pack hard-line rule that fires carries its <code>triggered_by</code> into the rejection chain &mdash; <code>condition.triggered-by.test.ts</code></td></tr>
+</tbody>
+</table>
+<p>There is no TC-RA-9-01p: the id was skipped while the tests were written and is not used.</p>
+</section>
+
+<section id="4-a-description-that-dictates-its-own-rating-is-">
+<h2>&sect;4 &mdash; A description that dictates its own rating is flagged, never obeyed (P12: UC-3, L-1 light measure)</h2>
+<table>
+<thead><tr><th>ID</th><th>Asserts</th></tr></thead>
+<tbody>
+<tr><td>TC-UC-3-04b-01</td><td>The try-these file yields all eleven descriptions, so the next family of tests cannot pass on an empty list &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-02</td><td>(one test per description, NN = 01 to 11) Each of the eleven descriptions in <code>docs/try-these.md</code> does not fire &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-03</td><td>No seeded sample-register or investment-bank-portfolio description fires &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-04</td><td>(one test per table line, NN = 01 onward) Plain operational prose does not fire, one test per line of a table ("Runs in Zone C", "autonomy level 3", "a self-service portal", "market risk", "track invoices", "credit risk data", "a low-risk internal pilot", "the data is classified as Zone C", "Use it in Zone A", "Track I accounts are premium", &hellip;) &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-05</td><td>The TC-UC-3-04 steering text fires &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-06</td><td>The gvm-test 007 live steering text fires, and its parts are quoted in text order &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-07</td><td>(one test per table line, NN = 01 onward) Instructions in several wordings each fire, one test per line of a table &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-08</td><td>Matches are de-duplicated, in text order, each cut to 80 characters, at most five &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-09</td><td>The check is deterministic and pure: same text, same answer, every time &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-10</td><td>One very long instruction is cut to 80 characters &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-11</td><td>100,000 newlines plus rating words finish in under a second &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-12</td><td>Steering text after 6,000 characters of ordinary words still fires &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-13</td><td>An instruction straddling a window boundary is found once; ordinary text at a boundary never fires &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-14</td><td>Steering at the end of 100,000 characters of ordinary words is found in under a second &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-15</td><td>A rating verb with a risk level followed by a noun is prose, not an instruction; a real instruction still fires &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04b-16</td><td>1.5 MB with 30,000 strong and 30,000 weak hits finishes in under two seconds &mdash; <code>rating-instructions.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04c-01</td><td>The review screen warns, in a status region with a visible "Warning:" lead-in, and quotes at most the first two phrases &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-02</td><td>An ordinary description gets no warning on the review screen &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-03</td><td>The confirmation step repeats a one-line warning on the description path &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-04</td><td>The form path shows no warning anywhere, even when the typed sentence reads like an instruction (no model reads it) &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-05</td><td>Confirming a description-path case records the phrases on the "graph confirmed" event; an ordinary description writes no such field &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-06</td><td>The register's audit line is one fixed sentence for every role, with no quoted phrase &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04c-07</td><td>The verdict is identical with and without the phrases when the graph is the same &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04d-01</td><td>A hand-off bundle made from real app output carries the phrases and round-trips; a bundle without them imports too &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04d-02</td><td>A bundle whose phrases field is the wrong shape is rejected, and nothing is imported &mdash; <code>RatingInstructions.gt7.test.tsx</code></td></tr>
+<tr><td>TC-UC-3-04e</td><td>The same limits paragraph appears in the user guide (both twins), the tester guide and the README &mdash; <code>docs-limits.gt7.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04f</td><td>A quoted phrase containing the decision words is shown without them, so the verdict-screen query for those words stays unambiguous &mdash; <code>plain-copy.rating.test.ts</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="amended-existing-cases">
+<h2>Amended existing cases</h2>
+<table>
+<thead><tr><th>ID</th><th>What changed</th></tr></thead>
+<tbody>
+<tr><td>TC-CF-5-02</td><td>The load error now names the rule id and the field path, and a pack failure joins the start-up gate (the rest in TC-CF-5-02b to -02j above). The test is in <code>packs.test.ts</code>, single-id; it fails against the earlier code. <code>test-cases.md</code> carries an "Amended (GT7, 2026-10-04)" note &mdash; <code>packs.test.ts</code></td></tr>
+<tr><td>TC-RA-7-01</td><td>Split out of the old double-tagged test into its own single-id test; it asserts the pack id and the rule id (<code>BAD-1</code>) are in the reason, and the bad rule is second in the file so the first rule cannot satisfy it &mdash; <code>packs.test.ts</code></td></tr>
+<tr><td>TC-VD-8-01</td><td>Now asserts the request body the SDK mock received, for a verdict from real <code>evaluate()</code> on a pack-forced Critical tier: it contains the track rule's name and id, the base-tier reason, and each chain entry's document, section and derived sentence. The old test, which read back the mock's own prose, is kept and retitled as rendering only &mdash; <code>reasoning-trace.test.ts</code></td></tr>
+<tr><td>TC-RA-9-01</td><td>The EU hiring case now also asserts the chain entry's <code>triggered_by</code> is the decision type "hiring" &mdash; <code>evaluate.test.ts</code></td></tr>
+<tr><td>MUT-4a</td><td>The unsigned-pack-rule mutation test now expects <code>triggered_by</code> on the chain entry, equal to the fixture rule's own condition (the label field and value) &mdash; <code>mutation-gaps.test.ts</code></td></tr>
+<tr><td>TC-UC-3-04</td><td>Manual evidence extended (<code>test-cases.md</code>): the 2026-10-04 live check with the local qwen3:4b model &mdash; a description that dictated its own rating partly steered extraction (data read as internal, Zone A, autonomy 0), giving "approved with controls, High" where the honest reading is a hard-line rejection; the engine rated the cards correctly; light measure built (warning, record, docs); stronger defence open. The case stays partly open (live model steering)</td></tr>
+</tbody>
+</table>
+</section>
+</main>
+</div>
+</body>
+</html>

@@ -297,6 +297,8 @@ interface Verdict extends EvaluationResult {
 }
 ```
 
+**Regulatory chain entries (GT7, 2026-10-04).** `VerdictExplanation.regulatory_chain` (optional — verdicts stored before V2-A lack it) holds one `RegulatoryChainEntry` per fired pack rule: `rule_id`, `document`, `section`, `source_text`, `basis`, `derived`, `sign_off`, and an optional `triggered_by: Array<{ field; value; excluded? }>`. `triggered_by` is filled by `chainEntryFor(rule, derived, pack, graph)` (`jurisdiction.ts`) from `matchedConditionValues(condition, graph)` (`condition.ts`, pure): when the rule's whole condition matches, for each condition field (sorted) the distinct scalar graph values that satisfy it, sorted with a fixed non-locale comparison; `[]` when the condition does not match as a whole or the rule is unconditional; for a `not_in` condition one entry with the excluded values in `excluded`. Candidates are collected by the same function `matchesCondition` uses, so a trigger is never reported that the engine would not fire on (the `jurisdictions` array is one candidate, not a list of scalars). Pack hard-line rejections build their entry the same way. The field is optional so old stored verdicts and hand-off bundles stay valid. TC-RA-9-01b to -01r, TC-PE-1-01 (whole-result determinism covers it).
+
 **Status determination:**
 - `rejected` if any hard line tripped OR control solver returned no satisfying set
 - `approved_with_controls` if tripped invariants exist AND a satisfying control set was found
@@ -418,6 +420,8 @@ interface VerdictTraceData {
 ```
 
 The LLM prompt for reasoning trace construction includes all of these structured fields verbatim and asks the model to write prose that references them — not to interpret or infer. This keeps the trace grounded and auditable (NF-8).
+
+**Amended (GT7, 2026-10-04).** The `VerdictTraceData` above is the original sketch. The shape built today (`buildTraceData`, `src/llm/reasoning-trace.ts`) also carries `track_rationale`, `tier_rationale` (the base tier, labelled so), the regulatory chain entries (`rule_id`, `document`, `section`, `source_text`, `derived`) and `binding_reason` / `binding_regulatory_basis`; see `verdict-audit.md` §7 (P10, TC-VD-8-01).
 
 ---
 
@@ -783,6 +787,7 @@ silently disagree.
 
 | Date | Change |
 |---|---|
+| 2026-10-04 | GT7 — §3.9 gains the regulatory chain entry shape with the optional `triggered_by` and `matchedConditionValues` (P11, TC-RA-9-01b to -01r); §6 notes the explanation's input as now built (P10, TC-VD-8-01). `test-cases-032.md`. |
 | 2026-10-03 | CR6 — §15a amended (C-5): `downstream_review_sources` collapse only entries identical in both `rule_id` and `review`, sorted by `rule_id` then `review`; a shared id with different text keeps both (TC-CR6-C5a, C5c). The unused `emptyExplanation()` helper was inlined at its one call site (no behaviour change; TC-PE-1-01 unchanged). |
 | 2026-10-02 | §15a added — round 16 chunk A1. PE-9: `collectFieldValues` expands an array value into per-element candidates; `describeGraphPath` names every input. Per-instance `downstream_review_sources` populated from all applicable producers at every `evaluate()` return site, with `downstream_reviews` derived from it; the pack hard-line branch (previously set neither field) now mirrors the base hard-line branch. `envelope.ts` exports `DATA_CLASS_RANK`/`maxBy`. |
 | 2026-09-28 | §3.4 amended and §7 point 2 clarified — track assignment uses the policy file's own declared order, not sorted by id (the one deliberate exception among policy collections). Fixes a defect where `evaluate()` sorted `policy.tracks` by id before calling `assignTrack()`, silently defeating the ordering `policy/appetite.yaml` already declares deliberately (oracle rounds 001/002). See `src/engine/track.test.ts` TC-R17-TO-01..05. |

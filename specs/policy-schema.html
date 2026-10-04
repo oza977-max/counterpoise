@@ -673,6 +673,7 @@ rules:
       <li><code>sign_off_date</code> — ISO 8601 date</li>
     </ul>
     <p>A rule missing any of these fields causes the entire pack to be <strong>rejected on load</strong>. The error message identifies the pack ID and the missing field.</p>
+    <p><strong>Amended (GT7, 2026-10-04).</strong> When the first problem is inside a rule, the error message names that rule's id as well: <code>pack &lt;pack-id&gt; rule &lt;rule-id&gt; rejected: missing/invalid field "&lt;path&gt;" — &lt;schema message&gt;</code> (e.g. field path <code>rules.0.source.text</code>; <code>PackLoadError</code> gains an optional <code>ruleId</code>). The rule id is read defensively from the raw document and omitted when it cannot be read (the message then names the pack only, as before). The app shows this text verbatim in the start-up banner and the Appetite framework screen (<code>cross-cutting.md</code> §5, CF-5; TC-CF-5-02, TC-RA-7-01).</p>
 
     <h2 id="typescript-interfaces">TypeScript Interfaces</h2>
 
@@ -862,6 +863,8 @@ export type PackRuleEffect =
         <tr><td>Each rule has <code>sign_off_date</code></td><td><code>pack-invalid: [pack-id] rule [rule-id] missing sign_off_date</code></td></tr>
       </tbody>
     </table>
+
+    <p><strong>Amended (GT7, 2026-10-04).</strong> The <code>pack-invalid: …</code> strings in the table above are the intended wording, not the literal text. What the loader (<code>src/store/packs.ts</code>) produces is one message of the form <code>pack &lt;pack-id&gt; rule &lt;rule-id&gt; rejected: missing/invalid field "&lt;path&gt;" — &lt;schema message&gt;</code>, for the FIRST problem found in the pack (the path says which field; the rule id appears when the path starts <code>rules.&lt;n&gt;</code> and that rule's id is readable). A condition-vocabulary or condition-field problem is reported by a separate branch that already names the pack and the rule. A pack that fails is rejected whole (CF-5, RA-7).</p>
 
     <h3 id="validation-output">Validation output (TypeScript)</h3>
     <pre><code>export type PolicyValidationResult =
@@ -1197,6 +1200,7 @@ export function checkPolicyReferences(
     <table>
       <thead><tr><th>Date</th><th>Change</th></tr></thead>
       <tbody>
+        <tr><td>2026-10-04</td><td>GT7 — §4 and §6 amended: a rejected pack's error message names the rule id as well as the pack and field path (<code>pack &lt;pack-id&gt; rule &lt;rule-id&gt; rejected: missing/invalid field "&lt;path&gt;" — …</code>), and the §6 table is marked as intended wording rather than literal text (TC-CF-5-02, TC-RA-7-01, <code>test-cases-032.md</code>).</td></tr>
         <tr><td>2026-10-04</td><td>CR9 &mdash; code review 009 fixes (TC-CR9-*, <code>test-cases-031.md</code>). The policy screen paragraph (&sect;10d): a save whose queuing fails part-way now refreshes the app's live policy, since the YAML is stored (CR9-03; TC-CR7-06b amended).</td></tr>
         <tr><td>2026-10-04</td><td>CR7 — code review 007 fixes, wave 1 (TC-CR7-*, <code>test-cases-029.md</code>). §10d loader check amended: placeholders are filled only in <code>plain_reason</code> and <code>plain_change</code> and warn elsewhere; error-level references added for <code>controls[].resolves</code>, <code>satisfies_controls</code>, <code>coupled_clusters</code> and pack <code>required_control</code>. §10d gains the policy-screen rules (single-flight Save, the three save outcomes, the per-country sign-off line).</td></tr>
       </tbody>

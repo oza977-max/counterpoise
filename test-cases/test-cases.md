@@ -897,6 +897,8 @@ And the output MUST NOT contain: only internal rule IDs (e.g. "PE-TRACK-2 fired"
 [Trace: src/llm/reasoning-trace.test.ts]
 ```
 
+> Amended (GT7, 2026-10-04): the previously failing clause is now met — the track reason, the tier reason and the regulatory citation reach the model. `src/llm/reasoning-trace.test.ts` `TC-VD-8-01` asserts the request body the SDK mock received, for a verdict from real `evaluate()` on a pack-forced Critical tier: it contains the track rule's name and id, the tier rationale (labelled as the BASE tier) and each chain entry's document, section and derived sentence; `TC-VD-8-01b` covers a hard-line verdict (binding reason and basis) and the 1024-token limit. The earlier test, which read back the mock's own prose, is kept as a rendering-only check. Whether the real model's prose then names these is not asserted here (live model). See `test-cases-032.md`.
+
 ---
 
 ## LC — Use Case Lifecycle
@@ -1156,6 +1158,8 @@ And the output MUST NOT contain: the application loading the invalid pack and pr
 [Trace: src/store/packs.test.ts]
 ```
 
+> Amended (GT7, 2026-10-04): the previously failing clause is now met. The load error names the specific rule id and the field path (`pack SS1-23 rule BAD-1 rejected: missing/invalid field "rules.0.source.text" — …`) — `src/store/packs.test.ts` test `[TC-CF-5-02]`, which fails against the earlier code — and a pack that fails to load now joins the start-up gate: the "Policy file invalid" banner lists the reason for 2LoD and on the Appetite framework screen, evaluation is refused, and nothing is written (TC-CF-5-02b to -02j, `src/components/__tests__/PackGate.gt7.test.tsx`, `PackGate.gt7-other-screens.test.tsx`, `PolicyEditor.packerror.test.tsx`). The wording on screen is the loader's own text, not the sentence in the Then above. See `test-cases-032.md`.
+
 ### TC-CF-5-03: Valid policy file and packs load without error
 ```
 Given the policy file and all regulatory packs are fully valid (all required fields present, all rules have source citations)
@@ -1258,6 +1262,8 @@ And the output MUST NOT contain: the rule loaded and applied silently without ci
 [Trace: src/store/packs.test.ts]
 ```
 
+> Amended (GT7, 2026-10-04): the previously failing clause (the specific rule id in the error) is now met. The old test carried two ids; it is now two single-id tests, `[TC-CF-5-02]` and `[TC-RA-7-01]`, in `src/store/packs.test.ts`, and the RA-7 one puts the bad rule second (`rules.1`) so it cannot pass by reading the first rule. The message is `pack <pack-id> rule <rule-id> rejected: missing/invalid field "<path>" — …` rather than the sentence in the Then above. See `test-cases-032.md`.
+
 ### TC-RA-7-02: Pack rule with complete source block loads successfully
 ```
 Given a rule has a complete source block (document, section, verbatim text)
@@ -1300,6 +1306,8 @@ And the output MUST NOT contain: only "EU AI Act pack fired" without the regulat
 [Requirement: RA-9] [Priority: MUST]
 [Trace: src/engine/evaluate.test.ts]
 ```
+
+> Amended (GT7, 2026-10-04): the previously failing clause ("the specific graph attribute that triggered it") is now met. Each chain entry carries `triggered_by` (the rule's condition fields with the case's own matching values) and the panel shows "Applies because …" in plain words. `src/engine/evaluate.test.ts` `[TC-RA-9-01]` (EU hiring case) asserts `triggered_by` equals `decision_type: hiring`; TC-RA-9-01b to -01r (`evaluate.test.ts`, `condition.test.ts`, `condition.triggered-by.test.ts`, `trigger-copy.test.ts`, `VerdictDisplay.ga-trigger.test.tsx`, `handoff.chain.test.ts`) cover a UK/EU credit case, hard-line entries, plain wording, old verdicts without the field and the hand-off round trip. See `test-cases-032.md`.
 
 ---
 
@@ -1710,7 +1718,7 @@ And the audit trail records the raw description alongside the extracted graph fo
 ```
 
 > Amended (gvm-test 007, 2026-10-04): (a) "the audit trail records the raw description alongside the extracted graph": the trail records the raw description verbatim (use_case_created) and the graph's id, version and every correction (graph_confirmed, graph_corrected); the full extracted graph is deliberately not persisted (ADR-RL-R3-1), so "alongside the graph" means that record. (b) That the language model itself ignores the steering is model behaviour, not code — see the manual evidence below. Current Then (automated): the verdict is decided by the engine from the confirmed graph and is not the Low tier / Track III the description asked for, and the raw steering description is on the trail unchanged.
-> Manual evidence (gvm-test 007): with a real model (an API key, or the local model), submit the Input description with a few operational facts added; check that the extracted cards state those facts rather than the description's own claims (Zone A, autonomy 0, low risk), or mark what the description does not support as "Not in your description" so it becomes a question; and that the verdict follows the cards. The mechanical guard that is automated: a value with no word-for-word quote in the description is "guessed" and becomes a question (R6-PV-2).
+> Manual evidence (gvm-test 007): with a real model (an API key, or the local model), submit the Input description with a few operational facts added; check that the extracted cards state those facts rather than the description's own claims (Zone A, autonomy 0, low risk), or mark what the description does not support as "Not in your description" so it becomes a question; and that the verdict follows the cards. The mechanical guard that is automated: a value with no word-for-word quote in the description is "guessed" and becomes a question (R6-PV-2). 2026-10-04 live check with the local qwen3:4b model: a description that dictated its own rating partly steered extraction (the data was read as internal, Zone A, and autonomy was read as 0), giving "approved with controls, High" where the honest reading is a hard-line rejection; the engine rated the cards it was given correctly, so the fault is in the reading, not the rules. Light measure built (GT7): the rating-instruction warning on the review and confirmation screens, a note in the record, and the limit stated in the docs (TC-UC-3-04b to -04f, `test-cases-032.md`); a stronger defence is open.
 
 ### TC-VD-8-02: LLM reasoning trace rendered as text, never HTML [SECURITY]
 ```
