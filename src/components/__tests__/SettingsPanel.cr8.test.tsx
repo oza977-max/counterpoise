@@ -57,7 +57,9 @@ describe('SettingsPanel — Clear all wording (CR8-16)', () => {
     const user = await openConfirmation();
     await user.click(screen.getByRole('button', { name: /yes, delete everything/i }));
     const text = (await screen.findByText(/not everything could be deleted/i)).textContent ?? '';
-    expect(text).toMatch(/aigate-audit \(blocked\)/);
+    // CR9-14 (amended): plain names, never the database id or its outcome word
+    expect(text).toMatch(/your audit trail/);
+    expect(text).not.toMatch(/aigate-|blocked/);
     expect(text).toMatch(/role/i);
     expect(text).toMatch(/hand-off/i);
     expect(text).toMatch(/welcome/i);
@@ -74,5 +76,33 @@ describe('SettingsPanel — Clear all wording (CR8-16)', () => {
     await actual.clearAllLocalData();
     const removed = before.filter((k) => localStorage.getItem(k) === null).sort();
     expect(removed).toEqual([...CLEARED_LOCAL_STORAGE_KEYS].sort());
+  });
+});
+
+describe('SettingsPanel — incomplete message names data plainly (CR9-14)', () => {
+  const reload = vi.fn();
+  const realLocation = window.location;
+  beforeEach(() => {
+    reload.mockClear();
+    vi.stubGlobal('location', { ...realLocation, reload });
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('TC-CR9-14: both databases incomplete — the message names both in plain words and prints no database id', async () => {
+    vi.mocked(resetStore.clearAllLocalData).mockResolvedValueOnce({
+      complete: false,
+      incomplete: ['aigate-register (blocked)', 'aigate-audit (error)', 'aigate-future (blocked)'],
+    });
+    const user = await openConfirmation();
+    await user.click(screen.getByRole('button', { name: /yes, delete everything/i }));
+    const text = (await screen.findByText(/not everything could be deleted/i)).textContent ?? '';
+    expect(text).toContain('your register of use cases');
+    expect(text).toContain('your audit trail');
+    expect(text).toContain('some stored data');
+    expect(text).not.toMatch(/aigate/);
   });
 });
