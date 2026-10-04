@@ -43,7 +43,7 @@ vi.mock('../../store/pack-source', async (importActual) => {
 });
 
 describe('PolicyEditor — a broken rulebook file explains itself in full', () => {
-  it('TC-CF-5-03: the load error shows the pack, the rule id and the field path as visible text', () => {
+  it('TC-CF-5-02b: the load error shows the pack, the rule id and the field path as visible text', () => {
     render(<PolicyEditor />);
     expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
     const detail = document.querySelector('.policy-view__pack-state-detail');
