@@ -21,3 +21,14 @@ HR3-05 | R3-JU-1 | Weak — no representation distinguishes "not answered" from 
 HR3-06 | R3-JU-2, LC-2 | Missing — 2LoD sign-off behaviour for a Provisional verdict | Defer | 2026-07-29 | Round 3. Deliberate deferral, recorded in the Out of Scope section. Revisit when both causes of Provisional can be observed together.
 HR3-07 | R3-JU-1 | Missing — pre-existing intake drafts bypass the new check | Fix | 2026-07-29 | Round 3. R3-JU-7 added: a draft saved before this round is treated as unanswered. Silent acceptance would reintroduce the defect JU-1 closes.
 HR3-08 | R3-RD-1 | Constraint conflict — rendering the verdict puts "Approved" on the register page | Proceed | 2026-07-29 | Round 3. Not a requirements defect. Carried to the tech spec: tighten the single-match /approved|rejected/i queries before RD-1 lands.
+HR18-01 | R18-GI-3, R18-GI-13 | Weak — a real quote does not prove the answer; steering phrases could ride as the quote | Fix | 2026-10-04 | Round 18. Owner: quote is evidence shown to the person (confirmation is the control); a quote that is itself a rating instruction is never accepted. Amended into R18-GI-3.
+HR18-02 | R18-GI-10 | Inconsistency — old cases "correctable" vs card review retired | Fix | 2026-10-04 | Round 18. Owner: correcting an old case opens the pre-filled form from its recorded answers where they map, description kept, rest blank and marked.
+HR18-03 | R18-GI-1 | Missing — no description length bound | Fix | 2026-10-04 | Round 18. Owner: 8,000 characters; beyond it the model is skipped, the full text kept. New R18-GI-14.
+HR18-04 | R18-MS-1 | Untestable — "cloud tag" undefined | Fix | 2026-10-04 | Round 18. Defined as a name ending :cloud or -cloud.
+HR18-05 | R18-MS-4, R18-NF-1 | Untestable — per-case limit has no value | Fix | 2026-10-04 | Round 18. 60 seconds per case.
+HR18-06 | R18-GI-3 | Missing — tick-all pre-fill unspecified | Fix | 2026-10-04 | Round 18. One verified quote per ticked option.
+HR18-07 | R18-GI-3 | Missing — value outside the options | Fix | 2026-10-04 | Round 18. Discarded like an unverified quote.
+HR18-08 | R18-PS-3 | Weak — examples vs model dependence | Fix | 2026-10-04 | Round 18. No example promises the same pre-fill from every model.
+HR18-09 | R18-GI-1 | Weak — "mentioned" rule unspecified | Acknowledge | 2026-10-04 | Round 18. Technical-spec decision (OQ-5); test cases pin concrete tick / no-tick sentences.
+HR18-10 | OQ-1 | Open — scoring basis of the in-app test | Acknowledge | 2026-10-04 | Round 18. Technical-spec decision; test cases are written at the behaviour level (deterministic per-question table).
+HR18-11 | R18-MS-5, R18-NF-3 | Missing — Clear all data vs saved test results and format mode | Fix | 2026-10-04 | Round 18. Kept with model settings.

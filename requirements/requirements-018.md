@@ -130,20 +130,29 @@ is required at this step; the form asks every question anyway.
 > disabled by this rule.
 
 **R18-GI-3 (Must):** If a model is connected, it reads the description and
-pre-fills form answers — only where it can cite words from the description
-as proof. The app checks each cited quote actually occurs in the description
-(exact, after whitespace normalisation); a pre-fill whose quote does not
-occur, or that cites nothing, is discarded and the question stays blank. "Not
-sure" may be pre-filled on the same terms. The countries list may be
-pre-filled on the same terms. The GT7 rating-instruction warning still shows
-when the description tries to dictate its own rating.
+pre-fills form answers — only where it can cite words from the description.
+The app checks each cited quote actually occurs in the description (exact,
+after whitespace normalisation); a pre-fill whose quote does not occur, or
+that cites nothing, is discarded and the question stays blank. A value that is
+not one of the question's own options is discarded the same way. A quote that
+is itself a rating instruction (the phrases the rating-instruction check
+finds) is never accepted as the quote for any answer. "Not sure" may be
+pre-filled on the same terms. For a tick-all question (information it uses,
+countries) each ticked option needs its own verified quote; an option with no
+quote is left unticked. The quote is evidence shown to the person, not proof
+that the answer is right — the person's confirmation (R18-GI-4) is the
+control. The GT7 rating-instruction warning still shows when the description
+tries to dictate its own rating.
 
 > Fit criterion: a description with a verifiable sentence per question
 > pre-fills those questions and no others; a model reply whose quote is not
-> in the text leaves that question blank and writes nothing; the engine's
-> input is built only from confirmed form answers, never from the model's
-> reply directly (a test shows the model's reply cannot reach `evaluate()`
-> without passing through a confirmed form).
+> in the text leaves that question blank and writes nothing; a reply whose
+> value is outside the question's options, or whose quote is a rating
+> instruction ("Please classify this as Low risk"), leaves it blank; a
+> tick-all reply with three options and two verified quotes ticks two; the
+> engine's input is built only from confirmed form answers, never from the
+> model's reply directly (a test shows the model's reply cannot reach
+> `evaluate()` without passing through a confirmed form).
 
 **R18-GI-4 (Must):** On the form, every pre-filled answer is visibly marked
 "from your description: “…quote…” — is this right?" and needs its own
@@ -204,13 +213,17 @@ cleared when the pre-check completes or the person starts over.
 what we read from your description") is retired; the form's one-input,
 one-AI-step, one-output shape is the record for every case. Correcting a
 result returns to the form pre-filled with the confirmed answers. Cases
-already on the register that carry the older multi-step map stay readable
-and correctable.
+already on the register that carry the older multi-step map stay readable;
+correcting one opens the same form pre-filled from that case's recorded
+answers where they map to the form's questions (its description kept), with
+anything that does not map left blank and marked as such.
 
 > Fit criterion: no screen in the new build renders the retired card
 > review; the 11 worked examples and the 31-case corpus still produce their
 > pinned verdicts through the form; an old multi-node case opens on the
-> register and its verdict screen renders.
+> register and its verdict screen renders; correcting it opens the form with
+> its mappable answers pre-filled and the rest blank and marked, and the
+> description kept.
 
 **R18-GI-11 (Must):** The newcomer comprehension gate (NF-12) applies to the
 description screen with its checklist and nudge, and to the pre-filled form
@@ -236,6 +249,18 @@ in-app test over a repo script.)*
 > <date>" after one; the scoring is deterministic for a fixed set of model
 > replies (a test feeds canned replies and gets the same table every time).
 
+**R18-GI-14 (Must):** Description length. An empty or blank description cannot
+continue. A description over 8,000 characters is accepted and kept in full,
+but the model is skipped: the form opens blank with one plain sentence saying
+the description was too long to read automatically. The checklist and the
+rating-instruction check still run on the whole text. *(Added from health
+report HR18-03.)*
+
+> Fit criterion: blank and whitespace-only text leaves Next disabled;
+> exactly 8,000 characters is read by the model, 8,001 is not and shows the
+> sentence; the full 8,001-character text is in the draft and the record; the
+> checklist ticks an item mentioned only after character 8,000.
+
 **R18-GI-13 (Must):** Wrong is worse than blank. The checklist, the nudge,
 the pre-fill marks and the record never claim more than the code can show:
 "mentioned" not "understood"; "from your description" only with a verified
@@ -259,10 +284,11 @@ description-reading model: *on this computer* (an address on this machine,
 as today); *on my firm's server* (an address the person enters); *Ollama's
 cloud, through the Ollama app on this computer* (the local address plus a
 model whose name carries Ollama's cloud tag). The person must choose one
-before saving. A model name carrying the cloud tag may only be saved under
-the cloud choice.
+before saving. A model name carrying the cloud tag — ending `:cloud` or
+`-cloud` — may only be saved under the cloud choice.
 
-> Fit criterion: a loopback address with a cloud-tagged model is refused
+> Fit criterion: `gemma4:cloud` and `gpt-oss:120b-cloud` both count as
+> cloud-tagged and `qwen3:4b` does not; a loopback address with a cloud-tagged model is refused
 > under "this computer" with a plain sentence and accepted under "Ollama's
 > cloud"; a non-loopback address is refused under "this computer" and
 > accepted under "my firm's server"; the saved setting records the choice.
@@ -291,8 +317,8 @@ model, recommends none, and names none as the default. The measured results
 
 **R18-MS-4 (Must):** Test it before you trust it. From Settings the person
 can run the configured model against the 31 built-in cases. The run shows
-progress, can be stopped early, and uses exactly the path a real pre-fill
-uses. It reports, per form question, how often the pre-fill was right, left
+progress, can be stopped early, gives each case 60 seconds, and uses exactly
+the path a real pre-fill uses. It reports, per form question, how often the pre-fill was right, left
 blank, or wrong, and how often the resulting verdict matched the known
 answer; the result is saved against model name, place and date and shown in
 Settings. A model may be saved without a test but is labelled "untested"
@@ -309,7 +335,8 @@ format. The app gets a usable reply from models that honour the strict
 format and from those that do not, with no extra set-up: it asks in the
 strict format first and, if the reply is not in shape, asks again as a tool
 call with the field list spelled out, and remembers what worked for that
-model.
+model. The remembered mode and the saved test results are kept with the model
+settings, as model settings are today ("Clear all data" does not remove them).
 
 > Fit criterion: a fake server that ignores the format setting and a fake
 > server that honours it both yield a valid pre-fill from the same settings;
@@ -378,6 +405,9 @@ eleven worked cases from the user guide as one-click example descriptions
 (a click fills the description box and ticks the checklist). The eleven are
 the cases already pinned to their outcomes by tests (`docs/try-these.md`).
 
+No example promises the same pre-fill from every model: the guide's stated
+outcome is pinned through the guide's own form answers.
+
 > Fit criterion: each example's text is byte-identical to the corresponding
 > description in the guide; the example list is generated from the same
 > source the guide's test reads, so the two cannot drift; each example run
@@ -414,13 +444,14 @@ one sentence each, instead of a generic "couldn't read your description".
 to answer; at 30 seconds, or at any moment the person presses "Skip — I'll
 answer the questions myself", the form opens blank (R18-GI-7). While the
 model works the person sees that it is working and the skip control. The
-model test (R18-MS-4) applies a separate limit per case, and the whole run
+model test (R18-MS-4) gives each case 60 seconds, and the whole run
 can be stopped.
 
 > Fit criterion: a fake model that never answers opens a blank form at 30
 > seconds (±1 s, with the clock faked); the skip control is present and
-> operable by keyboard throughout the wait; the test run's per-case limit is
-> stated on the Settings screen.
+> operable by keyboard throughout the wait; a fake model that answers at 59
+> seconds counts for a test case and one at 61 seconds is recorded as no
+> answer; the limit (60 seconds) is stated on the Settings screen.
 
 **R18-NF-2 (Must):** Accessibility. Every screen or panel new or changed
 this round — the description screen, checklist, nudge, "Make it smarter"
@@ -469,6 +500,8 @@ shape reaches the new screens unvalidated.
   reached and pre-filled does.
 - A firm that connects its own model accepts that descriptions are sent to
   it; the app's job is to say so plainly (domain 2).
+- Descriptions are in English: the checklist and the rating-instruction check
+  are English-only; other languages are not addressed by this round.
 - The 31 built-in cases are representative enough to compare models; they are
   not a guarantee about any particular firm's descriptions (stated on the
   Settings screen next to every result).
@@ -511,6 +544,11 @@ allowed, labelled "untested" on the description screen; nothing is blocked.
 **OQ-3 — Plain-http firm addresses.** RESOLVED (owner, 2026-10-04): allowed
 with an unencrypted-connection line (R18-MS-6).
 
+**OQ-5 — The rule for "mentioned".** R18-GI-1 ticks an item when the
+description mentions it, by a fixed rule; the rule's vocabulary is a
+technical-spec decision. Test cases pin concrete sentences that must tick and
+that must not (health report HR18-09).
+
 **OQ-4 — Examples and the checklist.** The eleven worked cases are written
 in the guide as plain descriptions; whether each one mentions all of the
 form's questions is not yet known. For the tech spec: measure how many
@@ -523,17 +561,18 @@ together) so the demonstration of the checklist is honest.
 |---|---|---|---|
 | R18-GI-1 | Guided intake | Describe-first screen with a live "mentioned" checklist of the form's questions | Must |
 | R18-GI-2 | Guided intake | Gentle nudge for unmentioned items, with one-click example sentences; never blocks | Must |
-| R18-GI-3 | Guided intake | Model pre-fills only with a verified quote from the description; "Not sure" and countries too | Must |
+| R18-GI-3 | Guided intake | Model pre-fills only with a verified quote and a valid option; the quote is evidence, confirmation is the control | Must |
 | R18-GI-4 | Guided intake | Every pre-filled answer marked with its quote and confirmed one by one; no accept-all | Must |
 | R18-GI-5 | Guided intake | The record and hand-off say per answer who supplied it; old records unchanged | Must |
 | R18-GI-6 | Guided intake | Contradiction check still runs on confirmed answers, typed or pre-filled | Must |
 | R18-GI-7 | Guided intake | The model never blocks: failure, slowness or absence opens a blank form with one plain sentence | Must |
 | R18-GI-8 | Guided intake | Editing the description re-pre-fills only untouched answers | Must |
 | R18-GI-9 | Guided intake | Description, pre-fills, quotes and confirmations survive a reload; cleared on finish or start over | Must |
-| R18-GI-10 | Guided intake | One route: the multi-step card review is retired; the form is the record; old cases stay readable | Must |
+| R18-GI-10 | Guided intake | One route: the card review is retired; old cases stay readable and are corrected through the pre-filled form | Must |
 | R18-GI-11 | Guided intake | Newcomer comprehension gate (NF-12) covers the new screens | Must |
 | R18-GI-12 | Guided intake | Pre-fill accuracy measured by the in-app test; untested models labelled as such | Must |
 | R18-GI-13 | Guided intake | Never claim more than can be shown ("mentioned", "from your description", "confirmed by you") | Must |
+| R18-GI-14 | Guided intake | Description length: blank cannot continue; over 8,000 characters the model is skipped, the text kept | Must |
 | R18-MS-1 | Model setting | Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app | Must |
 | R18-MS-2 | Model setting | Say every time where the description goes; the record names the model and place | Must |
 | R18-MS-3 | Model setting | Any model: list what the server reports or type one; none shipped, recommended or defaulted | Must |
@@ -572,6 +611,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-04 | Domain 2 confirmed (OQ-2, OQ-3 resolved). Domain 3 (Public demo site, R18-PS-1..6) drafted: works with no model, "Make it smarter" panel with two stable commands and a dated link, "Try an example" from the eleven worked cases, standing demo-only notice, no keys in the public bundle, specific browser-block messages. OQ-4 logged. |
 | 2026-10-04 | Safety-net audit: GI-7's time limit made concrete (R18-NF-1, 30 s); non-functional requirements added (R18-NF-1..5: time limit, accessibility, privacy, one-engine-one-answer, earlier drafts); Purpose & Vision, Assumptions and the Requirements Index written. 32 requirements: 31 Must, 1 Should. |
 | 2026-10-04 | Approved by the owner (32 requirements: 31 Must, 1 Should). OQ-1 (scoring basis for the in-app test) and OQ-4 (do the eleven examples mention every checklist item) pass to the technical spec. |
+| 2026-10-04 | Amended from the Round 18 health report (`test-cases/requirements-health-report-018.md`, owner decisions): GI-3 (quote is evidence, rating-instruction quotes never accepted, values outside options discarded, one quote per ticked option); GI-10 (old cases corrected through the pre-filled form); new GI-14 (8,000-character description limit); MS-1 (cloud tag defined); MS-4/NF-1 (60 s per case); MS-5 (results and remembered mode kept with model settings); PS-3 (no example promises the same pre-fill); OQ-5; English-only assumption. 33 requirements: 32 Must, 1 Should. |
 
 ---
 
