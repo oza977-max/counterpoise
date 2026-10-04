@@ -22,7 +22,7 @@ describe('loadPacks (V2-A)', () => {
     expect(packs.every((p) => p.rules.length >= 1)).toBe(true);
   });
 
-  it('rejects a WHOLE pack when a rule is missing a required field, naming pack and field (CF-5/RA-7) [TC-CF-5-02] [TC-RA-7-01]', () => {
+  it('[TC-CF-5-02] rejects a WHOLE pack when a rule is missing a required field, naming pack, rule id and field (CF-5)', () => {
     const bad = `
 pack_id: "BAD-PACK"
 version: "1.0"
@@ -53,6 +53,43 @@ rules:
     expect(errors).toHaveLength(1);
     expect(errors[0]?.packId).toBe('BAD-PACK');
     expect(errors[0]?.reason).toMatch(/rules\.0\.source\.text/);
+    expect(errors[0]?.reason).toContain('BAD-PACK');
+    expect(errors[0]?.reason).toContain('BAD-1');
+    expect(errors[0]?.ruleId).toBe('BAD-1');
+  });
+
+  it('[TC-RA-7-01] a pack with a rule missing its source citation is refused, naming the pack and the rule id (RA-7)', () => {
+    const bad = `
+pack_id: "BAD-PACK"
+version: "1.0"
+jurisdiction: "UK"
+regulator: "PRA"
+document: "Doc"
+effective_date: "2026-01-01"
+reviewer_name: "X"
+reviewer_role: "Y"
+sign_off_date: "2026-01-01"
+rules:
+  - id: "BAD-1"
+    title: "Missing source text"
+    source:
+      document: "Doc"
+      section: "S1"
+    effect:
+      type: "required_review"
+      review: "R"
+    condition: {}
+    basis: "verbatim"
+    reviewer_name: "X"
+    reviewer_role: "Y"
+    sign_off_date: "2026-01-01"
+`;
+    const { packs, errors } = loadPacks({ 'bad.yaml': bad });
+    expect(packs).toEqual([]);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.packId).toBe('BAD-PACK');
+    expect(errors[0]?.reason).toContain('pack BAD-PACK rule BAD-1 rejected');
+    expect(errors[0]?.reason).toContain('BAD-1');
   });
 
   it('review fix, pass 1: a rule whose condition uses a bad operator or non-canonical value rejects the WHOLE pack', () => {
