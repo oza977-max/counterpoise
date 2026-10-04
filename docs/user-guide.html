@@ -348,37 +348,40 @@
     <p><strong>Shortcut for a demo:</strong> in the sidebar, <strong>Demo data → Load sample use cases</strong> seeds six worked examples spanning Low to Critical, in and out of appetite, all scored by the real engine.</p>
 
     <h2 id="how-to-read-a-verdict">How to read a verdict</h2>
-    <p>The verdict screen is dense on purpose. Read it in this order.</p>
+    <p>The result screen opens with a short, plain first screen. Below it is a collapsed section headed <strong>"The full reasoning — every rule checked, the evidence, the sources, and the reviewer's actions"</strong>. A 2LoD reviewer sees it open; a submitter opens it by clicking. Read it in this order.</p>
 
-    <h3 id="the-banner-above-the-verdict">1. The banner above the verdict, if there is one</h3>
-    <p>A <strong>Provisional</strong> banner means jurisdiction-pack rules were applied that your firm has not adopted. It names each one. This is not a warning about quality — it is a statement that a rule was used which no qualified person at your firm has yet signed. See <a href="#what-provisional-means">What "provisional" means</a>.</p>
+    <h3 id="the-first-screen">1. The first screen</h3>
+    <p>A headline, then <strong>Why:</strong> in a sentence, then <strong>Your next steps</strong>, then <strong>Safeguards that must be in place before you start</strong> with the count, then <strong>Checks other teams run</strong>, then <strong>Who signs off:</strong>, then <strong>Could still change</strong>. A submitter can act from this screen alone; everything below it is the working behind it.</p>
 
-    <h3 id="the-verdict-line">2. The verdict line</h3>
-    <p>One of three outcomes, plus the tier, the track, and the <strong>binding constraint</strong> — the single invariant that is doing the most work. If you only read one line, read the binding constraint: it tells you what would have to change for the answer to change.</p>
+    <h3 id="the-banners-if-there-are-any">2. The banners, if there are any</h3>
+    <p>Inside the full reasoning, a <strong>Provisional — review required before this is final</strong> banner means a rule was used that your firm has not adopted, or that no regulatory basis was found. It lists the causes, and says who it is waiting on. This is not a warning about quality — it is a statement that a rule was used which no qualified person at your firm has yet signed. A <strong>Review overdue</strong> banner means a pack's source text was last retrieved longer ago than its window allows. See <a href="#what-provisional-means">What "provisional" means</a>.</p>
 
-    <h3 id="why-this-verdict">3. Why this verdict</h3>
-    <p>The tier and track each name the rule that set them and the regulation behind that rule. Below them, every triggered invariant is listed with its severity, what it requires, and its regulatory basis.</p>
-    <p>The footer here matters: <em>"Evaluated against 5 hard lines and 18 invariants — 6 triggered."</em> That is the denominator. It tells you the size of the check that was run, not just what came back.</p>
+    <h3 id="the-verdict-line">3. The verdict line</h3>
+    <p>The <strong>Verdict</strong> heading gives one of three outcomes — Approved, Approved with controls, or Rejected — plus the tier and the track, and a <strong>Decided by</strong> line naming the <strong>binding constraint</strong>: the rule that decided the case (the hard line that was crossed, or the most severe rule that tripped). If you only read one line, read that one.</p>
 
-    <h3 id="governance-margin">4. Governance margin</h3>
-    <p>How much headroom the control set leaves. The important part is the <strong>no headroom</strong> list: invariants closed by exactly one control. Remove that one control and the use case falls outside appetite. These are the fragile points in the approval, and they are the right thing to ask about in a committee.</p>
+    <h3 id="why-this-verdict">4. Why this verdict</h3>
+    <p>The tier and track each name the rule that set them and the regulation behind that rule. Below them, every triggered invariant is listed, grouped by severity, with what it requires and its regulatory basis.</p>
+    <p>The footer here matters: <em>"Evaluated against 5 hard lines and 23 firm rules (invariants) — 6 triggered."</em> (the counts are those of the policy in use, and the 6 depends on the case). That is the denominator. It tells you the size of the check that was run, not just what came back.</p>
 
-    <h3 id="platform-and-vendor-inheritance">5. Platform and vendor inheritance</h3>
-    <p>If you named an approved platform, this shows what its approval already covered and, dimension by dimension, where your use case falls outside that envelope — with the cleared value and your value side by side. <em>"Cleared for Confidential; this use case has Client PII"</em> is a complete argument for why nothing was inherited.</p>
+    <h3 id="how-fragile-is-this-approval">5. How fragile is this approval?</h3>
+    <p>How much margin the control set leaves. The important part is the <strong>Resting on a single control</strong> list: rules closed by exactly one control. Remove that one control and the use case falls outside appetite. These are the fragile points in the approval, and they are the right thing to ask about in a committee.</p>
 
-    <h3 id="the-regulatory-reasoning-chain">6. The regulatory reasoning chain</h3>
+    <h3 id="the-regulatory-reasoning-chain">6. Regulatory reasoning — the rules from law</h3>
     <p>For each jurisdiction rule that fired: the verbatim source text, what was derived from it, whether that derivation <strong>states</strong> the quoted text or <strong>infers</strong> from it, and the sign-off behind it.</p>
     <p><strong>Read the quoted text against the derivation.</strong> That is the check this section exists to make possible. An inference is not a defect — but it is something a person should agree with rather than inherit.</p>
 
-    <h3 id="the-minimal-control-set">7. The minimal control set</h3>
+    <h3 id="the-control-set-with-evidence-status">7. The control set, with evidence status</h3>
     <p>The smallest set of controls that holds the appetite margin — solved, not suggested. Each control names the invariants it patches.</p>
     <p>Each also carries an evidence status. <strong>UNVERIFIED means exactly what it says:</strong> the policy carries no evidence that this control is in place. It is not a failure and not an accusation; it is the absence of a claim.</p>
 
-    <h3 id="standing-conditions">8. Standing conditions</h3>
+    <h3 id="what-could-go-wrong-and-when-this-expires">8. What could go wrong — and when this expires</h3>
     <p>The operating bounds this verdict assumes. Nothing to action today — they are recorded as the verdict's expiry conditions. If the system later drifts outside any bound, or its deployment changes zone or autonomy, the verdict no longer applies and re-assessment is required.</p>
     <p>In V1 these are checked at re-review. Watching them live is V2, and the screen says so.</p>
 
-    <h2 id="what-the-honesty-markers-mean">What the honesty markers mean</h2>
+    <h3 id="platform-and-supplier-inheritance">9. Platform &amp; supplier inheritance</h3>
+    <p>Near the end, under the record of what you told us. If you named an approved platform or supplier, this shows what its approval already covered and, dimension by dimension, where your use case falls outside that envelope — with the cleared value and your value side by side. <em>"Cleared for Confidential; this use case has Client PII"</em> is a complete argument for why nothing was inherited.</p>
+
+<h2 id="what-the-honesty-markers-mean">What the honesty markers mean</h2>
     <p>Counterpoise is built not to claim more than it can prove. These markers are the mechanism, and none of them is a bug.</p>
     <table>
       <thead>
@@ -433,7 +436,7 @@
     </table>
 
     <h2 id="what-provisional-means">What "provisional" means</h2>
-    <p>Start with the distinction that unlocks it: <strong>the app is never rule-less; it is authority-less until a human claims it.</strong> Out of the box it carries a complete working ruleset — 5 hard lines, 18 invariants, full tiering — and produces real verdicts with zero configuration. What no tool can ship is <em>authority</em>: nobody at your firm has yet said "these rules are ours." Until someone does, verdicts are stamped provisional. Same rules, same verdicts — adoption removes only the stamp.</p>
+    <p>Start with the distinction that unlocks it: <strong>the app is never rule-less; it is authority-less until a human claims it.</strong> Out of the box it carries a complete working ruleset — 5 hard lines, 23 invariants, full tiering — and produces real verdicts with zero configuration. What no tool can ship is <em>authority</em>: nobody at your firm has yet said "these rules are ours." Until someone does, verdicts are stamped provisional. Same rules, same verdicts — adoption removes only the stamp.</p>
     <p>A verdict is provisional when it relied on a rule your firm has not adopted.</p>
     <p>Every shipped jurisdiction pack carries <code>[FIRM]</code> sign-off placeholders, because Counterpoise does not interpret regulations on your behalf. A bank that tells its supervisor "our AI interpreted SS1/23" does not have a defensible answer. A qualified person has to stand behind every regulatory determination.</p>
 
@@ -508,7 +511,7 @@
     <ol>
       <li>Open <strong>Appetite framework</strong>. The policy is shown in full, with the hard lines and every declared jurisdiction pack.</li>
       <li>Edit the YAML. <strong>Validate</strong> checks it before you can save; a file missing a required field cannot be used, and a pack rule without a source citation is rejected on load.</li>
-      <li>Save. Affected use cases are queued for re-evaluation, and the policy version increments.</li>
+      <li>Change the <code>version</code> field at the top of the file to say the rules have changed, then save. Active use cases are queued for re-evaluation. Saving does not change the version for you — if you leave it, new verdicts will record the old version number.</li>
     </ol>
     <p>Verdicts already issued are <strong>not</strong> rewritten. Each records the policy version and the version of every pack active at the time, so a decision made in March still reads as the decision that was made in March.</p>
     <p>Start by adjusting the materiality tiers to match your actual thresholds. That is where most of the difference between the template and your framework lives.</p>

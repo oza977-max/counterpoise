@@ -74,48 +74,56 @@ scored by the real engine.
 
 ## How to read a verdict
 
-The verdict screen is dense on purpose. Read it in this order.
+The result screen opens with a short, plain first screen. Below it is a
+collapsed section headed **"The full reasoning — every rule checked, the
+evidence, the sources, and the reviewer's actions"**. A 2LoD reviewer sees it
+open; a submitter opens it by clicking. Read it in this order.
 
-### 1. The banner above the verdict, if there is one
+### 1. The first screen
 
-A **Provisional** banner means jurisdiction-pack rules were applied that your
-firm has not adopted. It names each one. This is not a warning about quality —
-it is a statement that a rule was used which no qualified person at your firm
-has yet signed. See *[What "provisional" means](#what-provisional-means)*.
+A headline, then **Why:** in a sentence, then **Your next steps**, then
+**Safeguards that must be in place before you start** with the count, then
+**Checks other teams run**, then **Who signs off:**, then **Could still
+change**. A submitter can act from this screen alone; everything below it is
+the working behind it.
 
-### 2. The verdict line
+### 2. The banners, if there are any
 
-One of three outcomes, plus the tier, the track, and the **binding
-constraint** — the single invariant that is doing the most work. If you only
-read one line, read the binding constraint: it tells you what would have to
-change for the answer to change.
+Inside the full reasoning, a **Provisional — review required before this is
+final** banner means a rule was used that your firm has not adopted, or that
+no regulatory basis was found. It lists the causes, and says who it is waiting
+on. This is not a warning about quality — it is a statement that a rule was
+used which no qualified person at your firm has yet signed. A **Review
+overdue** banner means a pack's source text was last retrieved longer ago than
+its window allows. See *[What "provisional" means](#what-provisional-means)*.
 
-### 3. Why this verdict
+### 3. The verdict line
+
+The **Verdict** heading gives one of three outcomes — Approved, Approved with
+controls, or Rejected — plus the tier and the track, and a **Decided by** line
+naming the **binding constraint**: the rule that decided the case (the hard
+line that was crossed, or the most severe rule that tripped). If you only read
+one line, read that one.
+
+### 4. Why this verdict
 
 The tier and track each name the rule that set them and the regulation behind
-that rule. Below them, every triggered invariant is listed with its severity,
-what it requires, and its regulatory basis.
+that rule. Below them, every triggered invariant is listed, grouped by
+severity, with what it requires and its regulatory basis.
 
-The footer here matters: *"Evaluated against 5 hard lines and 18 invariants —
-6 triggered."* That is the denominator. It tells you the size of the check that
-was run, not just what came back.
+The footer here matters: *"Evaluated against 5 hard lines and 23 firm rules
+(invariants) — 6 triggered."* (the counts are those of the policy in use, and
+the 6 depends on the case). That is the denominator. It tells you the size of
+the check that was run, not just what came back.
 
-### 4. Governance margin
+### 5. How fragile is this approval?
 
-How much headroom the control set leaves. The important part is the **no
-headroom** list: invariants closed by exactly one control. Remove that one
+How much margin the control set leaves. The important part is the **Resting on
+a single control** list: rules closed by exactly one control. Remove that one
 control and the use case falls outside appetite. These are the fragile points
 in the approval, and they are the right thing to ask about in a committee.
 
-### 5. Platform and vendor inheritance
-
-If you named an approved platform, this shows what its approval already covered
-and, dimension by dimension, where your use case falls outside that envelope —
-with the cleared value and your value side by side. *"Cleared for
-Confidential; this use case has Client PII"* is a complete argument for why
-nothing was inherited.
-
-### 6. The regulatory reasoning chain
+### 6. Regulatory reasoning — the rules from law
 
 For each jurisdiction rule that fired: the verbatim source text, what was
 derived from it, whether that derivation **states** the quoted text or
@@ -125,7 +133,7 @@ derived from it, whether that derivation **states** the quoted text or
 exists to make possible. An inference is not a defect — but it is something a
 person should agree with rather than inherit.
 
-### 7. The minimal control set
+### 7. The control set, with evidence status
 
 The smallest set of controls that holds the appetite margin — solved, not
 suggested. Each control names the invariants it patches.
@@ -134,7 +142,7 @@ Each also carries an evidence status. **UNVERIFIED means exactly what it
 says:** the policy carries no evidence that this control is in place. It is not
 a failure and not an accusation; it is the absence of a claim.
 
-### 8. Standing conditions
+### 8. What could go wrong — and when this expires
 
 The operating bounds this verdict assumes. Nothing to action today — they are
 recorded as the verdict's expiry conditions. If the system later drifts outside
@@ -143,6 +151,14 @@ applies and re-assessment is required.
 
 In V1 these are checked at re-review. Watching them live is V2, and the screen
 says so.
+
+### 9. Platform & supplier inheritance
+
+Near the end, under the record of what you told us. If you named an approved
+platform or supplier, this shows what its approval already covered and,
+dimension by dimension, where your use case falls outside that envelope — with
+the cleared value and your value side by side. *"Cleared for Confidential; this
+use case has Client PII"* is a complete argument for why nothing was inherited.
 
 ---
 
@@ -168,7 +184,7 @@ mechanism, and none of them is a bug.
 
 Start with the distinction that unlocks it: **the app is never rule-less; it
 is authority-less until a human claims it.** Out of the box it carries a
-complete working ruleset — 5 hard lines, 18 invariants, full tiering — and
+complete working ruleset — 5 hard lines, 23 invariants, full tiering — and
 produces real verdicts with zero configuration. What no tool can ship is
 *authority*: nobody at your firm has yet said "these rules are ours." Until
 someone does, verdicts are stamped provisional. Same rules, same verdicts —
@@ -280,8 +296,10 @@ step-by-step conversion guide.)
 2. Edit the YAML. **Validate** checks it before you can save; a file missing a
    required field cannot be used, and a pack rule without a source citation is
    rejected on load.
-3. Save. Affected use cases are queued for re-evaluation, and the policy
-   version increments.
+3. Change the `version` field at the top of the file to say the rules have
+   changed, then save. Active use cases are queued for re-evaluation. Saving
+   does not change the version for you — if you leave it, new verdicts will
+   record the old version number.
 
 Verdicts already issued are **not** rewritten. Each records the policy version
 and the version of every pack active at the time, so a decision made in March
