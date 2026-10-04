@@ -1998,7 +1998,7 @@ describe('planCorrectionWrites — which corrections are already on the trail, a
 // the graph still holds the value it assumed. BC-004 converse: every action
 // that can make a carried assumption untrue must remove or narrow it.
 // ---------------------------------------------------------------------------
-describe('intakeReducer — a card edit narrows or removes the assumption it makes untrue (CR8-01, P2)', () => {
+describe('intakeReducer — a card edit removes the assumption it makes untrue (CR8-01, P2; whole, CR9 OB-1)', () => {
   const corrected = (node_id: string, field: string): GraphCorrection => ({
     correction_id: `c-${field}`,
     graph_version_before: 1,
@@ -2091,9 +2091,18 @@ describe('intakeReducer — a card edit narrows or removes the assumption it mak
       updatedGraph: graph({ version: 2, jurisdictions: ['UK'] }),
     });
     expect(listed(after)).toEqual([A_JUR, A_REV]);
+    // CR9 OB-1 (countries clause of TC-CR9-OB1): question 11 survives a countries edit even when other
+    // assumptions are dropped whole around it.
+    const withQ6 = intakeReducer(confirmation([A_JUR, A_Q6]), { type: 'CHANGE_ANSWER' });
+    const after2 = intakeReducer(withQ6, {
+      type: 'JURISDICTIONS_SET',
+      correction: corrected('graph', 'jurisdictions'),
+      updatedGraph: graph({ version: 2, jurisdictions: ['UK'] }),
+    });
+    expect(listed(after2).map((a) => a.questionId)).toEqual(['11', '6']);
   });
 
-  it('TC-CR8-01j: a different assumption that lists the jurisdictions field is still narrowed by a countries edit (only question 11 is exempt)', () => {
+  it('TC-CR8-01j: a different assumption that lists the jurisdictions field is dropped whole by a countries edit; only question 11 stays (CR9 OB-1)', () => {
     const other: Assumption = { ...A_JUR, questionId: 'x-other', fields: ['jurisdictions', 'scale'] };
     const review = intakeReducer(confirmation([other, A_JUR]), { type: 'CHANGE_ANSWER' });
     const after = intakeReducer(review, {
@@ -2101,10 +2110,7 @@ describe('intakeReducer — a card edit narrows or removes the assumption it mak
       correction: corrected('graph', 'jurisdictions'),
       updatedGraph: graph({ version: 2, jurisdictions: ['UK'] }),
     });
-    expect(listed(after).map((a) => [a.questionId, a.fields])).toEqual([
-      ['x-other', ['scale']],
-      ['11', ['jurisdictions']],
-    ]);
+    expect(listed(after).map((a) => [a.questionId, a.fields])).toEqual([['11', ['jurisdictions']]]);
   });
 
   it('TC-CR8-01e: an edit to a DIFFERENT field keeps the assumption, with its fields untouched', () => {
@@ -2112,16 +2118,25 @@ describe('intakeReducer — a card edit narrows or removes the assumption it mak
     expect(listed(out)).toEqual([A_REV, A_Q6, A_Q3]);
   });
 
-  it('TC-CR8-01f: a Q6 assumption plus ONE autonomy edit keeps the other three fields listed', () => {
+  // CR9 OB-1 (amended 01f / 01g / 01j): an edit to a field an assumption covers removes the WHOLE
+  // assumption. Narrowing kept a sentence that still named the edited field ("we assumed autonomy ...").
+  it('TC-CR8-01f: a Q6 assumption plus ONE autonomy edit drops the whole Q6 assumption (CR9 OB-1: no narrowing)', () => {
     const out = editThenConfirm(viaChangeAnswer(), 'p1', 'autonomy_level');
-    const q6 = listed(out).find((a) => a.questionId === '6');
-    expect(q6?.fields).toEqual(['action_type', 'decision_bindingness', 'hitl']);
+    expect(listed(out).map((a) => a.questionId)).toEqual(['field:output_reversibility', '3']);
   });
 
-  it('TC-CR8-01g: a Q3 assumption plus a vendor edit keeps data_zone listed', () => {
+  it('TC-CR8-01g: a Q3 assumption plus a vendor edit drops the whole Q3 assumption (CR9 OB-1: no narrowing)', () => {
     const out = editThenConfirm(viaChangeAnswer(), 'p1', 'vendor');
-    const q3 = listed(out).find((a) => a.questionId === '3');
-    expect(q3?.fields).toEqual(['data_zone']);
+    expect(listed(out).map((a) => a.questionId)).toEqual(['field:output_reversibility', '6']);
+  });
+
+  it('TC-CR9-OB1: a four-field Q6 assumption is gone after an autonomy edit; an unrelated edit leaves every assumption whole', () => {
+    expect(A_Q6.fields).toHaveLength(4);
+    expect(A_Q6.fields).toContain('autonomy_level');
+    const edited = editThenConfirm(viaChangeAnswer(), 'p1', 'autonomy_level');
+    expect(listed(edited).some((a) => a.questionId === '6')).toBe(false);
+    const unrelated = editThenConfirm(viaChangeAnswer(), 'p1', 'label');
+    expect(listed(unrelated)).toEqual([A_REV, A_Q6, A_Q3]);
   });
 
   it('TC-CR8-01h: an assumption from an older draft with no fields cannot be matched, so any card edit drops it', () => {
