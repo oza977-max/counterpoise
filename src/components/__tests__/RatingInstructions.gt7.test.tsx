@@ -132,7 +132,7 @@ describe('GT7 L-1 — rating instructions in a description (P12)', () => {
     expect(line.closest('[role="status"]')!.textContent).toMatch(/^Warning:/);
     // GB pass-2 I3: honest wording, no claim the cards are clean.
     expect(line.closest('[role="status"]')!.textContent).toContain(
-      'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card above before confirming.',
+      'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.',
     );
     expect(line.closest('[role="status"]')!.textContent).not.toMatch(/comes only from|as shown above/i);
   });

@@ -27,7 +27,8 @@
 // rate/score/grade + it/this; a rating wording nobody has listed yet (the
 // check does not catch every wording); a generic verb with a bare level
 // ("keep it low") or a bare level followed by more words ("rate this low
-// because ..."). This is a light measure, not a guarantee (L-1).
+// because ..."); "give/make this a ... rating/case" forms; a bare "Track III"
+// followed by more words ("Track I accounts"). This is a light measure, not a guarantee (L-1).
 //
 // Performance: the WHOLE text is scanned, in overlapping windows (linear), and
 // every whitespace run in a pattern is bounded, so newline-heavy input cannot
@@ -51,15 +52,24 @@ const MODAL =
 const PRE = `(?:${START}|\\b${MODAL}|\\b(?=(?:please|kindly)\\b))`;
 // Genuine rating verbs (a bare level word is fine after these, at a clause end).
 const RATING_VERBS = 'classify|categori[sz]e|rate|score|grade|treat|consider|label|mark';
-// Generic verbs (only with a rating noun: risk / tier / zone / autonomy / track).
-const GENERIC_VERBS = 'make|keep|use|set|put|give|return|output|file|assign|tag';
+// Generic verbs (only with a rating noun). Everyday verbs (make/keep/use/put) count only with
+// "<level> risk" — "Use it in Zone A", "Keep it Tier 2" are ordinary prose.
+const SOFT_VERBS = 'make|keep|use|put';
+const STRONG_GENERIC_VERBS = 'give|return|output|set|file|assign|tag';
+const GENERIC_VERBS = `${SOFT_VERBS}|${STRONG_GENERIC_VERBS}`;
 const VERBS = `${RATING_VERBS}|${GENERIC_VERBS}`;
 const OBJ =
   '(?:(?:this|it)(?:\\s{1,5}(?:use\\s{1,5}case|case|tool|system|request))?|the\\s{1,5}(?:case|tool|system|use\\s{1,5}case|ai|model|application|solution))';
-const PREP = '(?:(?:as|at|to\\s{1,5}be|to|into|in)(?:\\s{1,5}|\\s{0,3}:\\s{0,3})(?:an?\\s{1,5})?)';
+const PREP_BASE = '(?:as|at|to\\s{1,5}be|to|into|in)(?:\\s{1,5}|\\s{0,3}:\\s{0,3})';
+const PREP = `(?:${PREP_BASE}(?:an?\\s{1,5})?)`;
+// With and without an article: "as a high risk project plan" has a noun after the level,
+// so the article form counts only at a clause end.
+const PREP_NA = `(?:${PREP_BASE})`;
+const PREP_A = `(?:${PREP_BASE}an?\\s{1,5})`;
 // An optional opening quote before the rating ("as 'low risk'").
 const QL = '[\'"“‘]?';
 // A rating: a tier/risk level, a numbered tier, a zone, an autonomy level, self-service.
+const RISK_LEVEL = '(?:low|medium|high|critical)[\\s-]{1,3}risk\\b';
 const RATING_WORD =
   '(?:(?:low|medium|high|critical)[\\s-]{1,3}(?:risk|tier)\\b|tier\\s{1,3}[1-4]\\b|zone\\s{1,3}[ABC]\\b|autonomy(?:\\s{1,3}level)?\\s{1,3}\\d\\b|self-service\\b)';
 // A bare level / verdict word.
@@ -89,7 +99,12 @@ const SPECS: Spec[] = [
   // "Please classify this as Low risk" / "Classify as high tier" / "Treat the AI as low risk" —
   // a genuine rating verb with a rating (risk level / tier / zone / autonomy / self-service).
   {
-    re: new RegExp(`${PRE}(${PLEASE}?(?:${RATING_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP}?|${PREP})${QL}${RATING_WORD})`, 'gi'),
+    re: new RegExp(`${PRE}(${PLEASE}?(?:${RATING_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP_NA}?|${PREP_NA})${QL}${RATING_WORD})`, 'gi'),
+    group: 1,
+    accept: ZONE_CAPITAL,
+  },
+  {
+    re: new RegExp(`${PRE}(${PLEASE}?(?:${RATING_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP_A}|${PREP_A})${QL}${RATING_WORD})${CLAUSE_END}`, 'gi'),
     group: 1,
     accept: ZONE_CAPITAL,
   },
@@ -100,9 +115,13 @@ const SPECS: Spec[] = [
   },
   // "Set this to Low risk" / "Assign it Tier 1" — a generic verb counts only with a rating noun, at a clause end.
   {
-    re: new RegExp(`${PRE}(${PLEASE}?(?:${GENERIC_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP}?|${PREP})${QL}${RATING_WORD})${CLAUSE_END}`, 'gi'),
+    re: new RegExp(`${PRE}(${PLEASE}?(?:${STRONG_GENERIC_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP}?|${PREP})${QL}${RATING_WORD})${CLAUSE_END}`, 'gi'),
     group: 1,
     accept: ZONE_CAPITAL,
+  },
+  {
+    re: new RegExp(`${PRE}(${PLEASE}?(?:${SOFT_VERBS})\\s{1,5}(?:${OBJ}\\s{1,5}${PREP}?|${PREP})${QL}${RISK_LEVEL})${CLAUSE_END}`, 'gi'),
+    group: 1,
   },
   // "Do not rate this as high risk." — steering away from a rating is still steering.
   {
@@ -193,7 +212,12 @@ const SPECS: Spec[] = [
     group: 1,
   },
   // Case-sensitive on purpose: "Track III", not "track invoices"; not "Track Inventory".
-  { re: /\b(Track\s{1,3}(?:III|II|I))(?![A-Za-z/])/g, group: 1 },
+  // Bare, so it counts only at a clause end ("The tool is Track III." / "…, Track III, Zone A") —
+  // "Track I accounts are premium" has a noun after it.
+  {
+    re: new RegExp(`\\b(Track\\s{1,3}(?:III|II|I))(?![A-Za-z/])${CLAUSE_END}`, 'g'),
+    group: 1,
+  },
   // "it is (basically) harmless" — descriptive on its own; counts only beside a rating instruction
   // in the same sentence, or when directly followed by one ("…harmless, so treat it as …").
   {
@@ -255,7 +279,18 @@ export function findRatingInstructions(input: string): string[] {
   // Weak hits ("it is harmless") count only beside a strong hit in the same
   // sentence, or when a directive follows them directly. The sentence is looked
   // for within 500 characters either side (keeps this linear on huge inputs).
-  const strong = hits.filter((h) => !h.weak);
+  const strongStarts = hits.filter((h) => !h.weak).map((h) => h.start).sort((x, y) => x - y);
+  // First index whose start is > x (binary search).
+  const firstAfter = (x: number): number => {
+    let lo = 0;
+    let hi = strongStarts.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (strongStarts[mid]! > x) hi = mid;
+      else lo = mid + 1;
+    }
+    return lo;
+  };
   const kept = hits.filter((h) => {
     if (!h.weak) return true;
     if (FOLLOWED_BY_DIRECTIVE.test(full.slice(h.end, h.end + 40))) return true;
@@ -271,7 +306,8 @@ export function findRatingInstructions(input: string): string[] {
     const rest = full.slice(h.end, h.end + 500);
     const m = /[.!?\n]/.exec(rest);
     const sentEnd = m ? h.end + m.index : Math.min(n, h.end + 500);
-    return strong.some((o) => o.start > sentStartAbs && o.start < sentEnd);
+    const i = firstAfter(sentStartAbs);
+    return i < strongStarts.length && strongStarts[i]! < sentEnd;
   });
   kept.sort((a, b) => a.start - b.start || b.end - a.end);
 
