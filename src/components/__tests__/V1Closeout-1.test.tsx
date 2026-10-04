@@ -320,7 +320,7 @@ describe('V1 close-out 1 — verdict and register screens', () => {
     };
   }
 
-  it('TC-CS-1-02b: a verdict whose library offers no alternatives says plainly the margin is 0%, below the policy target, and that the rulebook is the limit', () => {
+  it('a verdict whose library offers no alternatives says plainly the margin is 0%, below the policy target, and that the rulebook is the limit [TC-CS-1-02b]', () => {
     const oneEach: PolicyFile = {
       ...policy,
       safety_margin: 0.1,
