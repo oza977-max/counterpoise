@@ -333,7 +333,7 @@ describe('Walking Skeleton', () => {
     expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('P4-C04: writes graph_confirmed then verdict_produced to the audit trail, in order, before showing the verdict (TC-UC-6-01/02/03)', async () => {
+  it('P4-C04: writes graph_confirmed then verdict_produced to the audit trail, in order, before showing the verdict [TC-UC-6-01]', async () => {
     const uniqueLabel = 'audit ordering check model';
     mockCreate.mockResolvedValueOnce({
       content: [
@@ -401,6 +401,17 @@ describe('Walking Skeleton', () => {
     expect(new Date(events[1]!.occurred_at).getTime()).toBeLessThanOrEqual(new Date(events[2]!.occurred_at).getTime());
 
     expect(events[0]!.actor).toBe('1LoD'); // actor is the documented hardcoded-role placeholder (identity on the creation record)
+
+    // gvm-test 007 close-out [TC-UC-6-01]: the confirmation record itself
+    // carries all three fields the case names — who, when, which graph version.
+    const confirmed = events[1]!;
+    expect(confirmed.actor).toBe('1LoD');
+    expect(Number.isNaN(Date.parse(confirmed.occurred_at))).toBe(false);
+    expect(confirmed.payload.type).toBe('graph_confirmed');
+    if (confirmed.payload.type === 'graph_confirmed') {
+      expect(confirmed.payload.graph_version).toBe(1);
+      expect(confirmed.payload.graph_id).toBeTruthy();
+    }
 
     const verdictPayload = events[2]!.payload;
     expect(verdictPayload.type).toBe('verdict_produced');

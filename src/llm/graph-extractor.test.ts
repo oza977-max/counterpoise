@@ -91,7 +91,7 @@ describe('extractGraph — response validation (P4-C01 review finding: real Zod 
     localStorage.setItem('aigate:api-key', 'test-key');
   });
 
-  it('rejects a response whose node uses a near-miss value outside the canonical vocabulary [TC-UC-3-04]', async () => {
+  it('rejects a response whose node uses a near-miss value outside the canonical vocabulary', async () => {
     mockCreate.mockResolvedValueOnce({
       content: [
         {

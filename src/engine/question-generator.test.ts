@@ -27,7 +27,7 @@ function graph(overrides: Partial<DataFlowGraph> = {}): DataFlowGraph {
 }
 
 describe('generateQuestions', () => {
-  it('an uncertain node whose field is referenced by an invariant generates a targeted question [TC-UC-4-04]', () => {
+  it('an uncertain node whose field is referenced by an invariant generates a targeted question', () => {
     const g = graph({
       input_nodes: [{ id: 'i1', label: 'notes', data_class: 'Client PII', data_zone: 'Zone A' }],
       processing_nodes: [

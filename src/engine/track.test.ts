@@ -90,7 +90,7 @@ describe('track totality (oracle round 001)', () => {
   ] as const;
   const BINDINGNESS = ['non-binding', 'advisory', 'material', 'binding'] as const;
 
-  it('routes every model_type x decision_bindingness pair at autonomy 0-2, replacement or not [TC-PE-2-02]', () => {
+  it('routes every model_type x decision_bindingness pair at autonomy 0-2, replacement or not', () => {
     const policyFile = loadPolicy(
       readFileSync(resolve(__dirname, '../../policy/appetite.yaml'), 'utf-8'),
     );
