@@ -266,7 +266,7 @@ describe('MUT-4: pack hard-line rejection verdict', () => {
         source_text: 'The regulation says so.',
         basis: 'verbatim',
         derived: 'Hard-line rejection: This is not allowed in the UK.',
-        triggered_by: [], // this fixture rule is unconditional (GT7 D-3)
+        triggered_by: [{ field: 'label', value: 'proc' }], // the fixture rule's condition (GT7 D-3)
         sign_off: '[name] · pending firm adoption',
       },
     ]);
