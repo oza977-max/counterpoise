@@ -659,6 +659,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // genuinely new use case from a duplicate waved through. Written against
     // the CANDIDATE's trail, because that is the record a later reader is
     // looking at when they ask why there are two of these.
+    // GB pass-1: deliberately NOT behind checkPolicyGate() — dismissing a
+    // match records a human decision about the inventory; it is not an evaluation.
     if (duplicateMatch) {
       const candidate = duplicateMatch;
       // Final review M-1: only THIS single append can fail as "your choice
@@ -746,6 +748,15 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
 
   async function handleAdoptClassification() {
     if (state.step !== 'duplicate_check' || !duplicateMatch) return;
+    // GB pass-1 I1: adopting writes a register record and verdict-bearing
+    // audit events, so it sits behind the same gate as evaluation — a broken
+    // rules file or pack means nothing is written. Checked before the
+    // in-flight flag is set, so a refusal leaves the button usable.
+    const gateError = checkPolicyGate();
+    if (gateError) {
+      setDecisionError(gateError);
+      return;
+    }
     // The audit trail is append-only; a double-click cannot be cleaned up
     // afterwards (same guard as the 2LoD actions, RegisterDetail.tsx:76).
     if (adoptInFlight.current) return;
