@@ -35,7 +35,7 @@ interface VerdictDisplayProps {
   registerStage?: LifecycleStage;
   // UC-11, register path: the caller (RegisterDetail) has no graph, so it
   // decides from the register's own links (registerSaysNoModelNamed) whether
-  // "No model was named" is provable. Ignored when `graph` is present.
+  // "No AI model is recorded" is provable. Ignored when `graph` is present.
   noModelNamed?: boolean;
   // Optional since P8-C06. register-lifecycle.md §15.1b: the sign-off page
   // reuses this component, and correction is a submitter action
@@ -1528,7 +1528,7 @@ export default function VerdictDisplay({ verdict, auditEvents, policy, graph, re
           processing nodes (declared_model_id); with no graph (the register
           path does not keep it) nothing is claimed either way. */}
       {(graph ? graph.processing_nodes.length > 0 && !graph.processing_nodes.some((n) => n.declared_model_id) : noModelNamed === true) && (
-        <p className="verdict__no-model-named">No model was named — your AI risk team may ask which one it uses.</p>
+        <p className="verdict__no-model-named">No AI model is recorded for this use case — your AI risk team may ask which one it uses.</p>
       )}
       {/* R12-ST-1: an undismissable statement of fact, in the same honesty
           idiom as the PROVISIONAL banner but its own block — staleness never

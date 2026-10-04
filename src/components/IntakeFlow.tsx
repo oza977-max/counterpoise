@@ -1683,7 +1683,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           console.error('Counterpoise: the model link for this case could not be written:', err);
           // A second failure must not break a confirm whose case is already saved:
           // log it and carry on. Residual (accepted): with neither the edge nor
-          // the flag written, the register may later say "No model was named".
+          // the flag written, the register may later say "No AI model is recorded".
           try {
             await updateUseCaseVerdictSummary(useCaseId, { modelLinkUnrecorded: true });
           } catch (flagErr) {

@@ -178,7 +178,7 @@ export interface VerdictView {
 
 /** UC-11 on the register path (CR7-11). The register keeps no graph, but the
  *  first confirmation writes a `uses_model` edge exactly when a model was
- *  declared (addUseCaseModelLink). So "no model was named" may be said only
+ *  declared (addUseCaseModelLink). So "no AI model is recorded" may be said only
  *  when ALL of these hold; any other case says nothing rather than guess:
  *   - the edges were read (`edges` defined — a failed read is not "none");
  *   - no `uses_model` edge exists;
