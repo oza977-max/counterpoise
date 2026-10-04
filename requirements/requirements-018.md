@@ -2,7 +2,7 @@
 
 ## Round 18 — One set of questions: describe, pre-fill, confirm
 
-**Status: DRAFT COMPLETE — awaiting owner approval (2026-10-04).** Owner-led round after `/gvm-test 007`.
+**Status: APPROVED by the owner (2026-10-04) — next: `/gvm-test-cases`.** Owner-led round after `/gvm-test 007`.
 Scope: the written-description path and the guided form become one route
 (describe → the connected model pre-fills the form's answers, with proof →
 the person confirms each pre-filled answer and answers the rest → the same
@@ -571,6 +571,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-04 | Domain 1 confirmed by the owner. Domain 2 (Model setting, R18-MS-1..8) drafted: three declared places, honest notice, any model with an in-app 31-case test instead of a recommended model (owner's call), automatic format fallback, firm-server connection honesty, plain words for server failures. R18-GI-12 amended to point at the in-app test. OQ-1..3 logged. |
 | 2026-10-04 | Domain 2 confirmed (OQ-2, OQ-3 resolved). Domain 3 (Public demo site, R18-PS-1..6) drafted: works with no model, "Make it smarter" panel with two stable commands and a dated link, "Try an example" from the eleven worked cases, standing demo-only notice, no keys in the public bundle, specific browser-block messages. OQ-4 logged. |
 | 2026-10-04 | Safety-net audit: GI-7's time limit made concrete (R18-NF-1, 30 s); non-functional requirements added (R18-NF-1..5: time limit, accessibility, privacy, one-engine-one-answer, earlier drafts); Purpose & Vision, Assumptions and the Requirements Index written. 32 requirements: 31 Must, 1 Should. |
+| 2026-10-04 | Approved by the owner (32 requirements: 31 Must, 1 Should). OQ-1 (scoring basis for the in-app test) and OQ-4 (do the eleven examples mention every checklist item) pass to the technical spec. |
 
 ---
 
