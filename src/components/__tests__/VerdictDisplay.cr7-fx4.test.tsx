@@ -128,9 +128,9 @@ describe('VerdictDisplay — CR7-40: evidence typed into the policy file is not 
   });
 });
 
-describe('VerdictDisplay — CR7-11: "No model was named"', () => {
+describe('VerdictDisplay — CR7-11 / CR9-04: the no-model-recorded line', () => {
   const policy = realPolicy();
-  const LINE = 'No model was named — your AI risk team may ask which one it uses.';
+  const LINE = 'No AI model is recorded for this use case — your AI risk team may ask which one it uses.';
 
   it('TC-CR7-11a: shown in the reviewer section when no processing node names a model', () => {
     const g = graphFor(undefined, undefined);
@@ -140,19 +140,30 @@ describe('VerdictDisplay — CR7-11: "No model was named"', () => {
     expect(container.querySelector('.verdict__reviewer-body')!.textContent).toContain(LINE);
   });
 
+  it('TC-CR9-04: an in-house form case with no model renders the neutral sentence and never the old "No model was named"', () => {
+    const g = graphFor(undefined, undefined);
+    const verdict = verdictFrom(g, policy);
+    const { container } = render(<VerdictDisplay verdict={verdict} auditEvents={[]} policy={policy} graph={g} reasoningDefaultOpen />);
+    expect(container.textContent).toContain(LINE);
+    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toMatch(/was named/i);
+  });
+
   it('TC-CR7-11b: absent when a model is named (BC-005 false case)', () => {
     const g = graphFor(undefined, undefined);
     g.processing_nodes[0]!.declared_model_id = 'qwen3:4b';
     const verdict = verdictFrom(g, policy);
     const { container } = render(<VerdictDisplay verdict={verdict} auditEvents={[]} policy={policy} graph={g} reasoningDefaultOpen />);
-    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toContain(LINE);
+    expect(container.querySelector('.verdict__no-model-named')).toBeNull();
   });
 
   it('TC-CR7-11c: absent when there is no graph to read (the register path cannot say none was named)', () => {
     const g = graphFor(undefined, undefined);
     const verdict = verdictFrom(g, policy);
     const { container } = render(<VerdictDisplay verdict={verdict} auditEvents={[]} policy={policy} reasoningDefaultOpen />);
-    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toContain(LINE);
+    expect(container.querySelector('.verdict__no-model-named')).toBeNull();
   });
 });
 

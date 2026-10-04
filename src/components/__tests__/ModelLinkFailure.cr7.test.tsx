@@ -6,7 +6,7 @@ import RegisterDetail from '../RegisterDetail';
 import * as registerModule from '../../store/register';
 import { getUseCases } from '../../store/register';
 
-// Review pass 2, M-1. The register says "No model was named" when a case has no
+// Review pass 2, M-1. The register says "No AI model is recorded for this use case" when a case has no
 // uses_model edge. The link is written AFTER the use-case node (writing it first
 // stranded a case whose verdict was already on the trail). If the link write
 // fails the case is saved and flagged model_link_unrecorded, and the register
@@ -19,6 +19,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
   },
 }));
 
+const NO_MODEL_LINE = 'No AI model is recorded for this use case — your AI risk team may ask which one it uses.';
 const BASE = 'The Alpha tool built in-house drafts text. A person checks each one. It replaces no earlier model.';
 // The store persists across the tests of this file, so each test describes its own case.
 let DESC = BASE;
@@ -96,7 +97,7 @@ describe('IntakeFlow — a failed model-link write never strands a case (review 
     vi.restoreAllMocks();
   });
 
-  it('TC-CR7-11h: the link write fails, the case IS saved (no dead end), flagged model_link_unrecorded, and the register never claims "No model was named"', async () => {
+  it('TC-CR7-11h: the link write fails, the case IS saved (no dead end), flagged model_link_unrecorded, and the register never says no AI model is recorded', async () => {
     const user = userEvent.setup();
     mockCreate.mockResolvedValue(extraction());
     const confirm = await reachConfirm(user);
@@ -119,7 +120,8 @@ describe('IntakeFlow — a failed model-link write never strands a case (review 
     const view = render(<RegisterDetail useCaseId={row!.use_case_id} role="2LoD" onBack={() => {}} />);
     await view.findByText(/← register/i);
     await new Promise((res) => setTimeout(res, 100));
-    expect(view.container.textContent).not.toContain('No model was named');
+    expect(view.container.textContent).not.toContain(NO_MODEL_LINE);
+    expect(view.container.querySelector('.verdict__no-model-named')).toBeNull();
   }, 40000);
 
   it('TC-CR7-11j: the link write AND the flag write both reject — the verdict still shows and the case is saved', async () => {

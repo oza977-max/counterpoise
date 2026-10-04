@@ -13,12 +13,12 @@ import type { Verdict } from '../../types/verdict';
 // UC-11 on the register path (CR7-11, coordinator follow-up). The register
 // keeps no graph, but it can tell whether a model was named: the first
 // confirmation writes an `ai_model` node and a `uses_model` edge only when one
-// was declared. Rule the screen follows — it says "No model was named" only
+// was declared. Rule the screen follows — it says "No AI model is recorded" only
 // when ALL hold: the links loaded; no uses_model edge; the case was created
 // after model links shipped (2026-08-18) so a missing edge means "none"; and
 // no correction on the trail named a model later (a correction writes no link).
 // Anything else shows nothing rather than a claim it cannot support.
-const LINE = 'No model was named — your AI risk team may ask which one it uses.';
+const LINE = 'No AI model is recorded for this use case — your AI risk team may ask which one it uses.';
 
 function policy() {
   const r = loadPolicy(appetiteYaml);
@@ -84,7 +84,7 @@ async function renderAndWait(id: string) {
   return r;
 }
 
-describe('RegisterDetail — "No model was named" on the register path (UC-11)', () => {
+describe('RegisterDetail — the no-model-recorded line on the register path (UC-11)', () => {
   it('TC-CR7-11d: a case with no uses_model edge shows the line', async () => {
     const id = await seed({});
     const { container } = await renderAndWait(id);
@@ -94,18 +94,21 @@ describe('RegisterDetail — "No model was named" on the register path (UC-11)',
   it('TC-CR7-11e: a case whose model was linked does NOT show it (BC-005 false case, real addUseCaseModelLink)', async () => {
     const id = await seed({ declaredModel: 'qwen3:4b', link: true });
     const { container } = await renderAndWait(id);
-    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toContain(LINE);
+    expect(container.querySelector('.verdict__no-model-named')).toBeNull();
   });
 
   it('TC-CR7-11f: a case from before model links existed cannot be told apart from "none named" — nothing is claimed', async () => {
     const id = await seed({ createdAt: '2026-07-01T00:00:00.000Z' });
     const { container } = await renderAndWait(id);
-    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toContain(LINE);
+    expect(container.querySelector('.verdict__no-model-named')).toBeNull();
   });
 
   it('TC-CR7-11g: a model named in a later correction (which writes no link) — nothing is claimed', async () => {
     const id = await seed({ correctionToModel: true });
     const { container } = await renderAndWait(id);
-    expect(container.textContent).not.toContain('No model was named');
+    expect(container.textContent).not.toContain(LINE);
+    expect(container.querySelector('.verdict__no-model-named')).toBeNull();
   });
 });

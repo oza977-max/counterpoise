@@ -270,7 +270,7 @@ describe('wave-1 follow-up — one approved-model resolution rule', () => {
 });
 
 describe('registerSaysNoModelNamed — a link write that failed (pass 2, M-1)', () => {
-  it('TC-CR7-11i: model_link_unrecorded means "cannot tell" — never "no model was named"', async () => {
+  it('TC-CR7-11i: model_link_unrecorded means "cannot tell" — never "no AI model is recorded"', async () => {
     const { registerSaysNoModelNamed } = await import('./verdict-view-model');
     const base = { useCaseCreatedAt: '2026-10-02T00:00:00.000Z', edges: [], events: [] as AuditEvent[] };
     expect(registerSaysNoModelNamed(base)).toBe(true);
