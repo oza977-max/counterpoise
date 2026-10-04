@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateReasoningTrace, buildTraceData } from './reasoning-trace';
 import type { Verdict } from '../types/verdict';
-import type { Control } from '../engine/types';
+import type { Control, DataFlowGraph, PolicyFile } from '../engine/types';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { loadPolicy } from '../store/policy';
+import { loadPacks } from '../store/packs';
+import { getPackSources } from '../store/pack-source';
+import { evaluate } from '../engine/evaluate';
 
 function makeVerdict(overrides: Partial<Verdict> = {}): Verdict {
   return {
@@ -87,12 +93,32 @@ describe('buildTraceData', () => {
   });
 });
 
+function realPackForcedCriticalVerdict(): { verdict: Verdict; library: Control[] } {
+  const loaded = loadPolicy(readFileSync(resolve(__dirname, '../../policy/appetite.yaml'), 'utf-8'));
+  if (!loaded.valid) throw new Error('fixture policy invalid');
+  const policy: PolicyFile = loaded.policy;
+  const { packs, errors } = loadPacks(getPackSources());
+  if (errors.length > 0) throw new Error('fixture packs invalid');
+  const g: DataFlowGraph = {
+    id: 'g1', version: 1, input_nodes: [],
+    processing_nodes: [{ id: 'p1', label: 'cv screener', model_type: 'ml', autonomy_level: 1, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false }],
+    output_nodes: [{ id: 'o1', label: 'shortlist', action_type: 'recommend', exposure: 'internal-shared', decision_bindingness: 'material', output_reversibility: 'reversible', scale: 'at_scale', decision_type: 'hiring' }],
+    edges: [], jurisdictions: ['EU'], intake_method: 'structured_form', extracted_at: '2026-01-01T00:00:00.000Z',
+  };
+  const r = evaluate(g, policy, packs);
+  if (!r.ok) throw new Error('evaluate failed');
+  return {
+    verdict: makeVerdict({ ...r.value }),
+    library: policy.controls as Control[],
+  };
+}
+
 describe('generateReasoningTrace', () => {
   beforeEach(() => {
     mockCreate.mockClear();
   });
 
-  it('TC-VD-8-01: returns prose containing a regulatory citation when the policy description includes one', async () => {
+  it('renders the mocked prose (rendering only: this reads back the mock\'s own text and proves nothing about what the model was told)', async () => {
     const trace = buildTraceData(makeVerdict(), CONTROL_LIBRARY, 'SS1/23 §3.4 requires independent validation.');
     const result = await generateReasoningTrace(trace, 'test-key');
 
@@ -104,6 +130,57 @@ describe('generateReasoningTrace', () => {
     const callArgs = mockCreate.mock.calls[0]![0];
     expect(callArgs.messages[0].content).toContain('You are a regulatory documentation assistant');
     expect(callArgs.messages[0].content).toContain('Write the reasoning trace.');
+  });
+
+  it('TC-VD-8-01: the input handed to the model carries the track reason, the tier reason and the pack citation that forced the tier (P10)', async () => {
+    const { verdict, library } = realPackForcedCriticalVerdict();
+    // Preconditions: the verdict really is pack-forced and really has rationales.
+    expect(verdict.tier).toBe('Critical');
+    expect(verdict.explanation.track_rationale).not.toBeNull();
+    expect(verdict.explanation.tier_rationale).not.toBeNull();
+    const chain = verdict.explanation.regulatory_chain ?? [];
+    expect(chain.length).toBeGreaterThan(0);
+
+    await generateReasoningTrace(buildTraceData(verdict, library, 'binding'), 'test-key');
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const sent: string = mockCreate.mock.calls[0]![0].messages[0].content;
+
+    const trackName = verdict.explanation.track_rationale!.rule_name!;
+    expect(trackName.length).toBeGreaterThan(0);
+    expect(sent).toContain(trackName);
+    expect(sent).toContain(verdict.explanation.track_rationale!.rule_id);
+    expect(sent).toContain(verdict.explanation.tier_rationale!.rule_id);
+    expect(sent).toContain('tier_rationale');
+    // The pack-forced tier's citation lives in the chain.
+    expect(sent).toContain(chain[0]!.document);
+    expect(sent).toContain(chain[0]!.section);
+    expect(sent).toContain(chain[0]!.derived);
+    expect(sent).toContain(chain[0]!.rule_id);
+  });
+
+  it('TC-VD-8-01b: a hard-line verdict (no tier/track rationale) still hands the model the binding reason and its regulatory basis, and the call allows 1024 tokens', async () => {
+    const trace = buildTraceData(
+      makeVerdict({
+        explanation: {
+          tier_rationale: null,
+          track_rationale: null,
+          hard_lines_checked: 1,
+          invariants_checked: 0,
+          tripped_invariants: [],
+          binding_reason: 'MNPI must never reach Zone A',
+          binding_regulatory_basis: 'Market Abuse Regulation Art. 14',
+        },
+      }),
+      CONTROL_LIBRARY,
+      'd',
+    );
+    expect(trace.track_rationale).toBeNull();
+    expect(trace.tier_rationale).toBeNull();
+    await generateReasoningTrace(trace, 'test-key');
+    const body = mockCreate.mock.calls[0]![0];
+    expect(body.messages[0].content).toContain('MNPI must never reach Zone A');
+    expect(body.messages[0].content).toContain('Market Abuse Regulation Art. 14');
+    expect(body.max_tokens).toBe(1024);
   });
 
   it('returns no-api-key error cleanly when no key is configured, without throwing', async () => {
