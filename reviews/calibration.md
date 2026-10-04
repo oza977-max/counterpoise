@@ -46,6 +46,7 @@ against.
 | — | 2026-10-04 | build loop | CR8 fix round — plan checked before code (17 problems in v1); fresh Sonnet reviewer per pass per chunk | 0 | 1 | — | FX8-1 `[(1,0)]`; FX8-2 `[(1,0)]`; FX8-3 `[(1,1),(2,0)]` — converged; all Minors fixed; builders stated the P1–P5 properties in code and the reviewers attacked them (a 2000-run planner probe, a 192-combination sign-off probe). One chair instruction reverted on builder evidence (O(n) check per append) |
 | 9 | 2026-10-04 | code | A,B,C,D,E,G ×2 (DUAL: calibrated + blind) + F (assembled stub prompt) + EBT linter + 1 fresh-context verifier | 0 | 2 | 13 | **Merge with caveats** (review of the CR8 fix round 4aea27e..a2fe323, 45 commits / 20 production files + docs. P1–P5 held under attack by every panel; E, F and the EBT view found nothing. 2 Important: the user guide's false "self-service final" self-approval claim (6 panels) and "What you need to do: Nothing." under a confirm-the-sign-off headline (4 panels, 2 render probes). 13 Minor: O-4/O-5 promised in the plan and dropped (chair's miss), README chain over-claim, guide/tester-guide claims the app does not show, 2 spec html twins, Clear-all incomplete path, a try-these pin. 1 disputed Important sent to a verifier with a reducer probe → unreachable → Observation. Capture-recapture ≈98% (shared prompts; small population). Owner triage: fix both I, all 13 M, and OB-1 properly (drop, not narrow); OB-2..9 recorded) |
 | — | 2026-10-04 | build loop | CR9 fix round — plan checked before code (18 problems in v1); fresh Sonnet reviewer per pass per chunk | 0 | 1 | — | FX9-1 `[(1,1),(2,0)]`; FX9-2 `[(1,0)]` — converged; all Minors fixed. The plan check caught the same false self-approval claim in two more docs and test guards that a reword would have made vacuous. Handover lists every id's disposition (BC-006, first use). Next: /gvm-test |
+| 7 | 2026-10-04 | test | full mode (1,298 cases walked; Stryker on 6 engine files; live walkthrough both roles + local model) | 0 | 4 | — | **Demo-ready** (gvm_verdict.evaluate: VV-2(a) FAIL, all else PASS/N/A. The run's main finding was the evidence: round-1 traces had been overstated by test-006 — only 33/116 first-round cases were fully proved by the test naming them; all 116 closed out (~30 retags, ~70 new tests, ~25 open amendments); later rounds sampled 125 → 120 proved, 5 fixed. 4 MUST product defects found: D-1 pack error lacked rule id + evaluation not stopped, D-2 explanation input lacked track/tier reasons, D-3 chain lacked trigger, L-1 demo model steerable by a self-rating description — owner: fix D-1..3 + light measure for L-1 (GT7, converged GA [(1,0),(1b,0),(2,0)], GB [(1,2),(1b,2),(2,3),(3,0)]); TC-UC-3-04 live clause open. Mutation 78.85% → important survivors killed (MUT-1..12). Suite flakiness traced to host load (load avg up to 52), not code: 3× green on a quiet machine + CI. Calibration parser cannot read this file (expects "## Score History") — rows appended by hand) |
 
 ## Round 1 measurements
 
@@ -1058,6 +1059,20 @@ round 8 ≈52%). Both sets used the same common prompt, so treat as "small remai
   published docs (README, user guide, tester guide) as surfaces of the same fact.
 - RF-2 twin drift again (CR9-08, CR9-09): the parity script still reads .md only — third round.
 - New BC-006: every plan item ends in the handover as done (with its test) or not taken (with a reason).
+
+## Test round 7 (2026-10-04) — /gvm-test 007
+
+**Anchor (worst, evidence):** a test whose TITLE names a case is not proof of the case. test-006's "158/158 traced,
+each matched against Given/When/Then" did not survive an independent read: 83 of 116 first-round cases were only
+partly proved or not at all (ids on tests of something else; assertions that read back a mock; fixtures that could
+not exercise the clause). Title-tag tracing (trace-check) is necessary, not sufficient.
+**Anchor (best, verification):** a disputed defect settled by a property test over every shipped pack rule × the
+case corpus (triggered_by ⇔ the engine fired) — it also caught a second bug the reviewer had not named.
+**Recurring:** BC-005 (the warning copy over-claimed twice before it was honest); detector precision needed three
+review passes — rule-based language detection is a defect magnet, bound its scope early.
+**Promotion candidate (BC-007):** every acceptance case's proof is reviewed against its Given/When/Then when the case
+is first traced, and a sample (≥10%, all MUST) is re-read at every /gvm-test; a title tag alone is never evidence.
+**Environment:** local full-suite results are only evidence on a quiet machine (load ≤ cores); otherwise use CI.
 
 ## Parity Check History
 
