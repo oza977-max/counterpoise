@@ -70,6 +70,20 @@ reviewer_name: "X"
 reviewer_role: "Y"
 sign_off_date: "2026-01-01"
 rules:
+  - id: "GOOD-1"
+    title: "Complete rule"
+    source:
+      document: "Doc"
+      section: "S0"
+      text: "Quoted text"
+    effect:
+      type: "required_review"
+      review: "R"
+    condition: {}
+    basis: "verbatim"
+    reviewer_name: "X"
+    reviewer_role: "Y"
+    sign_off_date: "2026-01-01"
   - id: "BAD-1"
     title: "Missing source text"
     source:
@@ -87,6 +101,7 @@ rules:
     const { packs, errors } = loadPacks({ 'bad.yaml': bad });
     expect(packs).toEqual([]);
     expect(errors).toHaveLength(1);
+    expect(errors[0]?.reason).toMatch(/rules\.1\.source\.text/);
     expect(errors[0]?.packId).toBe('BAD-PACK');
     expect(errors[0]?.reason).toContain('pack BAD-PACK rule BAD-1 rejected');
     expect(errors[0]?.reason).toContain('BAD-1');
