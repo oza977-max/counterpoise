@@ -687,7 +687,7 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
       setSummary(s ?? null);
       setEvents(evs);
       // UC-11: the case's own links. A failed read leaves it undefined — which
-      // registerSaysNoModelNamed treats as "cannot tell", never as "none".
+      // registerSaysNoModelNamed treats as "cannot tell" (so no "No AI model is recorded" line), never as "none".
       try {
         const { nodes, edges } = await getGraph(useCaseId);
         const own = nodes.find((n) => n.node_id === useCaseId);

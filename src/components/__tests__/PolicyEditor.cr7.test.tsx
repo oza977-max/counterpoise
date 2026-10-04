@@ -187,9 +187,31 @@ describe('PolicyEditor save (CR7-06)', () => {
     expect(alert.textContent).toMatch(/saving again is safe/i);
     expect(alert.closest('[role="alert"]')).not.toBeNull();
     expect(alert.textContent).not.toMatch(/disk full|Error:/);
-    expect(onSaved).not.toHaveBeenCalled();
+    // CR9-03 (amended): the YAML WAS stored, so the app must pick up the new rules — onSaved fires once.
+    expect(onSaved).toHaveBeenCalledTimes(1);
     // not stuck: Save is usable again
     expect(screen.getByRole('button', { name: /^save$/i })).toBeEnabled();
+  });
+});
+
+describe('PolicyEditor save — a part-failed save still tells the app (CR9-03)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    packHolder.rewrite = undefined;
+  });
+
+  it('TC-CR9-03: onPolicyUpdated rejects — onSaved is called exactly once and the save-failed message is shown', async () => {
+    vi.mocked(policyStore.onPolicyUpdated).mockRejectedValueOnce(new Error('queue failed'));
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<PolicyEditor onSaved={onSaved} />);
+    await openYamlEditor(user);
+    const textarea = screen.getByLabelText(/policy yaml/i);
+    await user.clear(textarea);
+    await user.paste(MINIMAL_VALID_POLICY_YAML);
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(await screen.findByText(/did not finish/i)).toBeInTheDocument();
+    expect(onSaved).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -21,13 +21,25 @@ import { ibCaseCount, seedIbPortfolio } from '../seeds/ib-portfolio';
 
 type Busy = 'none' | 'seeding' | 'seeding-ib' | 'clearing';
 
+// CR9-14: a person reads "your audit trail", never a database id. reset.ts keeps its result shape
+// (`<database id> (<outcome>)`); the mapping lives here, where the words are chosen. An id this map does
+// not know prints as "some stored data" — a raw id can never reach the screen.
+const PLAIN_STORE_NAMES: Record<string, string> = {
+  'aigate-audit': 'your audit trail',
+  'aigate-register': 'your register of use cases',
+};
+function plainStoreName(entry: string): string {
+  const id = entry.split(' (')[0]!.trim();
+  return PLAIN_STORE_NAMES[id] ?? 'some stored data';
+}
+
 // Demo-space model configuration (user decision 2026-08-17): ONE generic
 // model slot, no vendor-specific key field. The cloud-SDK code path still
 // exists behind getApiKey() but has no UI — it never ran live, the local
 // open model has, and a demo should show the thing that works. A firm
 // deployment points the same slot at a stronger model inside its own
 // boundary (design-vision: models are swappable, the corpus is the moat).
-export default function SettingsPanel() {
+export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => void } = {}) {
   const [busy, setBusy] = useState<Busy>('none');
   // Local open-model provider (2026-08-16). URL presence IS the enabled flag.
   const [localUrl, setLocalUrl] = useState(getLocalLlmUrl() ?? DEFAULT_LOCAL_LLM_URL);
@@ -114,8 +126,10 @@ export default function SettingsPanel() {
         // Code review 001, I-3: a blocked delete used to resolve as success
         // and the UI reported a clean reset over surviving data. Say so.
         setBusy('none');
+        // CR9-13: the message says the role was cleared, so the header must stop showing the old one.
+        onRoleReset?.();
         setMessage(
-          `Not everything could be deleted: ${result.incomplete.join(', ')}. ` +
+          `Not everything could be deleted: ${[...new Set(result.incomplete.map(plainStoreName))].join(', ')}. ` +
             'Your unsaved intake drafts, selected role, hand-off sync record and welcome-panel dismissal were cleared; the data listed was not. ' +
             'This usually means Counterpoise is open in another tab. Close the others and the delete may still finish on its own; if the data is still there afterwards, try again.'
         );

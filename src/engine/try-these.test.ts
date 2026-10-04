@@ -5,6 +5,9 @@ import { loadPolicy } from '../store/policy';
 import { loadPacks } from '../store/packs';
 import { evaluate } from './evaluate';
 import { buildGraphFromForm } from './build-graph-from-form';
+import { plainAnswersToFormValues } from './plain-intake';
+import { optionKeyForText } from '../components/plain-copy';
+import type { PlainAnswers, QuestionId } from '../components/plain-copy';
 import type { StructuredFormValues } from './build-graph-from-form';
 import type { JurisdictionPack, PolicyFile } from './types';
 
@@ -114,24 +117,17 @@ describe('docs/try-these.md — every printed outcome', () => {
     expect(v.controls).toHaveLength(0);
   });
 
-  it('case 7: the same idea outside the envelope inherits nothing and costs 8 controls [TC-PV-8-01]', () => {
+  it('case 7: the same idea outside the envelope inherits nothing and costs 6 controls [TC-PV-8-01]', () => {
     const v = run({ ...base, inputDataClass: 'Client PII', inputDataZone: 'Zone B', modelType: 'llm',
       autonomyLevel: 1, processingDataZone: 'Zone B', outputActionType: 'draft', outputExposure: 'client-facing',
       decisionBindingness: 'advisory', outputReversibility: 'reversible', outputScale: 'at_scale',
       platform: 'PLAT-CLOUD-LLM', jurisdictions: ['UK'] });
     expect(v.tier).toBe('High');
     expect(v.inheritance?.inherited_controls ?? []).toHaveLength(0);
-    // changed by policy v1.6, 2026-09-28: was 8 (CTRL-DISCLOSE-01 and
-    // CTRL-ESCALATE-01 included). This case's action_type is 'draft' — the
-    // chatbot's reply is drafted, not sent to the client directly by the AI
-    // (outputActionType here models the same "AI upstream of a human-sent
-    // message" shape v1.6 narrowed INV-DISCLOSE-01/INV-ESCALATE-01 for) — so
-    // neither invariant's new action_type: {in: [inform, execute, trade,
-    // approve]} condition matches any more, and both controls drop out.
-    // docs/try-these.md's "8 controls" / "Eight controls is the cost of
-    // leaving the envelope" line was updated to 6 in this same commit, so it
-    // already matches this test — nothing stale to report (code-review-005,
-    // R3-5: an earlier version of this comment claimed otherwise).
+    // Policy v1.6 (2026-09-28) narrowed INV-DISCLOSE-01 / INV-ESCALATE-01 to
+    // action types where clients deal with the AI directly; this case drafts
+    // replies a person sends, so CTRL-DISCLOSE-01 and CTRL-ESCALATE-01 no
+    // longer apply: 6 controls, not 8. docs/try-these.md says 6.
     expect(v.controls).toEqual(['CTRL-CITE-01', 'CTRL-CONDUCT-01', 'CTRL-ENC-01', 'CTRL-FINGERPRINT-01', 'CTRL-REDTEAM-01', 'CTRL-SYNTHMARK-01']);
   });
 
@@ -178,6 +174,86 @@ describe('docs/try-these.md — every printed outcome', () => {
     // CTRL-LOG-01 — 6 -> 7. See docs/try-these.md's updated prose.
     expect(v.controls).toHaveLength(7);
     expect(v.downstream_reviews).toHaveLength(2);
+    expect(v.provisional_reasons).toContain('unsigned_pack_rules');
+  });
+});
+
+// CR9-15 (code review 009). Cases 7 and 10 above are driven by hand-built form values; the page's reader
+// answers plain questions. These drive the page's OWN answers — label text, as printed — through the real
+// path (plainAnswersToFormValues -> buildGraphFromForm -> evaluate), so a change to the mapping, an option
+// label or the policy that would make the page wrong fails here. Each row is [question, key, page label];
+// the label is checked against the app's option text so the page wording is pinned too.
+type PageAnswer = [QuestionId, string | string[], string | string[]];
+
+function labelFor(id: QuestionId, key: string): string | undefined {
+  if (id === '3') return policy.platforms?.find((p) => p.id === key)?.plain_name;
+  if (id === '11') return policy.jurisdictions?.find((j) => j.code === key)?.name;
+  return undefined;
+}
+
+function runPage(rows: PageAnswer[]) {
+  const answers: PlainAnswers = {};
+  for (const [id, key, label] of rows) {
+    const keys = Array.isArray(key) ? key : [key];
+    const labels = Array.isArray(label) ? label : [label];
+    expect(labels).toHaveLength(keys.length);
+    keys.forEach((k, i) => {
+      const dynamic = labelFor(id, k);
+      if (dynamic !== undefined) expect(dynamic.replace(/\u2019/g, "'"), `Q${id} ${k}`).toBe(labels[i]!.replace(/\u2019/g, "'"));
+      else expect(optionKeyForText(id, labels[i]!), `Q${id} "${labels[i]}"`).toBe(k);
+    });
+    answers[id] = key;
+  }
+  const { values } = plainAnswersToFormValues({ '1': 'x', '2': 'x', ...answers }, policy);
+  return run(values);
+}
+
+describe('try-these cases driven from the page\u2019s plain answers (CR9-15)', () => {
+  it('TC-CR9-15a: case 7 — High, nothing inherited, exactly 6 controls, both downstream reviews', () => {
+    const v = runPage([
+      ['3', 'PLAT-CLOUD-LLM', 'Your firm\u2019s cloud AI assistant'],
+      ['4', 'language', 'Reads, summarises, translates, writes or answers questions in words'],
+      ['5', ['people'], ['Information about people \u2014 clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs \u2014 anything about someone who can be identified']],
+      ['6', 'drafts', 'creates a draft \u2014 text, an image or code \u2014 and a person checks it before it\u2019s used'],
+      ['6a', 'one-input', 'It\u2019s one input among several when someone makes a decision'],
+      ['7', 'clients', 'Clients or customers \u2014 including people applying to us'],
+      ['8', 'operational', 'None of these \u2014 it\u2019s for day-to-day work'],
+      ['9', 'yes', 'Yes'],
+      ['10', 'wide', 'Several teams, the whole business, or every case of a kind (e.g. all applications)'],
+      ['11', ['UK'], ['United Kingdom']],
+    ]);
+    expect(v.status).toBe('approved_with_controls');
+    expect(v.tier).toBe('High');
+    expect(v.track).toBe('II');
+    expect(v.inheritance?.inherited_controls ?? []).toHaveLength(0);
+    expect(v.controls).toEqual(['CTRL-CITE-01', 'CTRL-CONDUCT-01', 'CTRL-ENC-01', 'CTRL-FINGERPRINT-01', 'CTRL-REDTEAM-01', 'CTRL-SYNTHMARK-01']);
+    expect(v.downstream_reviews).toHaveLength(2);
+    expect(v.downstream_reviews.join(' | ')).toMatch(/information security review/i);
+    expect(v.downstream_reviews.join(' | ')).toMatch(/vendor risk assessment/i);
+  });
+
+  it('TC-CR9-15b: case 10 — Critical, Track II, bound by autonomy, 7 controls, both downstream reviews, provisional', () => {
+    const v = runPage([
+      ['3', 'PLAT-INTERNAL-ML', 'Your firm\u2019s in-house model platform'],
+      ['3platformZone', 'firm-systems', 'Yes \u2014 the platform runs the AI on the firm\u2019s own systems'],
+      ['4', 'score', 'Gives a score, ranking, flag, category or forecast \u2014 e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem'],
+      ['4a', 'explainable', 'Yes \u2014 they can show which factors drove each result'],
+      ['5', ['people'], ['Information about people \u2014 clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs \u2014 anything about someone who can be identified']],
+      ['6', 'acts-bounded', 'acts by itself within limits someone set, with no routine review'],
+      ['6b', 'yes-no-decision', 'Makes a yes-or-no decision \u2014 e.g. accepts or declines an application, signs something off'],
+      ['7', 'clients', 'Clients or customers \u2014 including people applying to us'],
+      ['8', 'credit', 'Whether to lend to someone, or on what terms'],
+      ['9', 'yes', 'Yes'],
+      ['10', 'wide', 'Several teams, the whole business, or every case of a kind (e.g. all applications)'],
+      ['11', ['UK', 'EU'], ['United Kingdom', 'European Union']],
+    ]);
+    expect(v.status).toBe('approved_with_controls');
+    expect(v.tier).toBe('Critical');
+    expect(v.track).toBe('II');
+    expect(v.binding_constraint).toBe('INV-AUTONOMY-01');
+    expect(v.controls).toHaveLength(7);
+    expect(v.downstream_reviews).toHaveLength(2);
+    expect([...v.downstream_reviews].sort()).toEqual(['Independent model validation (2LoD)', 'Information security review']);
     expect(v.provisional_reasons).toContain('unsigned_pack_rules');
   });
 });

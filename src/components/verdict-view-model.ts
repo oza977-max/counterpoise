@@ -178,7 +178,7 @@ export interface VerdictView {
 
 /** UC-11 on the register path (CR7-11). The register keeps no graph, but the
  *  first confirmation writes a `uses_model` edge exactly when a model was
- *  declared (addUseCaseModelLink). So "no model was named" may be said only
+ *  declared (addUseCaseModelLink). So "no AI model is recorded" may be said only
  *  when ALL of these hold; any other case says nothing rather than guess:
  *   - the edges were read (`edges` defined — a failed read is not "none");
  *   - no `uses_model` edge exists;
@@ -608,6 +608,14 @@ function buildReviewInstances(verdict: Verdict, policy: PolicyFile | undefined, 
 // ---------------------------------------------------------------------------
 // §4.2 copy templates.
 
+// CR9-02 (P6): the ONE wording of "the sign-off is not confirmed", per state. Used by the next step, the
+// "What you need to do" box (zero branch, lead and "Then" row). Lower-case, so each use reads in its own
+// sentence: after a dash, after "Also, ", or capitalised as a step.
+export const SIGNOFF_MISSING_CONFIRM =
+  'no sign-off from your AI risk team is on record for this version, so confirm with them before you start.';
+export const SIGNOFF_UNKNOWN_CONFIRM =
+  "we can't tell yet whether your AI risk team must sign this off, so check with them before you start.";
+
 function headlineText(status: Verdict['status'], needsSignOff: boolean, n: number, signedOff = false, signOffMissing = false, signOffUnknown = false): string {
   if (status === 'rejected') return 'No — not as described.';
   if (signedOff) {
@@ -677,7 +685,7 @@ function buildNextSteps(args: {
   }
 
   if (signOffMissing) {
-    steps.push('Ask your AI risk team to confirm the sign-off before you start — none is on record for this version of the result.');
+    steps.push(SIGNOFF_MISSING_CONFIRM.charAt(0).toUpperCase() + SIGNOFF_MISSING_CONFIRM.slice(1));
   }
 
   if (outstandingSafeguards.length > 0) {

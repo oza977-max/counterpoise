@@ -20,7 +20,7 @@ import { Fold } from './Fold';
 // the verdict's first screen AND the four readers that need a safeguard's
 // status (this first screen, WhatToDo, SignOffChecklist, the evidence
 // panel below) — "one computation per fact" (principle 0.5).
-import { buildVerdictView, joinWithAnd, usedStaleSources, type SafeguardStatus, type SafeguardView, type VerdictView } from './verdict-view-model';
+import { buildVerdictView, joinWithAnd, SIGNOFF_MISSING_CONFIRM, SIGNOFF_UNKNOWN_CONFIRM, usedStaleSources, type SafeguardStatus, type SafeguardView, type VerdictView } from './verdict-view-model';
 
 // verdict-audit.md §5. Rule 4 (cross-cutting.md §7): presentation-only —
 // static policy-description lookup for the reasoning-trace fallback is
@@ -35,7 +35,7 @@ interface VerdictDisplayProps {
   registerStage?: LifecycleStage;
   // UC-11, register path: the caller (RegisterDetail) has no graph, so it
   // decides from the register's own links (registerSaysNoModelNamed) whether
-  // "No model was named" is provable. Ignored when `graph` is present.
+  // "No AI model is recorded" is provable. Ignored when `graph` is present.
   noModelNamed?: boolean;
   // Optional since P8-C06. register-lifecycle.md §15.1b: the sign-off page
   // reuses this component, and correction is a submitter action
@@ -175,10 +175,15 @@ function reviewWords(review: string, verdict: Verdict, policy: PolicyFile | unde
 function stageNote(stage: LifecycleStage, view: VerdictView): string | undefined {
   if (stage === 'approved') {
     if (view.signedOff) return 'Saved to register — signed off by your AI risk team.';
-    if (view.signOffRequired) return 'Saved to register — final; no sign-off from your AI risk team is recorded on this version.';
+    if (view.signOffRequired) return 'Saved to register — no sign-off from your AI risk team is recorded on this version.';
     // P4 (CR8-02): "self-service final" only where self-service is DETERMINED (explicit stage + policy routing).
     if (view.signOffUnknown) return 'Saved to register — whether your AI risk team had to sign this off is not known from this screen.';
     return STAGE_NOTE.approved;
+  }
+  // P6 (CR9 review): any later stage says the same unconfirmed-sign-off fact, never just the stage.
+  if (stage === 'in_production') {
+    if (view.signOffMissing) return `${STAGE_NOTE.in_production!.slice(0, -1)} — no sign-off from your AI risk team is recorded on this version.`;
+    if (view.signOffUnknown) return `${STAGE_NOTE.in_production!.slice(0, -1)} — whether your AI risk team had to sign this off is not known from this screen.`;
   }
   return STAGE_NOTE[stage];
 }
@@ -444,6 +449,8 @@ function WhatToDo({
   controlEvidenceErrors?: ReadonlyMap<string, string>;
 }) {
   const rejected = verdict.status === 'rejected';
+  // CR9-02 (P6): missing / unknown sign-off — the one shared wording, never "Nothing." or a start signal.
+  const signOffConfirm = view.signOffMissing ? SIGNOFF_MISSING_CONFIRM : view.signOffUnknown ? SIGNOFF_UNKNOWN_CONFIRM : null;
   const controls = verdict.controls ?? [];
   const allReviews = verdict.downstream_reviews ?? [];
   // R16-D1: was describesSameObligation's significant-word text heuristic —
@@ -479,8 +486,8 @@ function WhatToDo({
         </>
       ) : controls.length === 0 && reviews.length === 0 ? (
         <p className="verdict__todo-lead">
-          Nothing. This use case sits inside appetite as described, with no controls required and no further
-          reviews triggered.
+          {signOffConfirm ? `Nothing to put in place — ${signOffConfirm}` : 'Nothing.'} This use case sits inside
+          appetite as described, with no controls required and no further reviews triggered.
           {needsSignOff && ' It still needs a second-line sign-off before it is final.'}
         </p>
       ) : (
@@ -500,7 +507,8 @@ function WhatToDo({
               : controls.length > 0
                 ? `Put ${controls.length} control${controls.length === 1 ? '' : 's'} in place.`
                 : `${reviews.length} separate review${reviews.length === 1 ? '' : 's'} that other teams own still appl${reviews.length === 1 ? 'ies' : 'y'}.`}
-            {needsSignOff && ' Then a second-line reviewer signs off.'}{' '}
+            {needsSignOff && ' Then a second-line reviewer signs off.'}
+            {signOffConfirm && ` Also, ${signOffConfirm}`}{' '}
             Each item below says what it is, why this case needs it, and what "in place" looks like.
           </p>
 
@@ -633,7 +641,7 @@ function WhatToDo({
             </>
           )}
 
-          {needsSignOff && (
+          {(needsSignOff || signOffConfirm) && (
             <>
               <h4 className="verdict__todo-group">Then</h4>
               <ul className="verdict__todo-list verdict__todo-list--reviews">
@@ -641,8 +649,9 @@ function WhatToDo({
                   <strong>Second-line sign-off</strong>
                   <span className="verdict__todo-status">
                     {' '}
-                    — this use case is above the self-service threshold, so it is not final until a second-line
-                    reviewer (2LoD) approves it
+                    {needsSignOff
+                      ? '— this use case is above the self-service threshold, so it is not final until a second-line reviewer (2LoD) approves it'
+                      : `— ${signOffConfirm}`}
                   </span>
                 </li>
               </ul>
@@ -1524,7 +1533,7 @@ export default function VerdictDisplay({ verdict, auditEvents, policy, graph, re
           processing nodes (declared_model_id); with no graph (the register
           path does not keep it) nothing is claimed either way. */}
       {(graph ? graph.processing_nodes.length > 0 && !graph.processing_nodes.some((n) => n.declared_model_id) : noModelNamed === true) && (
-        <p className="verdict__no-model-named">No model was named — your AI risk team may ask which one it uses.</p>
+        <p className="verdict__no-model-named">No AI model is recorded for this use case — your AI risk team may ask which one it uses.</p>
       )}
       {/* R12-ST-1: an undismissable statement of fact, in the same honesty
           idiom as the PROVISIONAL banner but its own block — staleness never
@@ -1656,6 +1665,9 @@ export default function VerdictDisplay({ verdict, auditEvents, policy, graph, re
           needsSignOff &&
           ' Not final until a second-line reviewer (2LoD) signs off.'}
         {verdict.status !== 'rejected' && view.signedOff && ' Signed off by your AI risk team.'}
+        {verdict.status !== 'rejected' &&
+          (view.signOffMissing || view.signOffUnknown) &&
+          ' Whether it is final is not confirmed yet — see your next steps.'}
       </p>
 
       {/* design-review round 3 (2026-08-31, Panels A+D — beat 1, "the

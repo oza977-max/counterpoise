@@ -72,7 +72,9 @@ describe('SettingsPanel — Clear all data (CR7-15)', () => {
     await user.click(screen.getByRole('button', { name: /clear all data and start over/i }));
     await user.click(screen.getByRole('button', { name: /yes, delete everything/i }));
     const msg = await screen.findByText(/not everything could be deleted/i);
-    expect(msg.textContent).toMatch(/aigate-audit \(blocked\)/);
+    // CR9-14 (amended): plain name, no database id
+    expect(msg.textContent).toMatch(/your audit trail/);
+    expect(msg.textContent).not.toMatch(/aigate-/);
     expect(msg.textContent).toMatch(/intake drafts.*cleared/i);
     expect(loadDraft()).toBeNull();
     expect(loadFormDraft()).toBeNull();
