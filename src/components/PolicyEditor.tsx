@@ -131,14 +131,22 @@ export default function PolicyEditor({ onSaved }: PolicyEditorProps) {
       }
       // BC-P7C03-01: a real call, queuing real re_evaluation_queued audit
       // events for real active use cases — not a simulated message.
-      const { queuedCount, alreadyPendingCount } = await onPolicyUpdated(outcome.policy.version);
-      setResult({ status: 'saved', queuedCount, alreadyPendingCount });
+      let counts: { queuedCount: number; alreadyPendingCount: number };
+      try {
+        counts = await onPolicyUpdated(outcome.policy.version);
+      } catch {
+        // The YAML itself WAS stored (setCurrentPolicyYaml ran first); only the
+        // queuing may be incomplete, and some events may already be written —
+        // so the message says exactly that and no more (BC-005). CR9-03: the
+        // stored rules are now the live rules, so the app is told (onSaved)
+        // exactly as on success — otherwise it would keep evaluating against
+        // the old ones until a reload.
+        setResult({ status: 'save-failed' });
+        onSaved?.();
+        return;
+      }
+      setResult({ status: 'saved', queuedCount: counts.queuedCount, alreadyPendingCount: counts.alreadyPendingCount });
       onSaved?.();
-    } catch {
-      // The YAML itself WAS stored (setCurrentPolicyYaml ran first); only the
-      // queuing may be incomplete, and some events may already be written —
-      // so the message says exactly that and no more (BC-005).
-      setResult({ status: 'save-failed' });
     } finally {
       saveInFlight.current = false;
       setSaving(false);
