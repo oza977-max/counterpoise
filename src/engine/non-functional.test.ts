@@ -129,7 +129,7 @@ describe('TC-NF-11-01: the API key cannot reach an export', () => {
   });
 });
 
-describe('TC-CF-5-04: a malicious policy file is rejected, never executed', () => {
+describe('a malicious policy file is rejected, never executed', () => {
   it('refuses a YAML carrying a code-execution tag rather than acting on it', () => {
     // The policy file is the one artefact a bank hands this product from
     // outside. js-yaml's safe default schema is what stops a crafted tag being

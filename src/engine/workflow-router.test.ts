@@ -29,13 +29,14 @@ describe('routeToWorkflow', () => {
     expect(action.auto_approves_after_days).toBeNull();
   });
 
-  it('TC-LC-2-02b: Critical tier ("2LoD-approve") routes the same as High — 2LoD action required', () => {
+  it('TC-LC-2-02b: Critical tier ("2LoD-approve") routes the same as High — 2LoD action required, and the policy file maps Critical to 2LoD-approve [TC-LC-2-03]', () => {
+    expect(policy.tier_workflow.Critical).toBe('2LoD-approve');
     const action = routeToWorkflow('Critical', policy);
     expect(action.lifecycle_stage).toBe('pre_checked');
     expect(action.requires_twoLoD_action).toBe(true);
   });
 
-  it('TC-LC-2-03: Medium tier ("2LoD-notify") routes to lifecycle_stage "pre_checked", no action required but auto-approves after a review window', () => {
+  it('Medium tier ("2LoD-notify") routes to lifecycle_stage "pre_checked", no action required but auto-approves after a review window', () => {
     const action = routeToWorkflow('Medium', policy);
     expect(action.lifecycle_stage).toBe('pre_checked');
     expect(action.requires_twoLoD_action).toBe(false);

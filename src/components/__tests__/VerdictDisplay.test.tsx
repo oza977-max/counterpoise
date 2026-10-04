@@ -57,13 +57,13 @@ describe('VerdictDisplay', () => {
     expect(heading.closest('#verdict-reviewer-section')).not.toBeNull();
   });
 
-  it('TC-VD-2-01: binding constraint renders as <code> with the graph path shown', () => {
+  it('binding constraint renders as <code> with the graph path shown', () => {
     render(<VerdictDisplay verdict={makeVerdict()} auditEvents={[]} onCorrect={vi.fn()} />);
     expect(screen.getByText('INV-DATA-01').tagName).toBe('CODE');
     expect(screen.getByText(/client notes → drafting model → drafted email/)).toBeInTheDocument();
   });
 
-  it('TC-RA-11-01: a Medium confidence caveat renders inline, verdict stays non-provisional', () => {
+  it('a Medium confidence caveat renders inline, verdict stays non-provisional', () => {
     const verdict = makeVerdict({
       confidence_caveats: [
         { ruleId: 'PE-JUR-EU-2', field: 'jurisdiction', reason: 'Interpretive judgment required.', confidence: 'medium' },

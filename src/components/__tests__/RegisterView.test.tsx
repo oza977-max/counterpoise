@@ -96,7 +96,7 @@ describe('RegisterView', () => {
     expect(screen.queryByRole('columnheader', { name: 'Sampling' })).not.toBeInTheDocument();
   });
 
-  it('TC-RG-3-01: 2LoD tier filter chip narrows the visible rows', async () => {
+  it('2LoD tier filter chip narrows the visible rows', async () => {
     const user = userEvent.setup();
     const high = makeUseCaseNode({ node_id: crypto.randomUUID(), label: 'High tier case' });
     const low = makeUseCaseNode({

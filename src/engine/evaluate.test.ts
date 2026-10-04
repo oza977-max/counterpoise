@@ -275,7 +275,7 @@ describe('evaluate — TC-R11-MG-1a model-family fallback', () => {
 });
 
 describe('evaluate — TC-PE-4-01 hard line trip', () => {
-  it('returns immediate rejected with no controls solved when a hard line trips [TC-PE-4-02] [TC-PE-4-03]', () => {
+  it('returns immediate rejected with no controls solved when a hard line trips [TC-PE-4-03]', () => {
     const g = graph({
       processing_nodes: [
         { id: 'p1', label: 'x', model_type: 'agentic', autonomy_level: 4, data_zone: 'Zone A', vendor: 'internal', replaces_prior_model: false },
