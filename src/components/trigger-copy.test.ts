@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { triggerPhrase } from './trigger-copy';
+import { triggerPhrase, triggerNotPhrase } from './trigger-copy';
 
 // GT7 D-3 (P11, NF-11): plain words for "what set this regulation off".
 describe('triggerPhrase', () => {
@@ -38,5 +38,16 @@ describe('triggerPhrase', () => {
     }
     expect(triggerPhrase('some_future_field', true)).toBe('one of your answers matches this rule');
     expect(triggerPhrase('decision_type', 'some-new-kind')).toBe('one of your answers matches this rule');
+  });
+});
+
+describe('triggerNotPhrase', () => {
+  it('GT7-MN: a not_in trigger says it is NOT the excluded value, in plain words, with no raw code', () => {
+    const p = triggerNotPhrase('data_zone', ['Zone A']);
+    expect(p).toMatch(/^it is not the case that /);
+    expect(p).toMatch(/open internet/);
+    expect(p).not.toMatch(/Zone [ABC]|data_zone/);
+    expect(triggerNotPhrase('some_future_field', ['x'])).toBe('one of your answers matches this rule');
+    expect(triggerNotPhrase('data_zone', [])).toBe('one of your answers matches this rule');
   });
 });

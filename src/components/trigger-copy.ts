@@ -66,3 +66,11 @@ export function triggerPhrase(field: string, value: string | number | boolean): 
   if (table && Object.prototype.hasOwnProperty.call(table, key)) return table[key] as string;
   return GENERIC_TRIGGER_PHRASE;
 }
+
+// A `not_in` trigger: the rule applies because the answer is NOT one of the
+// excluded values, so say that instead of listing everything else.
+export function triggerNotPhrase(field: string, excluded: Array<string | number | boolean>): string {
+  const phrases = [...new Set(excluded.map((v) => triggerPhrase(field, v)))];
+  if (phrases.length === 0 || phrases.includes(GENERIC_TRIGGER_PHRASE)) return GENERIC_TRIGGER_PHRASE;
+  return `it is not the case that ${phrases.join(' or that ')}`;
+}

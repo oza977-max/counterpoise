@@ -91,4 +91,16 @@ describe('VerdictDisplay — what set each regulation off (GT7 D-3)', () => {
     expect(screen.getByText('EU-AIACT-TIER-01')).toBeInTheDocument();
     expect(screen.queryByText(/Applies because/)).not.toBeInTheDocument();
   });
+
+  it('GT7-MN: a not_in entry reads as "not <excluded>", not as the other values', () => {
+    render(
+      <VerdictDisplay
+        verdict={makeVerdict([{ ...ENTRY, triggered_by: [{ field: 'data_zone', value: 'Zone B', excluded: ['Zone A'] }] }])}
+        auditEvents={[]}
+      />,
+    );
+    const line = screen.getByText(/Applies because/);
+    expect(line.textContent).toMatch(/it is not the case that .*open internet/);
+    expect(line.textContent).not.toMatch(/outside supplier/);
+  });
 });

@@ -58,7 +58,14 @@ export function matchesCondition(condition: Condition, graph: DataFlowGraph): bo
 // SAME collector matchesCondition uses, so this never reports a trigger the
 // engine would not fire on (the `jurisdictions` array is ONE candidate, as in
 // matchesCondition). Only scalar candidates are reported.
-export type MatchedConditionValue = { field: string; value: string | number | boolean };
+// For a `not_in` condition, listing every non-excluded value reads oddly, so
+// that field yields ONE entry whose `excluded` lists the values it must NOT be
+// (and `value` the first matching actual one). Optional, so stored shapes stay valid.
+export type MatchedConditionValue = {
+  field: string;
+  value: string | number | boolean;
+  excluded?: Array<string | number | boolean>;
+};
 
 function compareScalar(a: string | number | boolean, b: string | number | boolean): number {
   const ka = `${typeof a}:${String(a)}`;
@@ -84,6 +91,14 @@ export function matchedConditionValues(condition: Condition, graph: DataFlowGrap
       values.push(candidate);
     }
     values.sort(compareScalar);
+    if (typeof expected === 'object' && expected !== null && 'not_in' in expected) {
+      const excluded = expected.not_in.filter(
+        (v): v is string | number | boolean => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean',
+      );
+      const first = values[0];
+      if (first !== undefined) out.push({ field, value: first, excluded: [...excluded].sort(compareScalar) });
+      continue;
+    }
     for (const value of values) out.push({ field, value });
   }
   return out;

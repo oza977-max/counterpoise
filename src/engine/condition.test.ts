@@ -245,7 +245,10 @@ describe('matchedConditionValues (GT7 D-3, P11)', () => {
     });
     expect(matchedConditionValues({ autonomy_level: { gte: 3 } }, g)).toEqual([{ field: 'autonomy_level', value: 4 }]);
     expect(matchedConditionValues({ autonomy_level: { lte: 3 } }, g)).toEqual([{ field: 'autonomy_level', value: 2 }]);
-    expect(matchedConditionValues({ data_zone: { not_in: ['Zone A'] } }, g)).toEqual([{ field: 'data_zone', value: 'Zone B' }]);
+    expect(matchedConditionValues({ data_zone: { not_in: ['Zone A'] } }, g)).toEqual([{ field: 'data_zone', value: 'Zone B', excluded: ['Zone A'] }]);
+    // not_in is ONE entry naming what it must not be, never a list of every other value
+    const many = graph({ processing_nodes: [{ id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 2, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false }, { id: 'p2', label: 'y', model_type: 'ml', autonomy_level: 4, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false }] });
+    expect(matchedConditionValues({ data_zone: { not_in: ['Zone A'] } }, many)).toHaveLength(1);
     expect(matchedConditionValues({ autonomy_level: { gte: 9 } }, g)).toEqual([]);
   });
 });

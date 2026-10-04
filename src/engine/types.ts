@@ -438,7 +438,7 @@ export interface RegulatoryChainEntry {
   // condition fields with the graph's actual matching value(s), sorted.
   // Optional: stored verdicts from before this field lack it, and an
   // unconditional rule has none. Every reader guards with `?? []`.
-  triggered_by?: Array<{ field: string; value: string | number | boolean }>;
+  triggered_by?: Array<{ field: string; value: string | number | boolean; excluded?: Array<string | number | boolean> }>;
 }
 
 // UC-7 correction recording (intake-flow.md §8).

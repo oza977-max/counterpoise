@@ -1663,18 +1663,6 @@ details input {
   color: var(--ink-faint);
 }
 
-.policy-view__pack-state--loaded {
-  color: var(--low);
-  border-color: var(--low);
-  background: #eef4ef;
-}
-
-.policy-view__pack-state--invalid {
-  color: var(--critical);
-  border-color: var(--critical);
-  background: #fbeae8;
-}
-
 /* ── Proof-carrying controls (V1.3) ── */
 .verdict__controlset {
   margin: 1rem 0;
@@ -1956,6 +1944,25 @@ details input {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   flex: 1 1 auto;
+}
+
+.policy-view__pack-state.policy-view__pack-state--loaded {
+  color: var(--low);
+  border-color: var(--low);
+  background: #eef4ef;
+}
+
+.policy-view__pack-state.policy-view__pack-state--invalid {
+  color: var(--critical);
+  border-color: var(--critical);
+  background: #fbeae8;
+}
+
+/* Review pass 2: the modifiers sit AFTER the base rule and are compound selectors,
+   so a broken rulebook really does look like an error. */
+.policy-view__pack-state--invalid .policy-view__pack-state-detail {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
 }
 
 .policy-view__pack-state-plain {
