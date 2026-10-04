@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchesCondition, describeGraphPath } from './condition';
+import { matchesCondition, describeGraphPath, matchedConditionValues } from './condition';
 import type { DataFlowGraph } from './types';
 
 function graph(overrides: Partial<DataFlowGraph> = {}): DataFlowGraph {
@@ -188,5 +188,48 @@ describe('describeGraphPath', () => {
   it('TC-R16-A1-16: falls back to the processing node when there are no input nodes at all', () => {
     const path = describeGraphPath(g2([]));
     expect(path).toBe('model → out');
+  });
+});
+
+describe('matchedConditionValues (GT7 D-3, P11)', () => {
+  const oneNode = () =>
+    graph({
+      processing_nodes: [
+        { id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false },
+        { id: 'p2', label: 'y', model_type: 'ml', autonomy_level: 1, data_zone: 'Zone B', vendor: 'internal', replaces_prior_model: false },
+      ],
+      output_nodes: [
+        { id: 'o1', label: 'z', action_type: 'recommend', exposure: 'client-facing', decision_bindingness: 'material', output_reversibility: 'reversible', scale: 'limited', decision_type: 'credit-decision' },
+      ],
+      jurisdictions: ['UK', 'EU'],
+    });
+
+  it('TC-RA-9-01d: returns, per condition field, only the graph values that satisfy it, fields sorted, values distinct', () => {
+    const out = matchedConditionValues(
+      {
+        model_type: { in: ['llm', 'agentic'] },
+        decision_type: { in: ['credit-decision', 'lending-decision'] },
+        data_zone: { in: ['Zone B'] },
+      },
+      oneNode(),
+    );
+    expect(out).toEqual([
+      { field: 'data_zone', value: 'Zone B' },
+      { field: 'decision_type', value: 'credit-decision' },
+      { field: 'model_type', value: 'llm' },
+    ]);
+  });
+
+  it('TC-RA-9-01e: an unconditional rule gives an empty list; a value-equality condition reports the matching value; array fields are flattened', () => {
+    expect(matchedConditionValues({}, oneNode())).toEqual([]);
+    expect(matchedConditionValues({ exposure: 'client-facing' }, oneNode())).toEqual([{ field: 'exposure', value: 'client-facing' }]);
+    expect(matchedConditionValues({ jurisdictions: { in: ['EU', 'JP'] } }, oneNode())).toEqual([{ field: 'jurisdictions', value: 'EU' }]);
+    // Several satisfying candidates are all listed, sorted by value (fixed, non-locale order).
+    expect(matchedConditionValues({ model_type: { in: ['ml', 'llm'] } }, oneNode())).toEqual([
+      { field: 'model_type', value: 'llm' },
+      { field: 'model_type', value: 'ml' },
+    ]);
+    // A condition that does not match contributes nothing.
+    expect(matchedConditionValues({ exposure: 'internal-only' }, oneNode())).toEqual([]);
   });
 });

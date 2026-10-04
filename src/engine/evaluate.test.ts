@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadPolicy } from '../store/policy';
+import { loadPacks } from '../store/packs';
+import { getPackSources } from '../store/pack-source';
 import { evaluate } from './evaluate';
 import type { DataFlowGraph, PolicyFile } from './types';
 
@@ -694,8 +696,45 @@ describe('evaluate — jurisdiction packs (V2-A)', () => {
     expect(chain).toHaveLength(1);
     expect(chain[0]?.source_text).toMatch(/recruitment or selection/);
     expect(chain[0]?.sign_off).toMatch(/pending firm adoption/);
+    // P11 / D-3: the entry says which attribute of THIS case set the rule off.
+    expect(chain[0]?.triggered_by).toEqual([{ field: 'decision_type', value: 'hiring' }]);
     // BC-V2A-03: unsigned fired rule → low caveat → provisional verdict.
     expect(result.value.confidence_caveats.some((c) => c.confidence === 'low')).toBe(true);
+  });
+
+  it('TC-RA-9-01b: a UK/EU credit case against the REAL EU pack — the credit-scoring rule\'s chain entry carries decision_type: credit-decision (P11)', () => {
+    const { packs, errors } = loadPacks(getPackSources());
+    expect(errors).toEqual([]);
+    const creditGraph = graph({
+      ...hiringGraph(),
+      output_nodes: [{ ...hiringGraph().output_nodes[0]!, decision_type: 'credit-decision' as const }],
+      jurisdictions: ['UK', 'EU'],
+    });
+    const result = evaluate(creditGraph, policy, packs);
+    if (!result.ok) throw new Error('evaluate failed');
+    const chain = result.value.explanation.regulatory_chain ?? [];
+    const entry = chain.find((c) => c.rule_id === 'EU-AIACT-TIER-01');
+    expect(entry).toBeDefined();
+    expect(entry!.triggered_by).toEqual([{ field: 'decision_type', value: 'credit-decision' }]);
+    // Every fired entry carries the field (possibly empty for an unconditional rule).
+    for (const c of chain) expect(Array.isArray(c.triggered_by)).toBe(true);
+  });
+
+  it('TC-RA-9-01c: a pack HARD-LINE rejection\'s chain entry also says what set it off', () => {
+    const hardPack = {
+      ...euPack,
+      rules: [{
+        ...euPack.rules[0]!,
+        id: 'EU-HL-TEST-1',
+        effect: { type: 'hard_line' as const, reason: 'Hiring is not permitted here.' },
+      }],
+    };
+    const result = evaluate(hiringGraph(), policy, [hardPack]);
+    if (!result.ok) throw new Error('evaluate failed');
+    expect(result.value.status).toBe('rejected');
+    const chain = result.value.explanation.regulatory_chain ?? [];
+    expect(chain).toHaveLength(1);
+    expect(chain[0]?.triggered_by).toEqual([{ field: 'decision_type', value: 'hiring' }]);
   });
 
   it('without the pack (or without the jurisdiction) the same case sits at the FIRM tier, and only the pack lifts it', () => {

@@ -467,18 +467,18 @@ describe('MUT-8: a sign-off needs BOTH a name and a date (NF-7)', () => {
 
   it('MUT-8g: the chain entry and caveat read the same sign-off the check does', () => {
     // No sign-off anywhere: the chain says so in words.
-    expect(chainEntryFor(rule(), 'd').sign_off).toBe('not yet adopted · pending firm adoption');
+    expect(chainEntryFor(rule(), 'd', undefined, graph()).sign_off).toBe('not yet adopted · pending firm adoption');
     // Pack-level adoption.
-    expect(chainEntryFor(rule(), 'd', { ...signedPack, reviewer_role: 'Legal' }).sign_off).toBe(
+    expect(chainEntryFor(rule(), 'd', { ...signedPack, reviewer_role: 'Legal' }, graph()).sign_off).toBe(
       'Pat Reviewer · 2026-02-02 (adopted at pack level)',
     );
     // Rule-level adoption names the rule, not the pack.
-    expect(chainEntryFor(rule({ reviewer_name: 'Ann', sign_off_date: '2026-03-03' }), 'd', { ...signedPack, reviewer_role: 'Legal' }).sign_off).toBe(
+    expect(chainEntryFor(rule({ reviewer_name: 'Ann', sign_off_date: '2026-03-03' }), 'd', { ...signedPack, reviewer_role: 'Legal' }, graph()).sign_off).toBe(
       'Ann · 2026-03-03 (adopted at this rule level)',
     );
     // A name without a date is not adopted, and the caveat says so.
     const half = rule({ reviewer_name: 'Ann' });
-    expect(chainEntryFor(half, 'd').sign_off).toBe('Ann · pending firm adoption');
+    expect(chainEntryFor(half, 'd', undefined, graph()).sign_off).toBe('Ann · pending firm adoption');
     expect(caveatForFiredRule(half)?.confidence).toBe('low');
     expect(caveatForFiredRule(rule(), { ...signedPack, reviewer_role: 'Legal' })).toBeNull();
   });
