@@ -363,7 +363,7 @@ export default function PolicyEditor({ onSaved }: PolicyEditorProps) {
                       <span className="policy-view__pack-state-plain">
                         Rulebook file has an error and could not be loaded
                       </span>
-                      <span className="policy-view__pack-state-detail">{packError.reason.slice(0, 60)}</span>
+                      <span className="policy-view__pack-state-detail">{packError.reason}</span>
                     </span>
                   ) : (
                     <span className="policy-view__pack-state">

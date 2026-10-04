@@ -1968,6 +1968,7 @@ details input {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.65rem;
   color: var(--ink-faint);
+  overflow-wrap: anywhere;
 }
 
 .policy-view__hardlines li {
