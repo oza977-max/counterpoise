@@ -406,11 +406,11 @@
             <header>
                 <h1>Counterpoise &mdash; Requirements, Round 18</h1>
                 <p class="subtitle">One set of questions: describe, pre-fill, confirm</p>
-                <p class="meta">Round 18 · 4 October 2026 · in elicitation &middot; Generated from requirements-018.md &mdash; do not hand-edit</p>
+                <p class="meta">Round 18 · 4 October 2026 · awaiting approval &middot; Generated from requirements-018.md &mdash; do not hand-edit</p>
             </header>
             <section id="round-18-one-set-of-questions-describe-p">
                 <h2>Round 18 — One set of questions: describe, pre-fill, confirm</h2>
-                <p><strong>Status: IN ELICITATION (2026-10-04).</strong> Owner-led round after <code>/gvm-test 007</code>. Scope: the written-description path and the guided form become one route (describe → the connected model pre-fills the form's answers, with proof → the person confirms each pre-filled answer and answers the rest → the same engine); a model setting that works with Ollama's free cloud models and with a firm's own model; honest wording wherever a description leaves the computer; what the public demo site tells visitors. Numbered 18 because the R16 prefix is taken by the plain-language intake amendments in <code>requirements.md</code> and R17 by the track-order round (<code>test-cases-017.md</code>).</p>
+                <p><strong>Status: DRAFT COMPLETE — awaiting owner approval (2026-10-04).</strong> Owner-led round after <code>/gvm-test 007</code>. Scope: the written-description path and the guided form become one route (describe → the connected model pre-fills the form's answers, with proof → the person confirms each pre-filled answer and answers the rest → the same engine); a model setting that works with Ollama's free cloud models and with a firm's own model; honest wording wherever a description leaves the computer; what the public demo site tells visitors. Numbered 18 because the R16 prefix is taken by the plain-language intake amendments in <code>requirements.md</code> and R17 by the track-order round (<code>test-cases-017.md</code>).</p>
             </section>
             <section id="provenance">
                 <h2>Provenance</h2>
@@ -436,7 +436,7 @@
             </section>
             <section id="purpose-vision">
                 <h2>Purpose &amp; Vision</h2>
-                <p><em>(written last — see Phase 5)</em></p>
+                <p>Counterpoise decides in the same way every time, from the person's own confirmed answers. Until now there were two ways to give those answers — a guided form, and a written description read by a small model — and the second asked a different, repetitive set of follow-up questions while giving a weaker result. This round makes them one route. A person says what the tool does in their own words, with a live checklist of what the form will need; a model, if one is connected, fills the form in only where it can quote the person's own words; the person confirms each filled answer and answers the rest; the deterministic engine then sees exactly what it always saw. The model is swappable and declared honestly — on this computer, on a firm's server, or on Ollama's free cloud — and no model is trusted until it has been run against the 31 built-in cases. The public demo works with no model at all and makes connecting one easy, optional and honest about where the words go.</p>
             </section>
             <section id="target-user">
                 <h2>Target User</h2>
@@ -503,7 +503,7 @@
                             <span class="req-id">R18-GI-7</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">The model never blocks. If it is not connected, is slow beyond a stated limit, fails, or returns nothing usable, the form opens blank with one plain sentence saying so, the description is kept, and the person continues as today.</p>
+                        <p class="requirement-text">The model never blocks. If it is not connected, does not answer within the time limit (R18-NF-1), fails, or returns nothing usable, the form opens blank with one plain sentence saying so, the description is kept, and the person continues as today.</p>
                         <div class="fit-criterion">with no model configured, with a model that times out, and with a model that returns an unreadable reply, the form opens blank within the limit and shows the sentence; no error word from the model reaches the screen; nothing is written to the trail by the failed attempt.</div>
                     </div>
                     <div class="requirement">
@@ -677,11 +677,50 @@
             </section>
             <section id="non-functional-requirements">
                 <h2>Non-Functional Requirements</h2>
-                <p><em>(to be elicited with domains 2 and 3)</em></p>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-NF-1</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Time limit. The description-reading model has 30 seconds to answer; at 30 seconds, or at any moment the person presses "Skip — I'll answer the questions myself", the form opens blank (R18-GI-7). While the model works the person sees that it is working and the skip control. The model test (R18-MS-4) applies a separate limit per case, and the whole run can be stopped.</p>
+                        <div class="fit-criterion">a fake model that never answers opens a blank form at 30 seconds (±1 s, with the clock faked); the skip control is present and operable by keyboard throughout the wait; the test run's per-case limit is stated on the Settings screen.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-NF-2</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Accessibility. Every screen or panel new or changed this round — the description screen, checklist, nudge, "Make it smarter" panel, pre-fill marks, Settings model choices and test — meets WCAG 2.1 AA as adopted in design review 007: keyboard-operable, named controls, status text that is announced, no meaning by colour alone, contrast checked.</p>
+                        <div class="fit-criterion">the existing accessibility checks (contrast token test, role/name assertions) cover each new element; the checklist and the model status use status regions; no information is carried by colour alone.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-NF-3</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Privacy. The description, the pre-filled answers and the quotes are held only in this browser (drafts, the trail) and are cleared by "Clear all data"; the only place they are ever sent is the declared model address; the app adds no analytics, no third-party scripts and no other outbound request for them.</p>
+                        <div class="fit-criterion">a test with a recording <code>fetch</code> shows that, during a pre-fill, the only request that carries any part of the description goes to the declared address; "Clear all data" removes the description draft and the stored quotes (extending the existing list of what it clears).</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-NF-4</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">One engine, one answer. Identical confirmed form answers give a byte-identical verdict whether they were typed or pre-filled (and by which model). The model's reply never reaches the engine except through the confirmed form.</p>
+                        <div class="fit-criterion">a test builds the same form answers by typing and by pre-fill and compares the whole serialised <code>evaluate()</code> result (as TC-PE-1-01 does); the engine boundary test still shows no model, clock or randomness in <code>src/engine</code>.</div>
+                    </div>
+                    <div class="requirement">
+                        <div class="requirement-header">
+                            <span class="req-id">R18-NF-5</span>
+                            <span class="priority-chip priority-must">Must</span>
+                        </div>
+                        <p class="requirement-text">Earlier drafts. A draft saved by a build before this round (including one on the old card-review step) opens honestly: at the form, with the description kept and one plain sentence saying it was saved by an earlier version and the answers need checking. Nothing is lost silently and no old shape reaches the new screens unvalidated.</p>
+                        <div class="fit-criterion">fixture drafts of every earlier saved shape (version 1, 2, 3 envelopes, card-review and form steps) each open at the form with the sentence and their description; none throws.</div>
+                    </div>
             </section>
             <section id="assumptions">
                 <h2>Assumptions</h2>
-                <ul><li>The guided form's questions do not change in this round; only how they are reached and pre-filled does.</li><li>A firm that connects its own model accepts that descriptions are sent to it; the app's job is to say so plainly (domain 2).</li></ul>
+                <ul><li>The guided form's questions do not change in this round; only how they are reached and pre-filled does.</li><li>A firm that connects its own model accepts that descriptions are sent to it; the app's job is to say so plainly (domain 2).</li><li>The 31 built-in cases are representative enough to compare models; they are not a guarantee about any particular firm's descriptions (stated on the Settings screen next to every result).</li><li>Ollama's cloud models and their free allowance change over time; the app names none and relies on the measured result, not a list.</li><li>The form's single input / AI step / output shape gives the same verdict as the retired multi-step map for the cases in the corpus (the 31 cases and 11 worked examples are pinned through it today); a case where the shapes would differ is a requirement-level question, not a silent behaviour.</li></ul>
             </section>
             <section id="constraints">
                 <h2>Constraints</h2>
@@ -700,7 +739,43 @@
             </section>
             <section id="requirements-index">
                 <h2>Requirements Index</h2>
-                <p><em>(generated at finalisation)</em></p>
+                <table>
+                    <thead><tr><th>ID</th><th>Domain</th><th>Summary</th><th>Priority</th></tr></thead>
+                    <tbody>
+                        <tr><td>R18-GI-1</td><td>Guided intake</td><td>Describe-first screen with a live "mentioned" checklist of the form's questions</td><td>Must</td></tr>
+                        <tr><td>R18-GI-2</td><td>Guided intake</td><td>Gentle nudge for unmentioned items, with one-click example sentences; never blocks</td><td>Must</td></tr>
+                        <tr><td>R18-GI-3</td><td>Guided intake</td><td>Model pre-fills only with a verified quote from the description; "Not sure" and countries too</td><td>Must</td></tr>
+                        <tr><td>R18-GI-4</td><td>Guided intake</td><td>Every pre-filled answer marked with its quote and confirmed one by one; no accept-all</td><td>Must</td></tr>
+                        <tr><td>R18-GI-5</td><td>Guided intake</td><td>The record and hand-off say per answer who supplied it; old records unchanged</td><td>Must</td></tr>
+                        <tr><td>R18-GI-6</td><td>Guided intake</td><td>Contradiction check still runs on confirmed answers, typed or pre-filled</td><td>Must</td></tr>
+                        <tr><td>R18-GI-7</td><td>Guided intake</td><td>The model never blocks: failure, slowness or absence opens a blank form with one plain sentence</td><td>Must</td></tr>
+                        <tr><td>R18-GI-8</td><td>Guided intake</td><td>Editing the description re-pre-fills only untouched answers</td><td>Must</td></tr>
+                        <tr><td>R18-GI-9</td><td>Guided intake</td><td>Description, pre-fills, quotes and confirmations survive a reload; cleared on finish or start over</td><td>Must</td></tr>
+                        <tr><td>R18-GI-10</td><td>Guided intake</td><td>One route: the multi-step card review is retired; the form is the record; old cases stay readable</td><td>Must</td></tr>
+                        <tr><td>R18-GI-11</td><td>Guided intake</td><td>Newcomer comprehension gate (NF-12) covers the new screens</td><td>Must</td></tr>
+                        <tr><td>R18-GI-12</td><td>Guided intake</td><td>Pre-fill accuracy measured by the in-app test; untested models labelled as such</td><td>Must</td></tr>
+                        <tr><td>R18-GI-13</td><td>Guided intake</td><td>Never claim more than can be shown ("mentioned", "from your description", "confirmed by you")</td><td>Must</td></tr>
+                        <tr><td>R18-MS-1</td><td>Model setting</td><td>Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app</td><td>Must</td></tr>
+                        <tr><td>R18-MS-2</td><td>Model setting</td><td>Say every time where the description goes; the record names the model and place</td><td>Must</td></tr>
+                        <tr><td>R18-MS-3</td><td>Model setting</td><td>Any model: list what the server reports or type one; none shipped, recommended or defaulted</td><td>Must</td></tr>
+                        <tr><td>R18-MS-4</td><td>Model setting</td><td>"Test it" from Settings: the 31 built-in cases, per-question score, saved and shown</td><td>Must</td></tr>
+                        <tr><td>R18-MS-5</td><td>Model setting</td><td>Works whether or not the server honours the strict answer format</td><td>Must</td></tr>
+                        <tr><td>R18-MS-6</td><td>Model setting</td><td>A firm address over plain http shows an "unencrypted" line</td><td>Must</td></tr>
+                        <tr><td>R18-MS-7</td><td>Model setting</td><td>Plain sentences for retired, unavailable, used-up, signed-out or silent models</td><td>Must</td></tr>
+                        <tr><td>R18-MS-8</td><td>Model setting</td><td>The test cases are the public corpus, byte-identical, with no firm data</td><td>Must</td></tr>
+                        <tr><td>R18-PS-1</td><td>Public demo site</td><td>A first-time visitor completes a pre-check at once with no model</td><td>Must</td></tr>
+                        <tr><td>R18-PS-2</td><td>Public demo site</td><td>"Make it smarter" panel: two stable commands and a dated link to Ollama's docs</td><td>Must</td></tr>
+                        <tr><td>R18-PS-3</td><td>Public demo site</td><td>"Try an example": the eleven worked cases, generated from the guide's own source</td><td>Must</td></tr>
+                        <tr><td>R18-PS-4</td><td>Public demo site</td><td>Standing demo-only notice whenever the model is not on this computer</td><td>Must</td></tr>
+                        <tr><td>R18-PS-5</td><td>Public demo site</td><td>No owner key, token or sign-in in the public site; no model-key field in Settings</td><td>Must</td></tr>
+                        <tr><td>R18-PS-6</td><td>Public demo site</td><td>Specific one-sentence messages when the browser blocks the visitor's own Ollama</td><td>Should</td></tr>
+                        <tr><td>R18-NF-1</td><td>Non-functional</td><td>30-second model time limit with an always-available skip control</td><td>Must</td></tr>
+                        <tr><td>R18-NF-2</td><td>Non-functional</td><td>WCAG 2.1 AA on every new or changed screen and panel</td><td>Must</td></tr>
+                        <tr><td>R18-NF-3</td><td>Non-functional</td><td>Description held only in this browser; sent only to the declared model; cleared by Clear all data</td><td>Must</td></tr>
+                        <tr><td>R18-NF-4</td><td>Non-functional</td><td>Identical confirmed answers give a byte-identical verdict, typed or pre-filled</td><td>Must</td></tr>
+                        <tr><td>R18-NF-5</td><td>Non-functional</td><td>Drafts from earlier builds open honestly at the form with the description kept</td><td>Must</td></tr>
+                    </tbody>
+                </table>
             </section>
             <section id="priority-model">
                 <h2>Priority Model</h2>
@@ -722,6 +797,7 @@
                         <tr><td>2026-10-04</td><td>Round 18 opened after <code>/gvm-test 007</code>; domain 1 (Guided intake, R18-GI-1..13) drafted from the owner's decisions and the model comparison.</td></tr>
                         <tr><td>2026-10-04</td><td>Domain 1 confirmed by the owner. Domain 2 (Model setting, R18-MS-1..8) drafted: three declared places, honest notice, any model with an in-app 31-case test instead of a recommended model (owner's call), automatic format fallback, firm-server connection honesty, plain words for server failures. R18-GI-12 amended to point at the in-app test. OQ-1..3 logged.</td></tr>
                         <tr><td>2026-10-04</td><td>Domain 2 confirmed (OQ-2, OQ-3 resolved). Domain 3 (Public demo site, R18-PS-1..6) drafted: works with no model, "Make it smarter" panel with two stable commands and a dated link, "Try an example" from the eleven worked cases, standing demo-only notice, no keys in the public bundle, specific browser-block messages. OQ-4 logged.</td></tr>
+                        <tr><td>2026-10-04</td><td>Safety-net audit: GI-7's time limit made concrete (R18-NF-1, 30 s); non-functional requirements added (R18-NF-1..5: time limit, accessibility, privacy, one-engine-one-answer, earlier drafts); Purpose &amp; Vision, Assumptions and the Requirements Index written. 32 requirements: 31 Must, 1 Should.</td></tr>
                     </tbody>
                 </table>
                 <p><em>Developed using the Grounded Vibe Methodology</em></p>

@@ -2,7 +2,7 @@
 
 ## Round 18 — One set of questions: describe, pre-fill, confirm
 
-**Status: IN ELICITATION (2026-10-04).** Owner-led round after `/gvm-test 007`.
+**Status: DRAFT COMPLETE — awaiting owner approval (2026-10-04).** Owner-led round after `/gvm-test 007`.
 Scope: the written-description path and the guided form become one route
 (describe → the connected model pre-fills the form's answers, with proof →
 the person confirms each pre-filled answer and answers the rest → the same
@@ -51,7 +51,19 @@ R16 prefix is taken by the plain-language intake amendments in
 
 ## Purpose & Vision
 
-*(written last — see Phase 5)*
+Counterpoise decides in the same way every time, from the person's own
+confirmed answers. Until now there were two ways to give those answers — a
+guided form, and a written description read by a small model — and the second
+asked a different, repetitive set of follow-up questions while giving a weaker
+result. This round makes them one route. A person says what the tool does in
+their own words, with a live checklist of what the form will need; a model,
+if one is connected, fills the form in only where it can quote the person's
+own words; the person confirms each filled answer and answers the rest; the
+deterministic engine then sees exactly what it always saw. The model is
+swappable and declared honestly — on this computer, on a firm's server, or on
+Ollama's free cloud — and no model is trusted until it has been run against
+the 31 built-in cases. The public demo works with no model at all and makes
+connecting one easy, optional and honest about where the words go.
 
 ## Target User
 
@@ -162,8 +174,8 @@ person to explain before confirming.
 > "information about people" answer stops at the explanation step, whether
 > that answer was typed or a changed pre-fill.
 
-**R18-GI-7 (Must):** The model never blocks. If it is not connected, is
-slow beyond a stated limit, fails, or returns nothing usable, the form opens
+**R18-GI-7 (Must):** The model never blocks. If it is not connected, does
+not answer within the time limit (R18-NF-1), fails, or returns nothing usable, the form opens
 blank with one plain sentence saying so, the description is kept, and the
 person continues as today.
 
@@ -398,7 +410,58 @@ one sentence each, instead of a generic "couldn't read your description".
 
 ## Non-Functional Requirements
 
-*(to be elicited with domains 2 and 3)*
+**R18-NF-1 (Must):** Time limit. The description-reading model has 30 seconds
+to answer; at 30 seconds, or at any moment the person presses "Skip — I'll
+answer the questions myself", the form opens blank (R18-GI-7). While the
+model works the person sees that it is working and the skip control. The
+model test (R18-MS-4) applies a separate limit per case, and the whole run
+can be stopped.
+
+> Fit criterion: a fake model that never answers opens a blank form at 30
+> seconds (±1 s, with the clock faked); the skip control is present and
+> operable by keyboard throughout the wait; the test run's per-case limit is
+> stated on the Settings screen.
+
+**R18-NF-2 (Must):** Accessibility. Every screen or panel new or changed
+this round — the description screen, checklist, nudge, "Make it smarter"
+panel, pre-fill marks, Settings model choices and test — meets WCAG 2.1 AA as
+adopted in design review 007: keyboard-operable, named controls, status text
+that is announced, no meaning by colour alone, contrast checked.
+
+> Fit criterion: the existing accessibility checks (contrast token test,
+> role/name assertions) cover each new element; the checklist and the model
+> status use status regions; no information is carried by colour alone.
+
+**R18-NF-3 (Must):** Privacy. The description, the pre-filled answers and the
+quotes are held only in this browser (drafts, the trail) and are cleared by
+"Clear all data"; the only place they are ever sent is the declared model
+address; the app adds no analytics, no third-party scripts and no other
+outbound request for them.
+
+> Fit criterion: a test with a recording `fetch` shows that, during a
+> pre-fill, the only request that carries any part of the description goes to
+> the declared address; "Clear all data" removes the description draft and
+> the stored quotes (extending the existing list of what it clears).
+
+**R18-NF-4 (Must):** One engine, one answer. Identical confirmed form answers
+give a byte-identical verdict whether they were typed or pre-filled (and by
+which model). The model's reply never reaches the engine except through the
+confirmed form.
+
+> Fit criterion: a test builds the same form answers by typing and by
+> pre-fill and compares the whole serialised `evaluate()` result (as TC-PE-1-01
+> does); the engine boundary test still shows no model, clock or randomness in
+> `src/engine`.
+
+**R18-NF-5 (Must):** Earlier drafts. A draft saved by a build before this round
+(including one on the old card-review step) opens honestly: at the form, with
+the description kept and one plain sentence saying it was saved by an earlier
+version and the answers need checking. Nothing is lost silently and no old
+shape reaches the new screens unvalidated.
+
+> Fit criterion: fixture drafts of every earlier saved shape (version 1, 2, 3
+> envelopes, card-review and form steps) each open at the form with the
+> sentence and their description; none throws.
 
 ## Assumptions
 
@@ -406,6 +469,15 @@ one sentence each, instead of a generic "couldn't read your description".
   reached and pre-filled does.
 - A firm that connects its own model accepts that descriptions are sent to
   it; the app's job is to say so plainly (domain 2).
+- The 31 built-in cases are representative enough to compare models; they are
+  not a guarantee about any particular firm's descriptions (stated on the
+  Settings screen next to every result).
+- Ollama's cloud models and their free allowance change over time; the app
+  names none and relies on the measured result, not a list.
+- The form's single input / AI step / output shape gives the same verdict as
+  the retired multi-step map for the cases in the corpus (the 31 cases and 11
+  worked examples are pinned through it today); a case where the shapes would
+  differ is a requirement-level question, not a silent behaviour.
 
 ## Constraints
 
@@ -447,7 +519,40 @@ together) so the demonstration of the checklist is honest.
 
 ## Requirements Index
 
-*(generated at finalisation)*
+| ID | Domain | Summary | Priority |
+|---|---|---|---|
+| R18-GI-1 | Guided intake | Describe-first screen with a live "mentioned" checklist of the form's questions | Must |
+| R18-GI-2 | Guided intake | Gentle nudge for unmentioned items, with one-click example sentences; never blocks | Must |
+| R18-GI-3 | Guided intake | Model pre-fills only with a verified quote from the description; "Not sure" and countries too | Must |
+| R18-GI-4 | Guided intake | Every pre-filled answer marked with its quote and confirmed one by one; no accept-all | Must |
+| R18-GI-5 | Guided intake | The record and hand-off say per answer who supplied it; old records unchanged | Must |
+| R18-GI-6 | Guided intake | Contradiction check still runs on confirmed answers, typed or pre-filled | Must |
+| R18-GI-7 | Guided intake | The model never blocks: failure, slowness or absence opens a blank form with one plain sentence | Must |
+| R18-GI-8 | Guided intake | Editing the description re-pre-fills only untouched answers | Must |
+| R18-GI-9 | Guided intake | Description, pre-fills, quotes and confirmations survive a reload; cleared on finish or start over | Must |
+| R18-GI-10 | Guided intake | One route: the multi-step card review is retired; the form is the record; old cases stay readable | Must |
+| R18-GI-11 | Guided intake | Newcomer comprehension gate (NF-12) covers the new screens | Must |
+| R18-GI-12 | Guided intake | Pre-fill accuracy measured by the in-app test; untested models labelled as such | Must |
+| R18-GI-13 | Guided intake | Never claim more than can be shown ("mentioned", "from your description", "confirmed by you") | Must |
+| R18-MS-1 | Model setting | Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app | Must |
+| R18-MS-2 | Model setting | Say every time where the description goes; the record names the model and place | Must |
+| R18-MS-3 | Model setting | Any model: list what the server reports or type one; none shipped, recommended or defaulted | Must |
+| R18-MS-4 | Model setting | "Test it" from Settings: the 31 built-in cases, per-question score, saved and shown | Must |
+| R18-MS-5 | Model setting | Works whether or not the server honours the strict answer format | Must |
+| R18-MS-6 | Model setting | A firm address over plain http shows an "unencrypted" line | Must |
+| R18-MS-7 | Model setting | Plain sentences for retired, unavailable, used-up, signed-out or silent models | Must |
+| R18-MS-8 | Model setting | The test cases are the public corpus, byte-identical, with no firm data | Must |
+| R18-PS-1 | Public demo site | A first-time visitor completes a pre-check at once with no model | Must |
+| R18-PS-2 | Public demo site | "Make it smarter" panel: two stable commands and a dated link to Ollama's docs | Must |
+| R18-PS-3 | Public demo site | "Try an example": the eleven worked cases, generated from the guide's own source | Must |
+| R18-PS-4 | Public demo site | Standing demo-only notice whenever the model is not on this computer | Must |
+| R18-PS-5 | Public demo site | No owner key, token or sign-in in the public site; no model-key field in Settings | Must |
+| R18-PS-6 | Public demo site | Specific one-sentence messages when the browser blocks the visitor's own Ollama | Should |
+| R18-NF-1 | Non-functional | 30-second model time limit with an always-available skip control | Must |
+| R18-NF-2 | Non-functional | WCAG 2.1 AA on every new or changed screen and panel | Must |
+| R18-NF-3 | Non-functional | Description held only in this browser; sent only to the declared model; cleared by Clear all data | Must |
+| R18-NF-4 | Non-functional | Identical confirmed answers give a byte-identical verdict, typed or pre-filled | Must |
+| R18-NF-5 | Non-functional | Drafts from earlier builds open honestly at the form with the description kept | Must |
 
 ## Priority Model
 
@@ -465,6 +570,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-04 | Round 18 opened after `/gvm-test 007`; domain 1 (Guided intake, R18-GI-1..13) drafted from the owner's decisions and the model comparison. |
 | 2026-10-04 | Domain 1 confirmed by the owner. Domain 2 (Model setting, R18-MS-1..8) drafted: three declared places, honest notice, any model with an in-app 31-case test instead of a recommended model (owner's call), automatic format fallback, firm-server connection honesty, plain words for server failures. R18-GI-12 amended to point at the in-app test. OQ-1..3 logged. |
 | 2026-10-04 | Domain 2 confirmed (OQ-2, OQ-3 resolved). Domain 3 (Public demo site, R18-PS-1..6) drafted: works with no model, "Make it smarter" panel with two stable commands and a dated link, "Try an example" from the eleven worked cases, standing demo-only notice, no keys in the public bundle, specific browser-block messages. OQ-4 logged. |
+| 2026-10-04 | Safety-net audit: GI-7's time limit made concrete (R18-NF-1, 30 s); non-functional requirements added (R18-NF-1..5: time limit, accessibility, privacy, one-engine-one-answer, earlier drafts); Purpose & Vision, Assumptions and the Requirements Index written. 32 requirements: 31 Must, 1 Should. |
 
 ---
 
