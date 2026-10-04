@@ -77,6 +77,8 @@ const PackSchema = z.object({
 export interface PackLoadError {
   file: string;
   packId?: string;
+  /** Set when the first schema problem is inside a rule and its id could be read. */
+  ruleId?: string;
   reason: string;
 }
 
@@ -105,10 +107,21 @@ export function loadPacks(sources: Record<string, string>): PackLoadResult {
     const result = PackSchema.safeParse(parsed);
     if (!result.success) {
       const issue = result.error.issues[0];
+      const path = issue?.path ?? [];
+      // D-1a: when the problem is inside rules.<n>, name that rule's id (read
+      // defensively from the raw document — it may itself be the broken part).
+      let ruleId: string | undefined;
+      if (path[0] === 'rules' && typeof path[1] === 'number') {
+        const rules = (parsed as { rules?: unknown } | null)?.rules;
+        const rule = Array.isArray(rules) ? (rules[path[1]] as { id?: unknown } | undefined) : undefined;
+        if (rule && typeof rule.id === 'string' && rule.id.length > 0) ruleId = rule.id;
+      }
+      const where = `pack ${packId ?? file}${ruleId ? ` rule ${ruleId}` : ''}`;
       errors.push({
         file,
         ...(packId ? { packId } : {}),
-        reason: `pack ${packId ?? file} rejected: missing/invalid field "${issue?.path.join('.') ?? '(root)'}" — ${issue?.message ?? 'schema error'}`,
+        ...(ruleId ? { ruleId } : {}),
+        reason: `${where} rejected: missing/invalid field "${path.join('.') || '(root)'}" — ${issue?.message ?? 'schema error'}`,
       });
       continue;
     }
