@@ -47,7 +47,9 @@ import {
   vendorNotOnListValue,
   VENDOR_UNSURE_VALUE,
   VENDOR_UNSURE_ASSUMPTION,
+  ratingInstructionWarning,
 } from './plain-copy';
+import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
 import GraphView from './GraphView';
 import StepTracker, { describeStep } from './StepTracker';
@@ -85,6 +87,13 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
 
 // CR7-21/22 and the count of corrections on the trail: planCorrectionWrites
 // (intake-state.ts, pure and unit-tested).
+
+// GT7 L-1 (P12). Rating instructions are looked for on the DESCRIPTION path
+// only — a graph a model read out of the typed description. The form path's
+// "In a sentence or two" text is never read by a model, so it gets no warning.
+function ratingInstructionsFor(graph: { intake_method: string }, description: string | undefined): string[] {
+  return graph.intake_method === 'llm' && description ? findRatingInstructions(description) : [];
+}
 
 export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?: number } = {}) {
   // explore-001 D-002/D-003: restore any in-flight draft so a refresh,
@@ -1466,6 +1475,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           ...(reviewerNote ? { submitter_note: reviewerNote } : {}),
           ...(contradictionResolutions.length > 0 ? { contradiction_resolutions: contradictionResolutions } : {}),
           ...(answerContexts.length > 0 ? { answer_contexts: answerContexts } : {}),
+          // GT7 L-1 (P12): the description path only — the form's sentence is
+          // never read by a model. Written here, on the first confirmation; a
+          // correction pass (the isCorrection branch above) does not re-flag,
+          // by design: the first record already carries it. Spread-if-present.
+          ...(ratingInstructionsFor(graph, typedDescription).length > 0
+            ? { rating_instructions: ratingInstructionsFor(graph, typedDescription) }
+            : {}),
           // R16-D2 §4 (D-81, DR7-16): the "Not sure" answers this
           // confirmation was based on — written only when non-empty, same
           // spread-if-present discipline as the three fields above.
@@ -2303,6 +2319,18 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                 <p>{state.description}</p>
               </div>
             )}
+            {/* GT7 L-1 (P12): a description that dictates its own rating is flagged,
+                never obeyed. A status region (not an alert — nothing is blocked) with a
+                visible "Warning:" lead-in so it is not colour alone. Display only: the
+                graph, the engine input and the verdict never see this list. */}
+            {(() => {
+              const found = ratingInstructionsFor(state.graph, state.description);
+              return found.length > 0 ? (
+                <p role="status" className="intake-flow__rating-warning">
+                  <strong>Warning:</strong> {ratingInstructionWarning(found)}
+                </p>
+              ) : null;
+            })()}
             {evaluationError && (
               <p role="alert">
                 {/* CR8-14: prefix kept (tests and the form path's wrapper read the
@@ -2530,6 +2558,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               // destination zone to an explicit 3platformZone answer.
               description={state.description}
               plainAnswers={formInitialAnswers}
+              ratingInstructionsFound={ratingInstructionsFor(state.graph, state.description).length > 0}
               onChangeAnswer={() => dispatch({ type: 'CHANGE_ANSWER' })}
               onConfirm={(note) => void handleConfirmAndEvaluate(note)}
               // A refusal that will repeat disables Confirm; a failed record

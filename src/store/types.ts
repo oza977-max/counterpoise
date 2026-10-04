@@ -94,6 +94,11 @@ export type AuditEventPayload =
       submitter_note?: string;
       contradiction_resolutions?: string[];
       answer_contexts?: string[];
+      // GT7 L-1 (P12): phrases in the typed description that tried to set the
+      // case's own rating (engine/rating-instructions.ts). Written only on the
+      // first confirmation of a description-path case and only when non-empty
+      // (spread-if-present). A note for the reviewer — never engine input.
+      rating_instructions?: string[];
       // R16-D2 §1/§4 (D-95, D-81, DR7-16, DR7-19). Every "Not sure" answer
       // this confirmation was based on, in the §1 shape — written only
       // when non-empty (spread-if-present, same discipline as

@@ -8,6 +8,7 @@ import { registerSaysNoModelNamed } from './verdict-view-model';
 import type { PolicyFile } from '../engine/types';
 import { getPackSources, loadPackSet } from '../store/pack-source';
 import type { Verdict } from '../types/verdict';
+import { RATING_INSTRUCTION_AUDIT_LINE } from './plain-copy';
 import { TIER_MEANINGS, TRACK_MEANINGS, STAGE_LABELS, ACTION_LABEL, STATUS_LABEL } from './field-copy';
 import { findRuleDescription } from '../engine/find-rule-description';
 import { findPrecedents } from '../engine/precedent';
@@ -62,7 +63,10 @@ export function eventDetail(event: AuditEvent, viewerRole?: string): string {
     case 'use_case_created':
       return `${p.description} (intake: ${p.intake_method})`;
     case 'graph_confirmed':
+      // GT7 L-1: a fixed sentence for every role — the phrases themselves are not quoted here.
       return `Attested. Graph v${p.graph_version}, ${p.corrections_count} correction${p.corrections_count === 1 ? '' : 's'}.${assumptionsCountClause(p.assumptions)}${
+        Array.isArray(p.rating_instructions) && p.rating_instructions.length > 0 ? ` ${RATING_INSTRUCTION_AUDIT_LINE}` : ''
+      }${
         p.contradiction_resolutions && p.contradiction_resolutions.length > 0
           ? ` ${p.contradiction_resolutions.length} contradiction${p.contradiction_resolutions.length === 1 ? '' : 's'} resolved: ${p.contradiction_resolutions.map((n) => `“${n}”`).join(' · ')}`
           : ''
