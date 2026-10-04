@@ -93,7 +93,7 @@
       <li><strong>Inventory:</strong> Maintain a queryable graph of AI systems, their properties, relationships, and data flows within a bank.</li>
       <li><strong>Lifecycle:</strong> Track each AI system through defined stages (draft, active, deprecated, archived) with automatic and manual transitions.</li>
       <li><strong>Tier Routing:</strong> Map systems to risk tiers (1–4) and route them to appropriate approval workflows based on appetite.</li>
-      <li><strong>Self-Assessment:</strong> Allow banks to input their own Counterpoise appetite and receive deterministic, auditable in/out verdicts.</li>
+      <li><strong>Self-Assessment:</strong> Counterpoise appears in its own register as a use case, with a verdict produced by its own evaluation engine (LC-6).</li>
       <li><strong>Traceability:</strong> Link every register entry to source data, appetite rules, and control decisions for regulatory reporting.</li>
     </ul>
 
@@ -154,8 +154,8 @@
         </tr>
         <tr>
           <td>LC-6</td>
-          <td>Bank must be able to configure appetite rules and see deterministic verdicts.</td>
-          <td>Policy engine, Counterpoise self-assessment UI</td>
+          <td>Counterpoise self-assessment must be a real evaluation.</td>
+          <td>Not a stub — Counterpoise must run its own engine on its own graph and store the result</td>
         </tr>
       </tbody>
     </table>
@@ -674,126 +674,58 @@ function setupReEvalListener(store: RegisterStore): void {
   }, 6 * 60 * 60 * 1000); // 6 hours
 }</code></pre>
 
-    <h2 id="aigate-self-assessment">Counterpoise Self-Assessment</h2>
-    <p>Banks upload their risk appetite rules (a policy document); Counterpoise checks the register against those rules and returns deterministic verdicts. Self-assessment is the bridge between the register and the evaluation engine.</p>
+    <h2 id="aigate-self-assessment">Counterpoise Self-Assessment (LC-6)</h2>
+    <p>Counterpoise must appear in its own register as a submitted use case with a verdict produced by its own evaluation engine. This is not a stub or a fixture — it is a real evaluation.</p>
 
-    <pre><code>// Bank uploads appetite rules; Counterpoise evaluates register
-interface BankAppetite {
-  bank_id: string;
-  max_tier_1_systems: number;
-  tier_1_required_controls: string[];
-  tier_2_approval_sla_days: number;
-  prohibit_data_flows: Array&lt;{from: string; to: string}&gt;;
-  max_blast_radius: number;
-  data_classification_required: boolean;
-}
+    <p><strong>Seeded use case record (canonical vocabulary — honest values):</strong></p>
 
-interface SelfAssessmentVerdict {
-  compliant: boolean;
-  timestamp: string;
-  summary: {
-    total_systems: number;
-    by_tier: Record&lt;1 | 2 | 3 | 4, number&gt;;
-    violations: Violation[];
-    recommendations: string[];
-  };
-  control_gaps: ControlGap[];
-}
+    <pre><code>// src/seeds/aigate-self-assessment.ts
+export const AIGATE_USE_CASE_GRAPH: DataFlowGraph = {
+  id: 'aigate-self-assessment',
+  version: 1,
+  intake_method: 'structured_form',
+  extracted_at: '2026-06-01T00:00:00Z',
+  jurisdictions: ['UK'],        // Adjust to deployment jurisdiction
+  input_nodes: [{
+    id: 'in-1',
+    label: 'User-described AI use case (text)',
+    data_class: 'Internal',     // Canonical: intake content is internal data; not assumed lower
+    data_zone: 'Zone B'         // Canonical: cloud-hosted LLM processing
+  }],
+  processing_nodes: [{
+    id: 'proc-1',
+    label: 'Counterpoise evaluation engine + LLM graph extraction (Anthropic claude-sonnet-4-6)',
+    model_type: 'llm',          // Canonical: LLM for graph extraction
+    autonomy_level: 1,          // Human confirms graph before evaluation fires
+    data_zone: 'Zone B',
+    vendor: 'Anthropic',
+    replaces_prior_model: false
+  }],
+  output_nodes: [{
+    id: 'out-1',
+    label: 'Structured governance verdict (approved / approved_with_controls / rejected)',
+    action_type: 'recommend',   // Canonical: verdict drives governance decisions
+    exposure: 'internal-only',
+    decision_bindingness: 'material',  // Honest: the verdict drives governance decisions
+    reversibility: 'reversible',
+    scale: 'limited'            // Internal pilot — limited scale
+  }],
+  edges: [
+    { from: 'in-1', to: 'proc-1' },
+    { from: 'proc-1', to: 'out-1' }
+  ]
+};</code></pre>
 
-interface Violation {
-  type: 'tier_limit_exceeded' | 'prohibited_flow' | 'control_missing' | 'blast_radius_exceeds_limit';
-  node_id?: string;
-  message: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-}
+    <p>On first launch (when the register is empty), <code>src/seeds/aigate-self-assessment.ts</code> is called to:</p>
+    <ol>
+      <li>Insert the Counterpoise use case as a <code>RegisterNode</code> with <code>node_type: 'use_case'</code> (CR8-10: written LAST, after the vendor, the edge and the model link, so its existence marks a finished seed)</li>
+      <li>Insert the Anthropic vendor node and <code>provided_by_vendor</code> edge</li>
+      <li>Run <code>evaluate(AIGATE_USE_CASE_GRAPH, policy)</code> against the loaded policy</li>
+      <li>Store the resulting <code>Verdict</code> in the audit trail via <code>audit.append()</code></li>
+      <li>Route the result through <code>workflow-router.ts</code> like any other use case — <strong>no auto-approve</strong>. If the engine assigns High or Critical, the use case sits at <code>pre_checked</code> until the 2LoD role approves. The register view shows a prominent warning: <strong>"Counterpoise self-assessment pending 2LoD approval — verdicts are provisional until cleared."</strong></li>
+    </ol>
+    <p>If the policy changes after this initial seeding, the Counterpoise use case is queued for re-evaluation along with all other active use cases (LC-4 trigger applies).</p>
 
-interface ControlGap {
-  node_id: string;
-  control: string;
-  required_by: string; // e.g., "tier_1_required_controls"
-  remediation: string;
-}
-
-async function runSelfAssessment(
-  appetite: BankAppetite,
-  store: RegisterStore
-): Promise&lt;SelfAssessmentVerdict&gt; {
-  const nodes = await store.queryNodes({});
-  const violations: Violation[] = [];
-  const controlGaps: ControlGap[] = [];
-
-  // Check tier limits
-  const byTier = { 1: 0, 2: 0, 3: 0, 4: 0 };
-  for (const node of nodes) {
-    byTier[node.tier]++;
-  }
-
-  if (byTier[1] &gt; appetite.max_tier_1_systems) {
-    violations.push({
-      type: 'tier_limit_exceeded',
-      message: `Tier-1 systems (${byTier[1]}) exceed appetite limit (${appetite.max_tier_1_systems})`,
-      severity: 'critical'
-    });
-  }
-
-  // Check prohibited data flows
-  const edges = await store.queryEdges({});
-  for (const edge of edges) {
-    const prohibited = appetite.prohibit_data_flows.some(
-      p =&gt; p.from === edge.source_id &amp;&amp; p.to === edge.target_id
-    );
-    if (prohibited) {
-      violations.push({
-        type: 'prohibited_flow',
-        message: `Data flow from ${edge.source_id} to ${edge.target_id} is prohibited`,
-        severity: 'critical'
-      });
-    }
-  }
-
-  // Check required controls
-  const tier1Systems = nodes.filter(n =&gt; n.tier === 1);
-  for (const system of tier1Systems) {
-    for (const requiredControl of appetite.tier_1_required_controls) {
-      if (!system.attributes[requiredControl]) {
-        controlGaps.push({
-          node_id: system.id,
-          control: requiredControl,
-          required_by: 'tier_1_required_controls',
-          remediation: `Implement ${requiredControl} for ${system.name}`
-        });
-      }
-    }
-  }
-
-  // Check blast radius
-  for (const system of nodes.filter(n =&gt; n.tier === 1)) {
-    const radius = await store.blastRadius(system.id);
-    if (radius.impact_count &gt; appetite.max_blast_radius) {
-      violations.push({
-        type: 'blast_radius_exceeds_limit',
-        node_id: system.id,
-        message: `System ${system.id} has blast radius of ${radius.impact_count}, exceeds limit of ${appetite.max_blast_radius}`,
-        severity: 'high'
-      });
-    }
-  }
-
-  return {
-    compliant: violations.length === 0,
-    timestamp: new Date().toISOString(),
-    summary: {
-      total_systems: nodes.length,
-      by_tier: byTier as Record&lt;1 | 2 | 3 | 4, number&gt;,
-      violations,
-      recommendations: [
-        violations.length &gt; 0 ? 'Address critical violations before proceeding' : 'System is compliant',
-        controlGaps.length &gt; 0 ? `Remediate ${controlGaps.length} control gaps` : 'All required controls are in place'
-      ]
-    },
-    control_gaps: controlGaps
-  };
-}</code></pre>
 
     <h2 id="register-view">Register View</h2>
     <p>The register is viewed through a filterable, sortable table. Role-based field masking (via CSS) controls visibility. Users can toggle between bank, regulator, and auditor perspectives using the localStorage role toggle.</p>
@@ -995,9 +927,9 @@ async function runSelfAssessment(
           <td>Triggered by data change, time threshold, manual request, dependency change</td>
         </tr>
         <tr>
-          <td>LC-6: Bank appetite config &amp; verdicts</td>
-          <td>Counterpoise Self-Assessment; BankAppetite; SelfAssessmentVerdict</td>
-          <td>Bank uploads appetite rules; engine returns deterministic compliant/violations verdict</td>
+          <td>LC-6: Counterpoise self-assessment</td>
+          <td>&sect;9 &mdash; Counterpoise Self-Assessment (seeding)</td>
+          <td>Counterpoise is seeded into its own register; its verdict comes from its own engine and is routed like any other use case</td>
         </tr>
       </tbody>
     </table>
@@ -1078,14 +1010,14 @@ async function runSelfAssessment(
           <td>Role-based masking; CSS classes</td>
         </tr>
         <tr>
-          <td>RG-008</td>
-          <td>Run Counterpoise self-assessment against bank appetite</td>
-          <td>runSelfAssessment; SelfAssessmentVerdict</td>
+          <td>TC-LC-6-01</td>
+          <td>Counterpoise self-assessment &mdash; normal evaluation path</td>
+          <td>&sect;9 seeding; evaluate(); workflow-router</td>
         </tr>
         <tr>
-          <td>RG-009</td>
-          <td>Detect tier-limit violation in appetite check</td>
-          <td>SelfAssessmentVerdict.violations</td>
+          <td>TC-LC-6-02</td>
+          <td>Counterpoise self-assessment &mdash; forced-Reject test policy produces the prominent warning</td>
+          <td>&sect;9 register-view warning</td>
         </tr>
         <tr>
           <td>RG-010</td>
