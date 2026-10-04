@@ -209,17 +209,20 @@ with its marks, before they ship.
 > one who changes a wrong pre-fill; 0 "didn't understand", 0 less-strict
 > answers.
 
-**R18-GI-12 (Must):** Pre-fill accuracy is measured, not assumed. A
-repeatable script in the project runs the 31-case corpus through the
-connected model and reports, per question, how often the pre-fill was right,
-left blank, or wrong, plus verdict agreement; the result is recorded under
-`backtest/model-comparison/` with the model's name and date. The recommended
-model is changed only with a recorded result. It is not a build-breaking
-test (models change; it needs a network).
+**R18-GI-12 (Must):** Pre-fill accuracy is measured, not assumed. The
+standing measurement is the in-app model test (R18-MS-4): the 31-case corpus
+run through the configured model, scored per question (right, blank, wrong)
+and by verdict agreement, with the result kept against the model's name,
+where it ran, and the date. A model with no recorded result is shown as
+"untested" wherever its name appears. The corpus itself lives in the
+project (`backtest/cases.json`) and is the test's only input — never a
+person's own description. *(Amended during domain 2: the owner chose an
+in-app test over a repo script.)*
 
-> Fit criterion: running the script against the recommended model writes a
-> dated result file with the per-question table; the docs name the
-> recommended model and point to its latest result.
+> Fit criterion: the Settings screen and the description screen both show
+> "untested" for a model with no recorded result and "tested N/31 on
+> <date>" after one; the scoring is deterministic for a fixed set of model
+> replies (a test feeds canned replies and gets the same table every time).
 
 **R18-GI-13 (Must):** Wrong is worse than blank. The checklist, the nudge,
 the pre-fill marks and the record never claim more than the code can show:
@@ -232,7 +235,99 @@ quote; "confirmed by you" only after the person's own tick or change.
 
 ## 2. Model setting (MS)
 
-*(next domain — to be elicited)*
+Any model, declared honestly, proven on the 31 cases before anyone relies
+on it. Today the app accepts only a model on this computer and promises the
+description never leaves it. This round widens the choice to a firm's own
+server and to Ollama's cloud through the local app, and replaces the promise
+with a declared, recorded fact. Nothing here is a recommendation of a
+particular model: the test is the recommendation.
+
+**R18-MS-1 (Must):** Settings offers three declared places for the
+description-reading model: *on this computer* (an address on this machine,
+as today); *on my firm's server* (an address the person enters); *Ollama's
+cloud, through the Ollama app on this computer* (the local address plus a
+model whose name carries Ollama's cloud tag). The person must choose one
+before saving. A model name carrying the cloud tag may only be saved under
+the cloud choice.
+
+> Fit criterion: a loopback address with a cloud-tagged model is refused
+> under "this computer" with a plain sentence and accepted under "Ollama's
+> cloud"; a non-loopback address is refused under "this computer" and
+> accepted under "my firm's server"; the saved setting records the choice.
+
+**R18-MS-2 (Must):** The app says where the description goes, every time,
+in plain words, and only what it can show. At set-up and on the description
+screen before the person types: "Your description will be read on this
+computer by <model>" / "…sent to your firm's server at <address> and read by
+<model>" / "…sent to Ollama's cloud and read by <model>". "Never leaves your
+computer" is said only for the first choice. The case record names the
+model and where it ran. The user guide, tester guide and README say the
+same.
+
+> Fit criterion: each of the three sentences renders only under its own
+> choice; the register detail and the hand-off file carry model name and
+> place for a pre-filled case; a docs test keeps the four copies identical.
+
+**R18-MS-3 (Must):** Any model. Settings lists the models the chosen server
+reports and lets the person type one it does not list; the app ships no
+model, recommends none, and names none as the default. The measured results
+(R18-MS-4) are the only guidance.
+
+> Fit criterion: with a server reporting three models, all three are
+> offered and a typed fourth is accepted; no model name is hard-coded in
+> the Settings screen's copy.
+
+**R18-MS-4 (Must):** Test it before you trust it. From Settings the person
+can run the configured model against the 31 built-in cases. The run shows
+progress, can be stopped early, and uses exactly the path a real pre-fill
+uses. It reports, per form question, how often the pre-fill was right, left
+blank, or wrong, and how often the resulting verdict matched the known
+answer; the result is saved against model name, place and date and shown in
+Settings. A model may be saved without a test but is labelled "untested"
+until one is recorded (R18-GI-12). The test sends only the built-in cases,
+never a person's description.
+
+> Fit criterion: a stopped run reports the cases completed so far and says
+> it was stopped; the per-question table and verdict count are deterministic
+> for canned replies; the saved result survives reload; the model's label
+> changes from "untested" to "tested N/31 on <date>".
+
+**R18-MS-5 (Must):** Works with servers that ignore the strict answer
+format. The app gets a usable reply from models that honour the strict
+format and from those that do not, with no extra set-up: it asks in the
+strict format first and, if the reply is not in shape, asks again as a tool
+call with the field list spelled out, and remembers what worked for that
+model.
+
+> Fit criterion: a fake server that ignores the format setting and a fake
+> server that honours it both yield a valid pre-fill from the same settings;
+> the second request is made only after an out-of-shape reply; the
+> remembered mode is used first next time.
+
+**R18-MS-6 (Must):** Connection honesty for a firm server. An address over
+plain http is accepted but shows, at set-up and on the description screen,
+that the description travels unencrypted inside the firm's network; an https
+address shows no such line.
+
+> Fit criterion: the line renders for `http://` firm addresses and not for
+> `https://`; it never renders for the this-computer choice.
+
+**R18-MS-7 (Must):** Plain words for the server's own failures. The replies
+seen in testing — a model retired, a model not included in the free
+allowance, the allowance used up, no sign-in, the server not answering —
+each become one plain sentence that says what to do (sign in, pick another
+model, wait, start the app), and never blocks the form (R18-GI-7).
+
+> Fit criterion: a test per reply shape asserts the plain sentence and that
+> no raw server text reaches the screen.
+
+**R18-MS-8 (Must):** The test's 31 cases are the public corpus already in
+the project; they contain no firm's data, and the app ships them as it ships
+the rulebooks. Scoring uses the corpus's known correct answers.
+
+> Fit criterion: the cases bundled in the build are byte-identical to
+> `backtest/cases.json`; a confidentiality scan of the bundle finds no firm
+> name.
 
 ## 3. Public demo site (PS)
 
@@ -267,7 +362,21 @@ quote; "confirmed by you" only after the person's own tick or change.
 
 ## Open Questions
 
-*(logged as they arise)*
+**OQ-1 — Scoring basis for the in-app test.** The corpus records each
+case's correct *graph*, not its correct *form answers*. Two ways to score a
+pre-fill: author form answers for all 31 cases by hand (human-led, like pack
+authoring), or turn the pre-filled answers into a graph through the form's
+own mapping and compare that with the case's graph (the method the
+2026-10-04 comparison used). For the tech spec; either must give a
+deterministic per-question table.
+
+**OQ-2 — Untested models in real use.** Drafted as: allowed, labelled
+"untested" on the description screen. The alternative is to refuse pre-fill
+until a test is recorded. Owner to confirm with domain 2.
+
+**OQ-3 — Plain-http firm addresses.** Drafted as: allowed with an
+unencrypted-connection line (R18-MS-6). The alternative is to refuse plain
+http outside this computer. Owner to confirm with domain 2.
 
 ## Requirements Index
 
@@ -287,6 +396,7 @@ quote; "confirmed by you" only after the person's own tick or change.
 | Date | Change |
 |---|---|
 | 2026-10-04 | Round 18 opened after `/gvm-test 007`; domain 1 (Guided intake, R18-GI-1..13) drafted from the owner's decisions and the model comparison. |
+| 2026-10-04 | Domain 1 confirmed by the owner. Domain 2 (Model setting, R18-MS-1..8) drafted: three declared places, honest notice, any model with an in-app 31-case test instead of a recommended model (owner's call), automatic format fallback, firm-server connection honesty, plain words for server failures. R18-GI-12 amended to point at the in-app test. OQ-1..3 logged. |
 
 ---
 
