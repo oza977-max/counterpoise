@@ -155,8 +155,17 @@ describe('Walking Skeleton', () => {
     expect(await screen.findByRole('button', { name: 'Awaiting 2LoD sign-off' })).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('P4-C02: routes to the structured form on the no-api-key path and completes end-to-end without any LLM call [TC-NF-4-01]', async () => {
+  it('P4-C02: routes to the structured form on the no-api-key path and completes end-to-end without any LLM call [TC-NF-4-01] [TC-NF-3-01]', async () => {
     localStorage.clear(); // no API key configured
+    // gvm-test 007 (TC-NF-3-01): the whole intake-to-verdict path, structured
+    // form and no key, makes zero outbound network requests. A call would throw
+    // here and be counted, so it cannot slip through unnoticed.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+      throw new Error('a network request was made via fetch');
+    });
+    const xhrSpy = vi.spyOn(XMLHttpRequest.prototype, 'open').mockImplementation(() => {
+      throw new Error('a network request was made via XMLHttpRequest');
+    });
 
     const user = userEvent.setup({ delay: null });
     render(<App />);
@@ -233,6 +242,11 @@ describe('Walking Skeleton', () => {
     // Self-verifying, not just structurally implied: the LLM boundary was
     // never touched on the no-api-key path (review finding, pass 1).
     expect(mockCreate).not.toHaveBeenCalled();
+    // ...and the network was never touched at all (TC-NF-3-01).
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(xhrSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+    xhrSpy.mockRestore();
   }, SLOW_FLOW_MS);
 
   it('P4-C03: an uncertain node generates a real question, answering it reaches a verdict', async () => {
@@ -923,6 +937,16 @@ describe('Walking Skeleton', () => {
     // STAGE_LABELS plain word ("Awaiting 2LoD sign-off"), not the raw
     // 'pre_checked' enum — same assertion, updated text.
     expect(await screen.findByRole('button', { name: 'Awaiting 2LoD sign-off' })).toBeInTheDocument();
+
+    // gvm-test 007 (TC-LC-2-02, as amended): the High-tier use case's own row
+    // reads "Awaiting 2LoD sign-off" — never "Cleared" — before 2LoD has
+    // acted, and its page asks 2LoD for the approval (the review requirement).
+    const caseButton = await screen.findByRole('button', { name: /High tier tool — High tier, Awaiting 2LoD sign-off/ });
+    expect(caseButton.closest('tr')).not.toHaveTextContent(/Cleared/);
+    await user.click(caseButton);
+    expect(await screen.findByText('Awaiting 2LoD sign-off', { selector: '.register-stage' })).toBeInTheDocument();
+    expect(screen.queryByText('Cleared', { selector: '.register-stage' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
   it('P5-C02: the real LLM-generated reasoning trace renders in the verdict details section', async () => {
