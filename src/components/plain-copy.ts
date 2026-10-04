@@ -1310,10 +1310,10 @@ export function ratingInstructionWarning(phrases: readonly string[]): string {
     // /approved|rejected/i query, so those words never appear in a quote.
     .map((p) => `\u201C${p.replace(/\b(approved|rejected)\b/gi, '[\u2026]')}\u201D`)
     .join(' and ');
-  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that \u2014 the result comes only from what the AI uses and does. Check each card below carefully.`;
+  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
 }
 
 export const RATING_INSTRUCTION_CONFIRM_LINE =
-  'Your description tried to set its own rating. We ignore that \u2014 the result comes only from what the AI uses and does, as shown above.';
+  'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card above before confirming.';
 
 export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its own rating \u2014 check the cards.';

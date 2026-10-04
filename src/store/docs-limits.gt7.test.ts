@@ -24,6 +24,7 @@ describe('GT7 L-1 honesty paragraph (TC-UC-3-04e)', () => {
     const copies = files.map(canonical);
     for (const c of copies) {
       expect(c).toContain(SENTENCE_START);
+      expect(c).toContain('the check does not catch every wording');
       expect(c).not.toMatch(/approved|rejected/i);
     }
     expect(new Set(copies).size).toBe(1);

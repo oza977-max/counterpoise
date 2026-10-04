@@ -650,6 +650,17 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
 
   async function handleConfirmNewUseCase() {
     if (state.step !== 'duplicate_check') return;
+    // GB pass-2 M2: dismissing a match writes duplicate_dismissed to the
+    // append-only trail. While a rulebook is broken the person cannot get a
+    // verdict anyway, so nothing is written (same gate as evaluation/adoption).
+    // Checked before the in-flight flag so a refusal leaves the button usable.
+    if (duplicateMatch) {
+      const gateError = checkPolicyGate();
+      if (gateError) {
+        setDecisionError(gateError);
+        return;
+      }
+    }
     if (confirmNewInFlight.current) return;
     confirmNewInFlight.current = true;
     setDecisionPending(true);
@@ -668,8 +679,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // genuinely new use case from a duplicate waved through. Written against
     // the CANDIDATE's trail, because that is the record a later reader is
     // looking at when they ask why there are two of these.
-    // GB pass-1: deliberately NOT behind checkPolicyGate() — dismissing a
-    // match records a human decision about the inventory; it is not an evaluation.
+    // GB pass-2 M2: behind the same policy/pack gate (checked at the top of this function).
     if (duplicateMatch) {
       const candidate = duplicateMatch;
       // Final review M-1: only THIS single append can fail as "your choice
