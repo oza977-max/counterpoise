@@ -168,6 +168,10 @@ describe('evaluate — TC-R11-MG-2 model governance review', () => {
     const result = evaluate(g, policy);
     expect(result.ok).toBe(true);
     if (result.ok) {
+      // The unlisted model must actually produce its review (otherwise the
+      // loop below would pass vacuously over an empty list).
+      const modelReviews = result.value.downstream_reviews.filter((r) => r.includes('totally-unlisted-model-xyz'));
+      expect(modelReviews.length).toBeGreaterThan(0);
       for (const r of result.value.downstream_reviews) {
         expect(r).not.toMatch(/approved|rejected/i);
       }

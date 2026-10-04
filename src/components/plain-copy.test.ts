@@ -39,7 +39,7 @@ describe('describeAssumptions', () => {
     expect(describeAssumptions([])).toEqual([]);
   });
 
-  it('TC-R16-F-04: a generic reference resolves to the exact worded assumption and question text (moved from plain-intake.test.ts)', () => {
+  it('TC-R16-F-04 / TC-R16-B-01: a generic reference resolves to the exact worded assumption and question text (moved from plain-intake.test.ts)', () => {
     const refs: AssumptionRef[] = [
       { questionId: '4', optionKey: 'not-sure', fields: ['model_type'] },
       { questionId: '6', optionKey: 'not-sure', fields: ['action_type', 'autonomy_level', 'decision_bindingness', 'hitl'] },

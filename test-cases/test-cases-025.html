@@ -407,7 +407,7 @@
 <tr><td>TC-CR6-13b</td><td>Two packs sharing a rule id with different review text: each review's plain wording comes from the pack rule whose review text matches &mdash; <code>verdict-view-model.test.ts</code></td></tr>
 <tr><td>TC-CR6-16</td><td>Every action type at every autonomy level reads as a full line; at level 2 and above it names the action &mdash; <code>plain-copy.cr6-fx4.test.ts</code></td></tr>
 <tr><td>TC-CR6-18</td><td>With an empty core reason, no sentence starts with ". " or ", " and none carries a doubled stop &mdash; <code>verdict-view-model.test.ts</code></td></tr>
-<tr><td>TC-CR6-19</td><td>The model button label and the Recorded line use <code>plain_name</code>, falling back to <code>model_id</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code></td></tr>
+<tr><td>TC-CR6-19</td><td>The model button label and the Recorded line use <code>plain_name</code>, falling back to <code>model_id</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code>. Amended (gvm-test 007, 2026-10-04): the fallback is now a neutral &quot;Model n&quot;, never the raw id (CR7-35b, see test-cases-028); the test title says so</td></tr>
 <tr><td>TC-CR6-19b</td><td>The policy schema accepts and keeps an approved model's <code>plain_name</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code></td></tr>
 <tr><td>TC-CR6-20</td><td>The evidence-scope caveat (<code>--scope</code>) has its own contrast-safe rule that differs from plain evidence text &mdash; <code>app-css.cr6-fx4.test.ts</code></td></tr>
 <tr><td>TC-CR6-21</td><td>The questions' tick-all list resets the fieldset and styles each option like the form's &mdash; <code>app-css.cr6-fx4.test.ts</code></td></tr>

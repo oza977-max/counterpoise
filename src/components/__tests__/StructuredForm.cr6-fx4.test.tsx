@@ -136,6 +136,15 @@ describe('StructuredForm — CR6-07 required questions are announced', () => {
       expect(g).toHaveAttribute('aria-required', 'true');
       expect(g.querySelector('[role="radiogroup"]')).toBeNull();
       expect(g).not.toHaveAccessibleName(/required/i);
+      // Named by its legend: the accessible name is exactly the legend text.
+      const legend = g.querySelector('legend');
+      expect(legend).not.toBeNull();
+      // The visual "*" mark is aria-hidden, so it is not part of the name.
+      const clone = legend!.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+      const legendText = clone.textContent!.trim();
+      expect(legendText).not.toBe('');
+      expect(g).toHaveAccessibleName(legendText);
     }
     expect(container.querySelectorAll('div[role="radiogroup"]')).toHaveLength(0);
   });

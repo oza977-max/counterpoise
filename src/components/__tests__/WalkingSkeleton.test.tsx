@@ -1002,7 +1002,7 @@ describe('Walking Skeleton', () => {
   // shared Fold component's summary text) before finding the textarea; the
   // real-save assertions below (queued count, header policy version bump)
   // are otherwise unchanged.
-  it('P7-C03 Part B: saving a valid policy via the Appetite framework editor is a real save — queues re-evaluation for existing active use cases and updates the header\'s policy version', async () => {
+  it('[TC-R15-C4-04] P7-C03 Part B: saving a valid policy via the Appetite framework editor is a real save — queues re-evaluation for existing active use cases and updates the header\'s policy version', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
 

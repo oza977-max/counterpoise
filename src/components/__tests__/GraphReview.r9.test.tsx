@@ -73,9 +73,22 @@ describe('R9-SC-1 — the review checklist', () => {
     expect(within(list).getByText(/check “credit risk data”/i)).toBeInTheDocument();
     expect(within(list).getByText(/check “analyst answers”/i)).toBeInTheDocument();
     expect(within(list).getByText(/check the countries/i)).toBeInTheDocument();
+    // Exactly four obligations: the guessed fix, two confirms, jurisdictions.
+    const linesBefore = within(list).getAllByRole('listitem');
+    expect(linesBefore).toHaveLength(4);
+    const checkBefore = within(list).queryAllByText(/check “/i).length;
+    expect(checkBefore).toBe(2);
 
+    // Complete one: the first confirmable card (i1, "credit risk data").
     await user.click(screen.getAllByRole('button', { name: /^this is right$/i })[0]!);
-    expect(screen.queryAllByText(/check “/i).length).toBeLessThan(3);
+    const listAfter = screen.getByText(/things? to check before you continue/i).parentElement!;
+    expect(within(listAfter).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(listAfter).queryAllByText(/check “/i)).toHaveLength(checkBefore - 1);
+    expect(within(listAfter).queryByText(/check “credit risk data”/i)).toBeNull();
+    // The other obligations are untouched.
+    expect(within(listAfter).getByText(/check “analyst answers”/i)).toBeInTheDocument();
+    expect(within(listAfter).getByText(/fix 2 details we couldn.t tell on “training pipeline”/i)).toBeInTheDocument();
+    expect(within(listAfter).getByText(/check the countries/i)).toBeInTheDocument();
   });
 
   it('TC-R9-SC-1-02: zero obligations renders the done state', async () => {

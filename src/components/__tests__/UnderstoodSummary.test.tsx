@@ -261,6 +261,13 @@ describe('UnderstoodSummary — R16-W §2: the form’s own words (D-71)', () =>
     expect(plainText).not.toMatch(/Zone [ABC]/);
     expect(plainText).not.toMatch(/\(draft\)/);
     expect(plainText).not.toMatch(/\bllm\b/i);
+    // No snake_case field code or enum name leaks. The fixture's underscore
+    // codes are listed explicitly, then a generic sweep (letters joined by
+    // underscores — legitimate prose never contains one).
+    for (const code of ['system_access_scope', 'multi_instance_coordination', 'shared_infrastructure', 'credentialed_systems', 'model_type', 'autonomy_level', 'data_zone', 'decision_bindingness', 'output_reversibility', 'action_type', 'replaces_prior_model']) {
+      expect(plainText).not.toContain(code);
+    }
+    expect(plainText).not.toMatch(/[a-z]+_[a-z_]+/);
   });
 });
 

@@ -390,7 +390,7 @@ describe('plainAnswersToFormValues — Q4 / Q4a (kind of AI)', () => {
     expect(values.modelType).toBe('ml');
   });
 
-  it('TC-R16-B-01: Q4 "Not sure" -> agentic, listed as an assumption reference ({questionId, optionKey})', () => {
+  it('Q4 "Not sure" -> agentic, listed as an assumption reference ({questionId, optionKey})', () => {
     const { values, assumptions } = plainAnswersToFormValues({ ...BASE, '4': 'not-sure' }, policy());
     expect(values.modelType).toBe('agentic');
     // R16-F §5 (DR7-06): the engine returns a reference, never the worded

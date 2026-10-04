@@ -157,7 +157,7 @@ Test files: `src/store/handoff.test.ts`,
 | TC-CR6-13b | Two packs sharing a rule id with different review text: each review's plain wording comes from the pack rule whose review text matches — `verdict-view-model.test.ts` |
 | TC-CR6-16 | Every action type at every autonomy level reads as a full line; at level 2 and above it names the action — `plain-copy.cr6-fx4.test.ts` |
 | TC-CR6-18 | With an empty core reason, no sentence starts with ". " or ", " and none carries a doubled stop — `verdict-view-model.test.ts` |
-| TC-CR6-19 | The model button label and the Recorded line use `plain_name`, falling back to `model_id` — `QuestionnaireStep.cr6-fx4.test.tsx` |
+| TC-CR6-19 | The model button label and the Recorded line use `plain_name`, falling back to `model_id` — `QuestionnaireStep.cr6-fx4.test.tsx`. Amended (gvm-test 007, 2026-10-04): the fallback is now a neutral "Model n", never the raw id (CR7-35b, see test-cases-028); the test title says so |
 | TC-CR6-19b | The policy schema accepts and keeps an approved model's `plain_name` — `QuestionnaireStep.cr6-fx4.test.tsx` |
 | TC-CR6-20 | The evidence-scope caveat (`--scope`) has its own contrast-safe rule that differs from plain evidence text — `app-css.cr6-fx4.test.ts` |
 | TC-CR6-21 | The questions' tick-all list resets the fieldset and styles each option like the form's — `app-css.cr6-fx4.test.ts` |
