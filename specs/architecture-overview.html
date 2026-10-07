@@ -330,6 +330,8 @@ pre code { background: none; padding: 0; font-size: 0.85rem; line-height: 1.5; }
       </tbody>
     </table>
 
+    <p><strong>Round 18 (2026-10-07).</strong> Intake becomes one route: describe &rarr; (optional) model pre-fill &rarr; confirm each answer on the guided form &rarr; the same engine. Architecturally this adds three pure modules to the engine island (the "mentioned" rule, the pre-fill verifier, the question &rarr; graph-field table), three model-facing modules to <code>src/llm</code> (pre-fill call with two server modes and a 30-second budget, the model setting by place, the in-app test), one optional audit field (<code>answer_sources</code>) and one setting key that "Clear all data" keeps. The engine, the policy and the boundaries are unchanged; the model proposes, a pure verifier disposes, and the person decides. Design: <code>intake-flow.md</code> §27, <code>cross-cutting.md</code> §13c, build plan <code>implementation-guide.md</code> §12 (chunks R18-A to R18-G).</p>
+
     <h2 id="conceptual-integrity-review">Conceptual Integrity Review (Brooks)</h2>
     <blockquote style="border-left: 4px solid #ddd; padding-left: 1.2rem; margin: 1.5rem 0; font-style: italic; color: #555;">
       "I will contend that conceptual integrity is the most important consideration in system design. It is better to have a system omit certain anomalous features and improvements, but to reflect one set of design ideas, than to have one that contains many good but independent and uncoordinated ideas." — Frederick Brooks

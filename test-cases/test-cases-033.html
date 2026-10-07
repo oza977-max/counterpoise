@@ -243,6 +243,7 @@
                 <li><a href="#4-non-functional-nf">4. Non-functional (NF)</a></li>
                 <li><a href="#traceability-matrix">Traceability Matrix</a></li>
                 <li><a href="#test-summary">Test Summary</a></li>
+                <li><a href="#changelog">Changelog</a></li>
 </ul></nav>
 <main class="main-content">
 <header>
@@ -291,7 +292,7 @@
 <h3>TC-R18-GI-1-01: Typing a sentence about countries ticks the countries item [EXAMPLE]</h3>
 <p>Input: "It will be used by our offices in the United Kingdom and Germany." Given the description screen is open with an empty box and no model configured When the person types the Input sentence Then the checklist item for "Which countries does it involve?" MUST contain the state "mentioned" And the checklist item for "What information will it see or use?" MUST NOT contain the state "mentioned" And no checklist item reads "answered" or "understood" [Requirement: R18-GI-1] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-1-02: Each checklist item ticks on a sentence that mentions it and stays unticked on one that does not [EXAMPLE]</h3>
-<p>Input: the twelve sentence pairs below, one item at a time (the final item list is fixed in the tech spec; this table gets one row per shipped item, and a missing row fails the case) Given an empty description box When the person types the "mentions it" sentence for one row Then that row's item MUST contain the state "mentioned" And the "does not mention it" sentence for the same row MUST NOT contain a tick for that item</p>
+<p>Input: the thirteen sentence pairs below, one item at a time (the item list is fixed by <code>intake-flow.md</code> &sect;27.2; this table has one row per shipped item, and a missing row fails the case) Given an empty description box When the person types the "mentions it" sentence for one row Then that row's item MUST contain the state "mentioned" And the "does not mention it" sentence for the same row MUST NOT contain a tick for that item</p>
 <table>
 <thead><tr><th>Item (form question it stands for)</th><th>Ticks on</th><th>Stays unticked on</th></tr></thead>
 <tbody>
@@ -305,6 +306,7 @@
 <tr><td>What it helps decide</td><td>"It helps decide who gets a loan."</td><td>"It is good with spreadsheets."</td></tr>
 <tr><td>Whether a mistake can be put right</td><td>"A person can correct any mistake before it is sent."</td><td>"It looks tidy."</td></tr>
 <tr><td>How widely it will be used</td><td>"Every application will go through it."</td><td>"It was built last year."</td></tr>
+<tr><td>Which countries it involves</td><td>"It will be used by our offices in the United Kingdom and Germany."</td><td>"It runs overnight on weekends."</td></tr>
 <tr><td>Whether it replaces something</td><td>"It replaces our old spreadsheet scorecard."</td><td>"It sits on the shared drive."</td></tr>
 <tr><td>What it can get into by itself</td><td>"It has its own logins for other systems."</td><td>"It has a blue logo."</td></tr>
 </tbody>
@@ -323,15 +325,15 @@
 <h3>TC-R18-GI-1-08: Every pre-check starts at the description screen [EXAMPLE]</h3>
 <p>Input: press "New pre-check" from the home screen with empty storage Given a first-time visitor When the pre-check opens Then the screen MUST contain one text box and the checklist beside it And the screen MUST NOT contain any form question as a required control before the description step [Requirement: R18-GI-1] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-01: With every item mentioned, no note shows [EXAMPLE]</h3>
-<p>Input: a description that mentions all twelve items (the twelve "ticks on" sentences of TC-R18-GI-1-02, joined) Given the description screen with every item ticked When the person presses Next Then the screen MUST contain the next step And the screen MUST NOT contain "Your description doesn't mention" [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
+<p>Input: a description that mentions all thirteen items (the thirteen "ticks on" sentences of TC-R18-GI-1-02, joined) Given the description screen with every item ticked When the person presses Next Then the screen MUST contain the next step And the screen MUST NOT contain "Your description doesn't mention" [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-02: With two items unmentioned, the note names exactly those two [EXAMPLE]</h3>
-<p>Input: the twelve sentences of TC-R18-GI-1-02 without those for "Which countries" and "Whether it replaces something" Given the description screen with ten items ticked When the person presses Next Then the note MUST contain "Your description doesn't mention:" followed by the countries item and the replaces item And the note MUST NOT contain any of the ten ticked items [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
+<p>Input: the thirteen sentences of TC-R18-GI-1-02 without those for "Which countries" and "Whether it replaces something" Given the description screen with eleven items ticked When the person presses Next Then the note MUST contain "Your description doesn't mention:" followed by the countries item and the replaces item And the note MUST NOT contain any of the eleven ticked items [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-03: Clicking an example sentence adds it and ticks the item [EXAMPLE]</h3>
 <p>Input: the note from TC-R18-GI-2-02, click the example beside "Which countries does it involve?" Given the note is showing two items When the person clicks that example Then the description box MUST contain the example sentence appended after the existing text And the countries item MUST contain the state "mentioned" And the note MUST NOT contain the countries item any more [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-04: Next is never disabled by the nudge [EXAMPLE]</h3>
 <p>Input: description "It helps with my work." (every item unmentioned) Given the description screen When the person presses Next, then presses Next again without adding anything Then the form step MUST contain its first question And the Next control MUST NOT contain a disabled state at any point while the description is not blank [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-05: A one-line description lists every item with an example for each [EXAMPLE]</h3>
-<p>Input: "It helps with my work." Given the description screen When the person presses Next Then the note MUST contain all twelve items, each with its own one-click example And the note MUST NOT contain a requirement wording such as "required" or "you must" [Requirement: R18-GI-2] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<p>Input: "It helps with my work." Given the description screen When the person presses Next Then the note MUST contain all thirteen items, each with its own one-click example And the note MUST NOT contain a requirement wording such as "required" or "you must" [Requirement: R18-GI-2] [Priority: SHOULD] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-3-01: A verifiable sentence pre-fills its question and no other [EXAMPLE]</h3>
 <p>Input: description "Our UK team will use it to summarise internal ticket volumes." and a fake model reply that answers the countries question "United Kingdom" quoting "Our UK team", and answers the information question "Everyday work information" quoting "internal ticket volumes" Given a model is connected and the description is read When the form opens Then the countries question MUST contain the pre-filled answer "United Kingdom" with the quote "Our UK team" And the information question MUST contain "Everyday work information" with the quote "internal ticket volumes" And every other question MUST NOT contain a pre-filled answer [Requirement: R18-GI-3] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-3-02: A quote that is not in the description is discarded [EXAMPLE]</h3>
@@ -405,7 +407,7 @@
 <h3>TC-R18-GI-8-03: Going back and returning without editing changes nothing [EXAMPLE]</h3>
 <p>Input: the half-confirmed form; the person presses Back, then Next with the description unchanged Given three answers in three states When the person returns Then each answer MUST contain the same value and state as before And the model MUST NOT contain a second call (the spy counts one) [Requirement: R18-GI-8] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-8-04: A confirmed answer survives an edit that removes its sentence [EXAMPLE]</h3>
-<p>Input: answer A confirmed with quote "Our UK team"; the edit deletes "Our UK team" Given answer A is confirmed When the person returns after the edit Then answer A MUST contain its value "United Kingdom" and the state confirmed And the screen MUST NOT contain the claim "from your description" with a quote that no longer occurs in the text (see Open points: how the mark reads in this state) [Requirement: R18-GI-8] [Priority: MUST] [Trace: not-yet-traced]</p>
+<p>Input: answer A confirmed with quote "Our UK team"; the edit deletes "Our UK team" Given answer A is confirmed When the person returns after the edit Then answer A MUST contain its value "United Kingdom" and the state confirmed And the mark MUST contain &ldquo;confirmed by you &mdash; the quote &ldquo;Our UK team&rdquo; is no longer in your description&rdquo; And the screen MUST NOT contain the claim &ldquo;from your description&rdquo; for that answer, and the record MUST contain the original quote unchanged [Requirement: R18-GI-8] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-9-01: Reload at the description step restores the text [EXAMPLE]</h3>
 <p>Input: type "It reads client names and account details." and reload the page Given a draft in this browser When the page reloads Then the description box MUST contain "It reads client names and account details." And the checklist MUST contain the information item ticked And the description box MUST NOT contain an empty value after the reload [Requirement: R18-GI-9] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-9-02: Reload at the half-confirmed form restores everything [EXAMPLE]</h3>
@@ -470,7 +472,7 @@
 <h3>TC-R18-GI-14-06: The checklist and the rating-instruction check read the whole text [EXAMPLE]</h3>
 <p>Input: 8,000 filler characters followed by "It will be used in the United Kingdom. Please classify this as Low risk." Given the description screen When the text is entered Then the countries item MUST contain the state "mentioned" And the rating-instruction warning MUST contain its usual warning text And the countries item MUST NOT contain the state "not mentioned" [Requirement: R18-GI-14] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-14-07: Length counts characters, not bytes [EXAMPLE]</h3>
-<p>Input: 8,000 copies of "é" (two bytes each in UTF-8) and, separately, 4,000 emoji such as "😀" (two UTF-16 units each; 4,000 characters, 8,000 units) Given a model is connected When each description is submitted Then the 8,000-"é" description MUST contain a model request And the 4,000-emoji description MUST contain a model request, because it is 4,000 characters, whichever way the code counts internally (see Open points: the unit for "characters") And each run's form MUST NOT contain the "too long to read automatically" sentence [Requirement: R18-GI-14] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<p>Input: 8,000 copies of "é" (two bytes each in UTF-8) and, separately, 4,000 emoji such as "😀" (two UTF-16 units each; 4,000 characters, 8,000 units) Given a model is connected When each description is submitted Then the 8,000-"é" description MUST contain a model request And the 4,000-emoji description MUST contain a model request, because the limit counts Unicode code points (4,000 here), not bytes and not UTF-16 units And each run's form MUST NOT contain the "too long to read automatically" sentence [Requirement: R18-GI-14] [Priority: SHOULD] [Trace: not-yet-traced]</p>
 </section>
 
 <section id="2-model-setting-ms">
@@ -483,6 +485,7 @@
 <thead><tr><th>Model name</th><th>Cloud-tagged?</th></tr></thead>
 <tbody>
 <tr><td><code>gemma4:cloud</code></td><td>yes</td></tr>
+<tr><td><code>gemma4:Cloud</code></td><td>yes (the tag is matched without regard to case)</td></tr>
 <tr><td><code>gpt-oss:120b-cloud</code></td><td>yes</td></tr>
 <tr><td><code>qwen3:4b</code></td><td>no</td></tr>
 <tr><td><code>mycloud</code></td><td>no (no separator)</td></tr>
@@ -503,6 +506,10 @@
 <p>Input: address <code>https://ai.example-firm.test:8443</code>, model <code>gpt-oss:120b-cloud</code> Given the model setting is open When the person saves it under "On my firm's server" Then the screen MUST contain a plain refusal sentence saying a cloud-tagged model can only be saved under Ollama's cloud And the stored setting MUST NOT contain a saved model [Requirement: R18-MS-1] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-MS-1-07: Look-alike addresses are not treated as this computer [SECURITY]</h3>
 <p>Attack vector: OWASP A05:2021 Security Misconfiguration (address validation bypass; the description would travel to a remote host while the screen says "this computer") Given the choice "On this computer" When the person saves each of <code>http://localhost.evil.example:11434</code>, <code>http://127.0.0.1.evil.example:11434</code>, <code>http://evil.example/localhost</code> and <code>http://localhost@evil.example:11434</code> Then each save MUST contain a plain refusal sentence And the stored setting MUST NOT contain any of them And <code>http://localhost:11434</code>, <code>http://127.0.0.1:11434</code> and <code>http://[::1]:11434</code> MUST contain acceptance under the same choice [Requirement: R18-MS-1] [Priority: MUST] [Trace: not-yet-traced]</p>
+<h3>TC-R18-MS-1-08: Ollama's cloud needs a loopback address [EXAMPLE]</h3>
+<p>Input: address <code>https://ai.example-firm.test:8443</code>, model <code>gemma4:cloud</code> Given the model setting is open When the person saves it under "Ollama's cloud, through the Ollama app on this computer" Then the screen MUST contain a plain refusal sentence saying the cloud choice goes through the Ollama app on this computer And the stored setting MUST NOT contain the address or the model [Requirement: R18-MS-1] [Priority: MUST] [Trace: not-yet-traced]</p>
+<h3>TC-R18-MS-1-09: Ollama's cloud needs a cloud-tagged model [EXAMPLE]</h3>
+<p>Input: address <code>http://localhost:11434</code>, model <code>qwen3:4b</code> Given the model setting is open When the person saves it under "Ollama's cloud, through the Ollama app on this computer" Then the screen MUST contain a plain refusal sentence saying the cloud choice needs a model carrying Ollama's cloud tag And the stored setting MUST NOT contain the model [Requirement: R18-MS-1] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-MS-2-01: Each where-it-goes sentence renders only under its own choice [EXAMPLE]</h3>
 <p>Input: the three saved settings in turn: <code>qwen3:4b</code> on this computer; <code>qwen3:4b</code> on <code>https://ai.example-firm.test:8443</code>; <code>gemma4:cloud</code> through Ollama's cloud Given each setting When Settings and the description screen render Then the first MUST contain "Your description will be read on this computer by qwen3:4b" And the second MUST contain "&hellip;sent to your firm's server at https://ai.example-firm.test:8443 and read by qwen3:4b" in the same sentence frame And the third MUST contain "&hellip;sent to Ollama's cloud and read by gemma4:cloud" in the same sentence frame And each screen MUST NOT contain the other two sentences [Requirement: R18-MS-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-MS-2-02: "Never leaves your computer" is said only for this computer [EXAMPLE]</h3>
@@ -610,12 +617,12 @@
 <p>Attack vector: OWASP A02:2021 Cryptographic Failures / hard-coded credentials in client-side code Given a production build When every shipped file is scanned for patterns such as <code>sk-[A-Za-z0-9]{20,}</code>, <code>ghp_[A-Za-z0-9]{20,}</code>, <code>AKIA[0-9A-Z]{16}</code>, <code>Bearer [A-Za-z0-9._-]{20,}</code>, a 64-hex-character string, and <code>-----BEGIN</code> Then the scan MUST contain zero hits And the shipped files MUST NOT contain the owner's Ollama sign-in or key material [Requirement: R18-PS-5] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-PS-5-02: Settings has no field for a model key [EXAMPLE]</h3>
 <p>Input: the Settings screen, every control listed Given Settings When its controls and labels are read Then no control MUST contain a password-type input, or a label with "key", "token", "secret" or "password" And the stored setting MUST NOT contain a credential field [Requirement: R18-PS-5] [Priority: MUST] [Trace: not-yet-traced]</p>
-<h3>TC-R18-PS-6-01: A server that is not reachable gets its own one-sentence message [EXAMPLE]</h3>
-<p>Input: a fake network that refuses the connection to <code>http://localhost:11434</code> Given a model on this computer When the description is read Then the panel MUST contain one sentence saying the visitor's Ollama could not be reached and what to do (start the app) And the form MUST contain every question blank (R18-GI-7) And the panel MUST NOT contain the generic "couldn't read your description" [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
-<h3>TC-R18-PS-6-02: A blocked origin gets a different one-sentence message [EXAMPLE]</h3>
-<p>Input: a fake network that answers the browser's pre-flight with a refusal for the page's origin Given a model on this computer When the description is read Then the panel MUST contain one sentence saying the browser is blocked from the visitor's Ollama and to set the allowed-origins setting And the panel MUST NOT contain the generic "couldn't read your description" [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
-<h3>TC-R18-PS-6-03: The two messages are different and neither blocks the form [EXAMPLE]</h3>
-<p>Input: the two failures Given each failure When the two sentences are compared Then the two MUST NOT contain the same sentence And each run MUST contain an open form the person can answer by hand [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<h3>TC-R18-PS-6-01: A refused connection gets the one sentence naming both causes [EXAMPLE]</h3>
+<p>Input: a fake network that refuses the connection to <code>http://localhost:11434</code> Given a model on this computer When the description is read Then the panel MUST contain the one sentence "We couldn't reach Ollama on this computer. Check it is running, and that its allowed-origins setting includes this page." And the form MUST contain every question blank (R18-GI-7) And the panel MUST NOT contain the generic "couldn't read your description" [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<h3>TC-R18-PS-6-02: A blocked origin gets the same single sentence [EXAMPLE]</h3>
+<p>Input: a fake <code>fetch</code> that rejects with a <code>TypeError</code> as a browser does when the page's origin is not allowed Given a model on this computer When the description is read Then the panel MUST contain the same one sentence as in TC-R18-PS-6-01 And the panel MUST NOT contain raw error text such as "Failed to fetch" or "CORS" [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<h3>TC-R18-PS-6-03: Neither failure blocks the form, and the sentence is not shown for other failures [EXAMPLE]</h3>
+<p>Input: the two failures above, then a server that answers HTTP 500 Given each failure When the form opens after each Then each run MUST contain an open form the person can answer by hand And the HTTP 500 run MUST contain the "isn't answering" sentence and MUST NOT contain the sentence of TC-R18-PS-6-01 [Requirement: R18-PS-6] [Priority: SHOULD] [Trace: not-yet-traced]</p>
 </section>
 
 <section id="4-non-functional-nf">
@@ -668,7 +675,7 @@
 
 <section id="traceability-matrix">
 <h2>Traceability Matrix</h2>
-<p>Every requirement of <code>requirements/requirements-018.md</code> maps to at least one case; every case names one requirement (no orphans). Verified mechanically when this file was written: 33 requirements, 154 cases, zero requirements without a case, zero cases without a requirement.</p>
+<p>Every requirement of <code>requirements/requirements-018.md</code> maps to at least one case; every case names one requirement (no orphans). Verified mechanically when this file was written: 33 requirements, 156 cases, zero requirements without a case, zero cases without a requirement.</p>
 <table>
 <thead><tr><th>Requirement</th><th>Priority</th><th>Test cases</th><th>Count</th></tr></thead>
 <tbody>
@@ -686,7 +693,7 @@
 <tr><td>R18-GI-12</td><td>Must</td><td>TC-R18-GI-12-01, TC-R18-GI-12-02, TC-R18-GI-12-03, TC-R18-GI-12-04, TC-R18-GI-12-05</td><td>5</td></tr>
 <tr><td>R18-GI-14</td><td>Must</td><td>TC-R18-GI-14-01, TC-R18-GI-14-02, TC-R18-GI-14-03, TC-R18-GI-14-04, TC-R18-GI-14-05, TC-R18-GI-14-06, TC-R18-GI-14-07</td><td>7</td></tr>
 <tr><td>R18-GI-13</td><td>Must</td><td>TC-R18-GI-13-01, TC-R18-GI-13-02, TC-R18-GI-13-03</td><td>3</td></tr>
-<tr><td>R18-MS-1</td><td>Must</td><td>TC-R18-MS-1-01, TC-R18-MS-1-02, TC-R18-MS-1-03, TC-R18-MS-1-04, TC-R18-MS-1-05, TC-R18-MS-1-06, TC-R18-MS-1-07</td><td>7</td></tr>
+<tr><td>R18-MS-1</td><td>Must</td><td>TC-R18-MS-1-01, TC-R18-MS-1-02, TC-R18-MS-1-03, TC-R18-MS-1-04, TC-R18-MS-1-05, TC-R18-MS-1-06, TC-R18-MS-1-07, TC-R18-MS-1-08, TC-R18-MS-1-09</td><td>9</td></tr>
 <tr><td>R18-MS-2</td><td>Must</td><td>TC-R18-MS-2-01, TC-R18-MS-2-02, TC-R18-MS-2-03, TC-R18-MS-2-04, TC-R18-MS-2-05</td><td>5</td></tr>
 <tr><td>R18-MS-3</td><td>Must</td><td>TC-R18-MS-3-01, TC-R18-MS-3-02, TC-R18-MS-3-03</td><td>3</td></tr>
 <tr><td>R18-MS-4</td><td>Must</td><td>TC-R18-MS-4-01, TC-R18-MS-4-02, TC-R18-MS-4-03, TC-R18-MS-4-04, TC-R18-MS-4-05, TC-R18-MS-4-06, TC-R18-MS-4-07</td><td>7</td></tr>
@@ -715,24 +722,34 @@
 <thead><tr><th>Measure</th><th>Value</th></tr></thead>
 <tbody>
 <tr><td>Requirements</td><td>33 (32 Must, 1 Should)</td></tr>
-<tr><td>Test cases</td><td>154</td></tr>
-<tr><td>By priority</td><td>145 Must, 9 Should, 0 Could</td></tr>
-<tr><td>By kind</td><td>136 <code>[EXAMPLE]</code>, 7 <code>[PROPERTY]</code>, 11 <code>[SECURITY]</code></td></tr>
+<tr><td>Test cases</td><td>156</td></tr>
+<tr><td>By priority</td><td>147 Must, 9 Should, 0 Could</td></tr>
+<tr><td>By kind</td><td>138 <code>[EXAMPLE]</code>, 7 <code>[PROPERTY]</code>, 11 <code>[SECURITY]</code></td></tr>
 <tr><td>Must requirements with an <code>[EXAMPLE]</code> case holding Input, MUST contain and MUST NOT contain</td><td>32 of 32</td></tr>
 <tr><td>Requirements with no case</td><td>0</td></tr>
-<tr><td>Cases tagged <code>[Trace: not-yet-traced]</code></td><td>154 of 154 &mdash; the project has no <code>impact-map.md</code>, so no case can resolve to a goal, actor and impact; this is counted, not blocked</td></tr>
+<tr><td>Cases tagged <code>[Trace: not-yet-traced]</code></td><td>156 of 156 &mdash; the project has no <code>impact-map.md</code>, so no case can resolve to a goal, actor and impact; this is counted, not blocked</td></tr>
 </tbody>
 </table>
 <p>Priority notes. Edge and boundary cases were lowered one level from their requirement's Must, as the priority rule allows: TC-R18-GI-1-03 (near miss for a tick), TC-R18-GI-2-05 (one-line description), TC-R18-GI-3-08 (quote matching edge forms), TC-R18-GI-14-02 (one-character description), TC-R18-GI-14-07 (multi-byte text) and TC-R18-NF-5-02 (damaged old drafts). The requirement's main behaviour stays Must in each case.</p>
 <p>Technique notes. Property cases were emitted for exactly the seven requirements the property heuristic matched (GI-3, GI-6, GI-12, MS-5, NF-2, NF-4, NF-5); the other 26 requirements have none, which is correct for a conditional technique. GI-6's match is weak (a repeat-the-same-check property) and could be dropped at review. Security cases follow the description's real exposure: it is untrusted input to a model (prompt injection, GI-3-12), model output is untrusted data (GI-3-13, GI-4-06), imported files are untrusted (GI-5-05), addresses decide where data goes (MS-1-07), server text must not leak (MS-7-02), the bundle must hold no secrets or firm names (MS-8-02, PS-5-01) and nothing may leave the browser except to the declared address (NF-3-01, -03, -04).</p>
-<h3>Open points (for the tech spec or the owner; none blocks writing the tech spec)</h3>
-<p>1. <strong>GI-8 and GI-13 pull against each other.</strong> GI-8 keeps a confirmed answer after the person edits the description; GI-13 says "from your description" is shown only with a verified quote. If the edit removes the sentence the quote came from, the mark can no longer be verified. TC-R18-GI-8-04 asserts only that the answer is kept and no unverified claim is shown; the wording of the mark in that state is for the tech spec to settle. 2. <strong>PS-6 may not be buildable as written.</strong> A browser reports "server not running" and "origin not allowed" to a page as the same failed request. TC-R18-PS-6-01 and -02 assume the two can be told apart (for example by a probe the tech spec designs). If they cannot, PS-6 (the only Should) needs the owner's call: merge the two sentences, or drop the requirement. 3. <strong>MS-1 is silent on Ollama's cloud with a non-loopback address.</strong> The requirement says "the local address plus a cloud-tagged model", but only states refusals for the other two places. No case asserts what happens; the tech spec should say. 4. <strong>MS-1 does not say whether the cloud tag is case-sensitive</strong> (<code>gemma4:Cloud</code>). TC-R18-MS-1-02 lists lowercase names only. 5. <strong>GI-1's checklist item list is the form's questions by topic, but the exact set is a tech-spec decision (OQ-5, HR18-09).</strong> TC-R18-GI-1-02 lists twelve topics; the table gets one row per shipped item and a missing row fails the case. 6. <strong>GI-14 says "characters" without a unit.</strong> TC-R18-GI-14-07 pins 8,000 "é" and 4,000 emoji as inside the limit; the tech spec should state the counting unit. 7. <strong>MS-7 does not list the server's exact replies.</strong> TC-R18-MS-7-01 asserts the plain sentence per situation; the canned replies themselves are to be taken from the 2026-10-04 comparison runs (<code>backtest/model-comparison/</code>). 8. <strong>OQ-1 (scoring basis) and OQ-4 (do the eleven examples tick every item)</strong> stay with the tech spec; TC-R18-PS-3-01 asserts that the checklist ticks what an example mentions, not that it ticks all of it.</p>
+<h3>Open points (all settled by the tech spec, 2026-10-07)</h3>
+<p>1. <strong>GI-8 and GI-13</strong> &mdash; a kept answer whose quote has left the edited description reads &ldquo;confirmed by you &mdash; the quote &ldquo;&hellip;&rdquo; is no longer in your description&rdquo;; the record keeps the original quote (<code>intake-flow.md</code> &sect;27.6; TC-R18-GI-8-04 amended). 2. <strong>PS-6</strong> &mdash; a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (&sect;27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; recorded for the owner to ratify. 3. <strong>MS-1, Ollama's cloud with a non-loopback address</strong> &mdash; refused; the cloud choice also needs a cloud-tagged model (&sect;27.8; TC-R18-MS-1-08, -09 added). 4. <strong>MS-1, cloud tag case</strong> &mdash; matched without regard to case (&sect;27.8; <code>gemma4:Cloud</code> added to TC-R18-MS-1-02). 5. <strong>GI-1, the checklist items</strong> &mdash; thirteen, one per form question a description can mention (&sect;27.2); TC-R18-GI-1-02 gained a countries row and the "twelve" in the GI-1/GI-2 cases became "thirteen". 6. <strong>GI-14, the unit</strong> &mdash; Unicode code points (&sect;27.3; TC-R18-GI-14-07 states it). 7. <strong>MS-7, server replies</strong> &mdash; the sentences are the contract; the matchers are provisional until real replies are captured as fixtures in the build (&sect;27.5). Still open until then: only the HTTP 500 shape is recorded in the repository. 8. <strong>OQ-1 and OQ-4</strong> &mdash; scoring is graph comparison with every fill assumed confirmed (&sect;27.11); the examples are not reworded and the build records how many items each ticks (&sect;27.12).</p>
 <h3>Tooling notes</h3>
 <ul>
 <li><code>_ebt_validator.audit()</code> could not read this round's ids: its pattern for requirement ids (<code>[A-Z]+-\d+</code>) does not match <code>R18-GI-1</code>, so it would report zero requirements and pass vacuously. The same shape check was run with an equivalent script that accepts the <code>R18-</code> prefix: all 32 Must requirements have an <code>[EXAMPLE]</code> case with Input, MUST contain and MUST NOT contain. The skill's validator should be widened (noted for the owner, not changed here).</li>
 <li><code>scripts/trace-check.py</code> read <code>[Trace: not-yet-traced]</code> as a file path. It now skips that value and reports files marked <code>Status: PENDING BUILD</code> as pending instead of untraced. The marker comes off this file in the build round.</li>
 <li><code>.ebt-boundaries</code> does not exist, so the contract/collaboration lint has no allowlist; no case here is tagged <code>[CONTRACT]</code> or <code>[COLLABORATION]</code> because there is no code yet to classify.</li>
 </ul>
+</section>
+
+<section id="changelog">
+<h2>Changelog</h2>
+<table>
+<thead><tr><th>Date</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>2026-10-07</td><td>Amended after the tech spec (<code>intake-flow.md</code> &sect;27): checklist is thirteen items (TC-R18-GI-1-02 countries row; GI-2 cases count thirteen); TC-R18-GI-8-04 states the kept-answer mark; TC-R18-GI-14-07 states code points; TC-R18-MS-1-02 adds <code>gemma4:Cloud</code>; TC-R18-MS-1-08 and -09 added; TC-R18-PS-6-01..03 rewritten for the single sentence. 156 cases.</td></tr>
+</tbody>
+</table>
 </section>
 <footer class="gvm-attribution"><p><em>Developed using the Grounded Vibe Methodology</em></p></footer>
 </main>

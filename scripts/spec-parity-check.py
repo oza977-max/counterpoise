@@ -247,6 +247,20 @@ def check_r4() -> list[str]:
     findings = []
     path_pattern = re.compile(r"`(src/[\w./-]+\.tsx?)`")
     seen = set()
+    # Modules a round's specs name before the build creates them are listed under
+    # a "Planned modules" heading in implementation-guide.md. They are exempt here;
+    # a listed path that already exists is a finding (the list is emptied by the
+    # chunk that builds the module, so it can never silently rot).
+    planned: set[str] = set()
+    guide = SPECS_DIR / "implementation-guide.md"
+    if guide.exists():
+        sec = re.search(r"^#{2,4} [^\n]*Planned modules[^\n]*\n(.*?)(?=^#{1,4} |\Z)",
+                        guide.read_text(encoding="utf-8"), re.M | re.S)
+        if sec:
+            planned = set(path_pattern.findall(sec.group(1)))
+    for path in sorted(planned):
+        if (REPO_ROOT / path).exists():
+            findings.append(f"R4: `{path}` is listed as a planned module but now exists — remove it from the Planned modules list")
     for spec_file in sorted(SPECS_DIR.glob("*.md")):
         text = spec_file.read_text(encoding="utf-8")
         for m in path_pattern.finditer(text):
@@ -254,6 +268,8 @@ def check_r4() -> list[str]:
             if path in seen:
                 continue
             seen.add(path)
+            if path in planned:
+                continue
             if not (REPO_ROOT / path).exists():
                 findings.append(f"R4: {spec_file.name} references `{path}` which does not exist in src/")
     return findings

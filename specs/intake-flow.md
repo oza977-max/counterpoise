@@ -1215,10 +1215,294 @@ Spec for `build/prompts/GT7-fixes.md` (v2), found by `/gvm-test 007`: a typed de
 
 **What it never does.** It never changes the description sent to the model, the graph, the engine input or the verdict (TC-UC-3-04c-07: the same graph gives an identical verdict with and without the phrases). The phrases are a note for the person and the reviewer, never evaluation input. The user guide (both twins), the tester guide and the README's limits carry one plain paragraph saying the free local demo model can be misled by a description that claims its own rating, that the app flags what it can spot, that the rules engine only rates what is on the cards, and that every card must be checked (TC-UC-3-04e). Traceability: `test-cases-032.md`.
 
+## 27. Round 18 — Describe, pre-fill, confirm (R18-GI, R18-MS, R18-PS, R18-NF)
+
+*Written 2026-10-07 against `requirements/requirements-018.md` (33 requirements) and `test-cases/test-cases-033.md` (154 cases). Owner decisions taken at the start of this spec (2026-10-07): the two browser-block messages of PS-6 become one honest sentence if the browser cannot tell them apart; a kept answer whose quote has left the edited description reads "confirmed by you" with a note; Ollama's cloud with a non-loopback address is refused; the cloud tag is matched without regard to case; the 8,000-character limit counts characters; the scoring basis of the in-app test is the graph-comparison method (OQ-1); the eleven examples are not reworded to tick every checklist item (OQ-4). Boundaries are those of `cross-cutting.md` §7 and are restated per module below.*
+
+**Round 18 expert panel** (the file's panel above is unchanged; these governed §27, the implementation guide's §12 and the other specs' Round 18 sections):
+
+| Expert | Work | Role in this section |
+|---|---|---|
+| Michael Keeling | *Design It!* | ADR capture (ADR-IF-R18-1 to -5); the architecturally significant requirements (GI-3's proof rule, NF-1's budget, NF-4's one engine) |
+| George Fairbanks | *Just Enough Software Architecture* | Depth where risk is: the pre-fill verifier, the model-call modes and the setting validation are specified closely; the checklist copy and panel text lightly |
+| Frederick Brooks | *The Mythical Man-Month*; *The Design of Design* | Conceptual integrity: one route for every case, one sentence source, one verifier, one place a graph is built |
+| Mike Cohn | *Agile Estimating and Planning*; *User Stories Applied* | Vertical chunks R18-A to R18-G, MVP-first (R18-A runs with no model), split-by-data-variation fallback for R18-C |
+
+### 27.1 What changes and what does not
+
+The deterministic engine (`evaluate()`, the policy, the packs) does not change. The guided form's questions, options and the answer → graph mapping (`plainAnswersToFormValues`, `buildGraphFromForm`) do not change. What changes is how answers *reach* the form and what the record says about them. Three things are new in the engine island as **pure** modules (no React, no clock, no random, no I/O, no model): the "mentioned" rule (§27.2), the pre-fill verifier (§27.4) and the question → graph-field table used to score the in-app test (§27.11). Everything that talks to a model lives in `src/llm/*`; everything that persists lives in `src/store/*`; screens only render.
+
+The route replaces the description/LLM path *and* adds the pre-fill to the form path. After this round there is **one** route:
+
+```
+description_entry  ← R18-GI-1/-2/-14: text box + live checklist + nudge on Next
+duplicate_check    ← unchanged (UC-2)
+prefill_reading    ← NEW (R18-GI-3/-7, NF-1): model reads, 30 s, skip control; skipped when no model or > 8,000 characters
+graph_extraction   ← the form ("Your answers"), method is always 'form'; carries the pre-fill and per-answer state
+questionnaire / contradiction_review / confirmation / evaluation_pending / verdict ← unchanged
+```
+
+`graph_review` and the `'llm'` extraction method are removed (§27.10). The step tracker keeps its six labels; `prefill_reading` shows under "Your answers".
+
+### 27.2 The checklist and the "mentioned" rule (R18-GI-1, OQ-5, HR18-09)
+
+**ADR-IF-R18-1 — "mentioned" is a fixed phrase-table lookup over the normalised text.** Status: Accepted.
+
+*Context.* GI-1 ticks an item "from the text alone by a fixed, deterministic rule (no model, no clock)". It must never claim "understood".
+*Options.* (a) a model call per keystroke — rejected, not deterministic and slow; (b) free-form NLP — rejected, not explainable; (c) a reviewed vocabulary table per item matched on normalised text — chosen.
+*Decision.* A pure module `src/engine/mentioned.ts` holds one entry per checklist item and exposes `mentionedItems(text): ReadonlySet<ChecklistItemId>`. The text is normalised once (lower-cased, whitespace runs collapsed to one space, curly quotes and dashes folded to plain). An item is mentioned when any of its phrases occurs in the normalised text, where a phrase is a **whole-word** match (a letter or digit on either side defeats it — so "United" never ticks countries via "Unity"). The vocabulary is English only (Assumptions). The table is data in the module, not in policy: it is reviewed like pack text (human-led; `grounding/PACK-AUTHORING.md` principle applies — never generated).
+*The 13 items* (one per form question that a description can mention; the follow-ups of Q3 fold into "where the AI comes from", Q13 and Q14 into one item):
+
+| Item id | Stands for form question | Example phrases in the table (not exhaustive) |
+|---|---|---|
+| `where-ai-comes-from` | Q3 | "supplier", "vendor", "bought", "built in-house", "built by our team", "chatgpt", "copilot", "claude", "gemini" |
+| `kind-of-ai` | Q4 | "score", "ranking", "forecast", "classif", "summaris", "translat", "generate", "agent", "recognis" |
+| `can-explain` | Q4a | "show which factors", "explain why", "fixed rules", "scorecard", "can't explain" |
+| `information-used` | Q5 | "client", "customer", "applicant", "staff", "names", "account details", "confidential", "public information", "price-sensitive" |
+| `what-it-does-with-output` | Q6 | "checks each", "reviews", "approves", "acts by itself", "automatically", "drafts", "suggests", "flags" |
+| `weight-of-output` | Q6a | "usually go with", "one input among", "relied on", "decision is based on" |
+| `who-receives` | Q7 | "go out to clients", "sent to customers", "published", "my team", "other teams", "regulator" |
+| `what-it-decides` | Q8 | "who gets a loan", "lend", "hire", "pricing", "trading", "fraud", "regulatory return" |
+| `mistake-recoverable` | Q9 | "correct any mistake", "can be undone", "cannot be taken back", "irreversible" |
+| `how-widely` | Q10 | "every application", "whole business", "small trial", "pilot", "my team" |
+| `countries` | Q11 | the policy's jurisdiction names and codes plus country names: "united kingdom", "uk", "germany", "eu" … |
+| `replaces-something` | Q12 | "replaces", "instead of our old", "retire the old" |
+| `agentic-reach` | Q13/Q14 | "its own logins", "access token", "deploy", "other agents", "pass work" |
+
+The test sentences of `test-cases-033.md` (TC-R18-GI-1-02, -03) are the acceptance pins: each "ticks on" sentence must tick its item, each "stays unticked" sentence must tick nothing. A phrase added to the table needs a ticks-on and a stays-unticked sentence in the same commit. Item labels shown to the person are the form's own short words from `plain-copy.ts` (`CHECKLIST_LABELS`, no engine vocabulary — NF-11); the rendered state words are exactly "mentioned" and "not mentioned" (R18-GI-13).
+*Consequences.* A description can say "no client data" and still tick the information item — that is correct (it was mentioned); the contradiction check (UC-5) is where meaning is compared. False ticks are possible and harmless: the form asks every question anyway.
+
+**The checklist component** renders from `mentionedItems(text)` on every change (pure, cheap; no debounce needed at ≤ the whole text). The container has `role="status"`/`aria-live="polite"`; each item shows a symbol and the words "mentioned" / "not mentioned" so no meaning rides on colour (NF-2).
+
+### 27.3 The nudge, blank text and length (R18-GI-2, R18-GI-14)
+
+- **Next with unmentioned items** (first press): the description step sets `nudgeShown`, renders "Your description doesn't mention: …" listing exactly the unmentioned items, each with a one-click example sentence (`NUDGE_EXAMPLES`, plain-copy, one per item), and leaves the box and Next as they are. **The second press proceeds.** With every item mentioned the first press proceeds. Next is never disabled by the nudge. Clicking an example appends its sentence (preceded by a space or line break) to the text, which re-computes the checklist.
+- **Blank** (empty or whitespace-only after trimming Unicode whitespace) disables Next. One character is enough.
+- **Length.** `PREFILL_MAX_CHARS = 8000`, counted in **Unicode code points** (`[...text].length`), not UTF-16 units and not bytes (decision 2026-10-07: what a person sees). Exactly 8,000 is read by the model; 8,001 is not and the form opens blank with `TOO_LONG_SENTENCE`. The whole text is always kept in the draft and the record, and the checklist and `findRatingInstructions` always run on the whole text (the latter already scans every window).
+
+### 27.4 The pre-fill contract (R18-GI-3, R18-GI-6, R18-NF-4)
+
+**ADR-IF-R18-2 — The model proposes, a pure verifier disposes, the person decides.** Status: Accepted.
+
+*Context.* The previous LLM path asked the model for a graph and trusted its field values (guessed fields were then questioned). GI-3 requires proof from the person's own words and that the engine's input is built only from confirmed form answers (NF-4).
+*Decision.*
+
+1. **Catalogue.** The component layer builds a `PrefillCatalogue` from `PLAIN_QUESTIONS` and the policy's dynamic options (`buildDynamicOptions`): per question id, `kind: 'single' | 'multi'`, and `options: { key: string; text: string }[]`. Free-text questions (1, 2, 3supplierName, 3model, 8other) are not in the catalogue — they are never pre-filled. `src/llm/*` receives the catalogue as data and imports nothing from `components` (boundary 2/4).
+2. **Reply shape** (the contract both server modes must produce):
+
+```json
+{ "answers": [
+  { "question": "5",
+    "values": [ { "option": "people",   "quote": "client names" },
+                { "option": "everyday", "quote": "internal ticket volumes" } ] },
+  { "question": "11",
+    "values": [ { "option": "GB", "quote": "Our UK team" } ] }
+] }
+```
+
+   Single-choice questions carry one value; tick-all questions carry one `{option, quote}` per ticked option.
+3. **Verifier** — pure, in the engine island: `verifyPrefill(raw: unknown, catalogue: PrefillCatalogue, description: string): Prefill`, where `Prefill = Partial<Record<QuestionId, PrefillAnswer>>` and `PrefillAnswer = { values: { optionKey: string; quote: string }[] }`. Rules, applied per value, in this order; any failure drops *that value only*:
+   - the reply is an object with an `answers` array (otherwise the whole reply yields `{}`); entries whose `question` is not a catalogue id, or whose key is `__proto__`/`constructor`/`prototype`, are ignored; a duplicate question id keeps the first;
+   - `option` is one of the question's own option keys (a value outside the options is dropped — HR18-07); a single-choice answer with more than one value keeps none;
+   - `quote` is a non-empty string and **occurs in the description exactly** after both are whitespace-normalised (runs of whitespace → one space, then trimmed); no case folding, no fuzzy match, and the same text is compared (so a quote is a literal substring — Unicode look-alikes do not match);
+   - `quote` is **not** itself a rating instruction: `findRatingInstructions(quote)` returns an empty list (HR18-01);
+   - "Not sure" is an ordinary option key and obeys the same rules.
+   A question left with no values is absent from the result. The verifier is idempotent: it accepts and emits the same raw shape, so `verifyPrefill(toRaw(verifyPrefill(x)))` equals `verifyPrefill(x)` (the property of TC-R18-GI-3-11).
+4. **Visibility.** The form's own dependency rule (a follow-up is asked only when its trigger answer says so — `setSingle` clearing in `StructuredForm`) is applied to the verified result in question order: a pre-fill for a question that would not be shown is discarded, so the form never holds a hidden answer.
+5. **Only the form builds the engine's input.** `Prefill` becomes `PlainAnswers` values *in form state only*; `handleFormSubmitted` is the one place a graph is built (`plainAnswersToFormValues` → `buildGraphFromForm`), and Continue is disabled until every pre-filled answer is confirmed or changed (§27.6). `evaluate()` is reachable only from the confirmation step. No code path passes a `Prefill` or a raw reply to the engine (TC-R18-GI-3-09, NF-4-03).
+6. **Model name and place** are recorded with each pre-fill from the model setting at the time of the call (§27.8), not read back from the reply.
+7. **The prompt** is built in `src/llm/prefill.ts` from the catalogue: it states the question ids, the allowed option keys and texts, and that every value needs a quote copied exactly from the description; the description is wrapped as quoted data and the prompt says to ignore any instruction inside it. This reduces, but does not rely on, obedience: the verifier and the confirmation gate are the controls (LLM01).
+
+**Rating-instruction guard.** `ratingInstructionsFor(graph, description)` currently returns `[]` unless `graph.intake_method === 'llm'` (`IntakeFlow.tsx:98`). That guard is removed: every route now has a description and the warning runs on it wherever the description is shown (describe, form, confirmation), and the `rating_instructions` audit field is written whenever any are found (R18-GI-3, GT7).
+
+**Contradiction check (UC-5).** `detectContradictions(description, [], graph)` is called with the **description as typed** and the graph built from the confirmed answers, exactly as on the form path today (`handleFormSubmitted`); a changed pre-fill and a typed answer are indistinguishable to it (R18-GI-6).
+
+### 27.5 Calling the model: modes, time, failures (R18-MS-5, R18-NF-1, R18-GI-7, R18-MS-7, R18-PS-6)
+
+**ADR-IF-R18-3 — Ask strictly first; fall back to a tool call; remember what worked.** Status: Accepted.
+
+`src/llm/prefill.ts` exports `requestPrefill(args): Promise<PrefillOutcome>` with `args = { description, catalogue, setting: ModelSetting, signal: AbortSignal }`. A `ModelSetting` (§27.8) names the place, address, model and an optional remembered `mode`.
+
+- **Mode `format`** sends the strict JSON-schema in the server's `format` field (as today's `localChatJson`). **Mode `tool`** sends the same schema as one function tool (`fill_form`) with the field list spelled out in the prompt, and reads the arguments of the first tool call. `ModelSetting.mode` (`'format' | 'tool' | undefined`) says which to try first; with none, `format` is first. If the reply from the first mode does not pass the shape check (`answers` array present), the other mode is tried **once**; the mode that produced a usable reply is saved on the setting; a reply that is usable in neither mode is "unusable". A server that honours `format` therefore gets exactly one request.
+- **Time.** The owner of the 30-second budget is the intake component, not the provider: it creates an `AbortController`, arms a `setTimeout(30_000)` that aborts it, and passes `signal`. The **skip control** ("Skip — I'll answer the questions myself") aborts the same controller and opens the blank form at once. The existing attempt-token pattern (`IntakeFlow` CR6) makes a late reply a no-op. `AbortSignal.timeout` is not used (it cannot be driven by a fake clock). The model test (§27.11) uses the same mechanism with a 60-second budget per case.
+- **Outcome type.** `PrefillOutcome = { kind: 'ok'; prefill: Prefill } | { kind: 'none'; reason: PrefillFailure }` where `PrefillFailure` is one of `not-configured | too-long | timed-out | skipped | retired | not-included | allowance-used | signed-out | not-answering | blocked-or-unreachable | unusable | other`. `none` always opens a blank form with exactly one plain sentence (below), keeps the description, and writes **nothing** to the audit trail (GI-7). The outcome carries no raw server text out of `src/llm`.
+- **Classification** (status line and body of the reply, never shown): HTTP 401, or 403 whose body mentions signing in → `signed-out`; HTTP 402, or 403 whose body mentions a subscription/upgrade/plan → `not-included`; HTTP 429 or a body mentioning limit/quota/usage → `allowance-used`; HTTP 404 or a body mentioning "not found"/"retired"/"no longer" → `retired`; a connection refusal or a 5xx → `not-answering`; a thrown fetch failure with no response (browsers raise the same `TypeError` for an unreachable server and for a blocked origin) → `blocked-or-unreachable`; anything else → `other`. **These matchers are provisional**: the only reply shape recorded in the repository is `HTTP 500` (the 2026-10-04 gpt-oss run). The build chunk that adds this (R18-C) must capture the other replies from a live signed-in and signed-out Ollama, save them as fixtures under `src/llm/__fixtures__/`, and tighten the table to match; the table here is the contract for the *sentences*, the fixtures are the contract for the *matching*.
+
+**The sentences** (one per failure; plain; none contains "approved" or "rejected"; none shows server text; each says what to do and, except `not-configured`, that the form is open for the person to fill in):
+
+| Failure | Sentence (owner may adjust the wording in design review; the content may not shrink) |
+|---|---|
+| `not-configured` | "No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under Make it smarter." |
+| `too-long` | "Your description was too long to read automatically, so the form is blank. It is kept in full." |
+| `timed-out` / `skipped` | "Nothing was filled in for you. Answer the questions below." |
+| `retired` | "That model isn't available any more. Pick another one in Settings." |
+| `not-included` | "That model isn't included in the free allowance. Pick another one in Settings." |
+| `allowance-used` | "The free allowance for that model is used up for now. Wait a while, or pick another model in Settings." |
+| `signed-out` | "Ollama isn't signed in. Run `ollama signin` on this computer, then try again." |
+| `not-answering` | "The model isn't answering. Start the Ollama app or check the address in Settings." |
+| `blocked-or-unreachable` | "We couldn't reach Ollama on this computer. Check it is running, and that its allowed-origins setting includes this page." |
+| `unusable` / `other` | "The model's answer couldn't be used, so nothing was filled in for you." |
+
+**Owner decision on PS-6 (2026-10-07).** A page cannot reliably tell "server not running" from "origin not allowed" (both arrive as the same failed request), so PS-6 is met by the single `blocked-or-unreachable` sentence, which names both causes. If a build-time probe is ever found that separates them, the sentence may split; until then TC-R18-PS-6-01/-02 test the one sentence. This amends the PS-6 fit criterion ("which of the two it is") — recorded in the requirements changelog as a deviation for the owner to ratify.
+
+### 27.6 The form with pre-fills: marks, state, confirmation (R18-GI-4, R18-GI-8, R18-GI-13)
+
+Per question the form holds an **`AnswerState`**:
+
+```typescript
+type AnswerSource =
+  | { kind: 'typed' }
+  | { kind: 'prefilled'; quotes: { optionKey: string; quote: string }[]; model: string; place: ModelPlace; confirmed: boolean; quoteInText: boolean }
+  | { kind: 'changed'; from: { optionKey: string; quote: string }[]; model: string; place: ModelPlace };
+type FormAnswerState = Partial<Record<QuestionId, { value: string | string[]; source: AnswerSource }>>;
+```
+
+`PlainAnswers` stays the engine-facing shape (values only); `FormAnswerState` is form/draft/record state and is converted with one function (`toPlainAnswers`). Behaviour:
+
+- A pre-filled answer shows the mark “from your description: “quote” — is this right?” with its own confirm control (a checkbox-style control with an accessible name that includes the question). For a tick-all question each ticked option shows its own quote. The mark text appears **only** when `kind === 'prefilled'` and the quote is verified against the *current* description; the phrase “confirmed by you” appears only when `confirmed` is true or `kind === 'changed'`. There is no accept-all control anywhere.
+- Changing the value of a pre-filled answer sets `kind: 'changed'` (a change counts as confirmation). Changing it back to the pre-filled value still counts as changed.
+- **Continue** is enabled only when every question that is shown has a value and every `prefilled` answer is `confirmed` or has become `changed`.
+- **Editing the description and returning (R18-GI-8).** The model is asked again only for questions whose answer is blank or `prefilled && !confirmed`; `typed`, `changed` and `confirmed` answers are kept untouched. A returned pre-fill for an unconfirmed question replaces the old one; a question for which the new reply gives nothing becomes blank. Going back and forward without editing the text makes **no** model call (the text is compared with the text last read; the comparison is on the normalised text).
+- **Kept answer whose quote left the description (decision 2026-10-07).** A kept (`confirmed`) pre-fill is re-checked against the new text with the same verifier rule; if its quote no longer occurs, `quoteInText` is false and the mark reads “confirmed by you — the quote “…” is no longer in your description”. The answer, the person's confirmation and the original quote are kept in the record as they were. No “from your description” claim is made for it.
+- **Not-sure** and every other option behave as on the form today (assumptions listed back, stricter reading).
+
+### 27.7 Drafts and reload (R18-GI-9, R18-NF-5)
+
+- The intake draft envelope becomes **version 4**; `IntakeState` gains `description_entry.{nudgeShown}`, `prefill_reading`, and on `graph_extraction` (form): `prefill?: { description: string /* text last read */; model: string; place: ModelPlace }` and `answerState: FormAnswerState`. The separate form draft moves to `FORM_KEY = 'aigate:intake-form-draft:v3'`, holding `{ version: 4, answerState }` (an envelope — the old key held raw `PlainAnswers`). Both are `sessionStorage` as today. `Start over` and completion clear both keys (`clearDraft` + `clearFormDraft`, as `SettingsPanel` does today); `Clear all data` already calls both.
+- **Earlier shapes (NF-5).** `loadDraftInfo` maps every incompatible shape to one safe landing: the **form step** with the description kept and `earlierVersionNotice: true`. Shapes handled by fixture tests: version 1 (bare state), version 2, version 3 envelopes; steps `graph_review`, `questionnaire`, `contradiction_review`, `confirmation`, `graph_extraction` (llm and form); the old raw-`PlainAnswers` form key (`:v2`) and the older unversioned one (`probeLegacyFormDraft`, kept). A description that is not a string becomes empty; a version greater than the current one is treated as incompatible, not as current. Answers from an old draft are **not** carried over as confirmed: they are offered as blank (a typed value from an old *form* draft is kept as `typed` only when it passes the option check — otherwise blank). The notice reads: "This was saved by an earlier version of Counterpoise, so please check your answers." Nothing throws; a parse failure yields the same landing.
+- `StructuredForm` shows the notice with `role="status"` (existing pattern) and never reuses the old legacy-notice string for a different meaning.
+
+### 27.8 The model setting (R18-MS-1, -2, -3, -6, R18-PS-4, -5)
+
+**ADR-IF-R18-4 — One declared setting, validated by place, kept outside "Clear all data".** Status: Accepted.
+
+*Decision.* A single `localStorage` key `aigate:model-setting` holds `ModelSetting`:
+
+```typescript
+type ModelPlace = 'this-computer' | 'firm-server' | 'ollama-cloud';
+interface ModelSetting {
+  version: 1;
+  place: ModelPlace;
+  url: string;            // address as the person typed it, normalised to origin + path
+  model: string;
+  mode?: 'format' | 'tool';           // remembered (MS-5)
+  results: ModelTestResult[];         // saved test results (MS-4, GI-12)
+}
+```
+
+The old keys `aigate:local-llm-url` / `aigate:local-llm-model` are read once and migrated to `place: 'this-computer'` (then removed); `Clear all data` keeps `aigate:model-setting` as it kept the old keys (HR18-11, `reset.ts`; TC-CR8-16c's key list is updated in the same commit). **There is no field for a key or token** and nothing in `src/` stores one for a model (PS-5); the Anthropic `aigate:api-key` path has no UI today and is removed from the pre-fill route (the reasoning-trace call keeps its own provider order, unchanged).
+
+*Validation* — a pure function `validateModelSetting({place, url, model}): { ok: true } | { ok: false; reason: ModelSettingRefusal }`, in `src/llm/model-setting.ts` (no I/O):
+- The address is parsed with the platform URL parser; only `http:` and `https:` are accepted; an address carrying a username or password is refused under every place (no credentials are stored).
+- **Loopback** means the parsed *hostname* is exactly `localhost`, `127.0.0.1` or `[::1]` — never a prefix, suffix or substring (so `localhost.evil.example`, `127.0.0.1.evil.example` and `localhost@evil.example` are not loopback).
+- **Cloud-tagged** means the model name matches `/(?:[:\-])cloud$/i` (ends in `:cloud` or `-cloud`, any case — owner lean 2026-10-07). `mycloud`, `cloudy:7b` and `llama3:cloud-v2` are not.
+- `this-computer`: loopback address required; a cloud-tagged model is refused.
+- `firm-server`: any http(s) address; a cloud-tagged model is refused ("a cloud-tagged model can only be saved under Ollama's cloud").
+- `ollama-cloud`: loopback address required (the Ollama app on this computer carries the request — a non-loopback address is refused, decision 2026-10-07) **and** a cloud-tagged model required.
+- A place must be chosen; saving with none is refused with a plain sentence.
+
+*Where-it-goes sentences* (MS-2; one source, `PLACE_SENTENCES` in `plain-copy.ts`, reused by Settings, the description screen, the "Make it smarter" panel and the four documents):
+- this computer: "Your description will be read on this computer by {model}. It never leaves your computer."
+- firm server: "Your description will be sent to your firm's server at {address} and read by {model}."
+- Ollama's cloud: "Your description will be sent to Ollama's cloud and read by {model}."
+"Never leaves your computer" exists in exactly one string, used only for `this-computer`. With no model: "No model is connected." (no promise either way). The **unencrypted line** — "This address isn't encrypted, so your description travels unprotected inside your firm's network." — renders only for `firm-server` with an `http:` address, at set-up and on the description screen (MS-6). The **demonstration notice** (PS-4) — "This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network." — renders as ordinary text (no dismiss control, no dialog) whenever `place !== 'this-computer'` and a model is set.
+- **Model list** (MS-3): `listModels(setting)` calls `GET {url}/api/tags` (4 s, abortable) and returns names; failure returns `[]` and the person can still type a name. No model name appears in Settings copy; no default is selected; no wording says "recommended".
+- **Label**: `modelLabel(setting)` returns `untested` or `tested N/31 on {date}` from the saved results for *that model name and place* (a result for another model does not count).
+
+### 27.9 Egress, privacy and accessibility (R18-NF-2, R18-NF-3, R18-PS-5)
+
+- The description, quotes and answers are held in `sessionStorage` (drafts) and the audit trail / register (IndexedDB); the only network request that may carry any part of the description is the model call to the **declared address**. The model test sends only corpus text. No analytics, beacon or third-party script is added. A Content-Security-Policy `<meta>` is **not** adopted: a firm-server address is arbitrary, so `connect-src` could not be narrowed, and a meta CSP would break `file://` use (NF-4). The controls are the tests: a recording `fetch` and `sendBeacon` test, a built-page scan for foreign script sources, a scan of every request address for the description, and the dist scan below.
+- **Dist scan** (net-new test, runs after `vite build` in CI): over every file in `dist/`, no match for common key shapes (`sk-…`, `ghp_…`, `AKIA…`, `Bearer …`, 64-hex, `-----BEGIN`), excluding the known literal `aigate:api-key` storage-key name, and no hit from the confidentiality word list held outside the repository. If the word list is not present (CI), the test skips with a printed notice rather than inventing one.
+- **Accessibility.** New CSS classes are added to the selector list of `app-css.cr6-fx4.test.ts` (4.5:1 text, 3:1 non-text); the checklist, the nudge, the reading indicator and the model status are `role="status"`; the skip control, the example buttons, the confirm controls and the Test-it/Stop buttons are native buttons or checkboxes with names; the whole route is walked by keyboard in one test.
+
+### 27.10 One route: retirements and old cases (R18-GI-10, R18-NF-5)
+
+**Removed:** `GraphView.tsx` and its card review screen in `IntakeFlow` (the `graph_review` block), the reducer cases `GRAPH_EXTRACTED`, `CORRECTION_APPLIED`, `JURISDICTIONS_CONFIRMED`, `JURISDICTIONS_SET`, `NODE_CONFIRMED`, the `'llm'` branch of `handleConfirmNewUseCase` and `extractGraph`'s graph path, `handleCorrectNode`/`handleProceedFromGraphReview`, `GRAPH_REVIEW_CARD_TITLES`, the `provenance`/`guessedFields`/`unconfirmedNodeIds` state, and the tests that exist only for them (listed by file in the agent map of this round; each deleted test's TC id is moved to a `## Superseded` row in `test-cases-033.md` or the file that owns it, naming `R18-GI-10`, per `trace-check`). Code that is shared (plausibility, `graph-summary`, `field-copy`, `question-generator`, the questionnaire) stays if the form route or the register still uses it; the build removes only what no remaining caller reaches. `use_case_created.intake_method` keeps its two existing values; a pre-filled form case is `'structured_form'` and carries the new optional source record (§27.13) — no enum value is added, so older builds still import the file.
+
+**Old cases.** A register entry with a multi-node graph stays readable (record and verdict screens unchanged). "Correct" on it (`handleCorrectVerdict`) opens the form pre-filled **from the recorded graph**: a pure function `answersFromGraph(graph, policy): { answers: PlainAnswers; unmapped: QuestionId[] }` in the engine island (the reverse of `plainAnswersToFormValues` for the questions whose graph fields map one-to-one: Q4 from `model_type`, Q5 from the input classes, Q7 from `exposure`, Q9 from `output_reversibility`, Q10 from `scale`, Q11 from `jurisdictions`, Q12 from `replaces_prior_model`, Q13/Q14 from the agentic fields, Q6 from autonomy/bindingness where unambiguous). Answers it cannot map with certainty (anything where several answers give the same graph) are left blank and marked "not carried over from the earlier version"; every mapped answer is `prefilled` with `source: record` (shown as “from the earlier record” and still needing a confirmation tick — never claimed as the person's current confirmation). The description is kept. A case with no mappable answers opens an entirely blank, marked form.
+
+### 27.11 The in-app test (R18-MS-4, R18-GI-12, R18-MS-8, OQ-1)
+
+**ADR-IF-R18-5 — Score by graph comparison, with the person assumed to confirm every fill.** Status: Accepted (OQ-1 resolved).
+
+*Context.* Only 9 of the 31 corpus cases have hand-written form answers (`backtest/worked-case-answers.json`); all 31 have a correct **graph**. Authoring 22 more answer sets by hand would be human-led work with no new information.
+*Decision.* The corpus is bundled as the raw text of `backtest/cases.json` (`?raw`, the project's existing pattern for YAML), parsed at run time, so the bundle holds the file's own bytes (MS-8). For each case the runner calls the **same** `requestPrefill` path (30→60 s budget) with the case's `prose` and the standard catalogue (countries are supplied to the pre-fill like any other question; the 2026-10-04 comparison instead took countries from the case — the new run is stricter and not comparable to it, and the Settings text says so). A pure scorer then compares:
+- **per question**: the question's graph fields are given by a single table `QUESTION_FIELDS` (question id → graph field names; the same names the assumption references already carry in `plain-intake.ts`), computed from the verified pre-fill by applying it to the gold graph (`applyPrefillToGraph(gold, prefill, policy)`, pure). *right* = the question was pre-filled and the resulting fields equal the gold graph's; *blank* = not pre-filled; *wrong* = pre-filled and different.
+- **verdict agreement**: `evaluate()` on the gold graph with the pre-filled answers' fields overwritten, against the case's expected status and tier from `backtest/engine-verdicts.json`. This assumes the person confirms every fill and answers the blanks correctly, so it measures only the harm a wrong fill can do; the Settings text says exactly that. The expected verdicts are already pinned for the current policy by `backtest-predictions.test.ts`; a policy change that moves them fails that test first.
+*Result record* (one per run):
+
+```typescript
+interface ModelTestResult {
+  model: string;
+  place: ModelPlace;
+  date: string;                 // ISO date, taken by the component (a clock call outside the engine island)
+  casesRun: number;
+  stopped: boolean;
+  verdictMatches: number;
+  perQuestion: Record<string, { right: number; blank: number; wrong: number }>;   // key: QuestionId
+}
+```
+
+It is appended to `ModelSetting.results`, newest first, kept with the setting (survives reload and "Clear all data"). The label "tested N/31 on {date}" uses `verdictMatches` and appears wherever the model name appears (Settings, description screen, panel). A stopped run records `casesRun` and `stopped: true` and shows "stopped after N of 31". A case with no usable answer within 60 s scores every question *blank* and the verdict as not matched. Deterministic for fixed replies: the scorer takes the replies as input and does not read the clock or random.
+*Consequences.* The scorer and `QUESTION_FIELDS` are engine-island pure code with the property tests of TC-R18-GI-12-05 (row totals, order independence).
+
+### 27.12 Public demo site (R18-PS-1, -2, -3, -4)
+
+- **First screen.** The describe screen is the first screen with empty storage; no route requires a model. The description screen shows the "Make it smarter" panel (`MakeItSmarter.tsx`) when no model is set, and a one-line model status (name, place sentence, label) when one is.
+- **Panel content (PS-2).** A short explanation; exactly two commands in code style — `ollama signin` and the allowed-origins setting `OLLAMA_ORIGINS` (set to this page's address) — a link to Ollama's own documentation, and "Link last checked {date}" where the date is a constant `OLLAMA_DOCS_CHECKED` in `plain-copy.ts`. No other command, model name, version or price. The commands and the where-it-goes sentences are single-sourced constants asserted equal to the same text in `docs/user-guide.md`, `docs/tester-guide.md` and `README.md` by one docs test (TC-R18-MS-2-05, -PS-2-04, -PS-4-04).
+- **Try an example (PS-3).** The eleven worked cases move to a single module `src/engine/worked-examples.ts`: `{ id, title, description, answers: PlainAnswers, expected: {status, tier, track, …} }[]`, where `description` is the exact text printed in `docs/try-these.md`. `try-these.test.ts` reads this module instead of repeating the data; the app's example list reads it too; a docs test asserts each description appears byte-identically in `docs/try-these.md` (so the guide cannot drift). Clicking an example fills the box (the checklist then shows the real ticks). **OQ-4 decision:** the examples are *not* reworded to tick every item; the build records, in its handover, how many items each example ticks, and the list's note says "Examples are short — the checklist shows what they leave out." The guide's stated outcome is pinned through the guide's own answers, and the list copy never promises the same pre-fill from every model.
+
+### 27.13 Record and hand-off (R18-GI-5, R18-MS-2)
+
+`graph_confirmed` and `verdict_corrected` audit payloads gain an optional `answer_sources`:
+
+```typescript
+interface AnswerSourceRecord {
+  question_id: string;
+  origin: 'typed' | 'prefilled_confirmed' | 'prefilled_changed' | 'from_earlier_record';
+  quotes?: { option: string; quote: string }[];   // the model's quotes, verbatim
+  changed_from?: string[];                         // the pre-filled option keys, for 'prefilled_changed'
+  model?: string;                                  // the model's name
+  place?: ModelPlace;                              // where it ran
+}
+```
+
+It is optional everywhere (store type, the hand-off zod schema — which is `.passthrough()` and declares new fields optional — and `RegisterDetail`'s reader), so records written before this round and bundles exported before it import and read as they do today and `HANDOFF_FORMAT_VERSION` does not change. The chain/hash covers it automatically (it is part of the payload). `RegisterDetail` reads it through `currentVerdictAttestationFields` (the one correction-aware reader), shows, per answer, “typed by you”, “filled from your description and confirmed by you — “…quote…”” or “filled from your description and changed by you (from …) — “…quote…””, and above them one line naming the model and place ("read by {model}, {place sentence}"). A case with no pre-fill shows the typed lines only and **no** model line. Imported values are validated: `origin` must be one of the four words and `place` one of the three, otherwise the import is refused with the existing plain "this file can't be read" sentence; every string is rendered as text (never as markup). `description` is already on `use_case_created` and `use_case` metadata; the full text is stored (GI-14).
+
+### 27.14 Traceability and the test cases
+
+| Requirements | Section | Test-case family (`test-cases-033.md`) |
+|---|---|---|
+| R18-GI-1, -2, -14 | 27.2, 27.3 | TC-R18-GI-1-*, GI-2-*, GI-14-* |
+| R18-GI-3, -4, -6, -8, -13, NF-4 | 27.4, 27.6, 27.7 | TC-R18-GI-3-*, GI-4-*, GI-6-*, GI-8-*, GI-13-*, NF-4-* |
+| R18-GI-5, MS-2 (record) | 27.13 | TC-R18-GI-5-*, MS-2-04 |
+| R18-GI-7, MS-5, MS-7, PS-6, NF-1 | 27.5 | TC-R18-GI-7-*, MS-5-*, MS-7-*, PS-6-*, NF-1-* |
+| R18-GI-9, NF-5 | 27.7 | TC-R18-GI-9-*, NF-5-* |
+| R18-GI-10 | 27.10 | TC-R18-GI-10-* |
+| R18-GI-11 | build round (process) | TC-R18-GI-11-* |
+| R18-GI-12, MS-4, MS-8 | 27.11 | TC-R18-GI-12-*, MS-4-*, MS-8-* |
+| R18-MS-1, R18-MS-2, R18-MS-3, R18-MS-6, R18-PS-4, R18-PS-5 | 27.8, 27.9 | TC-R18-MS-1-*, MS-2-*, MS-3-*, MS-6-*, PS-4-*, PS-5-* |
+| R18-PS-1, -2, -3 | 27.12 | TC-R18-PS-1-*, PS-2-*, PS-3-* |
+| R18-NF-2, NF-3 | 27.9 | TC-R18-NF-2-*, NF-3-* |
+
+**Open points of the test cases, resolved here:** (1) GI-8/GI-13 → §27.6; (2) PS-6 → §27.5 (one sentence); (3) MS-1 cloud + non-loopback → §27.8 (refused); (4) cloud tag case → §27.8 (case-insensitive); (5) checklist items → §27.2 (13); (6) character unit → §27.3 (code points); (7) MS-7 replies → §27.5 (provisional matchers, fixtures captured at build); (8) OQ-1 → §27.11; OQ-4 → §27.12. Consequences for the test cases are listed in the test-cases changelog (the checklist has **thirteen** items; PS-6 is one sentence; the GI-8 kept-answer mark text is fixed; an `ollama-cloud` setting needs a cloud-tagged model and a loopback address).
+
+**Threat model, in one table (OWASP LLM Top 10 and the project's hand-off boundary).**
+
+| Threat | Where it enters | Control |
+|---|---|---|
+| Prompt injection in the description | the model call | quote verification, option check, rating-instruction rejection, **person confirms each fill**, engine sees only confirmed answers (§27.4) |
+| Model output rendered as markup | marks, register, hand-off | text rendering only; the verifier drops unknown keys and values (§27.4, §27.13) |
+| Look-alike address sends the description off-machine | Settings | exact-hostname loopback check, no credentials in addresses (§27.8) |
+| Server error text leaks | failure screens | classification inside `src/llm`, fixed sentences only (§27.5) |
+| Secrets or firm names in the public bundle | build | dist scan, no key field (§27.9) |
+| A tampered hand-off file | import | closed vocabularies for `origin`/`place`, text-only rendering (§27.13) |
+
 ## 14. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-10-07 | Round 18 — §27 added (TC-R18-*, `test-cases-033.md`): the describe → pre-fill → confirm route; one pure "mentioned" rule (13 checklist items), the nudge and the 8,000-character rule (code points); the pre-fill contract (catalogue, reply shape, pure verifier, form-only path to the engine); the two model modes, the 30-second budget and the failure sentences; per-answer state and the confirm gate; draft version 4 and earlier-draft landings; the model setting by place (`aigate:model-setting`); the record's `answer_sources`; retirement of the card review; the in-app test's graph-comparison scoring (OQ-1); the public-site panel and example source. Owner decisions 2026-10-07: PS-6 merged into one sentence, kept-answer note, Ollama cloud needs a loopback address and a cloud-tagged model, cloud tag matched without regard to case, characters counted as code points. |
 | 2026-10-04 | GT7 — §26 added: the rating-instruction check (P12, L-1 light measure) — `findRatingInstructions` (pure, directive-only), the review-screen warning and the confirmation line (description path only), the optional `graph_confirmed.rating_instructions` (also in the hand-off schema), the register's fixed audit line, and the honest limits (TC-UC-3-04b to -04f, `test-cases-032.md`). It never changes the description sent to the model, the graph or the verdict. |
 | 2026-10-04 | CR9 — code review 009 fixes (TC-CR9-*, `test-cases-031.md`). §23's card-edit rule changes from narrowing to dropping: a review-card or countries edit drops every assumption whose field list includes the edited field (`dropAssumptionsCovering`), because an assumption's sentence is fixed per question and can name the edited value; the question-11 assumption still survives a countries edit (TC-CR9-OB1; TC-CR8-01d, -01f, -01g, -01j amended). |
 | 2026-10-04 | CR8 — code review 008 fixes (TC-CR8-*, `test-cases-030.md`). §3 gains the confirm notice's corrected wording (CR8-04; the CR7 sentence that "a later change would show as a break" is amended), and §23 gains card edits narrowing assumptions (CR8-01), the confirmation step carrying `afterFailedEvaluation` and the refused `GRAPH_EXTRACTED` on an attested form step (CR8-03), the correction planner comparing against the latest value written so far (CR8-06), the countries panel on a correction from the result (CR8-08) and the failed-evaluation alert wording (CR8-14). |
