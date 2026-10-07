@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Review 008 — Round 18: describe, pre-fill, confirm</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: "ET Book", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      color: #111;
+      background: #fffff8;
+      line-height: 1.6;
+      padding: 2rem 1rem 6rem;
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    /* ── Typography ── */
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+      color: #111;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      font-style: italic;
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      color: #111;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.3rem;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.6rem;
+      color: #333;
+    }
+
+    p, li {
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 0.8rem;
+      max-width: 640px;
+    }
+
+    ul, ol { padding-left: 1.4rem; margin-bottom: 1.2rem; }
+    li { margin-bottom: 0.4rem; }
+
+    .subtitle {
+      font-size: 1.1rem;
+      font-style: italic;
+      color: #555;
+      margin-bottom: 2.5rem;
+      max-width: 640px;
+    }
+
+    .date {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── Floating TOC (Left Side) ── */
+    nav.toc {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      width: 220px;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+      background: #fffff8;
+      border-right: 2px solid #ddd;
+      padding: 1rem 1rem 1rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      z-index: 100;
+    }
+
+    nav.toc .toc-title {
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin-bottom: 0.6rem;
+    }
+
+    nav.toc a {
+      color: #555;
+      text-decoration: none;
+      display: block;
+      padding: 0.15rem 0;
+      transition: color 0.15s;
+    }
+
+    nav.toc a:hover { color: #111; }
+    nav.toc a.active { color: #111; font-weight: 600; }
+    nav.toc .toc-h3 { padding-left: 0.8rem; font-size: 0.78rem; color: #888; }
+    nav.toc .toc-h3:hover { color: #555; }
+
+    /* Offset main content for left TOC */
+    main {
+      margin-left: 260px;
+    }
+
+    /* ── Sidenotes (Right Margin) ── */
+    .sidenote {
+      float: right;
+      clear: right;
+      width: 220px;
+      margin-right: -260px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #666;
+      padding-left: 1rem;
+      border-left: 2px solid #e0e0e0;
+    }
+
+    /* ── Tables ── */
+    table {
+      border-collapse: collapse;
+      margin: 1.5rem 0 2rem;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      width: auto;
+      min-width: 480px;
+    }
+
+    thead th {
+      text-align: left;
+      font-weight: 600;
+      padding: 0.5rem 1rem 0.5rem 0;
+      border-bottom: 2px solid #333;
+      color: #111;
+    }
+
+    tbody td {
+      padding: 0.45rem 1rem 0.45rem 0;
+      border-bottom: 1px solid #e8e8e8;
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: 2px solid #333; }
+    tbody tr:nth-child(even) { background: #f9f9f4; }
+
+    caption {
+      font-style: italic;
+      font-size: 0.88rem;
+      color: #666;
+      text-align: left;
+      margin-bottom: 0.4rem;
+    }
+
+    /* ── Inline Code ── */
+    code {
+      font-family: "Menlo", "Consolas", "Monaco", monospace;
+      font-size: 0.88rem;
+      background: #f0f0e8;
+      padding: 0.1rem 0.35rem;
+      border-radius: 2px;
+    }
+
+    /* ── Verdict Box ── */
+    .verdict {
+      border: 2px solid #333;
+      padding: 1.2rem 1.5rem;
+      margin: 2rem 0;
+      max-width: 640px;
+    }
+
+    .verdict-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 0.3rem;
+    }
+
+    .verdict-text {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #111;
+      margin-bottom: 0.4rem;
+    }
+
+    .verdict-basis {
+      font-size: 0.88rem;
+      color: #555;
+      max-width: 640px;
+    }
+
+    .verdict.caveats { border-color: #e67e22; background: #fef8f0; }
+    .verdict.caveats .verdict-text { color: #e67e22; }
+    .verdict.not-ready { border-color: #c0392b; background: #fdf3f2; }
+    .verdict.not-ready .verdict-text { color: #c0392b; }
+
+    /* ── Score Card ── */
+    .score-card {
+      background: #f7f7f0;
+      border: 2px solid #333;
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+      max-width: 640px;
+      text-align: center;
+    }
+
+    .overall-score {
+      font-size: 2.4rem;
+      font-weight: 400;
+      color: #111;
+      margin-bottom: 0.8rem;
+    }
+
+    .score-breakdown {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .score-item {
+      font-size: 0.88rem;
+      color: #555;
+    }
+
+    /* ── Issue Blocks ── */
+    .issue {
+      border-left: 3px solid;
+      padding: 0.8rem 1rem;
+      margin: 0.8rem 0;
+      max-width: 640px;
+    }
+
+    .issue.critical {
+      border-left-color: #c0392b;
+      background: #fdf0ef;
+    }
+
+    .issue.important {
+      border-left-color: #e67e22;
+      background: #fef8f0;
+    }
+
+    .issue.minor {
+      border-left-color: #7f8c8d;
+      background: #f7f7f4;
+    }
+
+    .issue-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.3rem;
+    }
+
+    .issue-detail {
+      font-size: 0.92rem;
+      color: #555;
+      margin-bottom: 0.3rem;
+    }
+
+    .issue-location {
+      font-size: 0.78rem;
+      color: #999;
+      font-style: italic;
+    }
+
+    .issue-fix {
+      font-size: 0.92rem;
+      color: #333;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+
+    /* ── Criterion Rows ── */
+    .criterion {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      margin: 0.6rem 0;
+      max-width: 640px;
+    }
+
+    .criterion-name {
+      font-weight: 600;
+      color: #333;
+      min-width: 160px;
+    }
+
+    .criterion-score {
+      font-size: 0.85rem;
+      font-weight: 600;
+      min-width: 40px;
+    }
+
+    .criterion-score.high { color: #27ae60; }
+    .criterion-score.mid { color: #e67e22; }
+    .criterion-score.low { color: #c0392b; }
+
+    .criterion-note {
+      font-size: 0.88rem;
+      color: #666;
+    }
+
+    /* ── GVM Attribution ── */
+    .gvm-attribution {
+      font-size: 0.75rem;
+      color: #999;
+      font-style: italic;
+      text-align: center;
+      margin-top: 3rem;
+      margin-bottom: 0;
+      max-width: none;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      nav.toc {
+        position: static;
+        width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        padding: 1rem 0;
+        margin-bottom: 2rem;
+      }
+      main { margin-left: 0; }
+      .sidenote {
+        float: none;
+        width: 100%;
+        margin: 0.8rem 0;
+        padding: 0.6rem 0 0.6rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="toc" id="toc"><div class="toc-title">Contents</div></nav>
+  <main>
+    <p class="date">October 2026</p>
+    <h1>Design Review 008 — Round 18: describe, pre-fill, confirm</h1>
+    <p class="subtitle">Counterpoise &middot; review of <code>specs/intake-flow.md</code> §27, <code>cross-cutting.md</code> §13c, <code>verdict-audit.md</code> and <code>register-lifecycle.md</code> §16b and <code>implementation-guide.md</code> §12 against <code>requirements-018.md</code> and <code>test-cases-033.md</code> &middot; three rounds, 7 + 6 + 12 panels</p>
+
+    <div class="verdict caveats">
+      <div class="verdict-label">Verdict</div>
+      <div class="verdict-text">Build with caveats</div>
+      <p class="verdict-basis">As first written the design could not be built (two Critical findings, 69 Important). Three review rounds and three fix rounds closed every Critical and Important finding that any panel raised. The caveats: (1) the third fix round has not itself been reviewed; (2) several decisions the author took are awaiting owner ratification; (3) the live server replies behind the failure messages have not been captured yet (chunk R18-C0); (4) each build chunk runs its own review loop, which is where remaining defects are expected to surface.</p>
+    </div>
+
+    <h2 id="executive-summary">Executive Summary</h2>
+    <table>
+      <caption>Table 1 — Rounds</caption>
+      <thead><tr><th>Round</th><th>Criterion</th><th>Panels</th><th>Raw findings</th><th>Critical</th><th>Important</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Liberal</td><td>A, B, C, D, E, F1, F2</td><td>128</td><td>2</td><td>69</td><td>Fix all (owner)</td></tr>
+        <tr><td>2</td><td>Strict</td><td>A, B, C, D, E, F</td><td>about 50</td><td>2</td><td>about 33 distinct</td><td>Fix all (owner)</td></tr>
+        <tr><td>3</td><td>Strict, dual review</td><td>6 calibrated + 6 blind</td><td>about 60</td><td>2 distinct (4 raw)</td><td>about 30 distinct (52 raw)</td><td>Fixed the same day, not re-reviewed</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Dual review (Round 3).</strong> The calibrated panels raised 3 Critical and 26 Important; the blind panels 1 Critical and 26 Important. The Back-from-form Critical was found independently by three panels (calibrated B and C, blind C), so it is confirmed. The register-entry Critical was found only by a calibrated panel. The blind panels also found things the calibrated ones missed (the "eleven examples" are ten; the app does not run from <code>file://</code>; the rating-instruction warning had no home on the new route; the scoring flaw for questions the form cannot express). Several Important findings (the stale digest sentence, the signature disagreements, chunk A's missing helpers) were found by both sets.</p>
+    <p><strong>Capture-recapture.</strong> Not computed. The panels have orthogonal mandates, so a Lincoln-Petersen estimate across them is not valid. The same defects surfacing from several panels (the answer-state path from five, the unguarded Back from three) and the continuing stream of new, smaller defects after each fix round show that the defect population was not exhausted by Round 1; the strict rounds were the right call.</p>
+    <p><strong>Convergence note.</strong> Distinct new Important findings fell from about 60 (Round 1) to about 33 (Round 2) to about 30 (Round 3) while their kind shifted from missing design to disagreement between sections written at different times. A fourth round would very likely find more of the second kind. The project rule is to stop the review loop and let each build chunk's own convergence loop catch the rest.</p>
+
+    <h2 id="requirements-coverage">Requirements Coverage Matrix</h2>
+    <table>
+      <caption>Table 2 — 33 requirements, after the Round 3 fixes</caption>
+      <thead><tr><th>Requirement</th><th>Priority</th><th>Design</th><th>Test cases</th><th>Status</th></tr></thead>
+      <tbody>
+<tr><td>R18-GI-1</td><td>Must</td><td>§27.2</td><td>9</td><td>Covered</td></tr>
+<tr><td>R18-GI-2</td><td>Must</td><td>§27.3</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-GI-3</td><td>Must</td><td>§27.4, §27.6</td><td>20</td><td>Covered</td></tr>
+<tr><td>R18-GI-4</td><td>Must</td><td>§27.6</td><td>6</td><td>Covered</td></tr>
+<tr><td>R18-GI-5</td><td>Must</td><td>§27.13</td><td>11</td><td>Covered</td></tr>
+<tr><td>R18-GI-6</td><td>Must</td><td>§27.4</td><td>4</td><td>Covered</td></tr>
+<tr><td>R18-GI-7</td><td>Must</td><td>§27.5</td><td>11</td><td>Covered</td></tr>
+<tr><td>R18-GI-8</td><td>Must</td><td>§27.1, §27.6</td><td>14</td><td>Covered</td></tr>
+<tr><td>R18-GI-9</td><td>Must</td><td>§27.7</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-GI-10</td><td>Must</td><td>§27.10</td><td>8</td><td>Covered</td></tr>
+<tr><td>R18-GI-11</td><td>Must</td><td>§12.6 (process)</td><td>2</td><td>Covered</td></tr>
+<tr><td>R18-GI-12</td><td>Must</td><td>§27.11</td><td>8</td><td>Covered</td></tr>
+<tr><td>R18-GI-14</td><td>Must</td><td>§27.3</td><td>7</td><td>Covered</td></tr>
+<tr><td>R18-GI-13</td><td>Must</td><td>§27.6, §27.8</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-MS-1</td><td>Must</td><td>§27.8</td><td>13</td><td>Covered</td></tr>
+<tr><td>R18-MS-2</td><td>Must</td><td>§27.8, §27.13</td><td>7</td><td>Covered</td></tr>
+<tr><td>R18-MS-3</td><td>Must</td><td>§27.8</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-MS-4</td><td>Must</td><td>§27.11</td><td>9</td><td>Covered</td></tr>
+<tr><td>R18-MS-5</td><td>Must</td><td>§27.5</td><td>8</td><td>Covered</td></tr>
+<tr><td>R18-MS-6</td><td>Must</td><td>§27.8</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-MS-7</td><td>Must</td><td>§27.5</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-MS-8</td><td>Must</td><td>§27.11</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-PS-1</td><td>Must</td><td>§27.12</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-PS-2</td><td>Must</td><td>§27.12</td><td>4</td><td>Covered</td></tr>
+<tr><td>R18-PS-3</td><td>Must</td><td>§27.12</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-PS-4</td><td>Must</td><td>§27.8</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-PS-5</td><td>Must</td><td>§27.8, §27.9</td><td>2</td><td>Covered</td></tr>
+<tr><td>R18-PS-6</td><td>Should</td><td>§27.5</td><td>3</td><td>Covered</td></tr>
+<tr><td>R18-NF-1</td><td>Must</td><td>§27.5</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-NF-2</td><td>Must</td><td>§27.9</td><td>5</td><td>Covered</td></tr>
+<tr><td>R18-NF-3</td><td>Must</td><td>§27.9</td><td>9</td><td>Covered</td></tr>
+<tr><td>R18-NF-4</td><td>Must</td><td>§27.4</td><td>4</td><td>Covered</td></tr>
+<tr><td>R18-NF-5</td><td>Must</td><td>§27.7</td><td>4</td><td>Covered</td></tr>
+      </tbody>
+    </table>
+    <p>Recorded deviations from the requirements, all marked in the requirement bodies and the changelog and awaiting owner ratification: PS-6 met by one sentence; GI-10 narrowed to the answered cases, and older cases restore only their description and "Not sure" answers (plus a new "Correct this check" register action); PS-5 and NF-3 narrowed for the optional stored Anthropic key; GI-3's quote needs two words, at most 300 characters and no control characters; PS-3 offers ten examples.</p>
+
+    <h2 id="utility-tree">Utility Tree &mdash; ATAM</h2>
+    <table>
+      <caption>Table 3 — Quality attribute scenarios (importance / risk)</caption>
+      <thead><tr><th>Leaf</th><th>Importance</th><th>Risk</th><th>Panel</th></tr></thead>
+      <tbody>
+        <tr><td>Case text goes only where the app says; nothing persists wider than stated</td><td>H</td><td>H</td><td>F1 (Round 1), E</td></tr>
+        <tr><td>Identical confirmed answers give a byte-identical verdict; the record says truthfully who supplied each answer; a bad or absent model never blocks and writes nothing</td><td>H</td><td>H</td><td>F2 (Round 1), F</td></tr>
+        <tr><td>Newcomer comprehension of the new screens</td><td>H</td><td>M</td><td>process gate (NF-12, GI-11)</td></tr>
+        <tr><td>Models and places can be swapped</td><td>M</td><td>M</td><td>D</td></tr>
+        <tr><td>Testability with fake clocks and servers</td><td>M</td><td>M</td><td>D</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="findings">Findings</h2>
+    <p>All findings of all rounds were presented to the owner before any disposition (rule 28); the owner chose "fix all" after Round 1 and again after Round 2. None was deferred or dismissed. The full per-finding lists are in the panel reports of this session and the consolidated Round 1 list is kept with the review working files. Below: the six Critical findings, then the Important findings by round.</p>
+    <h3 id="critical">Critical (6, all closed)</h3>
+<div class="issue critical"><p class="issue-title"><strong>DR8-C1</strong> — Per-answer state never reaches the record (Round 1; five panels)</p><p class="issue-detail">The design added the "who supplied this answer" state only to the form step; the baseline carries only plain answers through the later steps and the confirm write, no chunk owned the writer, the answer source had no record variant, and the state lived in two stores with no precedence.</p><p class="issue-fix"><strong>Closed by:</strong> §27.6 (one answer-state object carried through every step, a derived plain-answers cache, one draft writer, mergePrefill) and §27.13 (written once per confirm attempt).</p></div>
+<div class="issue critical"><p class="issue-title"><strong>DR8-C2</strong> — A false sentence in the build plan (Round 1)</p><p class="issue-detail">The plan said the old model call was rebuilt for the reasoning-trace caller; that caller does not use it, and three readers of the old settings keys were unlisted.</p><p class="issue-fix"><strong>Closed by:</strong> §27.8 and guide §12.4 list every old-key reader and the seed constant.</p></div>
+<div class="issue critical"><p class="issue-title"><strong>DR8-R2-C1</strong> — The form question data lived in UI code but engine modules needed it (Round 2)</p><p class="issue-detail">Option keys, kinds and conditional-option data sat in plain-copy.ts and StructuredForm; the engine boundary forbids importing them.</p><p class="issue-fix"><strong>Closed by:</strong> New engine module question-structure.ts (no words); words passed in as a parameter; a test that structure and words cover the same ids.</p></div>
+<div class="issue critical"><p class="issue-title"><strong>DR8-R2-C2</strong> — Edit-and-return could not be built as written (Round 2)</p><p class="issue-detail">A stale form draft would beat a fresh pre-fill; two code paths wrote the draft key; the description lived in two places; the reducer had no Back path.</p><p class="issue-fix"><strong>Closed by:</strong> updateFormDraft (single writer), mergePrefill before the form mounts, Question 2 bound to state.description, STEP_BACK transitions.</p></div>
+<div class="issue critical"><p class="issue-title"><strong>DR8-R3-C1</strong> — Back from the form could turn a correction or a retry into a fresh case (Round 3; confirmed by three panels)</p><p class="issue-detail">description_entry carries no case id; the baseline refuses exactly this for the old review screen. The new Back had no guard and would also have written the duplicate decision twice.</p><p class="issue-fix"><strong>Closed by:</strong> §27.1: Back refused whenever useCaseId, originalVerdictId or afterFailedEvaluation is present; decidedFor skips the second duplicate check.</p></div>
+<div class="issue critical"><p class="issue-title"><strong>DR8-R3-C2</strong> — The register had no "Correct" entry and keeps no graph (Round 3; one panel)</p><p class="issue-detail">RegisterDetail does not pass onCorrect; the full graph is deliberately not persisted, so the old graph-based restore had no input for an older case and the three GI-10 cases could not be built.</p><p class="issue-fix"><strong>Closed by:</strong> §27.10: a submitter-side "Correct this check" action; answers restored from recorded values (new cases) or from the description and recorded "Not sure" answers (older cases); the graph-based restore replaced by answersFromRecord.</p></div>
+    <h3 id="important">Important</h3>
+<div class="issue important"><p class="issue-title"><strong>Round 1 (69 raw Important, merged to 12 themes)</strong></p><p class="issue-detail">Form rules not shareable (visibility in the component); reverse mapping not one-to-one; verifier too weak (one-word quotes, control characters, prototype keys, empty replies counted as success); unsafe model calls (redirects, credentials, no re-validation, no snapshot, fallback resends text); claims the app cannot prove (never-leaves, record wording, label); chunk seams (old and new routes coexisting, types needed early, D/E sharing files, test cases without a building chunk); only 9 of 31 corpus cases have form answers; egress paths missing (duplicate check and reasoning trace under a stored key, shared github.io origin, test blind spots, dist-scan patterns); reload and double-fire; three different "descriptions"; unbounded imports; the "mentioned" rule underspecified.</p><p class="issue-fix"><strong>Closed by:</strong> the revisions of the same day (specs, guide and test cases); each is marked DR8-… or R3 in intake-flow.md §27.</p></div>
+<div class="issue important"><p class="issue-title"><strong>Round 2 (about 33 distinct new)</strong></p><p class="issue-detail">Reload during reading contradicted the baseline persistence; Back and Start over had no reducer path; the record answer could not hold its confirmation; sources lost on a failed-evaluation retry; the confirmation line had no owner and no counting rule; a stopped test run would read "tested"; the digest claim had no source; bidi characters in context sentences; prototype-valued imported words; "never leaves your computer" false with a stored key; CI never ran on the round branch; chunk A not runnable (about 15 tests drove the old LLM path); the policy code is UK not GB; the scoring base could not exercise follow-up questions; stream:false missing and the second-mode trigger vague; import bounds would refuse our own export; two cases pinned one reply to two outcomes; ownership gaps; requirement bodies not amended.</p><p class="issue-fix"><strong>Closed by:</strong> the revisions of the same day (specs, guide and test cases); each is marked DR8-… or R3 in intake-flow.md §27.</p></div>
+<div class="issue important"><p class="issue-title"><strong>Round 3 (about 30 distinct)</strong></p><p class="issue-detail">Stale digest sentence; model name and address unbounded; invalid-setting had no sentence and the promise could sit above a rewritten address; the escape function escaped line breaks; "POST-only" contradicted the model list; the dropped-fills label overstated a cause; unconfirmed quote-gone mark undefined; last-read sentinel; Clear-all sentence unconditional; same-page setting changes undetected; chunk A needed helpers built later; Back-from-form test not passable in A; interim egress allow-list; new-case correction wiring owner; E needed the scoring derivation; C1 tracer and the ok-outcome; the rating-instruction warning had no home; three signatures disagreed; form draft cleared on submit so the last-read marker was lost; readingInFlight release lists; the plain-answers cache; Find models unreachable under Ollama cloud; correction description not on the record; "eleven" examples are ten; the app does not run from file://; scorer overlay wrong for questions the form cannot express.</p><p class="issue-fix"><strong>Closed by:</strong> the revisions of the same day (specs, guide and test cases); each is marked DR8-… or R3 in intake-flow.md §27.</p></div>
+    <h3 id="minor">Minor, observations, borderline</h3>
+    <p>28 Minor, 15 borderline and 14 observation findings of Round 1 were batched and folded in where cheap (the nudge reset, the not-read sentence, the earlier-version notice, the lifecycle table, the digest removal) or recorded; Rounds 2 and 3 reported Important and Critical only, under the strict criterion.</p>
+
+    <h2 id="cross-panel-themes">Cross-Panel Themes</h2>
+    <h3 id="theme-owners">Theme A: One fact, two owners</h3>
+    <p>The answer state, the description, the last-read marker and the plain answers each had two homes in the first design. Each fix round replaced "two owners" with one owner plus a derived copy, and each time a signature or chunk assignment elsewhere still named the old arrangement.</p>
+    <h3 id="theme-baseline">Theme B: Claims about the baseline that were never true</h3>
+    <p>The reasoning-trace rebuild; "one place a graph is built"; "the register can correct"; "the app opens from <code>file://</code>"; "eleven examples"; "the draft effect saves nothing for evaluation_pending". Every one was caught by a panel reading the real code, not the spec.</p>
+    <h3 id="theme-honesty">Theme C: Honest wording that the app cannot prove</h3>
+    <p>"Never leaves your computer", "confirmed by you", "tested N/31", the digest and the dropped-fills line each needed a condition, a qualification or removal.</p>
+    <h3 id="theme-seams">Theme D: Chunk plans that put a case or a helper before its builder</h3>
+    <p>Repeated in all three rounds; the ownership table (guide §12.5) is now explicit per family and per part.</p>
+
+    <h2 id="scores">Scores</h2>
+    <table>
+      <caption>Table 4 — Scores at the end of Round 3, before the final fix round (0–10 rubric)</caption>
+      <thead><tr><th>Panel</th><th>Dimension</th><th>Round 1</th><th>Round 3 calibrated</th><th>Round 3 blind</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>Requirements coverage</td><td>5</td><td>7</td><td>7</td></tr>
+        <tr><td>B</td><td>Interface contracts</td><td>3</td><td>6</td><td>6</td></tr>
+        <tr><td>C</td><td>Structural soundness</td><td>3</td><td>5</td><td>6</td></tr>
+        <tr><td>D</td><td>Implementability</td><td>4</td><td>7</td><td>6</td></tr>
+        <tr><td>E</td><td>Security</td><td>5</td><td>8</td><td>8</td></tr>
+        <tr><td>F</td><td>Quality attributes</td><td>4</td><td>7</td><td>7</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Rubric:</strong> 9–10 no gaps; 7–8 one or two partial gaps; 5–6 several partial gaps; below 5 a missing element or structural failure. Scores are the author's reading of each panel's final findings, not a panel output.</p>
+
+    <h2 id="preventing-higher-scores">What Prevents a Higher Score</h2>
+    <ul>
+      <li><strong>Structural soundness (5–6):</strong> the reducer, form-draft and register changes touch the same large files (IntakeFlow.tsx, intake-state.ts, StructuredForm.tsx). The revision names owners, but only a build can show the transitions are complete.</li>
+      <li><strong>Interface contracts (6):</strong> three signatures disagreed between sections in Round 3; they were reconciled by editing, not by a compiler. The first type-check run will find any that remain.</li>
+      <li><strong>Implementability (6–7):</strong> the failure-message matchers are provisional until real server replies are captured (R18-C0); the scoring overlay and the older-case restore are specified by rule, not by example.</li>
+      <li><strong>Requirements coverage (7):</strong> several requirement bodies carry amendments that await the owner's ratification.</li>
+      <li><strong>Quality attributes (7):</strong> the third fix round was not independently reviewed.</li>
+    </ul>
+
+    <h2 id="expert-panel">Expert Panel &mdash; Authorities per Dimension</h2>
+    <table>
+      <thead><tr><th>Panel</th><th>Experts</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>Karl Wiegers (traceability), Mike Cohn (INVEST, vertical slicing)</td></tr>
+        <tr><td>B</td><td>Michael Keeling (decisions at boundaries), Sam Newman (service boundaries), Martin Kleppmann (schema evolution)</td></tr>
+        <tr><td>C</td><td>Martin Fowler (patterns), Frederick Brooks (conceptual integrity), George Fairbanks (risk-driven design)</td></tr>
+        <tr><td>D</td><td>Steve McConnell (construction clarity), Hunt &amp; Thomas (tracer bullets), Mike Cohn</td></tr>
+        <tr><td>E</td><td>Ross Anderson (threat model, defence in depth), Bratus, Patterson &amp; Sassaman (LANGSEC), OWASP LLM Top 10</td></tr>
+        <tr><td>F</td><td>Bass, Clements &amp; Kazman (quality attribute scenarios), Michael Power (audit record), Frederick Brooks</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="owner-triage">Owner Triage</h2>
+    <ul>
+      <li>2026-10-07, after Round 1: fix all Critical and Important findings now, then a strict second pass.</li>
+      <li>2026-10-07, after Round 2: fix all, then a strict third pass.</li>
+      <li>After Round 3: fixed by the author the same day; <strong>the author's decisions awaiting the owner's ratification</strong> are the narrowings of GI-10, PS-3, PS-5/NF-3 and GI-3's quote rule, the one-sentence PS-6, and the new register action "Correct this check".</li>
+    </ul>
+    <p>No finding was deferred or dismissed.</p>
+
+    <p class="gvm-attribution">Developed using the Grounded Vibe Methodology</p>
+  </main>
+  <script>
+    (function () {
+      const toc = document.getElementById('toc');
+      const headings = document.querySelectorAll('h2[id], h3[id]');
+      const links = [];
+
+      headings.forEach(function (h) {
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent;
+        if (h.tagName === 'H3') a.classList.add('toc-h3');
+        toc.appendChild(a);
+        links.push({ el: a, target: h });
+      });
+
+      function onScroll() {
+        let current = links[0];
+        for (let i = 0; i < links.length; i++) {
+          if (links[i].target.getBoundingClientRect().top <= 80) current = links[i];
+        }
+        links.forEach(function (l) { l.el.classList.remove('active'); });
+        if (current) {
+          current.el.classList.add('active');
+          const tocEl = document.getElementById('toc');
+          const elTop = current.el.offsetTop - tocEl.offsetTop;
+          const elBot = elTop + current.el.offsetHeight;
+          if (elTop < tocEl.scrollTop || elBot > tocEl.scrollTop + tocEl.clientHeight) {
+            tocEl.scrollTop = elTop - tocEl.clientHeight / 2;
+          }
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
+  </script>
+</body>
+</html>
