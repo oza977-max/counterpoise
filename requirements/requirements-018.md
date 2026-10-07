@@ -132,7 +132,9 @@ is required at this step; the form asks every question anyway.
 **R18-GI-3 (Must):** If a model is connected, it reads the description and
 pre-fills form answers — only where it can cite words from the description.
 The app checks each cited quote actually occurs in the description (exact,
-after whitespace normalisation); a pre-fill whose quote does not occur, or
+after whitespace normalisation) and that it has at least two words, at most 300
+characters and no control, format or private-use characters *[amended
+2026-10-07, design review 008 — awaiting owner ratification]*; a pre-fill whose quote does not occur, or
 that cites nothing, is discarded and the question stays blank. A value that is
 not one of the question's own options is discarded the same way. A quote that
 is itself a rating instruction (the phrases the rating-instruction check
@@ -219,8 +221,10 @@ answers where they map to the form's questions (its description kept), with
 anything that does not map left blank and marked as such.
 
 > Fit criterion: no screen in the new build renders the retired card
-> review; the 11 worked examples and the 31-case corpus still produce their
-> pinned verdicts through the form; an old multi-node case opens on the
+> review; the 11 worked examples and the 9 corpus cases that have blind form
+> answer sets still produce their pinned verdicts through the form (the other 22
+> corpus cases keep their graph-level pins and are exercised by the in-app test)
+> *[amended 2026-10-07, design review 008 — awaiting owner ratification]*; an old multi-node case opens on the
 > register and its verdict screen renders; correcting it opens the form with
 > its mappable answers pre-filled and the rest blank and marked, and the
 > description kept.
@@ -425,7 +429,9 @@ plain, not a banner that must be dismissed.
 
 **R18-PS-5 (Must):** No key, token or sign-in of the owner's is ever
 included in the public site. The app stores no model credentials of its own:
-a model that needs a key is reached through the visitor's own Ollama app.
+a model that needs a key is reached through the visitor's own Ollama app. *(Exception, declared
+2026-10-07 and awaiting owner ratification: an optional saved Anthropic key, which no screen
+sets, still enables the semantic duplicate check and the verdict explanation.)*
 
 > Fit criterion: a scan of the production bundle finds no key or token
 > pattern; the Settings screen has no field for a model key.
@@ -467,7 +473,9 @@ that is announced, no meaning by colour alone, contrast checked.
 quotes are held only in this browser (drafts, the trail) and are cleared by
 "Clear all data"; the only place they are ever sent is the declared model
 address; the app adds no analytics, no third-party scripts and no other
-outbound request for them.
+outbound request for them *(except the optional saved Anthropic key's two calls, declared in
+the docs and covered by the egress tests; while a key is stored the "never leaves your
+computer" sentence is withheld — amended 2026-10-07, awaiting owner ratification)*.
 
 > Fit criterion: a test with a recording `fetch` shows that, during a
 > pre-fill, the only request that carries any part of the description goes to
@@ -508,8 +516,8 @@ shape reaches the new screens unvalidated.
 - Ollama's cloud models and their free allowance change over time; the app
   names none and relies on the measured result, not a list.
 - The form's single input / AI step / output shape gives the same verdict as
-  the retired multi-step map for the cases in the corpus (the 31 cases and 11
-  worked examples are pinned through it today); a case where the shapes would
+  the retired multi-step map for the cases in the corpus (the 11 worked examples and the 9 corpus
+  cases with blind answer sets are pinned through it today; the other 22 corpus cases are pinned at graph level); a case where the shapes would
   differ is a requirement-level question, not a silent behaviour.
 
 ## Constraints
@@ -614,6 +622,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-04 | Amended from the Round 18 health report (`test-cases/requirements-health-report-018.md`, owner decisions): GI-3 (quote is evidence, rating-instruction quotes never accepted, values outside options discarded, one quote per ticked option); GI-10 (old cases corrected through the pre-filled form); new GI-14 (8,000-character description limit); MS-1 (cloud tag defined); MS-4/NF-1 (60 s per case); MS-5 (results and remembered mode kept with model settings); PS-3 (no example promises the same pre-fill); OQ-5; English-only assumption. 33 requirements: 32 Must, 1 Should. |
 | 2026-10-07 | Tech spec (`specs/intake-flow.md` §27): R18-PS-6 is met by one sentence naming both causes, because a page cannot tell a refused connection from a blocked origin — the fit criterion's "which of the two it is" is not met in that form; recorded for the owner to ratify. Cases and tech-spec decisions otherwise stay inside the requirements (cloud tag matched without regard to case; the cloud choice needs a loopback address and a cloud-tagged model; the 8,000 limit counts code points). |
 | 2026-10-07 | Design review 008 fixes (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-10 and the Assumptions line narrowed — the form-route pins cover the 11 worked examples and the 9 corpus cases with blind answer sets; the other 22 keep graph-level pins and are exercised by the in-app test. R18-PS-5 and R18-NF-3 narrowed — the optional saved Anthropic key (no screen sets it) still enables the semantic duplicate check and the verdict explanation, which send case text to Anthropic; declared in the docs and covered by the egress tests. R18-PS-6 met by one sentence (earlier row). Round-18 chunks land on a `round-18` branch and merge to `main` after R18-G. |
+| 2026-10-07 | Design review 008, strict second pass (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-3 amended in its body — a verified quote has at least two words, at most 300 characters and no control, format or private-use characters (a correct one-word quote is dropped and the question stays blank); R18-GI-10, PS-5 and NF-3 bodies now carry the narrowings recorded in the previous row; the description (Question 2) is not a form answer; a stopped in-app test never makes a model "tested"; while an Anthropic key is stored the "never leaves your computer" sentence is withheld. |
 
 ---
 

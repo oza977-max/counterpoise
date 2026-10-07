@@ -129,7 +129,7 @@ And the screen MUST NOT contain any form question as a required control before t
 
 ### TC-R18-GI-1-09: A two-letter code ticks countries only when written as a code [EXAMPLE]
 Input: "It gives us a score." and, separately, "Our US office will use it." and "Used in the EU and the UK."
-Given an empty description box and a policy whose jurisdictions include US, EU and GB (name "United Kingdom")
+Given an empty description box and a policy whose jurisdictions include UK (name "United Kingdom"), US and EU
 When each sentence is typed
 Then the first sentence MUST contain the countries item "not mentioned"
 And the second and third sentences MUST contain the countries item "mentioned"
@@ -333,12 +333,21 @@ And the mark MUST NOT contain a quote that is not a substring of that sentence
 [Requirement: R18-GI-3] [Priority: MUST]
 [Trace: not-yet-traced]
 
+### TC-R18-GI-3-18: Direction-changing characters in the context sentence are shown, not obeyed [SECURITY]
+Attack vector: OWASP LLM01 / "Trojan source" (U+202E in the description around a clean quote)
+Given a description "Our UK team reads client names\u202e and account details" and a verified quote "client names"
+When the mark and the register line are rendered
+Then the context sentence MUST contain the visible escape ⟦U+202E⟧ in place of the character
+And the screen MUST NOT contain a visually reordered sentence or the raw character
+[Requirement: R18-GI-3] [Priority: MUST]
+[Trace: not-yet-traced]
+
 ### TC-R18-GI-3-17: The count of model-filled answers is shown to the reviewer [EXAMPLE]
-Input: a case in which 5 of 14 answers were pre-filled and confirmed and 9 were typed
+Input: a case with 14 shown select questions that have a value, of which 5 were pre-filled and confirmed, 2 were pre-filled and changed, and 7 were typed (free-text answers and the description are not counted)
 Given the case is confirmed and on the register
 When the confirmation line and the register detail are read
-Then each MUST contain "5 of 14 answers were filled in by a model and confirmed by you"
-And a typed-only case MUST NOT contain that sentence
+Then each MUST contain "5 of 14 answers were filled in by a model and confirmed by you, and 2 were changed by you"
+And the line MUST be built by the confirmation step and by the register detail from the record, and a typed-only case MUST NOT contain that sentence
 [Requirement: R18-GI-3] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -400,7 +409,7 @@ And no element is created from them and no script runs (`document.querySelector(
 [Trace: not-yet-traced]
 
 ### TC-R18-GI-5-01: The register shows who supplied each answer, and by what [EXAMPLE]
-Input: a completed case where "countries" was typed, "information" was a confirmed pre-fill quoting "internal ticket volumes", and "how widely" was a pre-fill changed from "Just me, or a small trial" to "My team, as part of normal work"; model name `gemma4:cloud` run through Ollama's cloud, host `localhost:11434`
+Input: a completed case where "countries" was typed, "information" was a confirmed pre-fill quoting "internal ticket volumes", and "how widely" was a pre-fill changed from "Just me, or a small trial" to "My team, as part of normal work"; model name `gemma4:cloud` run through Ollama's cloud, host `http://localhost:11434`
 Given the case is on the register
 When the reviewer opens its detail
 Then the detail MUST contain one line "read by gemma4:cloud" with the past-tense place words for Ollama's cloud, and each answer's value in words
@@ -432,16 +441,16 @@ And each MUST NOT contain a source line invented for it
 Input: a case where the person answered every question by hand, no model configured
 Given the case on the register
 When the reviewer opens its detail
-Then the detail MUST contain the description and "typed by the person" for each answer
+Then the detail MUST contain the description and "typed by you" for each answer
 And the detail MUST NOT contain a model name or a place
 [Requirement: R18-GI-5] [Priority: MUST]
 [Trace: not-yet-traced]
 
 ### TC-R18-GI-5-05: A tampered or oversized source record cannot reach the screen as markup [SECURITY]
 Attack vector: OWASP A08:2021 Software and Data Integrity Failures (a hand-off file is untrusted input)
-Given a hand-off bundle whose per-answer origin is `"<script>alert(1)</script>"`, another whose origin is the unknown word `"approved-by-model"`, one whose model name is `<b>gemma</b>`, one with a 1 MB quote, one with 200 answers, and one carrying a `__proto__` key
+Given a hand-off bundle whose per-answer origin is `"<script>alert(1)</script>"`, another whose origin is the unknown word `"approved-by-model"`, one whose model name is `<b>gemma</b>`, one with a 1 MB quote, one with 200 answers, one carrying a `__proto__` key, one whose origin and place are the strings `"constructor"` and `"__proto__"`, one with `"read": 99` and one with an unknown question id
 When each is imported
-Then the unknown-origin bundles MUST import and show “source not recognised” as inert text
+Then the unknown-origin, `"constructor"`/`"__proto__"`-valued, out-of-range-read and unknown-question-id bundles MUST import and show “source not recognised” (or the raw id) as inert text, with no thrown error
 And the model name MUST contain the literal characters with no `<b>` element
 And the oversized, over-long and prototype-key bundles MUST be refused with the existing plain sentence and MUST NOT contain a changed register
 [Requirement: R18-GI-5] [Priority: MUST]
@@ -460,9 +469,37 @@ And none MUST NOT contain "never leaves your computer" or any future-tense sente
 Input: a case with one typed answer and one confirmed pre-fill, confirmed with a double click on "Confirm and evaluate" and under React StrictMode
 Given the intake reaches the confirmation step
 When the person confirms
-Then the audit trail MUST contain exactly one `graph_confirmed` event, carrying `answer_sources` with each answer's value, its origin, the quotes and `quote_in_final_description`
+Then the audit trail MUST contain exactly one `graph_confirmed` event for that confirm attempt, carrying `answer_sources` with each answer's value, its origin, the quotes and `quote_in_final_description`
 And a typed-only case MUST contain typed rows and no `reads`
 And the trail MUST NOT contain a second event
+[Requirement: R18-GI-5] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-5-08: The export and the import say what the file is [EXAMPLE]
+Input: the hand-off export screen and the import screen
+Given a register with one pre-filled case
+When each screen renders
+Then the export screen MUST contain "This file contains the descriptions and quotes of every case in it."
+And the import screen MUST contain the statement that provenance in an imported file is self-asserted
+And a register screen with no export in progress MUST NOT contain the export sentence
+[Requirement: R18-GI-5] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-5-09: The register says when a quote is no longer in the description [EXAMPLE]
+Input: a confirmed case whose recorded `quote_in_final_description` is false for one answer and true for another
+Given the case is on the register
+When its detail renders
+Then the first answer's line MUST contain “the quote is no longer in your description”
+And the second answer's line MUST NOT contain that phrase
+[Requirement: R18-GI-5] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-5-10: A failed evaluation retried keeps the sources [EXAMPLE]
+Input: a case with a confirmed pre-fill whose first evaluation fails (injected), then Retry
+Given the intake reaches the confirmation step
+When the first confirm fails and the person retries
+Then each `graph_confirmed` event MUST contain `answer_sources` with the pre-filled row and its quotes
+And the retry's event MUST NOT contain a typed row for the model-filled answer
 [Requirement: R18-GI-5] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -520,12 +557,12 @@ And the form MUST NOT contain a model error or a still-running working indicator
 [Trace: not-yet-traced]
 
 ### TC-R18-GI-7-03: An unreadable reply opens a blank form [EXAMPLE]
-Input: fake replies `{"answers": ` (cut off), `not json at all`, `{}`, and `{"answers": []}`
+Input: fake replies `{"answers": ` (cut off), `not json at all` and `{}`
 Given a model is connected
 When each reply is read in turn
 Then each run MUST contain a blank form and the one plain sentence
 And no run's screen MUST contain the model's raw text
-And the screen MUST NOT contain the model's raw text in any of the four runs
+And the screen MUST NOT contain the model's raw text in any of the three runs
 [Requirement: R18-GI-7] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -650,6 +687,35 @@ And the form MUST NOT contain a second request after the plain Back-and-forward
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
 
+### TC-R18-GI-8-07: Back from the form returns to the description with everything kept [EXAMPLE]
+Input: a half-filled form (two typed answers, one confirmed pre-fill); press Back
+Given the form step
+When the person presses Back
+Then the description screen MUST contain the description unchanged and Next enabled
+And pressing Next with the description unchanged MUST contain the form with the same three answers
+And the fake model MUST NOT contain a second request
+[Requirement: R18-GI-8] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-8-08: A stale draft never beats a fresh read [EXAMPLE]
+Input: a form draft from the first visit holding pre-filled answer C (unconfirmed) and a typed answer D; the description is edited, the model returns a new value for C; return to the form
+Given a draft exists in this browser
+When the form mounts after the merge
+Then answer C MUST contain the new value, answer D MUST contain its typed value, and the draft MUST contain the merged state
+And the form MUST NOT contain the first visit's value for C
+[Requirement: R18-GI-8] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-8-09: Editing Question 2 on the form edits the description [EXAMPLE]
+Input: on the form, change Question 2's text so the sentence "Our UK team" is removed
+Given an answer pre-filled and confirmed with the quote "Our UK team"
+When the text changes
+Then the description in the reducer, the draft and the record MUST contain the new text
+And the answer's mark MUST contain “the quote “Our UK team” is no longer in your description”
+And the form draft MUST NOT contain an entry for Question 2
+[Requirement: R18-GI-8] [Priority: MUST]
+[Trace: not-yet-traced]
+
 ### TC-R18-GI-9-01: Reload at the description step restores the text [EXAMPLE]
 Input: type "It reads client names and account details." and reload the page
 Given a draft in this browser
@@ -757,6 +823,15 @@ And the form MUST NOT contain a blank question for an answer that was recorded
 [Requirement: R18-GI-10] [Priority: MUST]
 [Trace: not-yet-traced]
 
+### TC-R18-GI-10-07: A record answer needs its tick and becomes typed when changed [EXAMPLE]
+Input: an old case corrected; one answer mapped “from the earlier record”, one not carried; the person ticks the first and answers the second; in another run changes the first
+Given the form is open from an old case
+When the person ticks, answers and changes
+Then Continue MUST contain a disabled state until the record answer is ticked (or changed) and the blank answered
+And the answered blank and the changed record answer MUST contain the state “typed by you” and MUST NOT contain “from the earlier record”
+[Requirement: R18-GI-10] [Priority: MUST]
+[Trace: not-yet-traced]
+
 ### TC-R18-GI-11-01: The recorded newcomer test covers the three people the requirement names [EXAMPLE]
 Input: the newcomer test record for this round (the same kind of record as the one the NF-12 gate already keeps)
 Given the record
@@ -826,6 +901,15 @@ Given a tested model
 When each screen renders
 Then each MUST contain "tested 21/31 on 2026-10-07" followed by "(measured as if you check every filled answer)"
 And an untested model MUST NOT contain that suffix
+[Requirement: R18-GI-12] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-GI-12-07: The scorer is the only measurement route to evaluate() [EXAMPLE]
+Input: a scan of the imports of `src/engine/question-fields.ts` and of every file in the intake route (`IntakeFlow`, `StructuredForm`, the reading step)
+Given the build
+When the scan runs
+Then the importers of `applyPrefillToGraph` MUST contain only the in-app test runner and the engine-boundary allow-list
+And the files of the intake route MUST NOT contain an import of `applyPrefillToGraph`
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1110,6 +1194,16 @@ And the description screen MUST NOT contain either small-print line
 [Requirement: R18-MS-2] [Priority: MUST]
 [Trace: not-yet-traced]
 
+### TC-R18-MS-2-07: A stored Anthropic key withholds the "never leaves" promise [EXAMPLE]
+Input: Settings and the description screen under "On this computer" with `aigate:api-key` set, then with it removed
+Given each state
+When the screens render
+Then with the key set they MUST contain "A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."
+And with the key set they MUST NOT contain "It never leaves your computer"
+And with the key removed they MUST contain "It never leaves your computer"
+[Requirement: R18-MS-2] [Priority: MUST]
+[Trace: not-yet-traced]
+
 ### TC-R18-MS-3-01: Every model the server reports is offered, and a typed one is accepted [EXAMPLE]
 Input: a fake server reporting `alpha:1b`, `beta:7b` and `gamma:70b`; the person types `delta:2b`
 Given the model setting with the fake server's address
@@ -1212,6 +1306,16 @@ Given the Settings screen
 When the test runs and is stopped
 Then the screen MUST contain "Case 12 of 31", "Each case gets 60 seconds." and, after Stop, "Stopped after 12 of 31 cases."
 And a second press of "Test it" while running MUST NOT contain a second run
+[Requirement: R18-MS-4] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-MS-4-09: A stopped run never makes a model tested, and dropped fills are counted [EXAMPLE]
+Input: a run stopped after 12 cases, then a completed run in which the verifier dropped 7 fills
+Given a saved stopped result for `gemma4:cloud`
+When Settings renders after each
+Then after the stopped run the label MUST contain "untested (a partial test stopped after 12 of 31 cases)"
+And after the completed run the label MUST contain "tested" with its count and date, and the result MUST contain "7 filled-in answers were dropped for having no valid quote."
+And the stopped run's label MUST NOT contain "tested 12/31"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1487,6 +1591,15 @@ And it MUST NOT contain "will always fill", "every model will" or an equivalent 
 [Requirement: R18-PS-3] [Priority: MUST]
 [Trace: not-yet-traced]
 
+### TC-R18-PS-3-05: The example list says what the checklist will show [EXAMPLE]
+Input: the example list on the description screen
+Given the list is showing
+When it renders
+Then it MUST contain "Examples are short — the checklist shows what they leave out."
+And choosing an example MUST NOT contain a claim that every checklist item is ticked unless every item is ticked for that example
+[Requirement: R18-PS-3] [Priority: MUST]
+[Trace: not-yet-traced]
+
 ### TC-R18-PS-4-01: The demonstration notice shows under a firm server and under Ollama's cloud [EXAMPLE]
 Input: the two settings
 Given each setting
@@ -1520,6 +1633,15 @@ Given the four copies
 When a docs test compares them
 Then each MUST contain the same notice wording
 And the four copies MUST NOT contain different notice wording
+[Requirement: R18-PS-4] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-PS-4-05: The shared-site sentence shows only on github.io [EXAMPLE]
+Input: the description screen under "Ollama's cloud" served from `oza977-max.github.io`, from `localhost`, and from a `file://` page
+Given a model is set
+When the screen renders in each place
+Then the github.io screen MUST contain "On this public demo, other pages on the same site address can read data stored in this browser."
+And the localhost and file screens MUST NOT contain that sentence
 [Requirement: R18-PS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1718,11 +1840,20 @@ And the form MUST contain the blank form and a plain sentence, and the request o
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-3-07: Only the listed files call fetch [EXAMPLE]
-Input: a scan of `src/` for `fetch(`, `XMLHttpRequest`, `sendBeacon`, `WebSocket` and `EventSource`
+Input: a scan of `src/` for `fetch(`, `XMLHttpRequest`, `sendBeacon`, `WebSocket`, `EventSource`, `createClient` and imports of `@anthropic-ai/sdk`
 Given the build
 When the scan runs
-Then the matches MUST contain only the listed model and key-call files
+Then the matches MUST contain only the listed model and key-call files (`prefill.ts`, `model-setting.ts`, `model-test.ts`, `duplicate-check.ts`, `reasoning-trace.ts`, `client.ts`)
 And a new file containing one MUST NOT contain a passing scan result
+[Requirement: R18-NF-3] [Priority: MUST]
+[Trace: not-yet-traced]
+
+### TC-R18-NF-3-08: Clear all data says what it keeps, and the setting can be forgotten [EXAMPLE]
+Input: Settings → Clear all data, then "Forget the model setting"
+Given a saved model setting and a saved test result
+When "Clear all data" finishes, then the setting is forgotten
+Then after Clear all data the message MUST contain "Your model setting (including its address) is kept." and the setting MUST contain its saved values
+And after "Forget the model setting" both `aigate:model-setting` and `aigate:model-test-results` MUST NOT contain any value
 [Requirement: R18-NF-3] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1798,41 +1929,41 @@ Counterexample strategy: keys with `__proto__`, a 1 MB description, a descriptio
 
 ## Traceability Matrix
 
-Every requirement of `requirements/requirements-018.md` maps to at least one case; every case names one requirement (no orphans). Verified mechanically when this file was last written: 33 requirements, 183 cases, zero requirements without a case, zero cases without a requirement. The chunk that builds each family is in `specs/implementation-guide.md` §12.5.
+Every requirement of `requirements/requirements-018.md` maps to at least one case; every case names one requirement (no orphans). Verified mechanically when this file was last written: 33 requirements, 197 cases, zero requirements without a case, zero cases without a requirement. The chunk that builds each family is in `specs/implementation-guide.md` §12.5.
 
 | Requirement | Priority | Test cases | Count |
 |---|---|---|---|
 | R18-GI-1 | Must | TC-R18-GI-1-01, TC-R18-GI-1-02, TC-R18-GI-1-03, TC-R18-GI-1-04, TC-R18-GI-1-05, TC-R18-GI-1-06, TC-R18-GI-1-07, TC-R18-GI-1-08, TC-R18-GI-1-09 | 9 |
 | R18-GI-2 | Must | TC-R18-GI-2-01, TC-R18-GI-2-02, TC-R18-GI-2-03, TC-R18-GI-2-04, TC-R18-GI-2-05 | 5 |
-| R18-GI-3 | Must | TC-R18-GI-3-01, TC-R18-GI-3-02, TC-R18-GI-3-03, TC-R18-GI-3-04, TC-R18-GI-3-05, TC-R18-GI-3-06, TC-R18-GI-3-07, TC-R18-GI-3-08, TC-R18-GI-3-09, TC-R18-GI-3-10, TC-R18-GI-3-11, TC-R18-GI-3-12, TC-R18-GI-3-13, TC-R18-GI-3-14, TC-R18-GI-3-15, TC-R18-GI-3-16, TC-R18-GI-3-17 | 17 |
+| R18-GI-3 | Must | TC-R18-GI-3-01, TC-R18-GI-3-02, TC-R18-GI-3-03, TC-R18-GI-3-04, TC-R18-GI-3-05, TC-R18-GI-3-06, TC-R18-GI-3-07, TC-R18-GI-3-08, TC-R18-GI-3-09, TC-R18-GI-3-10, TC-R18-GI-3-11, TC-R18-GI-3-12, TC-R18-GI-3-13, TC-R18-GI-3-14, TC-R18-GI-3-15, TC-R18-GI-3-16, TC-R18-GI-3-18, TC-R18-GI-3-17 | 18 |
 | R18-GI-4 | Must | TC-R18-GI-4-01, TC-R18-GI-4-02, TC-R18-GI-4-03, TC-R18-GI-4-04, TC-R18-GI-4-05, TC-R18-GI-4-06 | 6 |
-| R18-GI-5 | Must | TC-R18-GI-5-01, TC-R18-GI-5-02, TC-R18-GI-5-03, TC-R18-GI-5-04, TC-R18-GI-5-05, TC-R18-GI-5-06, TC-R18-GI-5-07 | 7 |
+| R18-GI-5 | Must | TC-R18-GI-5-01, TC-R18-GI-5-02, TC-R18-GI-5-03, TC-R18-GI-5-04, TC-R18-GI-5-05, TC-R18-GI-5-06, TC-R18-GI-5-07, TC-R18-GI-5-08, TC-R18-GI-5-09, TC-R18-GI-5-10 | 10 |
 | R18-GI-6 | Must | TC-R18-GI-6-01, TC-R18-GI-6-02, TC-R18-GI-6-03, TC-R18-GI-6-04 | 4 |
 | R18-GI-7 | Must | TC-R18-GI-7-01, TC-R18-GI-7-02, TC-R18-GI-7-03, TC-R18-GI-7-04, TC-R18-GI-7-05, TC-R18-GI-7-06, TC-R18-GI-7-07, TC-R18-GI-7-08, TC-R18-GI-7-09, TC-R18-GI-7-10 | 10 |
-| R18-GI-8 | Must | TC-R18-GI-8-01, TC-R18-GI-8-02, TC-R18-GI-8-03, TC-R18-GI-8-04, TC-R18-GI-8-05, TC-R18-GI-8-06 | 6 |
+| R18-GI-8 | Must | TC-R18-GI-8-01, TC-R18-GI-8-02, TC-R18-GI-8-03, TC-R18-GI-8-04, TC-R18-GI-8-05, TC-R18-GI-8-06, TC-R18-GI-8-07, TC-R18-GI-8-08, TC-R18-GI-8-09 | 9 |
 | R18-GI-9 | Must | TC-R18-GI-9-01, TC-R18-GI-9-02, TC-R18-GI-9-03, TC-R18-GI-9-04, TC-R18-GI-9-05 | 5 |
-| R18-GI-10 | Must | TC-R18-GI-10-01, TC-R18-GI-10-02, TC-R18-GI-10-03, TC-R18-GI-10-04, TC-R18-GI-10-05, TC-R18-GI-10-06 | 6 |
+| R18-GI-10 | Must | TC-R18-GI-10-01, TC-R18-GI-10-02, TC-R18-GI-10-03, TC-R18-GI-10-04, TC-R18-GI-10-05, TC-R18-GI-10-06, TC-R18-GI-10-07 | 7 |
 | R18-GI-11 | Must | TC-R18-GI-11-01, TC-R18-GI-11-02 | 2 |
-| R18-GI-12 | Must | TC-R18-GI-12-01, TC-R18-GI-12-02, TC-R18-GI-12-03, TC-R18-GI-12-04, TC-R18-GI-12-05, TC-R18-GI-12-06 | 6 |
+| R18-GI-12 | Must | TC-R18-GI-12-01, TC-R18-GI-12-02, TC-R18-GI-12-03, TC-R18-GI-12-04, TC-R18-GI-12-05, TC-R18-GI-12-06, TC-R18-GI-12-07 | 7 |
 | R18-GI-14 | Must | TC-R18-GI-14-01, TC-R18-GI-14-02, TC-R18-GI-14-03, TC-R18-GI-14-04, TC-R18-GI-14-05, TC-R18-GI-14-06, TC-R18-GI-14-07 | 7 |
 | R18-GI-13 | Must | TC-R18-GI-13-01, TC-R18-GI-13-02, TC-R18-GI-13-03 | 3 |
 | R18-MS-1 | Must | TC-R18-MS-1-01, TC-R18-MS-1-02, TC-R18-MS-1-03, TC-R18-MS-1-04, TC-R18-MS-1-05, TC-R18-MS-1-06, TC-R18-MS-1-07, TC-R18-MS-1-08, TC-R18-MS-1-09, TC-R18-MS-1-10, TC-R18-MS-1-11 | 11 |
-| R18-MS-2 | Must | TC-R18-MS-2-01, TC-R18-MS-2-02, TC-R18-MS-2-03, TC-R18-MS-2-04, TC-R18-MS-2-05, TC-R18-MS-2-06 | 6 |
+| R18-MS-2 | Must | TC-R18-MS-2-01, TC-R18-MS-2-02, TC-R18-MS-2-03, TC-R18-MS-2-04, TC-R18-MS-2-05, TC-R18-MS-2-06, TC-R18-MS-2-07 | 7 |
 | R18-MS-3 | Must | TC-R18-MS-3-01, TC-R18-MS-3-02, TC-R18-MS-3-03 | 3 |
-| R18-MS-4 | Must | TC-R18-MS-4-01, TC-R18-MS-4-02, TC-R18-MS-4-03, TC-R18-MS-4-04, TC-R18-MS-4-05, TC-R18-MS-4-06, TC-R18-MS-4-07, TC-R18-MS-4-08 | 8 |
+| R18-MS-4 | Must | TC-R18-MS-4-01, TC-R18-MS-4-02, TC-R18-MS-4-03, TC-R18-MS-4-04, TC-R18-MS-4-05, TC-R18-MS-4-06, TC-R18-MS-4-07, TC-R18-MS-4-08, TC-R18-MS-4-09 | 9 |
 | R18-MS-5 | Must | TC-R18-MS-5-01, TC-R18-MS-5-02, TC-R18-MS-5-03, TC-R18-MS-5-04, TC-R18-MS-5-05, TC-R18-MS-5-06, TC-R18-MS-5-07, TC-R18-MS-5-08 | 8 |
 | R18-MS-6 | Must | TC-R18-MS-6-01, TC-R18-MS-6-02, TC-R18-MS-6-03 | 3 |
 | R18-MS-7 | Must | TC-R18-MS-7-01, TC-R18-MS-7-02, TC-R18-MS-7-03 | 3 |
 | R18-MS-8 | Must | TC-R18-MS-8-01, TC-R18-MS-8-02, TC-R18-MS-8-03 | 3 |
 | R18-PS-1 | Must | TC-R18-PS-1-01, TC-R18-PS-1-02, TC-R18-PS-1-03 | 3 |
 | R18-PS-2 | Must | TC-R18-PS-2-01, TC-R18-PS-2-02, TC-R18-PS-2-03, TC-R18-PS-2-04 | 4 |
-| R18-PS-3 | Must | TC-R18-PS-3-01, TC-R18-PS-3-02, TC-R18-PS-3-03, TC-R18-PS-3-04 | 4 |
-| R18-PS-4 | Must | TC-R18-PS-4-01, TC-R18-PS-4-02, TC-R18-PS-4-03, TC-R18-PS-4-04 | 4 |
+| R18-PS-3 | Must | TC-R18-PS-3-01, TC-R18-PS-3-02, TC-R18-PS-3-03, TC-R18-PS-3-04, TC-R18-PS-3-05 | 5 |
+| R18-PS-4 | Must | TC-R18-PS-4-01, TC-R18-PS-4-02, TC-R18-PS-4-03, TC-R18-PS-4-04, TC-R18-PS-4-05 | 5 |
 | R18-PS-5 | Must | TC-R18-PS-5-01, TC-R18-PS-5-02 | 2 |
 | R18-PS-6 | Should | TC-R18-PS-6-01, TC-R18-PS-6-02, TC-R18-PS-6-03 | 3 |
 | R18-NF-1 | Must | TC-R18-NF-1-01, TC-R18-NF-1-02, TC-R18-NF-1-03, TC-R18-NF-1-04, TC-R18-NF-1-05 | 5 |
 | R18-NF-2 | Must | TC-R18-NF-2-01, TC-R18-NF-2-02, TC-R18-NF-2-03, TC-R18-NF-2-04, TC-R18-NF-2-05 | 5 |
-| R18-NF-3 | Must | TC-R18-NF-3-01, TC-R18-NF-3-02, TC-R18-NF-3-03, TC-R18-NF-3-04, TC-R18-NF-3-05, TC-R18-NF-3-06, TC-R18-NF-3-07 | 7 |
+| R18-NF-3 | Must | TC-R18-NF-3-01, TC-R18-NF-3-02, TC-R18-NF-3-03, TC-R18-NF-3-04, TC-R18-NF-3-05, TC-R18-NF-3-06, TC-R18-NF-3-07, TC-R18-NF-3-08 | 8 |
 | R18-NF-4 | Must | TC-R18-NF-4-01, TC-R18-NF-4-02, TC-R18-NF-4-03, TC-R18-NF-4-04 | 4 |
 | R18-NF-5 | Must | TC-R18-NF-5-01, TC-R18-NF-5-02, TC-R18-NF-5-03, TC-R18-NF-5-04 | 4 |
 
@@ -1841,12 +1972,12 @@ Every requirement of `requirements/requirements-018.md` maps to at least one cas
 | Measure | Value |
 |---|---|
 | Requirements | 33 (32 Must, 1 Should) |
-| Test cases | 183 |
-| By priority | 174 Must, 9 Should, 0 Could |
-| By kind | 160 `[EXAMPLE]`, 7 `[PROPERTY]`, 16 `[SECURITY]` |
+| Test cases | 197 |
+| By priority | 188 Must, 9 Should, 0 Could |
+| By kind | 173 `[EXAMPLE]`, 7 `[PROPERTY]`, 17 `[SECURITY]` |
 | Must requirements with an `[EXAMPLE]` case holding Input, MUST contain and MUST NOT contain | 32 of 32 |
 | Requirements with no case | 0 |
-| Cases tagged `[Trace: not-yet-traced]` | 183 of 183 — the project has no `impact-map.md`, so no case can resolve to a goal, actor and impact; this is counted, not blocked |
+| Cases tagged `[Trace: not-yet-traced]` | 197 of 197 — the project has no `impact-map.md`, so no case can resolve to a goal, actor and impact; this is counted, not blocked |
 
 Priority notes. Edge and boundary cases were lowered one level from their requirement's Must, as the priority rule allows: TC-R18-GI-1-03 (near miss for a tick), TC-R18-GI-2-05 (one-line description), TC-R18-GI-3-08 (quote matching edge forms), TC-R18-GI-14-02 (one-character description), TC-R18-GI-14-07 (multi-byte text) and TC-R18-NF-5-02 (damaged old drafts). The requirement's main behaviour stays Must in each case.
 
@@ -1873,6 +2004,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-07 | Design review 008, strict second pass fixes (197 cases): `UK` is the policy's code (GI-1-09); direction-changing characters in the context sentence (GI-3-18); "typed by you" (GI-5-01..04); host is an origin; tampered `constructor`/`__proto__` values and out-of-range reads (GI-5-05); export and import statements, quote-no-longer, retry keeps sources (GI-5-08..10); `{"answers": []}` removed from GI-7-03 (it is GI-7-10); Back from the form, a stale draft never beats a fresh read, Question 2 edits the description (GI-8-07..09); record answers need a tick (GI-10-07); the scorer is the only measurement route (GI-12-07); the key-stored sentence (MS-2-07); stopped runs and dropped fills (MS-4-09); the confirmation line's counting rule (GI-3-17); the fetch-site grep covers the SDK (NF-3-07); Clear-all wording and Forget (NF-3-08); the github.io sentence (PS-4-05); the examples note (PS-3-05). |
 | 2026-10-07 | Design review 008 fixes (`specs/intake-flow.md` §27 revised): +27 cases (183 total) — two-letter country codes (GI-1-09); quote length, control/bidi characters, shown in context, model-filled share (GI-3-14..17); change-back returns to confirmed (GI-4-04); record values, past-tense words, once-only writer (GI-5-01, -05 amended; GI-5-06, -07); reload during reading, double press, skip beats timeout, setting changed, nothing found (GI-7-06..10); hidden follow-up, failed read not repeated (GI-8-05, -06); restored-draft quote check (GI-9-05); GI-10-02 narrowed to the answered corpus cases, GI-10-04 uniquely-invertible rule, correction after reload (GI-10-06); label caveat (GI-12-06); tampered setting and migration (MS-1-10, -11); small print (MS-2-06); test copy (MS-4-08); fallback resend and mode reset (MS-5-07, -08); place-keyed failure sentences (MS-7-01 rewritten, MS-7-03); key-based calls, redirect, fetch-site scan (NF-3-05..07); anchored dist-scan patterns (PS-5-01). |
 | 2026-10-07 | Amended after the tech spec (`intake-flow.md` §27): checklist is thirteen items (TC-R18-GI-1-02 countries row; GI-2 cases count thirteen); TC-R18-GI-8-04 states the kept-answer mark; TC-R18-GI-14-07 states code points; TC-R18-MS-1-02 adds `gemma4:Cloud`; TC-R18-MS-1-08 and -09 added; TC-R18-PS-6-01..03 rewritten for the single sentence. 156 cases. |
 
