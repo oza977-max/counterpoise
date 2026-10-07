@@ -760,14 +760,15 @@ gatekeeper" framing.
 
 **Audit lines (CR7-10, CR7-30).** The case page's trail shows another case's name (the matched label in `classification_adopted` and `duplicate_dismissed`) to a 2LoD view only, and a correction value that is null or absent reads "not stated" (`verdict-audit.md` §5.5; TC-CR7-10c, 30b).
 
-## 16b. Round 18 — who supplied each answer, on the register detail (R18-GI-5, R18-MS-2, 2026-10-07)
+## 16b. Round 18 — who supplied each answer, on the register detail (R18-GI-5, R18-MS-2, 2026-10-07; revised after design review 008)
 
-`RegisterDetail` reads the optional `answer_sources` through `currentVerdictAttestationFields` (the one correction-aware reader) and shows, under the description, one line naming the model and where it ran ("read by {model}", with the place sentence of `intake-flow.md` §27.8) and then, per answer, “typed by you”, “filled from your description and confirmed by you — “quote””, or “filled from your description and changed by you (from …) — “quote””. A case with no `answer_sources` (typed-only, older, or from an older hand-off) shows the typed lines only and no model line, and reads exactly as it did before this round. Old multi-node cases keep their record and verdict screens unchanged; "Correct" on one opens the pre-filled form (`intake-flow.md` §27.10). Tests: TC-R18-GI-5-01, -04, TC-R18-GI-10-03, -04, TC-R18-MS-2-04.
+`RegisterDetail` reads the optional `answer_sources` through `currentVerdictAttestationFields` (the one correction-aware reader) and shows, under the description: one line per distinct read ("read by {model}" with the past-tense place words of `intake-flow.md` §27.13 — never the "never leaves your computer" promise, which the app cannot prove), "N of M answers were filled in by a model and confirmed by you", and then per answer its value in words and “typed by you”, “filled from your description and confirmed by you — “quote””, “…and changed by you (from …)”, or “from the earlier record”; when the quote has left the final description the line says so. A case with no `answer_sources` (older, or from an older hand-off) reads exactly as it did before this round. Old multi-node cases keep their record and verdict screens unchanged; "Correct" on one opens the pre-filled form (`intake-flow.md` §27.10), and "Correct" on a new case — in the same session or after a reload — restores every answer from the recorded values. Tests: TC-R18-GI-5-01, -04, -06, -07, TC-R18-GI-10-03..06, TC-R18-MS-2-04.
 
 ## 17. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-10-07 | Design review 008 — §16b revised: values and reads, past-tense place words, model-filled share, correction of new cases from the record (see `intake-flow.md` §27.13). |
 | 2026-10-07 | Round 18 — §16b added: the register detail shows per-answer sources and the model line (see `intake-flow.md` §27.13). |
 | 2026-10-04 | CR9 — code review 009 fixes (TC-CR9-*, `test-cases-031.md`). The "No model was named" line quoted in the CR7 model-link amendments and §16 is now "No AI model is recorded" (CR9-04; neutral wording, `registerSaysNoModelNamed` and `noModelNamed` keep their names; TC-CR7-11d..11h re-pointed). |
 | 2026-10-04 | CR8 — code review 008 fixes (TC-CR8-*, `test-cases-030.md`). §8 amended: the policy-save pending check and queueing run under the per-case lock (CR8-09). §9 amended: seeds complete a half-written case from its own latest verdict and write the use-case node last (CR8-10). |
