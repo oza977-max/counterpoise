@@ -221,7 +221,7 @@ answers where they map to the form's questions (its description kept), with
 anything that does not map left blank and marked as such.
 
 > Fit criterion: no screen in the new build renders the retired card
-> review; the 11 worked examples and the 9 corpus cases that have blind form
+> review; the ten scripted worked examples and the 9 corpus cases that have blind form
 > answer sets still produce their pinned verdicts through the form (the other 22
 > corpus cases keep their graph-level pins and are exercised by the in-app test)
 > *[amended 2026-10-07, design review 008 — awaiting owner ratification]*; an old multi-node case opens on the
@@ -405,9 +405,11 @@ sentences as R18-MS-2.
 > app, the user guide, the tester guide and the README.
 
 **R18-PS-3 (Must):** "Try an example" on the description screen offers the
-eleven worked cases from the user guide as one-click example descriptions
-(a click fills the description box and ticks the checklist). The eleven are
-the cases already pinned to their outcomes by tests (`docs/try-these.md`).
+worked cases from the user guide as one-click example descriptions
+(a click fills the description box and ticks the checklist). They are
+the scripted cases already pinned to their outcomes by tests (`docs/try-these.md`):
+ten, because the guide's eleventh section is "things worth breaking" and is not
+scripted *[amended 2026-10-07, design review 008 — awaiting owner ratification]*.
 
 No example promises the same pre-fill from every model: the guide's stated
 outcome is pinned through the guide's own form answers.
@@ -516,7 +518,7 @@ shape reaches the new screens unvalidated.
 - Ollama's cloud models and their free allowance change over time; the app
   names none and relies on the measured result, not a list.
 - The form's single input / AI step / output shape gives the same verdict as
-  the retired multi-step map for the cases in the corpus (the 11 worked examples and the 9 corpus
+  the retired multi-step map for the cases in the corpus (the ten scripted worked examples and the 9 corpus
   cases with blind answer sets are pinned through it today; the other 22 corpus cases are pinned at graph level); a case where the shapes would
   differ is a requirement-level question, not a silent behaviour.
 
@@ -591,7 +593,7 @@ together) so the demonstration of the checklist is honest.
 | R18-MS-8 | Model setting | The test cases are the public corpus, byte-identical, with no firm data | Must |
 | R18-PS-1 | Public demo site | A first-time visitor completes a pre-check at once with no model | Must |
 | R18-PS-2 | Public demo site | "Make it smarter" panel: two stable commands and a dated link to Ollama's docs | Must |
-| R18-PS-3 | Public demo site | "Try an example": the eleven worked cases, generated from the guide's own source | Must |
+| R18-PS-3 | Public demo site | "Try an example": the ten scripted worked cases, generated from the guide's own source | Must |
 | R18-PS-4 | Public demo site | Standing demo-only notice whenever the model is not on this computer | Must |
 | R18-PS-5 | Public demo site | No owner key, token or sign-in in the public site; no model-key field in Settings | Must |
 | R18-PS-6 | Public demo site | Specific one-sentence messages when the browser blocks the visitor's own Ollama | Should |
@@ -623,6 +625,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-07 | Tech spec (`specs/intake-flow.md` §27): R18-PS-6 is met by one sentence naming both causes, because a page cannot tell a refused connection from a blocked origin — the fit criterion's "which of the two it is" is not met in that form; recorded for the owner to ratify. Cases and tech-spec decisions otherwise stay inside the requirements (cloud tag matched without regard to case; the cloud choice needs a loopback address and a cloud-tagged model; the 8,000 limit counts code points). |
 | 2026-10-07 | Design review 008 fixes (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-10 and the Assumptions line narrowed — the form-route pins cover the 11 worked examples and the 9 corpus cases with blind answer sets; the other 22 keep graph-level pins and are exercised by the in-app test. R18-PS-5 and R18-NF-3 narrowed — the optional saved Anthropic key (no screen sets it) still enables the semantic duplicate check and the verdict explanation, which send case text to Anthropic; declared in the docs and covered by the egress tests. R18-PS-6 met by one sentence (earlier row). Round-18 chunks land on a `round-18` branch and merge to `main` after R18-G. |
 | 2026-10-07 | Design review 008, strict second pass (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-3 amended in its body — a verified quote has at least two words, at most 300 characters and no control, format or private-use characters (a correct one-word quote is dropped and the question stays blank); R18-GI-10, PS-5 and NF-3 bodies now carry the narrowings recorded in the previous row; the description (Question 2) is not a form answer; a stopped in-app test never makes a model "tested"; while an Anthropic key is stored the "never leaves your computer" sentence is withheld. |
+| 2026-10-07 | Design review 008, strict third pass (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-PS-3 offers **ten** examples (the guide scripts ten; its eleventh section is not scripted); correcting an older case — whose graph the register never kept — restores only its description and recorded "Not sure" answers (the rest blank and marked), and a submitter-side "Correct this check" action is added to the register detail because none exists; the app does not run from `file://`, so no `file://` check or note is made; `verdict_corrected` may carry a changed description. |
 
 ---
 
