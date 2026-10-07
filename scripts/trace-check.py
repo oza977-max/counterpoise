@@ -24,6 +24,11 @@ not fail the build — they flag a row this script does not yet understand).
 Cases that are deliberately not built are listed in DEFERRED with the
 reason; they are reported, never silently skipped.
 
+A test-cases file written ahead of its build carries a line `Status: PENDING BUILD`
+near the top. Its ids are reported as PENDING (counted, listed, never failed) until
+the build round removes the line; from then on every id needs a named test as usual.
+`[Trace: not-yet-traced]` (no impact-map to trace through) is not a file path and is skipped.
+
 A case whose behaviour was intentionally replaced by a later requirement is
 listed in a `## Superseded` section of a test-cases file, as a table row
 `| TC-... | <reason, naming what replaced it> |`. It no longer needs a test,
@@ -70,6 +75,7 @@ RANGE_LETTER = re.compile(
 )
 WILDCARD = re.compile(r"^\|\s*(TC-[A-Za-z0-9-]+-)\*\s*\|", re.M)
 ANY_TC_ROW = re.compile(r"^\|\s*TC-.*$", re.M)
+PENDING_MARKER = re.compile(r"^Status:\s*PENDING BUILD\b", re.M)
 SUPERSEDED_SECTION = re.compile(r"^## Superseded[^\n]*\n(.*?)(?=^## |\Z)", re.M | re.S)
 SUPERSEDED_ROW = re.compile(r"^\|\s*(" + ID + r")\s*\|\s*([^|\n]*?)\s*\|", re.M)
 
@@ -107,6 +113,7 @@ def is_traced(tc: str, mode: str, test_text: str) -> bool:
 def main() -> int:
     case_files = sorted((ROOT / "test-cases").glob("test-cases*.md"))
     defined: dict[str, tuple[str, str]] = {}  # id -> (source file, check mode)
+    pending_files: set[str] = set()  # files marked "Status: PENDING BUILD"
     dangling: list[str] = []
     expansions: list[str] = []
     warnings: list[str] = []
@@ -115,6 +122,8 @@ def main() -> int:
 
     for f in case_files:
         text = f.read_text(encoding="utf-8")
+        if PENDING_MARKER.search(text):
+            pending_files.add(f.name)
         for sec in SUPERSEDED_SECTION.finditer(text):
             for row in SUPERSEDED_ROW.finditer(sec.group(1)):
                 tc, why = row.group(1), row.group(2).strip()
@@ -164,7 +173,7 @@ def main() -> int:
         for m in TRACE_LINE.finditer(text):
             for raw in m.group(1).split(";"):
                 path = raw.strip().rstrip(",;:")
-                if not path:
+                if not path or path == "not-yet-traced":
                     continue
                 if not (ROOT / path).exists():
                     dangling.append(f"{f.name}: [Trace: {path}] — file does not exist")
@@ -176,14 +185,18 @@ def main() -> int:
     )
 
     untraced = []
+    pending: list[str] = []
     for tc, (src, mode) in sorted(defined.items()):
         if tc in DEFERRED or tc in superseded:
             continue
         if not is_traced(tc, mode, test_text):
-            untraced.append(f"{tc}  ({src})")
+            if src in pending_files:
+                pending.append(tc)
+            else:
+                untraced.append(f"{tc}  ({src})")
 
     retired = len([tc for tc in defined if tc in superseded and tc not in DEFERRED])
-    traced = len(defined) - len(untraced) - len(DEFERRED) - retired
+    traced = len(defined) - len(untraced) - len(pending) - len(DEFERRED) - retired
     print(f"trace-check: {len(defined)} test cases across {len(case_files)} files")
     print(f"  traced to a named test: {traced}")
     if expansions:
@@ -196,6 +209,9 @@ def main() -> int:
         print(f"  SUPERSEDED {tc}: {why}")
     for b in bad_superseded:
         print(f"  ERROR {b}")
+    for f_name in sorted(pending_files):
+        n = len([t for t in pending if defined[t][0] == f_name])
+        print(f"  PENDING BUILD {f_name}: {n} cases not yet built (reported, not failed)")
     for u in untraced:
         print(f"  UNTRACED {u}")
     for d in dangling:
