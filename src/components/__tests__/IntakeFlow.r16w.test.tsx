@@ -117,6 +117,44 @@ describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to
 });
 
 describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form filled in', () => {
+  it('TC-R16-W-59: Back from the questionnaire returns to the form with its answers intact', async () => {
+    const DRAFT_KEY = 'aigate:intake-draft';
+    // R18-A: written as the version-4 draft the form's Continue leaves behind.
+    // Question 2 is the description (never a stored answer), so the description
+    // is carried in `description` and the tool name in `plainAnswers`.
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ version: 4, state: {
+        step: 'questionnaire',
+        description: 'Carried description.',
+        method: 'form',
+        graph: {
+          id: 'g1', version: 1, intake_method: 'structured_form', extracted_at: '2026-01-01T00:00:00.000Z',
+          jurisdictions: [],
+          input_nodes: [{ id: 'i1', label: 'x', data_class: 'Internal', data_zone: 'Zone C' }],
+          processing_nodes: [{ id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false }],
+          output_nodes: [{ id: 'o1', label: 'x', action_type: 'read', exposure: 'internal-only', decision_bindingness: 'non-binding', output_reversibility: 'reversible', scale: 'limited' }],
+          edges: [],
+        },
+        questions: [{ id: 'Q1', text: 'x?', field: 'autonomy_level', triggered_by: ['INV-1'], answer_type: 'text' }],
+        answers: [],
+        resolutionNotes: [],
+        corrections: [],
+        useCaseId: 'uc-back-1',
+        plainAnswers: { '1': 'Carried tool name' },
+        assumptions: [],
+      } }),
+    );
+
+    render(<App />);
+    const back = await screen.findByRole('button', { name: /back/i });
+    await userEvent.click(back);
+
+    expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('Carried tool name');
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('Carried description.');
+    sessionStorage.clear();
+  });
+
   it('TC-R16-W-60: "Change an answer" from confirmation reopens the form with its answers intact', async () => {
     const DRAFT_KEY = 'aigate:intake-draft';
     sessionStorage.setItem(
