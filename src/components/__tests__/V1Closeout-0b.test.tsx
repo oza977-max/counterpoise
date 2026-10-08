@@ -154,6 +154,10 @@ describe('TC-UC-3-04: a description that steers its own classification does not 
     expect(v.track).not.toBe('III');
     // And the engine's own reason is on the verdict, not the description's.
     expect(v.binding_constraint).toBe('HL-003');
+    // R18-A review m3: the old `track === 'II'` and tier_rationale `TIER-` assertions
+    // came from the extracted graph (autonomy 3, a tiered track). They do not hold for
+    // the scripted answers: example 3 is rejected by hard line HL-003 (asserted above),
+    // which carries no tier rationale and sits on Track I. Not restored, by design.
   }, SLOW_FLOW_MS);
 });
 
