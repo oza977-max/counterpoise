@@ -1,0 +1,4 @@
+# Reviewed benign matches for scripts/scan-dist.mjs, one per line:
+#   relative/path/inside/dist|exact matched text
+# Empty on purpose: the current dist/ has no match. Add a line only after
+# looking at the match in context and writing why it is harmless below it.
