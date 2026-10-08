@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import IntakeFlow from '../IntakeFlow';
 import * as evaluateModule from '../../engine/evaluate';
+import * as questionGeneratorModule from '../../engine/question-generator';
+import { CANONICAL_VOCABULARY } from '../../engine/canonical-vocabulary';
 import { setCurrentPolicyYaml } from '../../store/policy-source';
 import { getAllForExport } from '../../store/audit';
 import { addNode, getGraph, getUseCases } from '../../store/register';
@@ -202,6 +204,143 @@ describe('CR7-02 — re-entries into the form keep the "Not sure" assumptions (B
     const corrected = (await eventsOfType('verdict_corrected'))[0]!.payload as unknown as {
       assumptions?: AssumptionLike[];
     };
+    expect(corrected.assumptions?.map((a) => a.questionId)).toEqual(['9']);
+  }, 30000);
+});
+
+// ---- R18-A: the questions step on the form route (restored from main) -------
+// A form-built graph never marks a node uncertain, so generateQuestions asks
+// nothing for the answers a person can give today; the questionnaire is still
+// the step handleFormSubmitted dispatches to when it does ask (QuestionnaireStep
+// is kept). These tests drive the REAL form and the REAL reducer end to end and
+// make the question generator ask what a firm's rules could ask, by spying on it
+// (call-through, plus the extra questions). EBT exception: fault/scenario
+// injection on one pure engine function; nothing else is replaced.
+type AskedField = { field: string; node: 'p' | 'o' };
+function askOnFormRoute(...asked: AskedField[]) {
+  const real = questionGeneratorModule.generateQuestions;
+  vi.spyOn(questionGeneratorModule, 'generateQuestions').mockImplementation((graph, policy, packs) => [
+    ...real(graph, policy, packs),
+    ...asked.map(({ field, node }) => {
+      const options = (CANONICAL_VOCABULARY as Record<string, readonly string[]>)[field];
+      return {
+        id: `Q-${field}-${node}`,
+        field,
+        node_id: node === 'p' ? graph.processing_nodes[0]!.id : graph.output_nodes[0]!.id,
+        triggered_by: ['INV-TEST'],
+        answer_type: 'select' as const,
+        options: options ? [...options] : ['reversible', 'irreversible', 'unknown'],
+      };
+    }),
+  ]);
+}
+
+/** The form route to its first question, with the extra questions asked. */
+async function formToQuestions(user: User, ...asked: AskedField[]) {
+  await reachForm(user, NSDESC);
+  await fillMinimalForm(user, 'Client update model', NSDESC);
+  askOnFormRoute(...asked);
+  await user.click(screen.getByRole('button', { name: /^continue$/i }));
+}
+
+describe('CR7-03 (form route) — Back from the questions loses nothing; nothing is written twice (BC-004)', () => {
+  it('TC-CR7-03a / TC-CR7-03e: "Not sure" -> Back -> Continue asks the field again, the result lists the assumption once, and no duplicate graph_corrected events are written', async () => {
+    const user = userEvent.setup({ delay: null });
+    await formToQuestions(user, { field: 'output_reversibility', node: 'o' }, { field: 'scale', node: 'o' });
+    await screen.findByText(/can the mistake be caught and put right/i);
+    await user.click(screen.getByRole('button', { name: /^not sure$/i }));
+    await screen.findByText(/how widely will it be used/i);
+
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    // Back from the questions returns to the form, typed answers intact.
+    expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('Client update model');
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    // Asked again from the form's own values.
+    await screen.findByText(/can the mistake be caught and put right/i);
+    await user.click(screen.getByRole('button', { name: /^not sure$/i }));
+    await screen.findByText(/how widely will it be used/i);
+    await user.click(screen.getByRole('button', { name: /^just me, or a small trial$/i }));
+    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
+
+    const confirmed = (await eventsOfType('graph_confirmed')).pop()!.payload as unknown as {
+      assumptions?: AssumptionLike[];
+    };
+    expect(confirmed.assumptions?.map((a) => a.questionId)).toEqual(['field:output_reversibility']);
+    // 03e — one correction on the trail, not two.
+    const corrections = await eventsOfType('graph_corrected');
+    const keys = corrections.map((e) => {
+      const c = (e.payload as unknown as { correction: { node_id: string; field: string } }).correction;
+      return `${c.node_id}.${c.field}`;
+    });
+    expect(keys.length).toBeGreaterThan(0);
+    expect(new Set(keys).size).toBe(keys.length);
+  }, 30000);
+
+  it('TC-CR7-03d: decision type "Something else" -> Back -> Continue asks it again', async () => {
+    const user = userEvent.setup({ delay: null });
+    await formToQuestions(user, { field: 'vendor', node: 'p' }, { field: 'decision_type', node: 'o' });
+    await screen.findByText(/which supplier is it/i);
+    await user.click(screen.getByRole('button', { name: /^i don.t know$/i }));
+    await screen.findByText(/which of these does it help decide/i);
+    await user.click(screen.getByRole('button', { name: /^something else — describe it$/i }));
+    await screen.findByText(/what does it help decide\?/i);
+
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    await screen.findByLabelText(/what do you want to call it/i);
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await screen.findByText(/which supplier is it/i);
+    await user.click(screen.getByRole('button', { name: /^i don.t know$/i }));
+    // Asked again from the form's values, not silently dropped.
+    expect(await screen.findByText(/which of these does it help decide/i)).toBeInTheDocument();
+  }, 30000);
+
+  it('TC-CR7-02h-1: Not sure -> confirmation -> Change an answer -> Continue (questions) -> Back -> Continue -> Confirm keeps the earlier "Not sure" in graph_confirmed (and not the one given in the abandoned round)', async () => {
+    const user = userEvent.setup({ delay: null });
+    await reachNotSureConfirmation(user);
+    await user.click(document.querySelector<HTMLButtonElement>('.understood-summary__change')!);
+    await screen.findByLabelText(/what do you want to call it/i);
+    askOnFormRoute({ field: 'output_reversibility', node: 'o' }, { field: 'scale', node: 'o' });
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await screen.findByText(/can the mistake be caught and put right/i);
+    // The round about to be abandoned gives its own "Not sure" (an assumption).
+    await user.click(screen.getByRole('button', { name: /^not sure$/i }));
+    await screen.findByText(/how widely will it be used/i);
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    await screen.findByLabelText(/what do you want to call it/i);
+    vi.restoreAllMocks();
+    askOnFormRoute({ field: 'scale', node: 'o' });
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await clickThroughToConfirm(user);
+    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
+    const confirmed = (await eventsOfType('graph_confirmed')).pop()!.payload as unknown as { assumptions?: AssumptionLike[] };
+    // The earlier "Not sure" (the form's question 9) stays; the abandoned round's does not.
+    expect(confirmed.assumptions?.map((a) => a.questionId)).toEqual(['9']);
+  }, 30000);
+
+  it('TC-CR7-02h-2 (correction): the same through a correction from the result — verdict_corrected keeps the earlier "Not sure"', async () => {
+    const user = userEvent.setup({ delay: null });
+    await reachNotSureConfirmation(user);
+    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
+    await user.click(document.querySelector<HTMLButtonElement>('.verdict__first-correct')!);
+    await screen.findByLabelText(/what do you want to call it/i);
+    askOnFormRoute({ field: 'output_reversibility', node: 'o' }, { field: 'scale', node: 'o' });
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await screen.findByText(/can the mistake be caught and put right/i);
+    await user.click(screen.getByRole('button', { name: /^not sure$/i }));
+    await screen.findByText(/how widely will it be used/i);
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    await screen.findByLabelText(/what do you want to call it/i);
+    // The second time round only the scale is asked, so the abandoned "Not sure" has nothing to come back with.
+    vi.restoreAllMocks();
+    askOnFormRoute({ field: 'scale', node: 'o' });
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await clickThroughToConfirm(user);
+    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
+    await waitFor(async () => expect(await eventsOfType('verdict_corrected')).toHaveLength(1), { timeout: 5000 });
+    const corrected = (await eventsOfType('verdict_corrected'))[0]!.payload as unknown as { assumptions?: AssumptionLike[] };
     expect(corrected.assumptions?.map((a) => a.questionId)).toEqual(['9']);
   }, 30000);
 });
@@ -694,6 +833,18 @@ describe('FX7-1 review pass 1 — Back is refused on a re-entered form (I-2, I-3
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
     await clickThroughToConfirm(user);
     expect(document.body.textContent).toMatch(/united kingdom/i);
+    // R18-A review m1: the ticked country reaches the evaluation. This is a first
+    // submission (no verdict to correct yet), so no correction is recorded; the
+    // proof is the graph the engine was handed for THIS case (call-through spy).
+    const evaluated = vi.spyOn(evaluateModule, 'evaluate');
+    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
+    const mine = evaluated.mock.calls
+      .map((c) => c[0])
+      .filter((g) => [...g.input_nodes, ...g.processing_nodes, ...g.output_nodes].some((n) => n.label.includes('Client update model')));
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every((g) => g.jurisdictions.includes('UK'))).toBe(true);
+    expect((await eventsOfType('graph_corrected')).map((e) => (e.payload as unknown as { correction: { field: string } }).correction.field)).not.toContain('jurisdictions');
   }, 30000);
 });
 
