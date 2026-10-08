@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import StructuredForm from '../StructuredForm';
 import type { PolicyFile } from '../../engine/types';
 import type { PlainAnswers } from '../plain-copy';
+import { loadFormDraft, updateFormDraft } from '../intake-draft';
+import { R18_COPY } from '../plain-copy';
 
 // Several questions share a short option word ("Yes"/"No"/"Not sure") on
 // this continuous-scroll form, where every question is in the DOM at once
@@ -148,7 +150,7 @@ describe('StructuredForm — CR6-06 (a stale single-select answer reads as unans
 
   it('TC-CR6-06d: a stale stored answer leaves Continue disabled until the question is re-picked', async () => {
     const user = userEvent.setup();
-    render(<StructuredForm policy={policy()} initialAnswers={INITIAL_ANSWERS} onSubmit={vi.fn()} />);
+    render(<StructuredForm policy={policy()} initialDescription="A test description." initialAnswers={INITIAL_ANSWERS} onSubmit={vi.fn()} />);
 
     // Every OTHER required question is answered validly — only Q9 carries a
     // value outside its current option set — so this isolates the bug: the
@@ -165,6 +167,7 @@ describe('StructuredForm — CR6-06 (a stale single-select answer reads as unans
     render(
       <StructuredForm
         policy={policy()}
+        initialDescription="A test description."
         initialAnswers={{ ...INITIAL_ANSWERS, '9': 'yes', '5': ['old-key'] }}
         onSubmit={vi.fn()}
       />,
@@ -334,7 +337,7 @@ describe('StructuredForm — conditional follow-ups (§2.2 Details)', () => {
       '10': 'small', '11': ['elsewhere-not-sure'], '12': 'no', '14': 'no',
     };
     const user = userEvent.setup();
-    render(<StructuredForm policy={policy()} initialAnswers={{ ...BASE_ANSWERS, '13': ['credentialed'] }} onSubmit={vi.fn()} />);
+    render(<StructuredForm policy={policy()} initialDescription="A test description." initialAnswers={{ ...BASE_ANSWERS, '13': ['credentialed'] }} onSubmit={vi.fn()} />);
     expect(screen.getByRole('button', { name: /continue/i })).toBeEnabled();
 
     await user.click(screen.getByRole('checkbox', { name: /its own logins, passwords or access tokens/i }));
@@ -450,16 +453,34 @@ describe('StructuredForm — W-1: question 2 pre-fill (R16-W §1, D-67)', () => 
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('Edited description.');
   });
 
-  it('TC-R16-W-11: initialAnswers already holding a question-2 value takes precedence over initialDescription', () => {
-    render(
-      <StructuredForm
-        policy={policy()}
-        initialDescription="From the first screen."
-        initialAnswers={{ '2': 'From a previous form submission.' }}
-        onSubmit={vi.fn()}
-      />,
+  // R18-A (specs/intake-flow.md §27.6): TC-R16-W-11 pinned the precedence of a stored
+  // question-2 answer over the first screen's text. Question 2 is no longer a stored
+  // answer - it is the editor of THE description - so there is nothing to take
+  // precedence (superseded; the rules below replace it).
+  it('R18-A: with a description prop, question 2 shows it, every edit is reported, and the form keeps no copy of its own', async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    const { rerender } = render(
+      <StructuredForm policy={policy()} description="From the describe screen." onDescriptionChange={(d) => seen.push(d)} onSubmit={vi.fn()} />,
     );
-    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('From a previous form submission.');
+    const q2 = screen.getByLabelText(/in a sentence or two/i);
+    expect(q2).toHaveValue('From the describe screen.');
+    await user.type(q2, '!');
+    // controlled: the text changes only when the owner passes a new description
+    expect(seen).toEqual(['From the describe screen.!']);
+    expect(q2).toHaveValue('From the describe screen.');
+    rerender(<StructuredForm policy={policy()} description="Changed by the owner." onDescriptionChange={(d) => seen.push(d)} onSubmit={vi.fn()} />);
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('Changed by the owner.');
+  });
+
+  it('R18-A: question 2 is never written to the form draft (the description lives in one place)', async () => {
+    const user = userEvent.setup();
+    render(<StructuredForm policy={policy()} initialDescription="x" onSubmit={vi.fn()} />);
+    await user.type(screen.getByLabelText(/in a sentence or two/i), ' zzmarker');
+    await user.type(screen.getByLabelText(/what do you want to call it/i), 'Tool');
+    const draft = loadFormDraft()!;
+    expect(Object.keys(draft.answerState)).toEqual(['1']);
+    expect(JSON.stringify(draft)).not.toContain('zzmarker');
   });
 });
 
@@ -488,7 +509,7 @@ describe('StructuredForm — W-4: initialAnswers reopens the form filled in (R16
   });
 
   it('TC-R16-W-14: an in-progress draft wins over initialAnswers (strictly newer information)', () => {
-    sessionStorage.setItem('aigate:intake-form-draft:v2', JSON.stringify({ '1': 'Draft name' }));
+    updateFormDraft({ answerState: { '1': { value: 'Draft name', source: { kind: 'typed' } } } });
     render(
       <StructuredForm policy={policy()} initialAnswers={{ '1': 'Stale carried-over name' }} onSubmit={vi.fn()} />,
     );
@@ -633,3 +654,87 @@ describe('StructuredForm — CR7-04: one rule for the model question', () => {
     }
   });
 });
+
+describe('StructuredForm - R18-A: one answer state with a typed source on every answer (specs/intake-flow.md 27.6, 27.7)', () => {
+  it('every answer the person gives is written to the form draft as a typed answer, through updateFormDraft', async () => {
+    const user = userEvent.setup();
+    render(<StructuredForm policy={policy()} onSubmit={vi.fn()} />);
+    await user.type(screen.getByLabelText(/what do you want to call it/i), 'Ticket tool');
+    await user.click(screen.getByRole('radio', { name: /something a team in your firm built for this job/i }));
+    await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
+    const draft = loadFormDraft()!;
+    expect(draft.version).toBe(4);
+    expect(draft.answerState['1']).toEqual({ value: 'Ticket tool', source: { kind: 'typed' } });
+    expect(draft.answerState['3']).toEqual({ value: 'firm-built', source: { kind: 'typed' } });
+    expect(draft.answerState['5']).toEqual({ value: ['everyday'], source: { kind: 'typed' } });
+    expect(draft.lastRead).toEqual({ fingerprint: '', outcome: 'not-read' });
+  });
+
+  it('Continue hands the answer state (typed sources) and the description to the owner', async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<StructuredForm policy={policy()} initialDescription="A test description." onSubmit={onSubmit} />);
+    await fillBaseWithoutDescription(user);
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+    const [, , answerState, description] = onSubmit.mock.calls[0]!;
+    expect(description).toBe('A test description.');
+    expect(answerState['3']).toEqual({ value: 'firm-built', source: { kind: 'typed' } });
+    expect(Object.values(answerState as Record<string, { source: { kind: string } }>).every((a) => a.source.kind === 'typed')).toBe(true);
+    expect('2' in answerState).toBe(false);
+  });
+
+  it('TC-R18-NF-5-03: a draft answer that is not one of the question\'s options ("Gigantic") shows as a blank question needing an answer', () => {
+    updateFormDraft({
+      answerState: {
+        '4': { value: 'Gigantic', source: { kind: 'typed' } },
+        '9': { value: 'Gigantic', source: { kind: 'typed' } },
+        '5': { value: ['Gigantic'], source: { kind: 'typed' } },
+      },
+    });
+    render(<StructuredForm policy={policy()} initialDescription="d" onSubmit={vi.fn()} />);
+    for (const radio of screen.getAllByRole('radio')) expect(radio).not.toBeChecked();
+    for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked();
+    expect(screen.queryByDisplayValue('Gigantic')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled();
+    expect(screen.getByText(/still to answer/i)).toBeInTheDocument();
+  });
+
+  it('TC-R18-NF-5-01: an earlier-version landing shows the one sentence, role=status, and an earlier form-draft key does not add a second', () => {
+    sessionStorage.setItem('aigate:intake-form-draft:v2', '{"1":"old"}');
+    sessionStorage.setItem('aigate:intake-form-draft', '{"values":{}}');
+    render(<StructuredForm policy={policy()} initialDescription="d" earlierVersionNotice onSubmit={vi.fn()} />);
+    const notice = screen.getByText(R18_COPY.EARLIER_VERSION_NOTICE);
+    expect(notice).toHaveAttribute('role', 'status');
+    expect(screen.queryByText(/older version of this form/i)).not.toBeInTheDocument();
+    expect(sessionStorage.getItem('aigate:intake-form-draft:v2')).toBeNull();
+    expect(sessionStorage.getItem('aigate:intake-form-draft')).toBeNull();
+  });
+
+  it('no notice at all on an ordinary form', () => {
+    render(<StructuredForm policy={policy()} initialDescription="d" onSubmit={vi.fn()} />);
+    expect(screen.queryByText(R18_COPY.EARLIER_VERSION_NOTICE)).not.toBeInTheDocument();
+  });
+
+  it('an earlier form-draft key found alone still gets its own sentence (R16-B), and it is removed', () => {
+    sessionStorage.setItem('aigate:intake-form-draft:v2', '{"1":"old"}');
+    render(<StructuredForm policy={policy()} initialDescription="d" onSubmit={vi.fn()} />);
+    expect(screen.getByText(/older version of this form/i)).toHaveAttribute('role', 'status');
+    expect(screen.queryByText(R18_COPY.EARLIER_VERSION_NOTICE)).not.toBeInTheDocument();
+    expect(sessionStorage.getItem('aigate:intake-form-draft:v2')).toBeNull();
+  });
+});
+
+/** fillBase minus the description: the description is the owner's here. */
+async function fillBaseWithoutDescription(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText(/what do you want to call it/i), 'Test tool');
+  await user.click(screen.getByRole('radio', { name: /something a team in your firm built for this job/i }));
+  await user.click(screen.getByRole('radio', { name: /reads, summarises, translates, writes or answers questions in words/i }));
+  await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
+  await user.click(screen.getByRole('radio', { name: /finds or summarises for people to read/i }));
+  await user.click(screen.getByRole('radio', { name: /^only me or my own team$/i }));
+  await user.click(screen.getByRole('radio', { name: /none of these — it.s for day-to-day work/i }));
+  await user.click(radioIn(/if it gets something wrong/i, /^yes$/i));
+  await user.click(screen.getByRole('radio', { name: /just me, or a small trial/i }));
+  await user.click(screen.getByRole('checkbox', { name: /somewhere else, or not sure/i }));
+  await user.click(radioIn(/does it replace something/i, /^no$/i));
+}

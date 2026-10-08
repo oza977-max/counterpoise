@@ -42,7 +42,7 @@ describe('IntakeFlow — a revisited review screen carries no "no basis" badge (
   });
 
   function restoreAfter(state: IntakeState) {
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 3, state }));
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 4, state }));
     return render(<App />);
   }
 

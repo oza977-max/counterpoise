@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { setCurrentPolicyYaml } from '../../store/policy-source';
+import { seedFormRoute, workedAnswers } from './formRoute';
 
 // R16-A1 (§1.4, CF-5). IntakeFlow's first evaluation gate (graph_review's
 // "Proceed", handleProceedFromGraphReview) must refuse evaluation the same
@@ -10,8 +11,10 @@ import { setCurrentPolicyYaml } from '../../store/policy-source';
 // reference error — through the existing reviewGateError message slot,
 // not a thrown exception (unlike a structurally-invalid policy file).
 //
-// Reached via a seeded draft (same technique as IntakeFlow.resume.test.tsx)
-// rather than driving the full guided form, since the gate under test does
+// R18-A: the pre-check has one route, so the first evaluation gate is the guided
+// form's "Continue" (handleFormSubmitted). Reached with a seeded form draft (a
+// version-4 intake draft plus the form's own answers, from the scripted worked
+// example 1) rather than clicking every question, since the gate under test does
 // not depend on how the graph was built — only on what the policy says.
 vi.mock('@anthropic-ai/sdk', () => {
   return {
@@ -20,35 +23,6 @@ vi.mock('@anthropic-ai/sdk', () => {
     },
   };
 });
-
-const DRAFT_KEY = 'aigate:intake-draft';
-
-const MINIMAL_GRAPH = {
-  id: 'test-graph-1',
-  version: 1,
-  intake_method: 'structured_form' as const,
-  extracted_at: '2026-01-01T00:00:00.000Z',
-  input_nodes: [{ id: 'i1', label: 'notes', data_class: 'Internal', data_zone: 'Zone C' }],
-  processing_nodes: [
-    { id: 'p1', label: 'summariser', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false },
-  ],
-  output_nodes: [
-    { id: 'o1', label: 'summary', action_type: 'draft', exposure: 'internal-only', decision_bindingness: 'non-binding', output_reversibility: 'reversible', scale: 'limited' },
-  ],
-  edges: [{ from: 'i1', to: 'p1' }, { from: 'p1', to: 'o1' }],
-  jurisdictions: [],
-};
-
-const GRAPH_REVIEW_DRAFT = {
-  step: 'graph_review',
-  description: 'A tool that summarises internal notes',
-  graph: MINIMAL_GRAPH,
-  graphVersion: 1,
-  corrections: [],
-  useCaseId: 'test-uc-1',
-  jurisdictionsConfirmed: true,
-  unconfirmedNodeIds: [],
-};
 
 const MINIMAL_VALID_YAML_WITH_BAD_COVERS_REVIEWS = `
 version: "1.0"
@@ -97,9 +71,9 @@ describe('IntakeFlow — first evaluation gate refuses on a policy reference err
     sessionStorage.clear();
   });
 
-  it("TC-R16-A1-63: clicking Proceed with a covers_reviews reference error shows the message and does not proceed to the questionnaire/confirmation step", async () => {
+  it("TC-R16-A1-63: clicking Continue on the form with a covers_reviews reference error shows the message and does not proceed to the confirmation step", async () => {
     setCurrentPolicyYaml(MINIMAL_VALID_YAML_WITH_BAD_COVERS_REVIEWS);
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(GRAPH_REVIEW_DRAFT));
+    seedFormRoute('A tool that summarises internal notes', workedAnswers(1));
     render(<App />);
 
     const user = userEvent.setup({ delay: null });
@@ -109,17 +83,18 @@ describe('IntakeFlow — first evaluation gate refuses on a policy reference err
     // Two banners legitimately match "Policy file invalid" here: App's own
     // start-up gate (always on screen) AND IntakeFlow's reviewGateError
     // slot this test targets — the specific message below disambiguates.
+    console.log('DBG', (screen.getByRole('button',{name:/^continue$/i}) as HTMLButtonElement).disabled + ' ' + [...document.querySelectorAll('input[type=checkbox]')].map(e=>(e as HTMLInputElement).value+(e as HTMLInputElement).checked).join(','));
     expect(await screen.findAllByText(/Policy file invalid/i)).not.toHaveLength(0);
     // IntakeFlow renders reviewGateError at more than one place in the
-    // graph_review screen (e.g. inline + a summary slot) — any match
+    // form screen (e.g. inline + a summary slot) — any match
     // confirms the specific message reached the user.
     // CR8-13 (code review 008): a submitter (the default 1LoD view) sees the
     // plain policy sentence, never the raw field path — that detail is for
     // 2LoD and the Appetite framework screen (TC-R16-A1-62 / TC-CR8-13).
     expect(screen.getAllByText(/rules file has a problem/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/CTRL-TPRM-01 covers_reviews: no review with id 'DR-VENDR-01'/)).not.toBeInTheDocument();
-    // Still on graph_review — the Proceed button is still there, the
-    // questionnaire/confirmation screens never mounted.
+    // Still on the form — the Continue button is still there, the
+    // confirmation screen never mounted.
     expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument();
   });
 });

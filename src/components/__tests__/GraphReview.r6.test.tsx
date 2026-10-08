@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import GraphView from '../GraphView';
-import IntakeFlow from '../IntakeFlow';
 import { extractGraph } from '../../llm/graph-extractor';
 import { questionsForGuessedFields } from '../../engine/question-generator';
 import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
-import { getAllForExport } from '../../store/audit';
 import type { DataFlowGraph } from '../../engine/types';
-import { pressNext } from './fillText';
 
 // Round 6 — show your working (requirements-006, intake-flow.md §16).
 // Provenance quotes verified deterministically; guessed fields resolve via
@@ -232,85 +228,6 @@ describe('R6-QN-1 — guessed fields become questions, and answers write back', 
     // round discovered and closed.
     expect(next.graph.input_nodes[0]!.data_zone).toBe('Zone C');
     expect(next.corrections).toHaveLength(1);
-  });
-});
-
-describe('R6 — flow level: guessed fields ride to the questionnaire and the answer reaches the record', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    localStorage.setItem('aigate:api-key', 'test-key');
-    mockCreate.mockClear();
-  });
-
-  it('TC-R6-QN-1-03: end to end — guessed model_type and vendor are asked; answering writes graph_corrected on attestation', async () => {
-    const user = userEvent.setup();
-    render(<IntakeFlow />);
-    await user.type(screen.getByLabelText(/what ai tool do you want to use/i), DESCRIPTION);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i }));
-    await screen.findByText(/check what we read from your description/i);
-
-    // p1 has guessed fields → no confirm button on it; i1 and o1 are fully
-    // quoted → confirm them.
-    for (;;) {
-      const buttons = screen.queryAllByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i });
-      if (buttons.length === 0) break;
-      await user.click(buttons[0]!);
-    }
-    // §4 (D-103): the jurisdiction confirm no longer shares a "— confirm"
-    // suffix with the node buttons above, so it needs its own click
-    // (MOCK_INPUT declares no jurisdictions at all).
-    await user.click(screen.getByRole('button', { name: /^none of these — continue$/i }));
-    await user.click(screen.getByRole('button', { name: /^continue$/i }));
-
-    // The guessed fields arrive as questions. Answer model_type with a
-    // DIFFERENT value than extracted (llm → traditional-ml), with context.
-    // R16-E §2: the question's own words now come from QUESTIONNAIRE_COPY,
-    // not a second, separately-invented QUESTION_TEXT map.
-    await screen.findByText(/what kind of ai is it/i);
-    await user.type(
-      // NOT the R16-W-reworded ConfirmationStep label — this is
-      // QuestionnaireStep's own PER-ANSWER context field. R16-E §3
-      // (F1B-6): "reviewer" renamed to "your AI risk team".
-      screen.getByLabelText(/anything your ai risk team should know about this answer/i),
-      'Confirmed with the platform team.',
-    );
-    // R16-E §2: option buttons now carry QUESTIONNAIRE_COPY's own words —
-    // model_type's targeted question flattens Q4/Q4a into one option per
-    // leaf kind.
-    await user.click(screen.getByRole('button', { name: /the people who built it can show which factors drove each result/i }));
-
-    // vendor question — R16-E §2 (DR7-28): a select, not free text; "I
-    // don't know" resolves to its own value (an assumption), a different
-    // value than the extracted "open source" guess, so it is a correction.
-    await screen.findByText(/which supplier is it/i);
-    await user.click(screen.getByRole('button', { name: /^i.*don.t know$/i }));
-
-    // Attest.
-    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-    await screen.findByRole('region', { name: /verdict/i }, { timeout: 5000 });
-
-    // The trail carries the answers' effects — full scan, since the flow
-    // generated its own use case id. On a FRESH pass corrections are
-    // recorded as the attestation's corrections_count (individual
-    // graph_corrected events are correction-pass-only, verdict-audit.md §6);
-    // what matters here is that the answer write-backs COUNT as corrections
-    // and the context reached the record.
-    const all = await getAllForExport();
-    const confirmedEvent = all.find(
-      (e) => e.payload.type === 'graph_confirmed' && (e.payload.answer_contexts?.length ?? 0) > 0,
-    );
-    expect(confirmedEvent).toBeDefined();
-    if (confirmedEvent?.payload.type !== 'graph_confirmed') return;
-    expect(confirmedEvent.payload.answer_contexts).toEqual(['Confirmed with the platform team.']);
-    // Two answers differed from the extracted values (model_type, vendor) —
-    // both applied as corrections (ADR-IF-R6-3).
-    expect(confirmedEvent.payload.corrections_count).toBeGreaterThanOrEqual(2);
-    // And the VERDICT was produced from the answered graph, not the
-    // extracted one: the evaluated processing node is traditional-ml.
-    const verdictEvent = all.find((e) => e.payload.type === 'verdict_produced');
-    expect(verdictEvent).toBeDefined();
   });
 });
 

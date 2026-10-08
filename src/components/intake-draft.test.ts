@@ -3,7 +3,7 @@ import {
   saveDraft,
   loadDraft,
   clearDraft,
-  saveFormDraft,
+  updateFormDraft,
   loadFormDraft,
   clearFormDraft,
   probeLegacyFormDraft,
@@ -20,6 +20,7 @@ describe('intake draft persistence (D-002 / D-003)', () => {
   it('round-trips a mid-flow state so a refresh does not lose the work', () => {
     const state = {
       step: 'graph_review',
+      description: 'd',
       graph: { id: 'g1', version: 1, input_nodes: [], processing_nodes: [], output_nodes: [],
                edges: [], jurisdictions: [], intake_method: 'structured_form',
                extracted_at: '2026-01-01T00:00:00.000Z' },
@@ -51,11 +52,12 @@ describe('intake draft persistence (D-002 / D-003)', () => {
     expect(loadDraft()).toBeNull();
   });
 
-  it('rejects a stale or corrupt shape rather than putting the reducer in an unreachable state', () => {
+  it('a stale or corrupt shape never puts the reducer in an unreachable state: it opens the form with nothing carried (R18-NF-5)', () => {
     sessionStorage.setItem('aigate:intake-draft', '{"nonsense":true}');
-    expect(loadDraft()).toBeNull();
+    expect(loadDraft()).toEqual({ step: 'graph_extraction', description: '', method: 'form' });
+    expect(loadDraftInfo()?.earlierVersionNotice).toBe(true);
     sessionStorage.setItem('aigate:intake-draft', 'not json at all');
-    expect(loadDraft()).toBeNull();
+    expect(loadDraft()).toEqual({ step: 'graph_extraction', description: '', method: 'form' });
   });
 });
 
@@ -67,19 +69,22 @@ describe('guided-form draft (the half the first fix missed)', () => {
   beforeEach(() => clearFormDraft());
 
   it('round-trips the answers a user has already given', () => {
-    const values = { useCaseName: 'Persistence check', inputDataClass: 'Client PII', autonomyLevel: 2 };
-    saveFormDraft(values);
-    expect(loadFormDraft()).toEqual(values);
+    const answerState = {
+      '1': { value: 'Persistence check', source: { kind: 'typed' as const } },
+      '5': { value: ['everyday', 'client-pii'], source: { kind: 'typed' as const } },
+    };
+    updateFormDraft({ answerState });
+    expect(loadFormDraft()).toEqual({ version: 4, answerState, lastRead: { fingerprint: '', outcome: 'not-read' } });
   });
 
   it('is cleared on submit so the next pre-check starts clean', () => {
-    saveFormDraft({ useCaseName: 'x' });
+    updateFormDraft({ answerState: { '1': { value: 'x', source: { kind: 'typed' } } } });
     clearFormDraft();
     expect(loadFormDraft()).toBeNull();
   });
 
   it('survives corrupt storage without breaking intake', () => {
-    sessionStorage.setItem('aigate:intake-form-draft:v2', 'not json');
+    sessionStorage.setItem('aigate:intake-form-draft:v4', 'not json');
     expect(loadFormDraft()).toBeNull();
   });
 });
@@ -93,7 +98,7 @@ describe('guided-form draft (the half the first fix missed)', () => {
 // the submitter is told plainly rather than finding a half-populated form.
 describe('legacy form-draft migration (R16-B, D-41)', () => {
   const LEGACY_KEY = 'aigate:intake-form-draft';
-  const NEW_KEY = 'aigate:intake-form-draft:v2';
+  const NEW_KEY = 'aigate:intake-form-draft:v4';
 
   beforeEach(() => {
     sessionStorage.removeItem(LEGACY_KEY);
@@ -114,11 +119,12 @@ describe('legacy form-draft migration (R16-B, D-41)', () => {
     expect(sessionStorage.getItem(NEW_KEY)).toBeNull();
   });
 
-  it('saveFormDraft/loadFormDraft round-trip through the NEW versioned key only', () => {
-    saveFormDraft({ '1': 'Test tool' });
+  it('updateFormDraft/loadFormDraft round-trip through the NEW versioned key only', () => {
+    const answerState = { '1': { value: 'Test tool', source: { kind: 'typed' as const } } };
+    updateFormDraft({ answerState });
     expect(sessionStorage.getItem(LEGACY_KEY)).toBeNull();
     expect(sessionStorage.getItem(NEW_KEY)).not.toBeNull();
-    expect(loadFormDraft()).toEqual({ '1': 'Test tool' });
+    expect(loadFormDraft()?.answerState).toEqual(answerState);
   });
 
   it('a legacy draft is never read back as a new-shape answer object', () => {
@@ -148,38 +154,11 @@ describe('intake draft versioning — an incompatible undo snapshot is dropped, 
   const DRAFT_KEY = 'aigate:intake-draft';
   beforeEach(() => clearDraft());
 
-  // CR7-28 (FX7-1): a questionnaire draft on the DESCRIPTION path saved by an
-  // older build no longer restores as a questionnaire (it restores as the
-  // review screen — see the CR7-28 describe below), so this CR6-04 test, which
-  // pins "a version-1 questionnaire draft loses its unsafe undo but keeps its
-  // work", now uses the form path's questionnaire (plainAnswers present, the
-  // guided form's graph), which CR7-28 deliberately leaves alone.
-  it('TC-CR6-04b: a draft with no version envelope at all (the shape every build before this fix wrote) restores, but drops an undo snapshot on the questionnaire step', () => {
-    const bareOldDraft = {
-      step: 'questionnaire',
-      description: 'd',
-      plainAnswers: { '1': 'Tool' },
-      graph: { id: 'g1', version: 2, input_nodes: [], processing_nodes: [], output_nodes: [], edges: [], jurisdictions: [], intake_method: 'structured_form', extracted_at: '2026-01-01T00:00:00.000Z' },
-      questions: [{ id: 'Q1', field: 'f', triggered_by: [], answer_type: 'text' }],
-      answers: [{ questionId: 'Q1', value: 'x' }],
-      resolutionNotes: [],
-      corrections: [],
-      useCaseId: 'uc-1',
-      // The pre-9348882 shape: no `questions`, no `assumptionsLen`.
-      undo: { graph: { id: 'g0', version: 1, input_nodes: [], processing_nodes: [], output_nodes: [], edges: [], jurisdictions: [], intake_method: 'llm', extracted_at: '2026-01-01T00:00:00.000Z' }, correctionsLen: 0 },
-    };
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(bareOldDraft));
-
-    const restored = loadDraft();
-    expect(restored).not.toBeNull();
-    expect(restored!.step).toBe('questionnaire');
-    // The real work — description, graph, questions, answers — survives.
-    expect((restored as typeof bareOldDraft).answers).toEqual(bareOldDraft.answers);
-    expect((restored as typeof bareOldDraft).questions).toEqual(bareOldDraft.questions);
-    // The one incompatible piece is gone, not silently misread as current.
-    expect('undo' in (restored as object)).toBe(false);
-  });
-
+  // R18-A: the CR6-04 case that pinned "a version-1 questionnaire draft keeps its
+  // work and loses only its unsafe undo" (TC-CR6-04b) is superseded. An earlier-build
+  // questionnaire draft no longer restores as a questionnaire at all: it lands on the
+  // form with the description kept and no answers (TC-R18-NF-5-01, in
+  // intake-draft.r18a.test.ts), so there is no unsafe undo to drop.
   it('a draft saved by the CURRENT build (with a real undo snapshot) round-trips its undo unchanged', () => {
     const state = {
       step: 'questionnaire',
@@ -206,11 +185,11 @@ describe('intake draft versioning — an incompatible undo snapshot is dropped, 
     expect(loadDraft()).toEqual({ step: 'duplicate_check', description: 'A tool that drafts client emails' });
   });
 
-  it('still rejects a stale or corrupt shape — the version envelope does not weaken the existing guard', () => {
+  it('still refuses a stale or corrupt shape - the version envelope does not weaken the guard (it opens the form, nothing carried; R18-NF-5)', () => {
     sessionStorage.setItem(DRAFT_KEY, '{"nonsense":true}');
-    expect(loadDraft()).toBeNull();
+    expect(loadDraft()).toEqual({ step: 'graph_extraction', description: '', method: 'form' });
     sessionStorage.setItem(DRAFT_KEY, 'not json at all');
-    expect(loadDraft()).toBeNull();
+    expect(loadDraft()).toEqual({ step: 'graph_extraction', description: '', method: 'form' });
   });
 });
 
@@ -263,8 +242,7 @@ describe('clearDraftIfCase — an abandoned confirm or adopt cannot wipe a newer
   });
 });
 
-describe('a questions draft saved before CR6 restores without the guessed list — so it restores as the review screen instead (CR7-28, BC-002)', () => {
-  const DRAFT_KEY = 'aigate:intake-draft';
+describe('a draft saved by the current build is never migrated (CR7-28 retired by R18-NF-5)', () => {
   beforeEach(() => clearDraft());
   const node = (id: string) => ({ id, label: id });
   const oldGraph = {
@@ -292,65 +270,15 @@ describe('a questions draft saved before CR6 restores without the guessed list �
     originalVerdictId: 'v-orig',
   });
 
-  for (const step of ['questionnaire', 'contradiction_review'] as const) {
-    it(`TC-CR7-28-4: a bare (version 1) ${step} draft on the description path restores as graph_review with every card to re-check, the countries unchecked, and nothing invented`, () => {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(oldQuestionnaire(step)));
-      const restored = loadDraft() as unknown as Record<string, unknown>;
-      expect(restored).toMatchObject({
-        step: 'graph_review',
-        description: 'A description the person typed.',
-        graphVersion: 3,
-        corrections: [correction],
-        useCaseId: 'uc-old',
-        originalVerdictId: 'v-orig',
-        unconfirmedNodeIds: ['i1', 'p1', 'o1'],
-        jurisdictionsConfirmed: false,
-      });
-      expect('guessedFields' in restored).toBe(false);
-      expect('provenance' in restored).toBe(false);
-      expect('answers' in restored).toBe(false);
-    });
-  }
-
-  it('TC-CR7-28-5: loadDraftInfo says the draft was migrated, so the screen can say so', () => {
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(oldQuestionnaire('questionnaire')));
-    expect(loadDraftInfo()?.migratedFromOldBuild).toBe(true);
-  });
-
-  it('TC-CR7-28-6: a form-path questionnaire (plainAnswers present) is NOT migrated', () => {
-    const formDraft = { ...oldQuestionnaire('questionnaire'), plainAnswers: { '1': 'Tool' }, graph: { ...oldGraph, intake_method: 'structured_form' } };
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(formDraft));
-    expect(loadDraft()?.step).toBe('questionnaire');
-    expect(loadDraftInfo()?.migratedFromOldBuild).toBe(false);
-  });
+  // R18-A: TC-CR7-28-4, -5, -6, -8 and TC-CR7-28b-1, -2 pinned the return of an
+  // earlier-build description-path questions draft to the card review. That screen
+  // is gone: such a draft (and every other earlier shape) now lands on the form with
+  // the description kept and no answers - see TC-R18-NF-5-01 in
+  // intake-draft.r18a.test.ts.
 
   it('TC-CR7-28-7: a draft saved by the current build (an envelope at the current version) is never migrated', () => {
     saveDraft(oldQuestionnaire('questionnaire') as unknown as IntakeState);
     expect(loadDraft()?.step).toBe('questionnaire');
     expect(loadDraftInfo()?.migratedFromOldBuild).toBe(false);
-  });
-
-  it('TC-CR7-28-8 (M-1): the migrated review keeps the assumptions and the frozen uncertain list the old draft held', () => {
-    const a = { questionId: 'field:scale', question: 'q', shortLabel: 's', assumption: 'a', fields: ['scale'] };
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...oldQuestionnaire('questionnaire'), assumptions: [a], uncertainNodeIds: ['o1'] }));
-    expect(loadDraft()).toMatchObject({ step: 'graph_review', assumptions: [a], uncertainNodeIds: ['o1'] });
-  });
-
-  it('TC-CR7-28b-1 (M-2): the current draft version is 3, and a version-2 description-path questions draft with no back snapshot is migrated like a version-1 one', () => {
-    saveDraft({ step: 'description_entry', description: 'x' } as IntakeState);
-    expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY)!).version).toBe(3);
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 2, state: oldQuestionnaire('questionnaire') }));
-    expect(loadDraftInfo()).toMatchObject({ migratedFromOldBuild: true, state: { step: 'graph_review' } });
-  });
-
-  it('TC-CR7-28b-2 (M-2): a version-2 draft that is on the form path, or that already has its back snapshot, is not migrated', () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({ version: 2, state: { ...oldQuestionnaire('questionnaire'), plainAnswers: { '1': 'Tool' }, graph: { ...oldGraph, intake_method: 'structured_form' } } }),
-    );
-    expect(loadDraftInfo()?.migratedFromOldBuild).toBe(false);
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 2, state: { ...oldQuestionnaire('questionnaire'), backGraph: oldGraph } }));
-    expect(loadDraftInfo()?.migratedFromOldBuild).toBe(false);
-    expect(loadDraft()?.step).toBe('questionnaire');
   });
 });

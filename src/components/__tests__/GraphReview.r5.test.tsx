@@ -1,12 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import GraphView from '../GraphView';
-import IntakeFlow from '../IntakeFlow';
 import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import type { DataFlowGraph } from '../../engine/types';
-import { pressNext } from './fillText';
 
 // Round 5 — the graph review that explains itself (requirements-005,
 // intake-flow.md §15). GR-1/3/5 are asserted directly against GraphView;
@@ -167,123 +164,5 @@ describe('R5-GR-2 — the confirm gate (reducer)', () => {
     const next = intakeReducer(state, { type: 'GRAPH_EXTRACTED', graph: makeGraph({ intake_method: 'structured_form' }), useCaseId: 'uc-2' });
     expect(next.step).toBe('graph_review');
     expect((next as { unconfirmedNodeIds?: string[] }).unconfirmedNodeIds).toBeUndefined();
-  });
-});
-
-// ——— Flow-level: gate message and jurisdiction hygiene, SDK mocked ———
-
-const MOCK_GRAPH_INPUT = {
-  input_nodes: [{ id: 'i1', label: 'credit risk data', data_class: 'Client PII', data_zone: 'Zone C', basis_quotes: { data_class: 'client PII', data_zone: 'Zone C' } }],
-  processing_nodes: [
-    {
-      id: 'p1',
-      label: 'training pipeline',
-      model_type: 'llm',
-      autonomy_level: 2,
-      data_zone: 'Zone C',
-      vendor: 'open source',
-      replaces_prior_model: false,
-      basis_quotes: {
-        model_type: 'large language model',
-        autonomy_level: 'supervised autonomy',
-        data_zone: 'Zone C',
-        vendor: 'open source',
-        replaces_prior_model: 'replaces no prior model',
-      },
-    },
-  ],
-  output_nodes: [
-    {
-      id: 'o1',
-      label: 'analyst answers',
-      action_type: 'recommend',
-      exposure: 'internal-only',
-      decision_bindingness: 'advisory',
-      output_reversibility: 'reversible',
-      scale: 'limited',
-      basis_quotes: {
-        action_type: 'recommends',
-        exposure: 'internal-only',
-        decision_bindingness: 'advisory',
-        output_reversibility: 'reversible',
-        scale: 'limited scale',
-      },
-    },
-  ],
-  edges: [
-    { from: 'i1', to: 'p1' },
-    { from: 'p1', to: 'o1' },
-  ],
-  // R5-GX-1: one junk value (the live model returned "Internal"), one real.
-  jurisdictions: ['Internal', 'UK'],
-};
-
-const mockCreate = vi.fn().mockResolvedValue({
-  content: [{ type: 'tool_use', name: 'extract_graph', input: MOCK_GRAPH_INPUT }],
-});
-
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: class MockAnthropic {
-    messages = { create: mockCreate };
-  },
-}));
-
-async function reachGraphReview(user: ReturnType<typeof userEvent.setup>) {
-  render(<IntakeFlow />);
-  await user.type(
-    screen.getByLabelText(/what ai tool do you want to use/i),
-    // BC-003: long enough that every quote in MOCK_GRAPH_INPUT.basis_quotes is
-    // a verbatim substring of what is typed here.
-    'Trains an open source model on internal credit risk data containing client PII. It is a large language model with supervised autonomy, running in Zone C, and it recommends advisory, reversible, internal-only answers at limited scale; it replaces no prior model.',
-  );
-  await pressNext(user);
-  await user.click(await screen.findByRole('button', { name: /continue →/i }));
-  await screen.findByText(/check what we read from your description/i);
-}
-
-describe('R5-GR-2 / R5-GX-1 — flow level', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    localStorage.setItem('aigate:api-key', 'test-key');
-    mockCreate.mockClear();
-  });
-
-  it('TC-R5-GR-2-01: Proceed is refused with a plain-English message until every card is confirmed', async () => {
-    const user = userEvent.setup();
-    await reachGraphReview(user);
-
-    await user.click(screen.getByRole('button', { name: /^continue$/i }));
-    expect(await screen.findByText(/3 cards still need checking/i)).toBeInTheDocument();
-    expect(screen.getByText(/check what we read from your description/i)).toBeInTheDocument();
-
-    // Confirm all three; the gate opens.
-    for (;;) {
-      const buttons = screen.queryAllByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i });
-      if (buttons.length === 0) break;
-      await user.click(buttons[0]!);
-    }
-    // §4 (D-103): the jurisdiction confirm button no longer shares a
-    // "— confirm" suffix with the node confirm buttons above (R16-F's own
-    // behaviour let one generic selector catch both by accident) — it
-    // needs its own explicit click now.
-    await user.click(screen.getByRole('button', { name: /^these are right$/i }));
-    await user.click(screen.getByRole('button', { name: /^continue$/i }));
-    expect(screen.queryByText(/check what we read from your description/i)).toBeNull();
-  });
-
-  it('TC-R5-GR-2-02: the review screen states that values are proposed, not scored', async () => {
-    const user = userEvent.setup();
-    await reachGraphReview(user);
-    expect(screen.getByText(/nothing is\s+decided until you.ve checked or corrected each one/i)).toBeInTheDocument();
-  });
-
-  it('TC-R5-GX-1-01: an unrecognised jurisdiction is dropped from the graph and surfaced by name', async () => {
-    const user = userEvent.setup();
-    await reachGraphReview(user);
-    const notice = screen.getByText(/we ignored/i);
-    expect(notice).toHaveTextContent('“Internal”');
-    // The recognised one was NOT dropped — the notice names only the junk.
-    expect(notice.textContent).not.toContain('“UK”');
   });
 });

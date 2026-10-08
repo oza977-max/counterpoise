@@ -34,6 +34,12 @@ vi.mock('@anthropic-ai/sdk', () => ({
 
 const DRAFT_KEY = 'aigate:intake-draft';
 
+// R18-A: a saved intake draft is a { version: 4, state } envelope; a bare
+// state is read as an earlier build's and lands on the form.
+function putDraft(stateJson: string): void {
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 4, state: JSON.parse(stateJson) }));
+}
+
 // setCurrentPolicyYaml (store/policy-source.ts) persists to localStorage —
 // module-global for the life of this test FILE (unlike sessionStorage,
 // which src/test-setup.ts already clears after every test). A broken
@@ -194,8 +200,7 @@ describe('§3 (DR7-10): focus moves and the step change is announced', () => {
 describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
   it('TC-R16-F-22: a confirm refused because another tab already confirmed the same case writes nothing, shows the "already decided" alert, and disables Confirm', async () => {
     const useCaseId = 'uc-r16f-already-decided';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool already confirmed elsewhere.',
@@ -267,8 +272,7 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
   it('TC-R16-F-23: a correction refused because another tab\'s correction already landed writes nothing and shows the "corrected elsewhere" alert', async () => {
     const useCaseId = 'uc-r16f-corrected-elsewhere';
     const originalVerdictId = 'v-original-this-tab-saw';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool corrected elsewhere while this tab worked.',
@@ -404,8 +408,7 @@ describe('F-3 (DR7-05): "Start over" before Confirm strands nothing', () => {
     // A draft at `confirmation` — reached via Continue, never Confirmed —
     // the exact state a person closing the tab (or clicking "Start over
     // instead" on the resumed-draft banner) leaves behind.
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'Abandoned before confirm.',
@@ -435,55 +438,6 @@ describe('F-3 (DR7-05): "Start over" before Confirm strands nothing', () => {
     const { getUseCases } = await import('../../store/register');
     const rows = await getUseCases('all');
     expect(rows.find((r) => r.use_case_id === useCaseId)).toBeUndefined();
-  });
-});
-
-// Found verifying R16-F: test-cases-022 said the correction handler's own
-// access-scope check was "exercised indirectly" by GraphView.r16f.test.tsx,
-// but those tests pass a stand-in onCorrect — the real handler never ran.
-// This drives the real one, on the review screen, through App.
-describe('§4 (DR7-11): the tick-all editor through the real correction handler', () => {
-  it('TC-R16-F-64: on the review screen, ticking a second kind of access applies both kinds to the case', async () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'graph_review',
-        description: 'An agent that files tickets using its own service account.',
-        graph: makeGraph({
-          intake_method: 'llm',
-          processing_nodes: [
-            {
-              id: 'p1',
-              label: 'Ticket agent',
-              model_type: 'agentic',
-              autonomy_level: 2,
-              data_zone: 'Zone C',
-              vendor: 'internal',
-              replaces_prior_model: false,
-              system_access_scope: ['credentialed_systems'],
-            },
-          ],
-        }),
-        graphVersion: 1,
-        corrections: [],
-        useCaseId: 'uc-r16f-access-editor',
-        jurisdictionsConfirmed: true,
-        unconfirmedNodeIds: [],
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const card = (await screen.findByText('Ticket agent')).closest('.graph-node') as HTMLElement;
-    await user.click(within(card).getByRole('button', { name: /^edit$/i }));
-    await user.click(within(card).getByRole('checkbox', { name: /runs on computers or servers shared with other automated tools/i }));
-
-    // The real handler accepted the list and wrote it into the graph, so the
-    // editor now shows both kinds ticked (a stand-in onCorrect would leave
-    // the graph, and so the ticks, unchanged).
-    expect(within(card).getByRole('checkbox', { name: /runs on computers or servers shared/i })).toBeChecked();
-    expect(within(card).getByRole('checkbox', { name: /its own logins, passwords or access tokens/i })).toBeChecked();
-    sessionStorage.clear();
   });
 });
 
@@ -535,8 +489,7 @@ tier_workflow:
   Low: "x"
 safety_margin: 0.1
 `);
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool confirmed after the policy broke.',
@@ -570,8 +523,7 @@ safety_margin: 0.1
 describe('R16-F review pass 2: a failed record check before Confirm is shown, and Confirm stays usable', () => {
   it('TC-R16-F-68: the record check failing writes nothing, says so in plain words, and a second press goes through', async () => {
     const useCaseId = 'uc-r16f-check-failed';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check fails once.',
@@ -615,8 +567,7 @@ describe('R16-F review pass 2: a failed record check before Confirm is shown, an
 describe('R16-F review pass 3: a failed-check message does not outlive the attempt it describes', () => {
   it('TC-R16-F-69: after a failed record check, "Change an answer" and back to Confirm shows no stale message', async () => {
     const useCaseId = 'uc-r16f-stale-check-message';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check fails once.',
@@ -661,8 +612,7 @@ describe('R16-F review pass 3: a failed-check message does not outlive the attem
 describe('R16-F review pass 4: nothing can change the answers while a confirm is under way', () => {
   it('TC-R16-F-70: while the record check is pending, Confirm and "Change an answer" are disabled and "Confirming…" shows; then the result arrives', async () => {
     const useCaseId = 'uc-r16f-confirm-pending';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check is slow.',
@@ -708,8 +658,7 @@ describe('R16-F review pass 4: nothing can change the answers while a confirm is
 describe('R16-F review pass 5: nothing can start a new case while the result is being worked out', () => {
   it('TC-R16-F-71: while the result is being worked out, "Start over instead" stays disabled; once the result is shown a new case can be started', async () => {
     const useCaseId = 'uc-r16f-evaluating-start-over';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose result takes a while.',

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
+import { textFingerprint } from '../engine/form-answer-state';
 import { intakeReducer, planCorrectionWrites, graphValueResolver } from './intake-state';
 import type { IntakeState } from './intake-state';
 import type { DataFlowGraph, GraphCorrection } from '../engine/types';
@@ -36,13 +37,15 @@ describe('intakeReducer', () => {
   it('duplicate_check → graph_extraction on NO_DUPLICATE_FOUND, carrying the chosen method', () => {
     const state: IntakeState = { step: 'duplicate_check', description: 'x' };
     const next = intakeReducer(state, { type: 'NO_DUPLICATE_FOUND', method: 'llm' });
-    expect(next).toEqual({ step: 'graph_extraction', description: 'x', method: 'llm' });
+    // R18-A: the fingerprint of the text the similar-cases screen was passed for
+    // travels with the step (decidedFor), so a Back-then-Next does not ask again.
+    expect(next).toEqual({ step: 'graph_extraction', description: 'x', method: 'llm', decidedFor: textFingerprint('x') });
   });
 
   it('duplicate_check → graph_extraction with method: form when no API key is configured', () => {
     const state: IntakeState = { step: 'duplicate_check', description: 'x' };
     const next = intakeReducer(state, { type: 'NO_DUPLICATE_FOUND', method: 'form' });
-    expect(next).toEqual({ step: 'graph_extraction', description: 'x', method: 'form' });
+    expect(next).toEqual({ step: 'graph_extraction', description: 'x', method: 'form', decidedFor: textFingerprint('x') });
   });
 
   it('graph_extraction → graph_review on GRAPH_EXTRACTED, carrying the graph version and setting useCaseId (P5-C01: moved earlier)', () => {
@@ -784,7 +787,10 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
     method: 'form',
     ...overrides,
   });
-  const plainAnswers = { '1': 'Test tool' };
+  // R18-A: the action carries the form's answer state; the reducer derives the
+  // PlainAnswers cache from it and the description (Question 2).
+  const answerState = { '1': { value: 'Test tool', source: { kind: 'typed' as const } } };
+  const plainAnswers = { '1': 'Test tool', '2': 'd' };
   const assumptions = [{ questionId: '9' as const, question: 'Q?', shortLabel: 'Q?', assumption: 'a', fields: ['output_reversibility'] }];
 
   it('TC-R16-W-18: is refused from any step other than graph_extraction(form)', () => {
@@ -794,7 +800,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: graph(),
       useCaseId: 'uc-1',
       description: 'd',
-      plainAnswers,
+      answerState,
       assumptions,
       questions: [],
       contradictions: [],
@@ -813,7 +819,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: g,
       useCaseId: 'uc-1',
       description: 'd',
-      plainAnswers,
+      answerState,
       assumptions,
       questions,
       contradictions: [{ statement1: 'a', statement2: 'b', field: 'data_class' }],
@@ -825,6 +831,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: g,
       useCaseId: 'uc-1',
       plainAnswers,
+      answerState,
       assumptions,
       questions,
       answers: [],
@@ -842,7 +849,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: g,
       useCaseId: 'uc-1',
       description: 'd',
-      plainAnswers,
+      answerState,
       assumptions,
       questions: [],
       contradictions,
@@ -854,6 +861,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: g,
       useCaseId: 'uc-1',
       plainAnswers,
+      answerState,
       assumptions,
       questions: [],
       answers: [],
@@ -870,7 +878,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graph: g,
       useCaseId: 'uc-1',
       description: 'd',
-      plainAnswers,
+      answerState,
       assumptions,
       questions: [],
       contradictions: [],
@@ -883,6 +891,7 @@ describe('intakeReducer — FORM_SUBMITTED (R16-W W-3, D-69)', () => {
       graphVersion: 3,
       useCaseId: 'uc-1',
       plainAnswers,
+      answerState,
       assumptions,
       corrections: [],
       answers: [],
@@ -1066,7 +1075,7 @@ describe('intakeReducer — CORRECT_VERDICT_WITH_FORM (R16-D2 §5, D-82)', () =>
       useCaseId: 'uc-1',
       originalVerdictId: 'v-1',
       description: 'The confirmed description.',
-      plainAnswers: { '1': 'Tool' },
+      answerState: { '1': { value: 'Tool', source: { kind: 'typed' } } },
       assumptions: [assumption],
     });
     expect(next).toEqual({
@@ -1074,7 +1083,9 @@ describe('intakeReducer — CORRECT_VERDICT_WITH_FORM (R16-D2 §5, D-82)', () =>
       description: 'The confirmed description.',
       method: 'form',
       useCaseId: 'uc-1',
-      plainAnswers: { '1': 'Tool' },
+      // R18-A: the cache is derived from the answer state and the description.
+      plainAnswers: { '1': 'Tool', '2': 'The confirmed description.' },
+      answerState: { '1': { value: 'Tool', source: { kind: 'typed' } } },
       assumptions: [assumption],
       originalVerdictId: 'v-1',
       originalGraph: original,
@@ -1089,7 +1100,7 @@ describe('intakeReducer — CORRECT_VERDICT_WITH_FORM (R16-D2 §5, D-82)', () =>
       useCaseId: 'uc-1',
       originalVerdictId: 'v-1',
       description: 'd',
-      plainAnswers: {},
+      answerState: {},
       assumptions: [],
     });
     expect(next).toBe(state);
@@ -1574,7 +1585,7 @@ describe('intakeReducer — FORM_SUBMITTED with questions AND contradictions (B-
       graph: g,
       useCaseId: 'uc-1',
       description: 'd',
-      plainAnswers: {},
+      answerState: {},
       assumptions: [],
       questions,
       contradictions,
@@ -2224,7 +2235,7 @@ describe('intakeReducer — the Back guard survives the confirmation (CR8-03, P3
           graph: graph({ intake_method: 'structured_form' }),
           useCaseId: NEW,
           description: 'd',
-          plainAnswers: { '1': 'Test tool' },
+          answerState: { '1': { value: 'Test tool', source: { kind: 'typed' } } },
           assumptions: [],
           questions: [],
           contradictions: [],
@@ -2235,7 +2246,7 @@ describe('intakeReducer — the Back guard survives the confirmation (CR8-03, P3
           graph: graph({ intake_method: 'structured_form' }),
           useCaseId: NEW,
           description: 'd',
-          plainAnswers: { '1': 'Test tool' },
+          answerState: { '1': { value: 'Test tool', source: { kind: 'typed' } } },
           assumptions: [],
           questions: Qs,
           contradictions: [],
@@ -2265,9 +2276,12 @@ describe('intakeReducer — the Back guard survives the confirmation (CR8-03, P3
           useCaseId: 'uc-1',
           originalVerdictId: 'v1',
           description: 'd',
-          plainAnswers: { '1': 'Test tool' },
+          answerState: { '1': { value: 'Test tool', source: { kind: 'typed' } } },
           assumptions: [],
         },
+        // R18-A: the two new actions are inert once a case is attested.
+        { type: 'NUDGE_SHOWN', nudgeFor: ['countries'] },
+        { type: 'DESCRIPTION_EDITED', description: 'edited after the attestation' },
       ];
       const attested = intakeReducer(start, { type: 'CONFIRMED' }); // evaluation_pending: attested
       const seen = new Set<string>([JSON.stringify(attested)]);

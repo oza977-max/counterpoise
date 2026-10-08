@@ -17,12 +17,12 @@ function Boom(): never {
 }
 
 const DRAFT_KEY = 'aigate:intake-draft';
-const FORM_DRAFT_KEY = 'aigate:intake-form-draft:v2';
+const FORM_DRAFT_KEY = 'aigate:intake-form-draft:v4';
 
 describe('ErrorBoundary (CR6-04, BC-002)', () => {
   it('TC-CR6-04c: a render error below the boundary shows a plain message and a button that clears the saved draft', async () => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'questionnaire', description: 'd' }));
-    sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify({ x: 1 }));
+    sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify({ version: 4, answerState: {}, lastRead: { fingerprint: '', outcome: 'not-read' } }));
     // React logs the caught error to the console by design (componentDidCatch);
     // silenced here so the test's own output stays readable, not to hide a
     // real failure — the assertions below are what prove the boundary works.
