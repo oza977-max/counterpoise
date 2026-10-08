@@ -50,6 +50,22 @@ export default function ModelSettingSection() {
 
   useEffect(() => () => listController.current?.abort(), []);
 
+  // A stored setting that goes away (Forget from the Clear-all confirmation, or another tab)
+  // must not linger in the form, where one Save would bring it back.
+  const hadStored = useRef(false);
+  const storedKind = snapshot.state.kind;
+  useEffect(() => {
+    if (!snapshot.ready) return;
+    if (hadStored.current && storedKind === 'none') {
+      listController.current?.abort();
+      setPlace('');
+      setUrl('');
+      setModel('');
+      setListing({ kind: 'idle' });
+    }
+    hadStored.current = storedKind !== 'none';
+  }, [snapshot.ready, storedKind]);
+
   const edited = () => {
     setOutcome(null);
   };
@@ -100,7 +116,7 @@ export default function ModelSettingSection() {
   const unsaved =
     formCheck.ok &&
     !(saved && saved.place === formCheck.setting.place && saved.url === formCheck.setting.url && saved.model === formCheck.setting.model);
-  const hasStored = snapshot.state.kind !== 'none';
+  const hasStored = snapshot.ready && snapshot.state.kind !== 'none';
 
   return (
     <details>

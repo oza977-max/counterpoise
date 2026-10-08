@@ -3,7 +3,7 @@ import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPanel from '../SettingsPanel';
 import { R18_COPY } from '../plain-copy';
-import { MODEL_SETTING_KEY, MODEL_TEST_RESULTS_KEY, updateModelSetting } from '../../llm/model-setting';
+import { MODEL_SETTING_KEY, MODEL_TEST_RESULTS_KEY, forgetModelSetting, updateModelSetting } from '../../llm/model-setting';
 import { enableLocalLlm } from '../../llm/local-provider';
 import type { ModelPlace, ModelTestResult } from '../../engine/prefill-types';
 
@@ -755,6 +755,38 @@ describe('Forget the model setting and Clear all data (TC-R18-NF-3-08, MS-5-04, 
     expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true);
     expect(section.textContent).not.toMatch(/Your description will be/);
     expect(section.textContent).toContain(R18_COPY.FORGOTTEN_SENTENCE);
+  });
+
+  it('R18-B fix: Forget from the Clear-all confirmation also empties the form, so one Save cannot bring the setting back', async () => {
+    updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
+    const user = userEvent.setup({ delay: null });
+    render(<SettingsPanel />);
+    await open(user);
+    expect(screen.getByLabelText(S.MODEL_LABEL)).toHaveValue('qwen3:4b');
+    await openClearConfirmation(user);
+    const alert = screen.getByRole('alert');
+    await user.click(within(alert).getByRole('button', { name: R18_COPY.FORGET_SETTING_LABEL }));
+    expect(localStorage.getItem(MODEL_SETTING_KEY)).toBeNull();
+    expect(screen.getByLabelText(S.MODEL_LABEL)).toHaveValue('');
+    expect(screen.getByLabelText(S.ADDRESS_LABEL)).toHaveValue('');
+    expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true);
+    await save(user);
+    expect(stored()).toBeNull();
+  });
+
+  it('R18-B fix: a setting forgotten elsewhere (another tab) empties the form too', async () => {
+    updateModelSetting({ place: 'firm-server', url: FIRM, model: 'qwen3:4b' });
+    const user = userEvent.setup({ delay: null });
+    render(<SettingsPanel />);
+    await open(user);
+    expect(screen.getByLabelText(S.MODEL_LABEL)).toHaveValue('qwen3:4b');
+    await waitFor(() => {
+      forgetModelSetting();
+      expect(screen.getByLabelText(S.MODEL_LABEL)).toHaveValue('');
+    });
+    expect(screen.getByLabelText(S.ADDRESS_LABEL)).toHaveValue('');
+    await save(user);
+    expect(stored()).toBeNull();
   });
 
   it('the Forget control is not offered before anything is saved (false state)', async () => {
