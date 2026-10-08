@@ -920,9 +920,6 @@ Each chunk's context is this section, `intake-flow.md` §27 and its slice of `te
 
 These paths are named by this round's specs before they exist. `scripts/spec-parity-check.py` (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.
 
-- `src/engine/mentioned.ts` (R18-A)
-- `src/engine/prefill-types.ts` (R18-A)
-- `src/engine/form-answer-state.ts` (R18-A)
 - `src/engine/question-structure.ts` (R18-C1)
 - `src/llm/model-setting.ts` (R18-B)
 - `src/engine/form-visibility.ts` (R18-C1)
@@ -933,7 +930,6 @@ These paths are named by this round's specs before they exist. `scripts/spec-par
 - `src/engine/answers-from-record.ts` (R18-E)
 - `src/llm/model-test.ts` (R18-F)
 - `src/engine/question-fields.ts` (R18-F)
-- `src/engine/worked-examples.ts` (R18-A)
 
 ### 12.8 Integration closure
 
