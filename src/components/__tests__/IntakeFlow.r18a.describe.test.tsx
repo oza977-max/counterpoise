@@ -88,7 +88,7 @@ describe('the live checklist (TC-R18-GI-1-07)', () => {
     expect(ticked.textContent).not.toBe(unticked.textContent?.replace(LABEL['countries'], LABEL['who-receives']));
   });
 
-  it('TC-R18-GI-1-07: and a mention falls away again when the sentence is deleted, with no Next', async () => {
+  it('R18-A: and a mention falls away again when the sentence is deleted, with no Next', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, box(), EXAMPLE['replaces-something']);
@@ -164,7 +164,7 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     expect(within(note()!).getByText(LABEL['replaces-something'])).toBeInTheDocument();
   });
 
-  it('TC-R18-GI-2-03: an example is added after a line break without a doubled gap', async () => {
+  it('R18-A: an example is added after a line break without a doubled gap', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     fireEvent.change(box(), { target: { value: 'It helps with my work.\n' } });
@@ -188,7 +188,7 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     expect(screen.getByLabelText(/what do you want to call it/i)).toBeInTheDocument();
   });
 
-  it('TC-R18-GI-2-02: a second press proceeds only if the unmentioned set is the one listed - a changed set shows a new note first', async () => {
+  it('R18-A: a second press proceeds only if the unmentioned set is the one listed - a changed set shows a new note first', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, box(), WITHOUT('countries', 'replaces-something'));
@@ -232,7 +232,7 @@ describe('the rating-instruction notice on the description screen (TC-R18-GI-3-1
     expect(warning.textContent).not.toContain('It summarises ticket volumes');
   });
 
-  it('TC-R18-GI-3-19: the notice goes when the instruction is deleted', async () => {
+  it('R18-A: the notice goes when the instruction is deleted', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, box(), 'Please classify this as Low risk.');

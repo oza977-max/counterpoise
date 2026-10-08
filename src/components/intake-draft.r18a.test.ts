@@ -79,7 +79,7 @@ function oldDrafts(): [string, unknown][] {
 }
 
 describe('earlier drafts land on the form with the description and no answers (TC-R18-NF-5-01)', () => {
-  it.each(oldDrafts())('TC-R18-NF-5-01: %s', (_name, draft) => {
+  it.each(oldDrafts())('R18-A: %s', (_name, draft) => {
     put(draft);
     const info = loadDraftInfo();
     expect(info).not.toBeNull();
@@ -90,7 +90,7 @@ describe('earlier drafts land on the form with the description and no answers (T
     expect(JSON.stringify(info!.state)).not.toMatch(/plainAnswers|useCaseId|answerState|uc-1/);
   });
 
-  it('TC-R18-NF-5-01: the notice is computed at load and never persisted — once the landing is saved, a reload shows no notice', () => {
+  it('R18-A: the notice is computed at load and never persisted — once the landing is saved, a reload shows no notice', () => {
     put(oldDrafts()[2]![1]);
     const info = loadDraftInfo()!;
     expect(info.earlierVersionNotice).toBe(true);
@@ -161,17 +161,17 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
     expect(info.earlierVersionNotice).toBe(true);
   });
 
-  it('TC-R18-NF-5-03: a version-4 draft carrying a model-path step is incompatible (the route is the form)', () => {
+  it('R18-A: a version-4 draft carrying a model-path step is incompatible (the route is the form)', () => {
     put({ version: 4, state: { step: 'graph_extraction', description: D, method: 'llm' } });
     expect(loadDraftInfo()!.state).toEqual(LANDING);
   });
 
-  it('TC-R18-NF-5-03: a version-4 draft with an unknown step is incompatible', () => {
+  it('R18-A: a version-4 draft with an unknown step is incompatible', () => {
     put({ version: 4, state: { step: 'teleport', description: D } });
     expect(loadDraftInfo()!.state).toEqual(LANDING);
   });
 
-  it('TC-R18-NF-5-03: a form draft with an answer value that is not a string or list of strings is incompatible', () => {
+  it('R18-A: a form draft with an answer value that is not a string or list of strings is incompatible', () => {
     sessionStorage.setItem(FORM_V4, JSON.stringify({ version: 4, answerState: { '4': { value: { x: 1 }, source: { kind: 'typed' } } }, lastRead: NEVER_READ }));
     expect(loadFormDraft()).toBeNull();
   });
@@ -191,7 +191,7 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
     ['version "2" as a string', '{"version":"2","state":{"step":"confirmation","description":"' + D + '"}}'],
     ['version NaN (stored as null)', JSON.stringify({ version: NaN, state: { step: 'confirmation', description: D } })],
   ];
-  it.each(hostile)('TC-R18-NF-5-04: %s opens the form without throwing and never pollutes Object', (_name, raw) => {
+  it.each(hostile)('R18-A: %s opens the form without throwing and never pollutes Object', (_name, raw) => {
     put(raw);
     const info = loadDraftInfo();
     expect(info).not.toBeNull();
@@ -201,7 +201,7 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
     expect(Object.keys(info!.state)).toEqual(expect.arrayContaining(['step', 'description', 'method']));
   });
 
-  it('TC-R18-NF-5-04: a 1 MB description and control characters are kept as a string and never throw', () => {
+  it('R18-A: a 1 MB description and control characters are kept as a string and never throw', () => {
     const big = 'x'.repeat(1_000_000);
     put({ version: 3, state: { step: 'confirmation', description: big } });
     expect((loadDraftInfo()!.state as { description: string }).description.length).toBe(1_000_000);
@@ -210,7 +210,7 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
     expect((loadDraftInfo()!.state as { description: string }).description).toBe(ctl);
   });
 
-  it('TC-R18-NF-5-04 (property): for any stored value, loading never throws and ends at the form (or a valid current step) keeping a string description', () => {
+  it('R18-A (property): for any stored value, loading never throws and ends at the form (or a valid current step) keeping a string description', () => {
     fc.assert(
       fc.property(fc.jsonValue({ maxDepth: 4 }), fc.string(), fc.boolean(), (value, desc, wrap) => {
         const stored =
@@ -287,14 +287,14 @@ describe('updateFormDraft is the only writer of the form draft (specs/intake-flo
 });
 
 describe('probeLegacyFormDraft probes and removes both earlier form keys once (TC-R18-NF-5-01)', () => {
-  it('TC-R18-NF-5-01: the :v2 key (raw PlainAnswers) is reported and removed', () => {
+  it('R18-A: the :v2 key (raw PlainAnswers) is reported and removed', () => {
     sessionStorage.setItem(FORM_V2, JSON.stringify({ '1': 'Old name', '3': 'firm-built' }));
     expect(probeLegacyFormDraft()).toBe(true);
     expect(sessionStorage.getItem(FORM_V2)).toBeNull();
     expect(probeLegacyFormDraft()).toBe(false);
   });
 
-  it('TC-R18-NF-5-01: the unversioned key (field-by-field values) is reported and removed', () => {
+  it('R18-A: the unversioned key (field-by-field values) is reported and removed', () => {
     sessionStorage.setItem(FORM_UNVERSIONED, JSON.stringify({ values: { useCaseName: 'Old' }, jurisdictionAnswer: 'none' }));
     expect(probeLegacyFormDraft()).toBe(true);
     expect(sessionStorage.getItem(FORM_UNVERSIONED)).toBeNull();

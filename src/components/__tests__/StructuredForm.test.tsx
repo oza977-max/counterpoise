@@ -683,7 +683,7 @@ describe('StructuredForm - R18-A: one answer state with a typed source on every 
     expect('2' in answerState).toBe(false);
   });
 
-  it('TC-R18-NF-5-03: a draft answer that is not one of the question\'s options ("Gigantic") shows as a blank question needing an answer', () => {
+  it('R18-A: a draft answer that is not one of the question\'s options ("Gigantic") shows as a blank question needing an answer', () => {
     updateFormDraft({
       answerState: {
         '4': { value: 'Gigantic', source: { kind: 'typed' } },
@@ -699,7 +699,7 @@ describe('StructuredForm - R18-A: one answer state with a typed source on every 
     expect(screen.getByText(/still to answer/i)).toBeInTheDocument();
   });
 
-  it('TC-R18-NF-5-01: an earlier-version landing shows the one sentence, role=status, and an earlier form-draft key does not add a second', () => {
+  it('R18-A: an earlier-version landing shows the one sentence, role=status, and an earlier form-draft key does not add a second', () => {
     sessionStorage.setItem('aigate:intake-form-draft:v2', '{"1":"old"}');
     sessionStorage.setItem('aigate:intake-form-draft', '{"values":{}}');
     render(<StructuredForm policy={policy()} initialDescription="d" earlierVersionNotice onSubmit={vi.fn()} />);

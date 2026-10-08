@@ -83,7 +83,7 @@ describe('the duplicate decision is remembered by text fingerprint (TC-R18-GI-8-
 describe('Back from the form (TC-R18-GI-8-07, TC-R18-GI-8-13)', () => {
   const fresh: IntakeState = { step: 'graph_extraction', description: D, method: 'form', decidedFor: textFingerprint(D), nudgeFor: ['countries'] };
 
-  it('TC-R18-GI-8-07: a fresh case goes back to the description, handing over decidedFor and nudgeFor', () => {
+  it('R18-A: a fresh case goes back to the description, handing over decidedFor and nudgeFor', () => {
     expect(intakeReducer(fresh, { type: 'STEP_BACK' })).toEqual({
       step: 'description_entry',
       description: D,
@@ -97,7 +97,7 @@ describe('Back from the form (TC-R18-GI-8-07, TC-R18-GI-8-13)', () => {
     ['a correction (originalVerdictId)', { originalVerdictId: 'v-1' }],
     ['a correction with its original graph', { originalVerdictId: 'v-1', originalGraph: graph, useCaseId: 'uc-1' }],
     ['after a failed evaluation (afterFailedEvaluation)', { afterFailedEvaluation: true }],
-  ])('TC-R18-GI-8-13: Back is refused for %s', (_n, extra) => {
+  ])('R18-A: Back is refused for %s', (_n, extra) => {
     const s = { ...fresh, ...extra } as IntakeState;
     expect(intakeReducer(s, { type: 'STEP_BACK' })).toBe(s);
   });

@@ -47,7 +47,7 @@ describe('earlier drafts open on the form (TC-R18-NF-5-01)', () => {
     expect(screen.queryByText(/check what we read from your description/i)).not.toBeInTheDocument();
   });
 
-  it('TC-R18-NF-5-01: the sentence is shown once - after a reload it is gone', () => {
+  it('R18-A: the sentence is shown once - after a reload it is gone', () => {
     put({ version: 3, state: { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'u', afterFailedEvaluation: false } });
     const first = render(<App />);
     expect(noticeEl()).toBeInTheDocument();

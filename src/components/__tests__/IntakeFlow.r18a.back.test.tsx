@@ -67,7 +67,7 @@ describe('Back from the form (TC-R18-GI-8-07)', () => {
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(text);
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-8-07: a text edited on the form (question 2) is the text on the description screen after Back', async () => {
+  it('R18-A: a text edited on the form (question 2) is the text on the description screen after Back', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await describeToForm(user, 'First wording of the tool.');
@@ -135,7 +135,7 @@ describe('Back is refused for a correction and after a failed evaluation (TC-R18
     expect(created).toHaveLength(1);
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-8-13: the form after a failed evaluation has no Back either', async () => {
+  it('R18-A: the form after a failed evaluation has no Back either', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await describeToForm(user, 'Back refusal probe after a failure');
