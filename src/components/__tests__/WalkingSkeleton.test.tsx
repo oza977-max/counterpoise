@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import appetiteYaml from '../../../policy/appetite.yaml?raw';
 import { setCurrentPolicyYaml } from '../../store/policy-source';
+import * as questionGeneratorModule from '../../engine/question-generator';
 import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // TDD-2 mock budget = 1: the only mock is the external boundary (Anthropic SDK).
@@ -315,6 +316,60 @@ describe('Walking Skeleton', () => {
     expect(useCase).toBeDefined();
     const events = await getAll(useCase!.use_case_id);
     expect(events.map((e) => e.event_type)).toContain('verdict_produced');
+  }, SLOW_FLOW_MS);
+
+  // R18-A review I-6: restored from main (the review-screen edit it used is gone).
+  // On the form route a graph's version moves past 1 when an answer on the questions
+  // step corrects it. A form-built graph asks nothing for the answers a person can give
+  // today, so the question generator is made to ask one (call-through spy; EBT
+  // exception: scenario injection on one pure function) and the real reducer,
+  // confirmation and audit store do the rest.
+  it('TC-UC-6-03: the graph_confirmed event carries the corrected graph version (2), not the original (1), with corrections_count matching', async () => {
+    const uniqueLabel = 'confirmed version model';
+    const user = userEvent.setup({ delay: null });
+    await reachFormScreen(
+      user,
+      'Confirmed version probe: records which numbered edition of the reviewed picture a human signed off, after exactly one correction was applied to the first reading',
+    );
+    await fillMaterialForm(user, uniqueLabel);
+    const real = questionGeneratorModule.generateQuestions;
+    const askSpy = vi.spyOn(questionGeneratorModule, 'generateQuestions').mockImplementation((graph, policy, packs) => [
+      ...real(graph, policy, packs),
+      {
+        id: 'Q-scale-o',
+        field: 'scale',
+        node_id: graph.output_nodes[0]!.id,
+        triggered_by: ['INV-TEST'],
+        answer_type: 'select' as const,
+        options: ['limited', 'at_scale'],
+      },
+    ]);
+    try {
+      await user.click(screen.getByRole('button', { name: /^continue$/i }));
+      await screen.findByText(/how widely will it be used/i);
+      // The form said "a small trial" (limited); the answer here differs: exactly one correction, version 1 -> 2.
+      const options = [...document.querySelectorAll<HTMLButtonElement>('.questionnaire__options button')];
+      const widely = options.find((b) => !/small trial/i.test(b.textContent ?? ''))!;
+      expect(widely).toBeDefined();
+      await user.click(widely);
+    } finally {
+      askSpy.mockRestore();
+    }
+    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
+    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+
+    const { getUseCases } = await import('../../store/register');
+    const { getAll } = await import('../../store/audit');
+    const useCase = (await getUseCases('all')).find((u) => u.label === uniqueLabel);
+    expect(useCase).toBeDefined();
+    const events = await getAll(useCase!.use_case_id);
+    const confirmed = events.find((e) => e.event_type === 'graph_confirmed');
+    expect(confirmed).toBeDefined();
+    if (confirmed?.payload.type !== 'graph_confirmed') throw new Error('wrong payload type');
+    expect(confirmed.payload.corrections_count).toBe(1);
+    expect(events.filter((e) => e.event_type === 'graph_corrected')).toHaveLength(1);
+    expect(confirmed.payload.graph_version).toBe(2);
+    expect(confirmed.payload.graph_version).not.toBe(1);
   }, SLOW_FLOW_MS);
 
   it('P5-C01: "Correct this classification?" re-opens the form, reuses the same use case, and appends graph_corrected/verdict_corrected without touching the original verdict_produced event', async () => {
