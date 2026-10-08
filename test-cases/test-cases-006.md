@@ -35,4 +35,3 @@ confirm flow (intake-flow.md §16.3).
 R6-NF-1 is held by TC-PE-1-01 unchanged; R6-NF-3's provider parity is held
 by both provider paths exiting through the same `parseExtraction` (asserted
 structurally in graph-extractor.test.ts).
-
