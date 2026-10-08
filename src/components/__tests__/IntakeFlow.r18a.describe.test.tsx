@@ -34,8 +34,8 @@ function itemState(id: ChecklistItemId): string {
   const li = within(checklist()).getByText(LABEL[id]).closest('li')!;
   return within(li).getByText(/^(not )?mentioned$/i).textContent!.toLowerCase();
 }
-function note() {
-  return screen.queryByText(R18_COPY.UNMENTIONED_NOTE_LEAD)?.closest('[role="status"]') ?? null;
+function note(): HTMLElement | null {
+  return (screen.queryByText(R18_COPY.UNMENTIONED_NOTE_LEAD)?.closest('[role="status"]') as HTMLElement | null) ?? null;
 }
 function next() {
   return screen.getByRole('button', { name: /^next/i });
