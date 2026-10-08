@@ -36,8 +36,13 @@ import { intakeReducer, nextReviewStep, contradictionKey, planCorrectionWrites, 
 import { saveDraft, loadDraft, loadDraftInfo, clearDraft, clearDraftIfCase, clearFormDraft } from './intake-draft';
 import type { IntakeState } from './intake-state';
 import StructuredForm from './StructuredForm';
+import ChecklistPanel from './ChecklistPanel';
+import NudgeNote, { appendExample } from './NudgeNote';
+import RatingInstructionNotice from './RatingInstructionNotice';
+import { CHECKLIST_ITEM_IDS, mentionedItems } from '../engine/mentioned';
+import type { MentionJurisdiction } from '../engine/mentioned';
 import type { Assumption, PlainAnswers } from './plain-copy';
-import type { FormAnswerState } from '../engine/prefill-types';
+import type { ChecklistItemId, FormAnswerState } from '../engine/prefill-types';
 import {
   extractionErrorMessage,
   EXTRACTION_ERROR_HELP,
@@ -48,6 +53,7 @@ import {
   VENDOR_UNSURE_VALUE,
   VENDOR_UNSURE_ASSUMPTION,
   ratingInstructionWarning,
+  R18_COPY,
 } from './plain-copy';
 import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
@@ -513,11 +519,40 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     void refreshRegister();
   }, [refreshRegister]);
 
+  // R18-GI-1/-2 (specs/intake-flow.md §27.2-27.3). The checklist's rule needs
+  // the policy's jurisdiction codes (a code like "UK" counts only as a capital-
+  // letter code); an unusable policy simply has none.
+  const mentionJurisdictions = useMemo<MentionJurisdiction[]>(
+    () => (policyResult.valid ? policyResult.policy.jurisdictions.map((j) => ({ code: j.code, name: j.name })) : []),
+    [policyResult],
+  );
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  // The items the description leaves unmentioned, as sorted ids — what the first
+  // Next press lists (nudgeFor) and what the second is compared with.
+  const unmentionedNow: ChecklistItemId[] = useMemo(() => {
+    if (state.step !== 'description_entry') return [];
+    const mentioned = mentionedItems(state.description, mentionJurisdictions);
+    return CHECKLIST_ITEM_IDS.filter((id) => !mentioned.has(id)).sort();
+  }, [state, mentionJurisdictions]);
+
   function handleSubmitDescription() {
     // Final review M-1: a failed-save message belongs to the case it was
     // about — never carried onto the next one.
     setDecisionError(null);
     if (state.step !== 'description_entry') return;
+    // Blank (empty or only Unicode whitespace) cannot continue; one character can.
+    if (state.description.trim() === '') return;
+    // The nudge (§27.3): the first press lists what is unmentioned and stays; the
+    // second proceeds only if the unmentioned set is still the one listed. With
+    // everything mentioned there is nothing to list.
+    if (unmentionedNow.length > 0) {
+      const listed = state.nudgeFor;
+      const same = listed !== undefined && listed.length === unmentionedNow.length && listed.every((id, i) => id === unmentionedNow[i]);
+      if (!same) {
+        dispatch({ type: 'NUDGE_SHOWN', nudgeFor: unmentionedNow });
+        return;
+      }
+    }
     // CR6-02f: entering a new duplicate check is a new attempt — anything
     // still running for an earlier description is dropped when it lands.
     attemptToken.current += 1;
@@ -2137,28 +2172,44 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         )}
 
         {state.step === 'description_entry' && (
-          <div>
-            {/* R16-W §4 (D-74): label/placeholder/button/help all replaced —
-                "Describe your AI use case" / "Read & extract →" were the
-                tool's own internal-process words ("extract"), not the
-                submitter's question. */}
-            <label htmlFor="description-input">What AI tool do you want to use, and what will it do for you?</label>
-            <textarea
-              id="description-input"
-              value={state.description}
-              onChange={(e) => dispatch({ type: 'DESCRIPTION_CHANGED', description: e.target.value })}
-              placeholder='e.g. "Use ChatGPT to turn my client meeting notes into follow-up emails, which I check before sending."'
-            />
-            <button type="button" onClick={handleSubmitDescription} disabled={!state.description.trim()}>
-              Next →
-            </button>
-            {/* design-review round 4 (Panel G — Intake: Describe, Important):
-                the button never said what happens after clicking, or that
-                nothing is final yet. */}
-            <p className="field-help">
-              You can check and change everything before anything is decided — nothing here is final
-              yet.
-            </p>
+          <div className="describe">
+            <div className="describe__input">
+              {/* R16-W §4 (D-74): label/placeholder/button/help all replaced —
+                  "Describe your AI use case" / "Read & extract →" were the
+                  tool's own internal-process words ("extract"), not the
+                  submitter's question. */}
+              <label htmlFor="description-input">What AI tool do you want to use, and what will it do for you?</label>
+              <textarea
+                id="description-input"
+                ref={descriptionRef}
+                value={state.description}
+                onChange={(e) => dispatch({ type: 'DESCRIPTION_CHANGED', description: e.target.value })}
+                placeholder='e.g. "Use ChatGPT to turn my client meeting notes into follow-up emails, which I check before sending."'
+              />
+              {/* GI-3-19: a description that dictates its own rating is warned
+                  on this screen, before anything is read or decided. */}
+              <RatingInstructionNotice description={state.description} />
+              {/* The first Next lists what is unmentioned (only the items still
+                  unmentioned now); Next is never disabled by it. */}
+              <NudgeNote
+                items={(state.nudgeFor ?? []).filter((id) => unmentionedNow.includes(id))}
+                onAddExample={(sentence) => {
+                  dispatch({ type: 'DESCRIPTION_CHANGED', description: appendExample(state.description, sentence) });
+                  descriptionRef.current?.focus();
+                }}
+              />
+              <button type="button" onClick={handleSubmitDescription} disabled={!state.description.trim()}>
+                Next →
+              </button>
+              {/* design-review round 4 (Panel G — Intake: Describe, Important):
+                  the button never said what happens after clicking, or that
+                  nothing is final yet. */}
+              <p className="field-help">
+                You can check and change everything before anything is decided — nothing here is final
+                yet.
+              </p>
+            </div>
+            <ChecklistPanel description={state.description} jurisdictions={mentionJurisdictions} />
           </div>
         )}
 
@@ -2339,6 +2390,18 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
             {reviewGateError && (
               <p role="alert" className="intake-flow__gate-error">
                 {reviewGateError}
+              </p>
+            )}
+            {/* R18-GI-7-01: this route never sends the description to a model, so a
+                form reached fresh from the description says, in one plain sentence,
+                that nothing was filled in for the person. Not shown on a form that
+                carries a case (a correction, a retry or a trip back from the
+                questions): the sentence is about this arrival from the describe
+                screen, and it would be a false claim of a read that never was
+                attempted there. */}
+            {state.decidedFor !== undefined && state.useCaseId === undefined && state.originalVerdictId === undefined && (
+              <p role="status" className="plain-form__read-note">
+                {R18_COPY.FAILURE_SENTENCES['not-configured'].ollama}
               </p>
             )}
             <StructuredForm

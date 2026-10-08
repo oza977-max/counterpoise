@@ -44,22 +44,23 @@ function next() {
 describe('the first screen (TC-R18-GI-1-08, TC-R18-PS-1-02)', () => {
   it('TC-R18-GI-1-08: one text box and the checklist beside it, and no form question before the description', () => {
     render(<App />);
-    expect(screen.getAllByRole('textbox')).toHaveLength(1);
-    expect(box()).toBeInTheDocument();
+    // The work area (the sidebar's own Settings box is not part of the pre-check).
+    const area = within(box().closest('.intake-flow') as HTMLElement);
+    expect(area.getAllByRole('textbox')).toHaveLength(1);
     expect(checklist()).toBeInTheDocument();
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-    expect(screen.queryByText(/what do you want to call it/i)).not.toBeInTheDocument();
+    expect(area.queryByRole('radio')).not.toBeInTheDocument();
+    expect(area.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(area.queryByText(/what do you want to call it/i)).not.toBeInTheDocument();
   });
 
   it('TC-R18-PS-1-02: with empty storage nothing before the first description is a set-up step', () => {
     render(<App />);
     expect(box()).toBeInTheDocument();
     expect(checklist()).toBeInTheDocument();
-    const text = document.body.textContent ?? '';
-    expect(text).not.toMatch(/sign in|sign-in|api key|connect a model first|set up a model|set-up/i);
-    // The description box is the first control in the work area: nothing to press or fill in before it.
+    // The pre-check's own screen: no sign-in, key or model set-up step in front of the box.
     const main = box().closest('.intake-flow')!;
+    expect(main.textContent ?? '').not.toMatch(/sign in|sign-in|api key|connect a model first|set up a model|set-up/i);
+    // The description box is the first control in the work area: nothing to press or fill in before it.
     const controls = [...main.querySelectorAll('textarea, input, select, button')];
     const firstField = controls.find((el) => el.matches('textarea, input, select'));
     expect(firstField).toBe(box());
