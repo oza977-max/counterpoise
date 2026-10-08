@@ -9,7 +9,7 @@ import { plainAnswersToFormValues } from './plain-intake';
 import { optionKeyForText } from '../components/plain-copy';
 import type { PlainAnswers, QuestionId } from '../components/plain-copy';
 import type { StructuredFormValues } from './build-graph-from-form';
-import type { JurisdictionPack, PolicyFile, Verdict } from './types';
+import type { EvaluationResult, JurisdictionPack, PolicyFile } from './types';
 import { WORKED_EXAMPLES } from './worked-examples';
 import type { WorkedExpectation } from './worked-examples';
 import { PLAIN_QUESTIONS } from '../components/plain-copy';
@@ -265,7 +265,7 @@ describe('try-these cases driven from the page\u2019s plain answers (CR9-15)', (
 // src/engine/worked-examples.ts as PlainAnswers; this file reads that module.
 // The hand-built StructuredFormValues cases above are kept as the independent
 // oracle: each `expected` in the module copies an assertion made above.
-function assertExpected(v: Verdict, e: WorkedExpectation) {
+function assertExpected(v: EvaluationResult, e: WorkedExpectation) {
   if (e.status !== undefined) expect(v.status).toBe(e.status);
   if (e.tier !== undefined) expect(v.tier).toBe(e.tier);
   if (e.track !== undefined) expect(v.track).toBe(e.track);
@@ -279,7 +279,7 @@ function assertExpected(v: Verdict, e: WorkedExpectation) {
   if (e.unclassifiedDecisionTypes !== undefined) expect(v.unclassified_decision_types).toEqual(e.unclassifiedDecisionTypes);
 }
 
-function runPlain(answers: PlainAnswers, description: string): Verdict {
+function runPlain(answers: PlainAnswers, description: string): EvaluationResult {
   const { values } = plainAnswersToFormValues({ ...answers, '2': description }, policy);
   return run(values);
 }
