@@ -26,6 +26,8 @@ export const MAX_MODEL_CHARS = 100;
 export const MAX_URL_CHARS = 500;
 export const MAX_HOST_CHARS = 253;
 export const MAX_TEST_RESULTS = 20;
+/** The size of the test corpus: only a run of every case, not stopped, makes a model tested. */
+export const CORPUS_CASE_COUNT = 31;
 const LIST_TIMEOUT_MS = 4000;
 const LIST_MAX_BODY_CHARS = 1_000_000;
 const LIST_MAX_NAMES = 200;
@@ -309,9 +311,9 @@ export function modelLabel(
   const host = originOf(setting.url);
   if (host === null) return { kind: 'untested' };
   const mine = results.filter((r) => r.model === setting.model && r.place === setting.place && r.host === host);
-  const done = mine.find((r) => !r.stopped);
+  const done = mine.find((r) => !r.stopped && r.casesRun === CORPUS_CASE_COUNT);
   if (done) return { kind: 'tested', matches: done.verdictMatches, date: done.date };
-  const partial = mine.find((r) => r.stopped);
+  const partial = mine[0];
   if (partial) return { kind: 'partial', casesRun: partial.casesRun };
   return { kind: 'untested' };
 }

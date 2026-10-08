@@ -13,6 +13,7 @@ import {
   forgetModelSetting,
   listModels,
   modelLabel,
+  CORPUS_CASE_COUNT,
   readTestResults,
 } from './model-setting';
 import { enableLocalLlm } from './local-provider';
@@ -571,6 +572,12 @@ describe('modelLabel (TC-R18-GI-12-*)', () => {
 
   it('only a completed run counts: a stopped run is partial, and never tested', () => {
     expect(modelLabel(sett, [result({ stopped: true, casesRun: 12, verdictMatches: 9 })])).toEqual({ kind: 'partial', casesRun: 12 });
+  });
+
+  it('a run that was not stopped but ran fewer cases than the corpus is partial, not tested', () => {
+    expect(CORPUS_CASE_COUNT).toBe(31);
+    expect(modelLabel(sett, [result({ stopped: false, casesRun: 3 })])).toEqual({ kind: 'partial', casesRun: 3 });
+    expect(modelLabel(sett, [result({ stopped: false, casesRun: 32 })])).toEqual({ kind: 'partial', casesRun: 32 });
   });
 
   it('a completed run wins over a newer stopped one; the newest completed one wins', () => {
