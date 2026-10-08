@@ -448,7 +448,7 @@ describe('listModels', () => {
   it('TC-R18-MS-3-01 / MS-1-13: GET {url}/api/tags with no body and the safety options, returning every reported name', async () => {
     const calls = fakeFetch(() => json({ models: [{ name: 'alpha:1b' }, { name: 'beta:7b' }, { name: 'gamma:70b' }] }));
     const names = await listModels({ place: 'this-computer', url: LOCAL }, new AbortController().signal);
-    expect(names).toEqual(['alpha:1b', 'beta:7b', 'gamma:70b']);
+    expect(names).toEqual({ ok: true, names: ['alpha:1b', 'beta:7b', 'gamma:70b'] });
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe('http://localhost:11434/api/tags');
     const init = calls[0]!.init;
@@ -463,44 +463,49 @@ describe('listModels', () => {
 
   it('TC-R18-MS-1-13 (rule): works under Ollama cloud before any model is typed', async () => {
     fakeFetch(() => json({ models: [{ name: 'alpha:cloud' }, { name: 'beta:cloud' }] }));
-    expect(await listModels({ place: 'ollama-cloud', url: LOCAL })).toEqual(['alpha:cloud', 'beta:cloud']);
+    expect(await listModels({ place: 'ollama-cloud', url: LOCAL })).toEqual({ ok: true, names: ['alpha:cloud', 'beta:cloud'] });
   });
 
   it('TC-R18-MS-1-12 (rule 5): drops names over 100 characters and keeps a hidden-character name as it is (display escapes it)', async () => {
     fakeFetch(() => json({ models: [{ name: 'ok:1b' }, { name: 'x'.repeat(150) }, { name: 'z​:1b' }, { name: 'x'.repeat(100) }] }));
     const names = await listModels({ place: 'this-computer', url: LOCAL });
-    expect(names).toEqual(['ok:1b', 'z​:1b', 'x'.repeat(100)]);
+    expect(names).toEqual({ ok: true, names: ['ok:1b', 'z​:1b', 'x'.repeat(100)] });
+  });
+
+  it('an answered but empty list is a success with no names, distinct from a failure', async () => {
+    fakeFetch(() => json({ models: [] }));
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: true, names: [] });
   });
 
   it('ignores entries that are not objects with a string name, and duplicates', async () => {
     fakeFetch(() => json({ models: [null, 5, {}, { name: 7 }, { name: '' }, { name: 'a:1' }, { name: 'a:1' }, 'str'] }));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual(['a:1']);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: true, names: ['a:1'] });
   });
 
   it('TC-R18-MS-3-03 (rule 3): returns [] on 404, on HTML, on bad JSON, on a wrong shape and on a thrown fetch', async () => {
     fakeFetch(() => new Response('nope', { status: 404 }));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: false });
     fakeFetch(() => new Response('<html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: false });
     fakeFetch(() => json({ models: 'many' }));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: false });
     fakeFetch(() => json([1, 2]));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: false });
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
-    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual({ ok: false });
   });
 
   it('a redirect (fetch rejects under redirect:error) returns []', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('redirect mode is set to error'))));
-    expect(await listModels({ place: 'firm-server', url: FIRM })).toEqual([]);
+    expect(await listModels({ place: 'firm-server', url: FIRM })).toEqual({ ok: false });
   });
 
   it('makes no request when the address does not validate for the place', async () => {
     const calls = fakeFetch(() => json({ models: [{ name: 'a:1' }] }));
-    expect(await listModels({ place: 'this-computer', url: 'http://evil.example:11434' })).toEqual([]);
-    expect(await listModels({ place: 'ollama-cloud', url: FIRM })).toEqual([]);
-    expect(await listModels({ place: 'firm-server', url: 'http://u:p@ai.example-firm.test' })).toEqual([]);
-    expect(await listModels({ place: undefined as never, url: LOCAL })).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: 'http://evil.example:11434' })).toEqual({ ok: false });
+    expect(await listModels({ place: 'ollama-cloud', url: FIRM })).toEqual({ ok: false });
+    expect(await listModels({ place: 'firm-server', url: 'http://u:p@ai.example-firm.test' })).toEqual({ ok: false });
+    expect(await listModels({ place: undefined as never, url: LOCAL })).toEqual({ ok: false });
     expect(calls).toHaveLength(0);
   });
 
@@ -515,7 +520,7 @@ describe('listModels', () => {
       await vi.advanceTimersByTimeAsync(0);
       expect(settled).toBe(false);
       await vi.advanceTimersByTimeAsync(2);
-      expect(await p).toEqual([]);
+      expect(await p).toEqual({ ok: false });
     } finally {
       vi.useRealTimers();
     }
@@ -526,14 +531,14 @@ describe('listModels', () => {
     const c = new AbortController();
     const p = listModels({ place: 'this-computer', url: LOCAL }, c.signal);
     c.abort();
-    expect(await p).toEqual([]);
+    expect(await p).toEqual({ ok: false });
   });
 
   it('an already-aborted signal makes no request', async () => {
     const calls = fakeFetch(() => json({ models: [{ name: 'a:1' }] }));
     const c = new AbortController();
     c.abort();
-    expect(await listModels({ place: 'this-computer', url: LOCAL }, c.signal)).toEqual([]);
+    expect(await listModels({ place: 'this-computer', url: LOCAL }, c.signal)).toEqual({ ok: false });
     expect(calls).toHaveLength(0);
   });
 });

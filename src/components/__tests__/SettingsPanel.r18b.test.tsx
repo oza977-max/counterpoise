@@ -300,6 +300,37 @@ describe('Find models (TC-R18-MS-1-12, -13, MS-3-01, -03)', () => {
     expect(within(list).queryByRole('button', { name: /delta/ })).not.toBeInTheDocument();
   });
 
+  it('R18-B fix: an answered but empty list says so, distinctly from a failure', async () => {
+    fakeFetch(() => tags());
+    const user = userEvent.setup({ delay: null });
+    render(<SettingsPanel />);
+    await open(user);
+    await choose(user, 'this-computer');
+    await type(user, S.ADDRESS_LABEL, LOCAL);
+    await user.click(screen.getByRole('button', { name: S.FIND_MODELS }));
+    expect(await screen.findByText(R18_COPY.FIND_MODELS_EMPTY)).toBeInTheDocument();
+    expect(screen.queryByText(R18_COPY.FIND_MODELS_FAILED)).not.toBeInTheDocument();
+  });
+
+  it('R18-B fix: the picked model button is aria-pressed, and the help sentences are linked to their controls', async () => {
+    fakeFetch(() => tags('alpha:1b', 'beta:7b'));
+    const user = userEvent.setup({ delay: null });
+    render(<SettingsPanel />);
+    await open(user);
+    await choose(user, 'this-computer');
+    await type(user, S.ADDRESS_LABEL, LOCAL);
+    expect(screen.getByLabelText(S.ADDRESS_LABEL)).toHaveAccessibleDescription(S.ADDRESS_HELP);
+    expect(screen.getByRole('button', { name: S.FIND_MODELS })).toHaveAccessibleDescription(S.FIND_MODELS_HELP);
+    await user.click(screen.getByRole('button', { name: S.FIND_MODELS }));
+    const list = await screen.findByRole('list', { name: S.MODEL_LIST_LABEL });
+    const alpha = within(list).getByRole('button', { name: /alpha:1b/ });
+    const beta = within(list).getByRole('button', { name: /beta:7b/ });
+    expect(alpha).toHaveAttribute('aria-pressed', 'false');
+    await user.click(beta);
+    expect(beta).toHaveAttribute('aria-pressed', 'true');
+    expect(alpha).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('TC-R18-MS-1-12: a 150-character name is not offered and a U+200B name is shown escaped', async () => {
     fakeFetch(() => tags('ok:1b', 'x'.repeat(150), 'z​:1b'));
     const user = userEvent.setup({ delay: null });

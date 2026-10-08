@@ -28,6 +28,7 @@ type Listing =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'failed' }
+  | { kind: 'empty' }
   | { kind: 'ok'; names: string[] };
 
 function isPlainHttp(url: string): boolean {
@@ -93,9 +94,10 @@ export default function ModelSettingSection() {
     const controller = new AbortController();
     listController.current = controller;
     setListing({ kind: 'loading' });
-    const names = await listModels({ place: place as ModelPlace, url: address.url }, controller.signal);
+    const listed = await listModels({ place: place as ModelPlace, url: address.url }, controller.signal);
     if (controller.signal.aborted) return;
-    setListing(names.length > 0 ? { kind: 'ok', names } : { kind: 'failed' });
+    if (!listed.ok) setListing({ kind: 'failed' });
+    else setListing(listed.names.length > 0 ? { kind: 'ok', names: listed.names } : { kind: 'empty' });
   }
 
   function handleForget() {
@@ -154,16 +156,23 @@ export default function ModelSettingSection() {
           placeholder="http://localhost:11434"
           autoComplete="off"
           spellCheck={false}
+          aria-describedby="model-address-help"
         />
-        <p className="field-help">{S.ADDRESS_HELP}</p>
+        <p className="field-help" id="model-address-help">{S.ADDRESS_HELP}</p>
 
-        <button type="button" onClick={() => void handleFindModels()} disabled={listing.kind === 'loading'}>
+        <button
+          type="button"
+          onClick={() => void handleFindModels()}
+          disabled={listing.kind === 'loading'}
+          aria-describedby="model-find-help"
+        >
           {S.FIND_MODELS}
         </button>
-        <p className="field-help">{S.FIND_MODELS_HELP}</p>
+        <p className="field-help" id="model-find-help">{S.FIND_MODELS_HELP}</p>
         <div role="status">
           {listing.kind === 'loading' && <p>{S.LOADING_MODELS}</p>}
           {listing.kind === 'failed' && <p>{R18_COPY.FIND_MODELS_FAILED}</p>}
+          {listing.kind === 'empty' && <p>{R18_COPY.FIND_MODELS_EMPTY}</p>}
         </div>
         {listing.kind === 'ok' && (
           <ul aria-label={S.MODEL_LIST_LABEL} className="model-setting__list">
@@ -171,6 +180,7 @@ export default function ModelSettingSection() {
               <li key={name}>
                 <button
                   type="button"
+                  aria-pressed={model === name}
                   onClick={() => {
                     setModel(name);
                     edited();

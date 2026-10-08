@@ -320,14 +320,16 @@ export function modelLabel(
 
 // ---- the explicit "Find models" call --------------------------------------
 
-/** GET {url}/api/tags on an explicit press, after the address validates. No body, no case text. [] on any failure. */
+export type ListModelsResult = { ok: true; names: string[] } | { ok: false };
+
+/** GET {url}/api/tags on an explicit press, after the address validates. No body, no case text. { ok: false } on any failure; an answered but empty list is { ok: true, names: [] }. */
 export async function listModels(
   setting: { place: ModelPlace; url: string },
   signal?: AbortSignal,
-): Promise<string[]> {
+): Promise<ListModelsResult> {
   const address = validateAddress(setting.place, setting.url);
-  if (!address.ok) return [];
-  if (signal?.aborted) return [];
+  if (!address.ok) return { ok: false };
+  if (signal?.aborted) return { ok: false };
   const controller = new AbortController();
   const onAbort = () => controller.abort();
   signal?.addEventListener('abort', onAbort);
@@ -341,12 +343,12 @@ export async function listModels(
       referrerPolicy: 'no-referrer',
       cache: 'no-store',
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { ok: false };
     const text = await res.text();
-    if (text.length > LIST_MAX_BODY_CHARS) return [];
+    if (text.length > LIST_MAX_BODY_CHARS) return { ok: false };
     const body: unknown = JSON.parse(text);
     const models = body !== null && typeof body === 'object' ? (body as { models?: unknown }).models : undefined;
-    if (!Array.isArray(models)) return [];
+    if (!Array.isArray(models)) return { ok: false };
     const names: string[] = [];
     for (const m of models) {
       const name = m !== null && typeof m === 'object' ? (m as { name?: unknown }).name : undefined;
@@ -354,9 +356,9 @@ export async function listModels(
       if (!names.includes(name)) names.push(name);
       if (names.length >= LIST_MAX_NAMES) break;
     }
-    return names;
+    return { ok: true, names };
   } catch {
-    return [];
+    return { ok: false };
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onAbort);
