@@ -229,7 +229,7 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
 
     it('a real-shaped confirmation draft with extra keys comes back without them, and keeps the keys it should', () => {
       stored(
-        { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'uc-1', plainAnswers: { '1': 'Tool' }, assumptions: [] } as IntakeState,
+        { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'uc-1', plainAnswers: { '1': 'Tool' }, assumptions: [], afterFailedEvaluation: false } as IntakeState,
         JUNK,
       );
       const state = loadDraftInfo()!.state as unknown as Record<string, unknown>;
