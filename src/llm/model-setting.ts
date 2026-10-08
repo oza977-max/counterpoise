@@ -108,6 +108,8 @@ export function validateAddress(place: ModelPlace | '' | undefined, rawUrl: stri
     return { ok: false, reason: 'address-invalid' };
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return { ok: false, reason: 'address-invalid' };
+  // Requests are built as url + '/api/tags' and '/api/chat': a query or fragment would send them to the wrong path.
+  if (url.includes('?') || url.includes('#')) return { ok: false, reason: 'address-invalid' };
   if (parsed.username !== '' || parsed.password !== '') return { ok: false, reason: 'address-credentials' };
   if (parsed.hostname.length > MAX_HOST_CHARS) return { ok: false, reason: 'address-too-long' };
   if (place === 'this-computer' && !isLoopback(url)) return { ok: false, reason: 'not-this-computer' };

@@ -95,6 +95,20 @@ describe('validateAddress', () => {
     });
   });
 
+  it.each([
+    'http://localhost:11434?x=1',
+    'http://localhost:11434/?',
+    'http://localhost:11434#frag',
+    'http://localhost:11434/path#',
+    'https://ai.example-firm.test/ollama?token=1',
+  ])('refuses an address with a query string or fragment: %s', (u) => {
+    for (const place of ['this-computer', 'firm-server', 'ollama-cloud'] as const) {
+      const r = validateAddress(place, u);
+      expect(r.ok, `${place} ${u}`).toBe(false);
+      if (!r.ok && place === 'firm-server') expect(r.reason).toBe('address-invalid');
+    }
+  });
+
   it('only http: and https: are accepted', () => {
     for (const u of ['ftp://localhost:11434', 'file:///etc/passwd', 'javascript:alert(1)', 'ws://localhost:11434', 'localhost:11434', 'ai.example-firm.test']) {
       expect(validateAddress('firm-server', u).ok, u).toBe(false);
