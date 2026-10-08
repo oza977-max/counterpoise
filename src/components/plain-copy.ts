@@ -1503,7 +1503,7 @@ export const R18_COPY = {
   TUNNEL_SMALL_PRINT:
     "This assumes the program at that address runs on this computer. We can't check that: a tunnel or proxy on that port would carry your description somewhere else.",
   FIRM_SMALL_PRINT:
-    "We can't check that this is your firm's server. The address is the one you typed, and the sentence above is only as true as that.",
+    "We can't check that this is your firm's server. The address is the one you typed, and where your description goes is only as true as that.",
   FALLBACK_RESEND_NOTE:
     'If the server ignores the strict format, your description is sent a second time to the same address.',
   FIND_MODELS_FAILED: "The list of models couldn't be read, or it was empty. You can still type a model name.",
