@@ -1304,13 +1304,22 @@ export function approvedModelLabelFor(
 // flagged, never obeyed. Wording lives here (presentation), the detection in
 // engine/rating-instructions.ts. No quoted phrase ever reaches the record line.
 export function ratingInstructionWarning(phrases: readonly string[]): string {
-  const quoted = phrases
+  const quoted = quoteRatingPhrases(phrases);
+  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
+}
+
+/** Quoted-phrase builder shared by both wordings. GB pass-1 D: the review screen is asserted with a
+ *  single-match /approved|rejected/i query, so those words never appear in a quote. */
+function quoteRatingPhrases(phrases: readonly string[]): string {
+  return phrases
     .slice(0, 2)
-    // GB pass-1 D: the review screen is asserted with a single-match
-    // /approved|rejected/i query, so those words never appear in a quote.
     .map((p) => `\u201C${p.replace(/\b(approved|rejected)\b/gi, '[\u2026]')}\u201D`)
     .join(' and ');
-  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
+}
+
+/** R18-GI-3-19: the description-screen wording. No claim about cards or about what was read. */
+export function ratingInstructionDescriptionWarning(phrases: readonly string[]): string {
+  return R18_COPY.RATING_DESCRIPTION_LEAD + quoteRatingPhrases(phrases) + R18_COPY.RATING_DESCRIPTION_TAIL;
 }
 
 export const RATING_INSTRUCTION_CONFIRM_LINE =
@@ -1388,6 +1397,20 @@ export const R18_COPY = {
   // Length (R18-GI-14). Used by the model path (C1); defined here with its sentence.
   TOO_LONG_SENTENCE:
     'Your description was too long to read automatically, so the form is blank. It is kept in full.',
+
+  // The form's note while no model route exists in this build (R18-GI-7-01). It says only
+  // what is true in every state: the description was not read automatically. It must not
+  // claim "no model is connected" (a key or local setting may exist) nor point at a panel
+  // that is not built yet. R18-G switches the form to FAILURE_SENTENCES['not-configured'].
+  NO_MODEL_INTERIM_SENTENCE:
+    "Your description wasn't read automatically, so nothing was filled in for you. Answer the questions below.",
+
+  // The rating-instruction warning on the description screen (R18-GI-3-19). Nothing has
+  // been read there and there are no cards, so it says only what is true on that screen.
+  // The quoted phrases are built by ratingInstructionDescriptionWarning (approved/rejected scrubbed).
+  RATING_DESCRIPTION_LEAD: 'Your description tells us how to rate it (',
+  RATING_DESCRIPTION_TAIL:
+    "). We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
 
   // Failure sentences (§27.5 table), keyed by PrefillFailure. {host} is filled in by the caller.
   FAILURE_SENTENCES: {

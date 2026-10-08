@@ -2408,7 +2408,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                 attempted there. */}
             {state.decidedFor !== undefined && state.useCaseId === undefined && state.originalVerdictId === undefined && (
               <p role="status" className="plain-form__read-note">
-                {R18_COPY.FAILURE_SENTENCES['not-configured'].ollama}
+                {R18_COPY.NO_MODEL_INTERIM_SENTENCE}
               </p>
             )}
             <StructuredForm

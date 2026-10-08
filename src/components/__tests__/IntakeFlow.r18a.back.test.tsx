@@ -168,7 +168,7 @@ describe('the whole text is kept (TC-R18-GI-14-05)', () => {
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
     // no model: the form is blank with the one sentence (and the too-long sentence does not apply)
-    expect(screen.getByText(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama)).toBeInTheDocument();
+    expect(screen.getByText(R18_COPY.NO_MODEL_INTERIM_SENTENCE)).toBeInTheDocument();
 
     // mid-way: the draft holds all of it
     const draft = JSON.parse(sessionStorage.getItem('aigate:intake-draft')!);

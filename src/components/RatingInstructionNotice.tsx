@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { findRatingInstructions } from '../engine/rating-instructions';
-import { ratingInstructionWarning } from './plain-copy';
+import { ratingInstructionDescriptionWarning } from './plain-copy';
 
 // R18-GI-3-19 (specs/intake-flow.md §27.4). GT7 L-1 (P12): a description that
 // dictates its own rating is flagged, never obeyed. On the description screen the
@@ -14,7 +14,7 @@ export default function RatingInstructionNotice({ description }: { description: 
   if (found.length === 0) return null;
   return (
     <p role="status" className="intake-flow__rating-warning">
-      <strong>Warning:</strong> {ratingInstructionWarning(found)}
+      <strong>Warning:</strong> {ratingInstructionDescriptionWarning(found)}
     </p>
   );
 }
