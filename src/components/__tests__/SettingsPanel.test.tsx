@@ -9,18 +9,21 @@ describe('SettingsPanel (local-testing-only key storage)', () => {
   });
 
   // v0.8.1 (user decision): the vendor-specific key field is gone — one
-  // generic model slot remains. The demo shows the thing that has actually
-  // run live; the cloud-SDK code path is dormant with no UI.
-  it('offers no vendor API key field, and frames the single model slot honestly', async () => {
+  // generic model setting remains. R18-B (TC-R18-PS-5-02, TC-R18-MS-3-02) keeps that
+  // promise and rewrites the rest for the model-by-place section: the old
+  // "frontier models draft better / tested with Qwen" footnote named a model in the
+  // Settings copy, which MS-3 forbids; the section now frames itself as optional and
+  // says where the description goes.
+  it('offers no vendor API key field, and frames the one model setting honestly', async () => {
     const user = userEvent.setup();
     render(<SettingsPanel />);
 
-    await user.click(screen.getByText(/settings/i));
+    await user.click(screen.getByText(/the model that reads your description/i));
     expect(screen.queryByLabelText(/anthropic api key/i)).toBeNull();
-    expect(screen.getByLabelText(/model for plain-language intake/i)).toBeInTheDocument();
-    // The footnote the user asked for: frontier models draft better; the
-    // demo was tested with an open-source model.
-    expect(screen.getByText(/frontier models produce noticeably better/i)).toBeInTheDocument();
-    expect(screen.getByText(/qwen/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/address of the model server/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^model name/i)).toBeInTheDocument();
+    expect(screen.getByText(/optional\. every result comes from your answers and the firm.s rules, with or without a model/i)).toBeInTheDocument();
+    expect(screen.queryByText(/qwen/i)).toBeNull();
+    expect(screen.queryByText(/frontier models/i)).toBeNull();
   });
 });

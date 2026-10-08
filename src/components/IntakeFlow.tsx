@@ -39,6 +39,7 @@ import StructuredForm from './StructuredForm';
 import ChecklistPanel from './ChecklistPanel';
 import NudgeNote, { appendExample } from './NudgeNote';
 import RatingInstructionNotice from './RatingInstructionNotice';
+import ModelStatus from './ModelStatus';
 import { CHECKLIST_ITEM_IDS, mentionedItems } from '../engine/mentioned';
 import type { MentionJurisdiction } from '../engine/mentioned';
 import type { Assumption, PlainAnswers } from './plain-copy';
@@ -2206,6 +2207,9 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                   descriptionRef.current?.focus();
                 }}
               />
+              {/* R18-B (§27.8): where the description will go and which model reads it,
+                  directly above Next. Shown from the stored setting only when it validates. */}
+              <ModelStatus />
               <button type="button" onClick={handleSubmitDescription} disabled={!state.description.trim()}>
                 Next →
               </button>

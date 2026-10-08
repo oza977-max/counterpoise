@@ -54,9 +54,13 @@ export async function clearAllLocalData(): Promise<{ complete: boolean; incomple
   // CR7-15: "start over" also forgets that a hand-off ever synced (that marker
   // changes which divergence message a later import shows) and that the
   // welcome panel was dismissed. Deliberately KEPT: the saved appetite
-  // framework (aigate:policy-yaml) and the model settings — they are the
+  // framework (aigate:policy-yaml) and the model settings (R18-B: the one
+  // setting `aigate:model-setting`, whose remembered mode lives inside it, and
+  // the saved test results `aigate:model-test-results`) — they are the
   // firm's configuration, not test data, and re-entering them is work the
-  // tester cannot cheaply redo. The sessionStorage intake drafts live in
+  // tester cannot cheaply redo. The Settings message says so, only when a
+  // setting exists, and offers "Forget the model setting" (TC-R18-NF-3-08);
+  // nothing here may remove either key — only forgetModelSetting() does. The sessionStorage intake drafts live in
   // components/intake-draft.ts and are cleared by the caller (SettingsPanel):
   // the store must not import components.
   clearHandoffSyncMarker();

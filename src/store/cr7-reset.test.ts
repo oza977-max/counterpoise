@@ -43,12 +43,15 @@ describe('clearAllLocalData (CR7-20, CR7-15)', () => {
     localStorage.setItem('aigate:welcome-dismissed', '1');
     localStorage.setItem('aigate:role', '2LoD');
     localStorage.setItem('aigate:policy-yaml', 'version: "x"');
-    localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
+    // R18-B: the model setting (one key) and its saved test results replace the two old local-model keys.
+    localStorage.setItem('aigate:model-setting', '{"version":1}');
+    localStorage.setItem('aigate:model-test-results', '{"version":1,"results":[]}');
     await clearAllLocalData();
     expect(localStorage.getItem('aigate-handoff-last-synced-tip')).toBeNull();
     expect(localStorage.getItem('aigate:welcome-dismissed')).toBeNull();
     expect(localStorage.getItem('aigate:role')).toBeNull();
     expect(localStorage.getItem('aigate:policy-yaml')).toBe('version: "x"');
-    expect(localStorage.getItem('aigate:local-llm-url')).toBe('http://localhost:11434');
+    expect(localStorage.getItem('aigate:model-setting')).toBe('{"version":1}');
+    expect(localStorage.getItem('aigate:model-test-results')).toBe('{"version":1,"results":[]}');
   });
 });

@@ -1506,7 +1506,7 @@ export const R18_COPY = {
     "We can't check that this is your firm's server. The address is the one you typed, and the sentence above is only as true as that.",
   FALLBACK_RESEND_NOTE:
     'If the server ignores the strict format, your description is sent a second time to the same address.',
-  FIND_MODELS_FAILED: "The list of models couldn't be read. You can still type a model name.",
+  FIND_MODELS_FAILED: "The list of models couldn't be read, or it was empty. You can still type a model name.",
 
   // One plain refusal sentence per validation reason (specs §27.8). None repeats the address.
   REFUSAL_SENTENCES: {
@@ -1561,9 +1561,10 @@ export const R18_COPY = {
     FIND_MODELS_HELP: 'Asks the server at that address which models it has. It sends no description.',
     MODEL_LIST_LABEL: 'Models the server reported',
     USE_MODEL: 'Use',
-    SAVE: 'Save',
+    SAVE: 'Save the model setting',
     SAVED: 'Saved.',
-    CHOOSE_PLACE_FIRST: 'Choose where the model runs first.',
+    NOT_SAVED_YET: 'Not saved yet. Press Save to use this.',
+    LOADING_MODELS: 'Asking the server…',
   },
 
   // An earlier saved draft landed on the form (R18-NF-5). Shown role="status" on the form.
