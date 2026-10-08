@@ -331,10 +331,12 @@ describe('worked-examples module: the ten cases of docs/try-these.md (R18-A)', (
       const body = sections[sections.indexOf(n) + 1]!;
       const lines = body.split('**Answers.**')[1]!.split('**Expect:**')[0]!.split('\n').filter((l) => l.startsWith('- **'));
       expect(lines.length, c.id).toBeGreaterThan(8);
+      const printedIds = new Set<string>();
       for (const line of lines) {
         const m = line.match(/^- \*\*(.+?)\*\* \u2192 (.*)$/)!;
         const id = idFor(m[1]!);
         expect(id, `${c.id}: ${m[1]}`).toBeDefined();
+        printedIds.add(id!);
         const printed = [...m[2]!.matchAll(/\*([^*]+)\*/g)].map((x) => x[1]!);
         const free = m[2]!.match(/`([^`]+)`/)?.[1];
         if (free !== undefined) {
@@ -350,6 +352,18 @@ describe('worked-examples module: the ten cases of docs/try-these.md (R18-A)', (
           else expect(optionKeyForText(id!, text), `${c.id} Q${id} "${text}"`).toBe(key);
         });
       }
+      // R18-A review m7: the check runs BOTH ways. Every answer the module holds (the tool's
+      // name, question 1, is the case's title and is not printed as an answer) is printed in
+      // the guide, and every printed question has an answer in the module.
+      // Two keys are legitimately not printed as their own line: '8other' (the free text is
+      // printed inside question 8's line, and checked above) and '12' ("does it replace
+      // something you already use") — the guide never prints that question, so the module
+      // holds its default, "no", for every case, and that default is pinned here.
+      if (c.answers['12'] !== undefined) expect(c.answers['12'], `${c.id} Q12`).toBe('no');
+      const held = Object.keys(c.answers).filter((k) => k !== '1' && k !== '8other' && k !== '12');
+      // A free-text decision type is only asked after "Something else" was chosen.
+      if (c.answers['8other'] !== undefined) expect(c.answers['8'], c.id).toBe('other');
+      expect([...held].sort(), `${c.id}: module answers vs printed questions`).toEqual([...printedIds].sort());
     }
   });
 });
