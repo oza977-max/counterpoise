@@ -1333,7 +1333,10 @@ export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its o
 // verdict screen is asserted with a single-match /approved|rejected/i query).
 // Chunks B..G append to this object; do not scatter new Round 18 strings
 // elsewhere. Words only: no logic (the rule is src/engine/mentioned.ts).
-import type { ChecklistItemId, PrefillFailure } from '../engine/prefill-types';
+import type { ChecklistItemId, ModelPlace, PrefillFailure } from '../engine/prefill-types';
+import type { ValidationReason } from '../llm/model-setting';
+import type { ModelLabel } from '../llm/model-setting';
+import { visibleText } from '../engine/visible-text';
 
 /** A failure sentence for the model places, and for a firm's own server (§27.5). */
 export interface FailureSentence {
@@ -1468,7 +1471,133 @@ export const R18_COPY = {
     other: same("The model's answer couldn't be used, so nothing was filled in for you."),
   } as Record<PrefillFailure, FailureSentence>,
 
+  // ── The model setting (R18-B, specs/intake-flow.md §27.8) ─────────────────
+  // The three places, named as the test cases quote them.
+  PLACE_CHOICE_LABELS: {
+    'this-computer': 'On this computer',
+    'firm-server': "On my firm's server",
+    'ollama-cloud': "Ollama's cloud, through the Ollama app on this computer",
+  } as Record<ModelPlace, string>,
+
+  // Where the description goes. {model} and {address} are filled by placeSentence().
+  // "It never leaves your computer." exists in exactly ONE string (the first); it is a
+  // statement about a setting the app can check (a loopback address, a model without the
+  // cloud tag), not a proof, and it is withheld while an Anthropic key is stored.
+  PLACE_SENTENCES: {
+    'this-computer': 'Your description will be read on this computer by {model}. It never leaves your computer.',
+    'this-computer-with-key':
+      'Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic.',
+    'firm-server': "Your description will be sent to your firm's server at {address} and read by {model}.",
+    'ollama-cloud': "Your description will be sent to Ollama's cloud and read by {model}.",
+  } as Record<'this-computer' | 'this-computer-with-key' | 'firm-server' | 'ollama-cloud', string>,
+
+  NO_MODEL_SENTENCE: 'No model is connected.',
+  INVALID_SETTING_SENTENCE: "The model setting isn't valid. Open Settings and check it.",
+  UNENCRYPTED_LINE:
+    "This address isn't encrypted, so your description travels unprotected inside your firm's network.",
+  DEMO_NOTICE:
+    'This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network.',
+  SHARED_ORIGIN_NOTE:
+    'On this public demo, other pages on the same site address can read data stored in this browser.',
+  // Settings-only small print: what the sentences above cannot prove.
+  TUNNEL_SMALL_PRINT:
+    "This assumes the program at that address runs on this computer. We can't check that: a tunnel or proxy on that port would carry your description somewhere else.",
+  FIRM_SMALL_PRINT:
+    "We can't check that this is your firm's server. The address is the one you typed, and the sentence above is only as true as that.",
+  FALLBACK_RESEND_NOTE:
+    'If the server ignores the strict format, your description is sent a second time to the same address.',
+  FIND_MODELS_FAILED: "The list of models couldn't be read. You can still type a model name.",
+
+  // One plain refusal sentence per validation reason (specs §27.8). None repeats the address.
+  REFUSAL_SENTENCES: {
+    'no-place': 'Choose where the model runs before saving.',
+    'address-missing': 'Type the address of the model server.',
+    'address-invalid': "That address can't be used. It must start with http:// or https://.",
+    'address-credentials': 'Leave a user name and password out of the address. This page has no place to keep them.',
+    'address-too-long': 'That address is too long.',
+    'address-characters': "That address contains characters that can't be shown safely.",
+    'not-this-computer': 'On this computer needs an address on this computer, such as localhost.',
+    'cloud-needs-app':
+      "Ollama's cloud goes through the Ollama app on this computer, so the address must be on this computer, such as localhost.",
+    'model-missing': 'Type a model name, or pick one from the list.',
+    'model-too-long': 'That model name is too long.',
+    'model-characters': "That model name contains characters that can't be shown safely.",
+    'cloud-model-elsewhere': "A cloud-tagged model can only be saved under Ollama's cloud.",
+    'cloud-needs-tag':
+      "Ollama's cloud needs a model carrying Ollama's cloud tag, a name ending :cloud or -cloud.",
+    'storage-unavailable': "The setting couldn't be saved in this browser.",
+  } as Record<ValidationReason, string>,
+
+  // How the register words where a read happened (past tense; never the present-tense promise). §27.13.
+  PLACE_RECORD_WORDS: {
+    'this-computer': 'by the program at {host} on the computer in use',
+    'firm-server': "by the server at {host}, which the person declared as the firm's",
+    'ollama-cloud': "by Ollama's cloud, through the Ollama app on the computer in use",
+  } as Record<ModelPlace, string>,
+
+  // The test label (R18-GI-12). The suffix is fixed and never dropped from a "tested" label.
+  LABEL_UNTESTED: 'untested',
+  LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
+  LABEL_TESTED: 'tested {matches}/31 on {date}',
+  TEST_ASSUMPTION_SUFFIX: '(measured as if you check every filled answer)',
+
+  // Clear all data keeps the model setting and says so only when one exists.
+  CLEAR_KEEPS_SETTING: "Your model setting (including its address) is kept. Use 'Forget the model setting' to remove it.",
+  FORGET_SETTING_LABEL: 'Forget the model setting',
+  FORGOTTEN_SENTENCE: 'The model setting was removed.',
+
+  // The Settings section itself. No model is named, none is chosen for the person, nothing is
+  // "recommended" (TC-R18-MS-3-02), and there is no field for a key or token (TC-R18-PS-5-02).
+  SETTINGS: {
+    SUMMARY: 'Settings — the model that reads your description',
+    INTRO:
+      'Optional. Every result comes from your answers and the firm’s rules, with or without a model. Choose where the model runs; the sentence under the choice says where your description will go.',
+    PLACE_LEGEND: 'Where does the model run?',
+    ADDRESS_LABEL: 'Address of the model server',
+    ADDRESS_HELP:
+      'The server must speak Ollama’s own interface (/api/chat and /api/tags). On the public https site the browser blocks a plain-http address.',
+    MODEL_LABEL: 'Model name',
+    FIND_MODELS: 'Find models',
+    FIND_MODELS_HELP: 'Asks the server at that address which models it has. It sends no description.',
+    MODEL_LIST_LABEL: 'Models the server reported',
+    USE_MODEL: 'Use',
+    SAVE: 'Save',
+    SAVED: 'Saved.',
+    CHOOSE_PLACE_FIRST: 'Choose where the model runs first.',
+  },
+
   // An earlier saved draft landed on the form (R18-NF-5). Shown role="status" on the form.
   EARLIER_VERSION_NOTICE:
     'This was saved by an earlier version of Counterpoise, so please check your answers.',
 } as const;
+
+// ── Round 18-B: filling the sentences (words only; no decisions) ───────────
+
+/** The where-it-goes sentence for a setting. `keyStored` withholds the this-computer promise. */
+export function placeSentence(
+  setting: { place: ModelPlace; model: string; url: string },
+  keyStored: boolean,
+): string {
+  const key =
+    setting.place === 'this-computer' && keyStored ? 'this-computer-with-key' : setting.place;
+  return R18_COPY.PLACE_SENTENCES[key]
+    .replace('{model}', () => visibleText(setting.model))
+    .replace('{address}', () => visibleText(setting.url));
+}
+
+/** The label words for a model: "untested", the partial note, or "tested N/31 on DATE (suffix)". */
+export function modelLabelWords(label: ModelLabel): string {
+  switch (label.kind) {
+    case 'untested':
+      return R18_COPY.LABEL_UNTESTED;
+    case 'partial':
+      return R18_COPY.LABEL_PARTIAL.replace('{n}', String(label.casesRun));
+    case 'tested':
+      return `${R18_COPY.LABEL_TESTED.replace('{matches}', String(label.matches)).replace('{date}', visibleText(label.date))} ${R18_COPY.TEST_ASSUMPTION_SUFFIX}`;
+  }
+}
+
+/** How the register words the place of a read, in the past tense. */
+export function placeRecordWords(place: ModelPlace, host: string): string {
+  return R18_COPY.PLACE_RECORD_WORDS[place].replace('{host}', () => visibleText(host));
+}
