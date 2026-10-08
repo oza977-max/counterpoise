@@ -19,3 +19,12 @@ reducer), plus the updated GRAPH_EXTRACTED expectation in
 
 R7-NF-1 is held by TC-PE-1-01 unchanged and the suite-wide reserved-words
 guard.
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R7-JC-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R7-JC-3-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+
+| TC-R7-JC-2-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

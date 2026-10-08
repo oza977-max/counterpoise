@@ -179,3 +179,11 @@ summary, the duplicate-check screens, and the verdict first screen.
 ---
 
 *Developed using the Grounded Vibe Methodology*
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R16-W-59 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+
+| TC-R16-W-11 | Superseded by R18-A (specs/intake-flow.md 27.6): question 2 is no longer a stored answer but the editor of the one description, so a stored question-2 value has no precedence to hold; replaced by the description-prop tests in StructuredForm.test.tsx and TC-R18-GI-8-09. |

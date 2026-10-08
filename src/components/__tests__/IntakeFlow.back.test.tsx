@@ -43,7 +43,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
   it('does not offer a back control on the confirmation step — that is an attestation', async () => {
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'A model that scores retail credit applications',
         graph: {
@@ -68,7 +68,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
         corrections: [],
         answers: [],
         useCaseId: 'uc-1',
-      }),
+      } }),
     );
 
     render(<App />);
@@ -84,7 +84,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
   it('TC-CR6-D1: "Change an answer" on a structured_form case returns to the guided form, not the review screen', async () => {
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'A model that scores retail credit applications',
         graph: {
@@ -104,7 +104,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
         useCaseId: 'uc-1',
         plainAnswers: { '1': 'Retail credit scorer' },
         assumptions: [],
-      }),
+      } }),
     );
 
     render(<App />);
@@ -151,7 +151,9 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     );
     const btn = screen.getByRole('button', { name: /^next/i });
     expect(btn).toBeEnabled();
-    await user.click(btn);
+    // R18-A: the first Next may list what the description does not mention
+    // and stay; pressNext goes on through it.
+    await pressNext(user);
     // Advanced to the duplicate check — the description was accepted.
     // R16-W §4 (D-74): tag renamed from "DUPLICATE CHECK".
     await screen.findAllByText(/has this been checked before/i);

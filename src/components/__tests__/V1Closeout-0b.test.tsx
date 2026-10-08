@@ -153,6 +153,57 @@ describe('TC-UC-3-04: a description that steers its own classification does not 
     expect(v.tier).not.toBe('Low');
     expect(v.track).not.toBe('III');
     // And the engine's own reason is on the verdict, not the description's.
-    expect(v.explanation.binding_constraint).toBe('HL-003');
+    expect(v.binding_constraint).toBe('HL-003');
+  }, SLOW_FLOW_MS);
+});
+
+describe('TC-UC-7-02 / TC-VD-3-02: several corrections in one session are all recorded, each with who, when, which field, before and after', () => {
+  it('three corrections (data class, autonomy level, where it runs) are each on the trail as graph_corrected events, between the first verdict and the corrected one', async () => {
+    seedFormRoute('Summarises internal reports for the risk team.', workedAnswers(1));
+    const user = userEvent.setup({ delay: null });
+    render(<IntakeFlow />);
+    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' });
+
+    // Correct three different answers in one correction pass.
+    await user.click(document.querySelector<HTMLButtonElement>('.verdict__first-correct')!);
+    await screen.findByText(/you.re correcting your earlier answers/i);
+    await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
+    await user.click(screen.getByRole('checkbox', { name: /price-sensitive information/i }));
+    await user.click(screen.getByRole('radio', { name: /creates a draft — text, an image or code/i }));
+    await user.click(await screen.findByRole('radio', { name: /^little — it.s routine work/i }));
+    await user.click(screen.getByRole('radio', { name: /an ai assistant or website run by an outside company/i }));
+    await user.click(await screen.findByRole('radio', { name: /a free or personal account/i }));
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
+    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' });
+
+    const useCase = (await getUseCases('all')).find((u) => u.label === workedAnswers(1)['1'])!;
+    const events = await getAll(useCase.use_case_id);
+    const corrections = events.flatMap((e) => (e.payload.type === 'graph_corrected' ? [e.payload.correction] : []));
+    const types = events.map((e) => e.event_type);
+    // Each changed field is its own graph_corrected event (a changed answer can move more than one field),
+    // all of them after the first verdict and before the corrected one.
+    expect(types.filter((t) => t === 'graph_corrected')).toHaveLength(corrections.length);
+    expect(types.indexOf('graph_corrected')).toBeGreaterThan(types.indexOf('verdict_produced'));
+    expect(types.lastIndexOf('graph_corrected')).toBeLessThan(types.indexOf('verdict_corrected'));
+
+    const byField = Object.fromEntries(corrections.map((c) => [c.field, c]));
+    expect(Object.keys(byField)).toEqual(expect.arrayContaining(['data_classes', 'autonomy_level', 'data_zone']));
+    // Before / after, for each.
+    expect([byField.data_classes!.original_value, byField.data_classes!.corrected_value]).toEqual([['Internal'], ['MNPI']]);
+    expect([byField.autonomy_level!.original_value, byField.autonomy_level!.corrected_value]).toEqual([0, 1]);
+    expect([byField.data_zone!.original_value, byField.data_zone!.corrected_value]).toEqual(['Zone C', 'Zone A']);
+    // Who and when, for each — and the same on the event wrapper the trail itself stamps.
+    for (const c of corrections) {
+      expect(c.corrected_by).toBe('1LoD');
+      expect(Number.isNaN(Date.parse(c.corrected_at))).toBe(false);
+      expect(c.graph_version_after).toBeGreaterThan(c.graph_version_before);
+    }
+    for (const e of events.filter((x) => x.event_type === 'graph_corrected')) {
+      expect(e.actor).toBe('1LoD');
+      expect(Number.isNaN(Date.parse(e.occurred_at))).toBe(false);
+    }
   }, SLOW_FLOW_MS);
 });

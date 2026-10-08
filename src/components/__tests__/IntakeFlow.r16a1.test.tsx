@@ -73,7 +73,9 @@ describe('IntakeFlow — first evaluation gate refuses on a policy reference err
 
   it("TC-R16-A1-63: clicking Continue on the form with a covers_reviews reference error shows the message and does not proceed to the confirmation step", async () => {
     setCurrentPolicyYaml(MINIMAL_VALID_YAML_WITH_BAD_COVERS_REVIEWS);
-    seedFormRoute('A tool that summarises internal notes', workedAnswers(1));
+    // The policy under test lists no countries, so the countries question is
+    // answered with its always-present "somewhere else, or not sure" option.
+    seedFormRoute('A tool that summarises internal notes', { ...workedAnswers(1), '11': ['elsewhere-not-sure'] });
     render(<App />);
 
     const user = userEvent.setup({ delay: null });
@@ -83,7 +85,6 @@ describe('IntakeFlow — first evaluation gate refuses on a policy reference err
     // Two banners legitimately match "Policy file invalid" here: App's own
     // start-up gate (always on screen) AND IntakeFlow's reviewGateError
     // slot this test targets — the specific message below disambiguates.
-    console.log('DBG', (screen.getByRole('button',{name:/^continue$/i}) as HTMLButtonElement).disabled + ' ' + [...document.querySelectorAll('input[type=checkbox]')].map(e=>(e as HTMLInputElement).value+(e as HTMLInputElement).checked).join(','));
     expect(await screen.findAllByText(/Policy file invalid/i)).not.toHaveLength(0);
     // IntakeFlow renders reviewGateError at more than one place in the
     // form screen (e.g. inline + a summary slot) — any match

@@ -20,10 +20,10 @@ import type { DataFlowGraph, GraphCorrection } from '../../engine/types';
 import type { AuditEvent, RegisterNode } from '../../store/types';
 import type { Verdict } from '../../types/verdict';
 import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
-import { questionnaireCopyForField } from '../plain-copy';
+import { seedFormRoute, workedAnswers } from './formRoute';
 
 // gvm-test 007 close-out, chunk 3 — the UI cases. Only the model SDK is mocked
-// (and only where a test exercises the description path); the policy, packs,
+// (so that "no model call" is a checkable claim); the policy, packs,
 // engine, store, audit trail and components are the real ones.
 const mockCreate = vi.fn();
 vi.mock('@anthropic-ai/sdk', () => ({
@@ -43,7 +43,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const DRAFT_KEY = 'aigate:intake-draft';
 const policyResult = loadPolicy(appetiteYaml);
 if (!policyResult.valid) throw new Error('fixture policy invalid');
 const policy = policyResult.policy;
@@ -123,22 +122,6 @@ describe('TC-CF-5-01 — a policy file with hard_lines missing prevents evaluati
     return dump(raw);
   }
 
-  const MINIMAL_GRAPH = {
-    id: 'test-graph-1',
-    version: 1,
-    intake_method: 'structured_form' as const,
-    extracted_at: '2026-01-01T00:00:00.000Z',
-    input_nodes: [{ id: 'i1', label: 'notes', data_class: 'Internal', data_zone: 'Zone C' }],
-    processing_nodes: [
-      { id: 'p1', label: 'summariser', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false },
-    ],
-    output_nodes: [
-      { id: 'o1', label: 'summary', action_type: 'draft', exposure: 'internal-only', decision_bindingness: 'non-binding', output_reversibility: 'reversible', scale: 'limited' },
-    ],
-    edges: [{ from: 'i1', to: 'p1' }, { from: 'p1', to: 'o1' }],
-    jurisdictions: [],
-  };
-
   it('TC-CF-5-01: the shipped policy with hard_lines deleted is refused, the error names hard_lines, and evaluation is blocked', async () => {
     // The shipped policy itself is fine; only the deletion makes it invalid.
     expect(loadPolicy(appetiteYaml).valid).toBe(true);
@@ -148,19 +131,9 @@ describe('TC-CF-5-01 — a policy file with hard_lines missing prevents evaluati
 
     setRole('2LoD');
     setCurrentPolicyYaml(yamlWithoutHardLines());
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'graph_review',
-        description: 'A tool that summarises internal notes',
-        graph: MINIMAL_GRAPH,
-        graphVersion: 1,
-        corrections: [],
-        useCaseId: 'test-uc-cf5',
-        jurisdictionsConfirmed: true,
-        unconfirmedNodeIds: [],
-      }),
-    );
+    // With the policy broken the form has no policy countries to offer, only
+    // "somewhere else, or not sure" — so the scripted example answers that.
+    seedFormRoute('A tool that summarises internal notes', { ...workedAnswers(1), '11': ['elsewhere-not-sure'] }, { useCaseId: 'test-uc-cf5' });
     render(<App />);
 
     // The start-up banner: evaluation disabled, and the missing section named.
@@ -475,27 +448,7 @@ describe('TC-UC-1-04 — special characters and non-ASCII are accepted as litera
 // ---------------------------------------------------------------- UC-2-04 ---
 
 describe('TC-UC-2-04 — nothing similar found: intake carries on without a duplicate prompt', () => {
-  it('TC-UC-2-04: no duplicate card or adopt option appears; one Continue goes straight on to extraction', async () => {
-    localStorage.setItem('aigate:api-key', 'test-key');
-    mockCreate.mockResolvedValue({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              { id: 'p1', label: 'menu translator', model_type: 'llm', autonomy_level: 0, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false },
-            ],
-            output_nodes: [
-              { id: 'o1', label: 'menu', action_type: 'draft', exposure: 'internal-only', decision_bindingness: 'non-binding', output_reversibility: 'reversible', scale: 'limited' },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
+  it('TC-UC-2-04: no duplicate card or adopt option appears; one Continue goes straight on to the guided form', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(
@@ -510,13 +463,12 @@ describe('TC-UC-2-04 — nothing similar found: intake carries on without a dupl
     expect(screen.queryByText(/something similar has been checked before/i)).toBeNull();
     expect(screen.queryByRole('button', { name: /use the earlier result/i })).toBeNull();
     expect(document.querySelector('.duplicate-card')).toBeNull();
-    // Only the one way on, and no extraction has been started yet.
-    expect(mockCreate).not.toHaveBeenCalled();
+    // Only the one way on, and the form has not been opened yet.
+    expect(screen.queryByText(/new pre-check — tell us about the ai you want to use/i)).toBeNull();
 
     await user.click(screen.getByRole('button', { name: /^continue →$/i }));
-    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1), { timeout: 5000 });
-    // The extracted graph is put in front of the submitter for checking.
-    expect(await screen.findByText(/check what we read from your description/i, {}, DUP_CHECK_WAIT)).toBeInTheDocument();
+    expect(await screen.findByText(/new pre-check — tell us about the ai you want to use/i)).toBeInTheDocument();
+    expect(mockCreate).not.toHaveBeenCalled();
   }, SLOW_FLOW_MS);
 });
 
@@ -579,129 +531,47 @@ async function eventsFor(label: string): Promise<{ id: string; events: AuditEven
   return { id: useCase!.use_case_id, events: await getAll(useCase!.use_case_id) };
 }
 
-// The description path, as the case words it: the submitter is reviewing the
-// extracted graph and corrects one field on a card.
-const UC7_DESCRIPTION =
-  'A tool that sorts internal documents for the operations team. It is a traditional ML model, internal vendor, Zone C, no autonomy, replacing no prior model; recommends, internal only, material, reversible, limited scale.';
-
-const UC7_EXTRACTION = {
-  content: [
-    {
-      type: 'tool_use',
-      name: 'extract_graph',
-      input: {
-        input_nodes: [
-          {
-            id: 'i1',
-            label: 'internal documents',
-            data_class: 'Internal',
-            data_zone: 'Zone C',
-            basis_quotes: { data_class: 'internal documents', data_zone: 'Zone C' },
-          },
-        ],
-        processing_nodes: [
-          {
-            id: 'p1',
-            label: 'document sorter',
-            model_type: 'traditional-ml',
-            autonomy_level: 0,
-            data_zone: 'Zone C',
-            vendor: 'internal',
-            replaces_prior_model: false,
-            basis_quotes: {
-              model_type: 'traditional ML model',
-              autonomy_level: 'no autonomy',
-              data_zone: 'Zone C',
-              vendor: 'internal vendor',
-              replaces_prior_model: 'replacing no prior model',
-            },
-          },
-        ],
-        output_nodes: [
-          {
-            id: 'o1',
-            label: 'sorted documents',
-            action_type: 'recommend',
-            exposure: 'internal-only',
-            decision_bindingness: 'material',
-            output_reversibility: 'reversible',
-            scale: 'limited',
-            basis_quotes: {
-              action_type: 'recommends',
-              exposure: 'internal only',
-              decision_bindingness: 'material',
-              output_reversibility: 'reversible',
-              scale: 'limited scale',
-            },
-          },
-        ],
-        edges: [{ from: 'i1', to: 'p1' }, { from: 'p1', to: 'o1' }],
-        jurisdictions: [],
-      },
-    },
-  ],
-};
-
-async function confirmAllNodes(user: ReturnType<typeof userEvent.setup>) {
-  for (;;) {
-    const buttons = screen.queryAllByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i });
-    if (buttons.length === 0) break;
-    await user.click(buttons[0]!);
-  }
-  const jurisdictionButton = screen.queryByRole('button', { name: /^(these are right|none of these — continue)$/i });
-  if (jurisdictionButton) await user.click(jurisdictionButton);
-}
-
 describe('TC-UC-7-01 / TC-VD-6-01 — a correction keeps both values; a fresh verdict carries its living status', () => {
-  it('TC-UC-7-01: correcting the data class from Internal to MNPI on the review screen records field, before, after, who and when [TC-VD-6-01]', async () => {
-    localStorage.setItem('aigate:api-key', 'test-key');
-    mockCreate.mockResolvedValue(UC7_EXTRACTION);
+  it('TC-UC-7-01: correcting the data class from Internal to MNPI on the form records field, before, after, who and when [TC-VD-6-01]', async () => {
     const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), UC7_DESCRIPTION);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-    await screen.findByText(/check what we read from your description/i);
-
-    // Correct the data class on the input card: Internal -> MNPI.
-    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[0]!);
-    const select = screen.getByLabelText(new RegExp(`internal documents — ${questionnaireCopyForField('data_class').shortLabel}`, 'i'));
-    expect((select as HTMLSelectElement).value).toBe('Internal');
-    await user.selectOptions(select, 'MNPI');
-    await user.click(screen.getByRole('button', { name: /^done$/i }));
-
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    await clickThroughToConfirm(user);
-    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
-    await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
-
-    const useCase = (await getUseCases('all')).find((u) => /document sorter|internal documents|sorted documents/i.test(u.label));
-    expect(useCase).toBeDefined();
-    const events = await getAll(useCase!.use_case_id);
-
-    // UC-7-01: the correction on the trail, with both values, who and when.
-    const corrections = events
-      .filter((e) => e.payload.type === 'graph_corrected')
-      .map((e) => ({ event: e, c: (e.payload as { type: 'graph_corrected'; correction: GraphCorrection }).correction }));
-    const dataClass = corrections.find((x) => x.c.field === 'data_class');
-    expect(dataClass).toBeDefined();
-    expect(dataClass!.c.node_id).toBe('i1');
-    expect(dataClass!.c.original_value).toBe('Internal');
-    expect(dataClass!.c.corrected_value).toBe('MNPI');
-    expect(dataClass!.c.corrected_by.length).toBeGreaterThan(0);
-    expect(dataClass!.c.corrected_by).toBe(dataClass!.event.actor);
-    expect(new Date(dataClass!.c.corrected_at).toISOString()).toBe(dataClass!.c.corrected_at);
+    const label = 'Zephyrquill data class correction probe';
+    await reachFormScreen(user, label);
+    await fillMinimalForm(user, label, 'Sorts internal documents for the data class correction test.');
+    await confirmAndReachVerdict(user);
 
     // VD-6-01: the verdict as produced and stored carries living_status and an
     // ISO timestamp for it, and the screen shows the living-status line.
-    const produced = events.find((e) => e.payload.type === 'verdict_produced');
+    const first = await eventsFor(label);
+    const produced = first.events.find((e) => e.payload.type === 'verdict_produced');
     if (produced?.payload.type !== 'verdict_produced') throw new Error('no verdict');
     const stored = produced.payload.verdict;
     expect(stored.living_status).toBe('approved');
     expect(Number.isNaN(Date.parse(stored.living_status_updated_at))).toBe(false);
     expect(new Date(stored.living_status_updated_at).toISOString()).toBe(stored.living_status_updated_at);
     expect(document.querySelector('.verdict__living-status')?.textContent).toMatch(/living status/i);
+
+    // Correct the data class: Internal ("everyday work information") -> MNPI ("price-sensitive information").
+    await user.click(document.querySelector<HTMLButtonElement>('.verdict__first-correct')!);
+    await screen.findByText(/you.re correcting your earlier answers/i);
+    await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
+    await user.click(screen.getByRole('checkbox', { name: /price-sensitive information/i }));
+    await confirmAndReachVerdict(user);
+
+    const { events } = await eventsFor(label);
+
+    // UC-7-01: the correction on the trail, with both values, who and when. (On the form the
+    // data class is a list, so the field is data_classes and the values are one-item lists.)
+    const corrections = events
+      .filter((e) => e.payload.type === 'graph_corrected')
+      .map((e) => ({ event: e, c: (e.payload as { type: 'graph_corrected'; correction: GraphCorrection }).correction }));
+    const dataClass = corrections.find((x) => x.c.field === 'data_classes');
+    expect(dataClass).toBeDefined();
+    expect(dataClass!.c.node_id.length).toBeGreaterThan(0);
+    expect(dataClass!.c.original_value).toEqual(['Internal']);
+    expect(dataClass!.c.corrected_value).toEqual(['MNPI']);
+    expect(dataClass!.c.corrected_by.length).toBeGreaterThan(0);
+    expect(dataClass!.c.corrected_by).toBe(dataClass!.event.actor);
+    expect(new Date(dataClass!.c.corrected_at).toISOString()).toBe(dataClass!.c.corrected_at);
   }, SLOW_FLOW_MS);
 });
 

@@ -101,3 +101,13 @@ There is no TC-RA-9-01p: the id was skipped while the tests were written and is 
 | TC-RA-9-01 | The EU hiring case now also asserts the chain entry's `triggered_by` is the decision type "hiring" — `evaluate.test.ts` |
 | MUT-4a | The unsigned-pack-rule mutation test now expects `triggered_by` on the chain entry, equal to the fixture rule's own condition (the label field and value) — `mutation-gaps.test.ts` |
 | TC-UC-3-04 | Manual evidence extended (`test-cases.md`): the 2026-10-04 live check with the local qwen3:4b model — a description that dictated its own rating partly steered extraction (data read as internal, Zone A, autonomy 0), giving "approved with controls, High" where the honest reading is a hard-line rejection; the engine rated the cards correctly; light measure built (warning, record, docs); stronger defence open. The case stays partly open (live model steering) |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-UC-3-04c-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-UC-3-04c-03 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-UC-3-04c-05 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+
+| TC-UC-3-04c-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

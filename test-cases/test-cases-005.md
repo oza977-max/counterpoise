@@ -39,3 +39,12 @@ R5-NF-1 is held by the pre-existing determinism test (TC-PE-1-01, unchanged);
 R5-NF-3's reserved-words and text-not-markup constraints are held by the
 suite-wide single-match guard and the existing [SECURITY] patterns — no new
 rendered string here matches `/approved|rejected/i` (verified by suite run).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R5-GR-2-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R5-GX-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+
+| TC-R5-GR-2-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

@@ -20,93 +20,19 @@ import appetiteYaml from '../../../policy/appetite.yaml?raw';
 import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // gvm-test 007, close-out builder 1 — UI cases. Real components, real engine,
-// real store on the suite's fake IndexedDB. The only mock is the external
-// boundary: the Anthropic SDK (the model call that reads a description).
+// real store on the suite's fake IndexedDB. Nothing is mocked
+// (R18-A: one route, the guided form).
 
 const FIVE_SENTENCES =
   "We want to deploy an AI assistant that reads client relationship management notes. It summarises each client's recent activity and generates a recommended action for the relationship manager. The model runs on our internal Azure OpenAI instance. Data stays within our private network. Output is displayed to the RM and requires their approval before any action is taken.";
-
-const CREDIT =
-  'We want to build a credit-scoring model that uses customer transaction history to predict default probability. Output feeds the lending decision system automatically.';
-
-// Verbatim substrings of the descriptions above, so every field has a verified
-// quote and the flow does not turn them into questions.
-const CREDIT_GRAPH = {
-  input_nodes: [
-    { id: 'i1', label: 'transaction history', data_class: 'Client PII', data_zone: 'Zone B', basis_quotes: { data_class: 'customer transaction history', data_zone: 'transaction history' } },
-  ],
-  processing_nodes: [
-    {
-      id: 'p1',
-      label: 'credit scoring model',
-      model_type: 'traditional-ml',
-      autonomy_level: 1,
-      data_zone: 'Zone B',
-      vendor: 'internal',
-      replaces_prior_model: false,
-      basis_quotes: {
-        model_type: 'credit-scoring model',
-        autonomy_level: 'automatically',
-        data_zone: 'transaction history',
-        vendor: 'credit-scoring model',
-        replaces_prior_model: 'credit-scoring model',
-      },
-    },
-  ],
-  output_nodes: [
-    {
-      id: 'o1',
-      label: 'lending decision',
-      action_type: 'execute',
-      exposure: 'internal-only',
-      decision_bindingness: 'binding',
-      output_reversibility: 'reversible',
-      scale: 'limited',
-      basis_quotes: {
-        action_type: 'feeds the lending decision',
-        exposure: 'lending decision',
-        decision_bindingness: 'lending decision',
-        output_reversibility: 'lending decision',
-        scale: 'lending decision',
-      },
-    },
-  ],
-  edges: [
-    { from: 'i1', to: 'p1' },
-    { from: 'p1', to: 'o1' },
-  ],
-  jurisdictions: [],
-};
-
-const mockCreate = vi.fn();
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: class MockAnthropic {
-    messages = { create: mockCreate };
-  },
-}));
-
-function mockExtraction(graph: unknown) {
-  mockCreate.mockResolvedValue({ content: [{ type: 'tool_use', name: 'extract_graph', input: graph }] });
-}
-
-async function describeAndReachGraph(user: ReturnType<typeof userEvent.setup>, text: string, expectLabel: RegExp) {
-  render(<App />);
-  await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), text);
-  await pressNext(user);
-  await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-  await screen.findAllByText(expectLabel);
-}
 
 describe('V1 close-out 1 — intake screens', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem('aigate:api-key', 'test-key');
-    mockCreate.mockReset();
   });
 
-  it('TC-UC-1-02: the five-sentence description is accepted and goes on to graph extraction, which receives that exact text', async () => {
-    mockExtraction(CREDIT_GRAPH);
+  it('TC-UC-1-02: the five-sentence description is accepted and goes on to the guided form, which carries that exact text', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
@@ -114,78 +40,11 @@ describe('V1 close-out 1 — intake screens', () => {
     const next = screen.getByRole('button', { name: /^next/i });
     expect(next).toBeEnabled();
     expect(FIVE_SENTENCES.split(/(?<=\.)\s/)).toHaveLength(5);
-    await user.click(next);
-    // Accepted: on to the duplicate check, then the model reads the description.
+    await pressNext(user);
+    // Accepted: on to the duplicate check, then the guided form.
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-    await screen.findAllByText(/credit scoring model/i);
-    expect(mockCreate).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(mockCreate.mock.calls[0]![0])).toContain('internal Azure OpenAI instance');
-    expect(JSON.stringify(mockCreate.mock.calls[0]![0])).toContain('requires their approval before any action is taken');
-  }, SLOW_FLOW_MS);
-
-  it('TC-UC-3-01: the extracted graph is shown — input, AI and output cards with their class, autonomy and action type — before any questions appear', async () => {
-    // The model is unsure about the AI node, so questions WILL follow — which
-    // lets the test show the order: graph first, questions only after review.
-    mockExtraction({
-      ...CREDIT_GRAPH,
-      processing_nodes: [{ ...CREDIT_GRAPH.processing_nodes[0]!, uncertain: true }],
-    });
-    const user = userEvent.setup({ delay: null });
-    await describeAndReachGraph(user, CREDIT, /credit scoring model/i);
-
-    // The graph, in the screen's own plain words (R16-E).
-    const view = within(screen.getByLabelText('What goes in, what happens, what comes out'));
-    expect(view.getByText('transaction history')).toBeInTheDocument(); // input node
-    expect(view.getByText('credit scoring model')).toBeInTheDocument(); // processing node
-    expect(view.getByText('lending decision')).toBeInTheDocument(); // output node
-    // Data class labelled on the input card.
-    expect(view.getByText(/^Information about people/)).toBeInTheDocument();
-    // Autonomy level shown on the AI card.
-    expect(view.getByText(/^A person checks or approves each thing before it happens/)).toBeInTheDocument();
-    // Action type shown on the output card.
-    expect(view.getByText(/^It carries out actions/)).toBeInTheDocument();
-    // And the model was asked exactly once to read the description.
-    expect(mockCreate).toHaveBeenCalledTimes(1);
-
-    // No intake questions yet: the submitter has not reviewed the graph.
-    expect(screen.queryByRole('region', { name: /targeted questions/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/question 1 of \d+/i)).not.toBeInTheDocument();
-
-    // Only after the submitter checks every card and continues do they arrive.
-    for (;;) {
-      const confirms = screen.queryAllByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i });
-      if (confirms.length === 0) break;
-      await user.click(confirms[0]!);
-    }
-    const jurisdictions = screen.queryByRole('button', { name: /^(these are right|none of these — continue)$/i });
-    if (jurisdictions) await user.click(jurisdictions);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    expect(await screen.findByRole('region', { name: /targeted questions/i })).toBeInTheDocument();
-    expect(await screen.findByText(/question 1 of \d+/i)).toBeInTheDocument();
-  }, SLOW_FLOW_MS);
-
-  it('TC-UC-7-03: correcting the autonomy level shows the corrected value on the graph straight away, before anything is confirmed', async () => {
-    mockExtraction(CREDIT_GRAPH);
-    const user = userEvent.setup({ delay: null });
-    await describeAndReachGraph(user, CREDIT, /credit scoring model/i);
-
-    const before = within(screen.getByLabelText('What goes in, what happens, what comes out'));
-    expect(before.getByText(/^A person checks or approves each thing before it happens/)).toBeInTheDocument();
-
-    // Edit the AI card (the second card), set autonomy to the "acts by itself" level (3).
-    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[1]!);
-    const select = await screen.findByLabelText('credit scoring model — how much it does without a person');
-    await user.selectOptions(select, '3');
-
-    // Displayed graph updates immediately: the new meaning shows, the old is gone.
-    await waitFor(() => expect(select).toHaveValue('3'));
-    await user.click(screen.getByRole('button', { name: /^done$/i }));
-    const after = within(screen.getByLabelText('What goes in, what happens, what comes out'));
-    expect(after.getByText(/^It acts by itself within limits someone set, with no routine review/)).toBeInTheDocument();
-    expect(after.queryByText(/^A person checks or approves each thing before it happens/)).not.toBeInTheDocument();
-    // Still on the review screen — the corrected value is visible BEFORE confirming.
-    expect(screen.queryByRole('button', { name: /confirm and evaluate/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument();
+    await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
+    expect((screen.getByLabelText(/in a sentence or two/i) as HTMLTextAreaElement).value).toBe(FIVE_SENTENCES);
   }, SLOW_FLOW_MS);
 
   it('an adopted classification shows on the new register record as "Classification adopted from <earlier case>", with no verdict of its own [TC-UC-2-02]', async () => {
@@ -198,9 +57,6 @@ describe('V1 close-out 1 — intake screens', () => {
       metadata: { node_type: 'use_case', submitted_by: '1LoD', lifecycle_stage: 'approved', current_verdict_id: null, tier: 'High', track: 'II' },
     };
     await addNode(existing);
-    // No model key: the duplicate check is the deterministic one, as in the
-    // sibling adoption test (IntakeFlow.resume.test.tsx).
-    localStorage.removeItem('aigate:api-key');
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), label);

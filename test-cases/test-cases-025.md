@@ -194,3 +194,15 @@ verbatim quotes; every caller of `buildGraphFromForm` passes a timestamp (B-15);
 the "replaces something you already use?" form-path test now pins the exact
 assumption reference; `UnderstoodSummary`'s jurisdiction line pins the policy's
 country name; `PolicyEditor` and `RegisterView` pin the reworded text (TC-CR6-29).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-CR6-14 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-CR6-17b | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-CR6-05b | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-CR6-02j | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-CR6-04b | Superseded by R18-NF-5 and R18-GI-10 (R18-A): a draft from an earlier build no longer restores as a questionnaire, so there is no unsafe undo snapshot to drop; such a draft opens the form with the description kept and no answers (TC-R18-NF-5-01). |
+
+| TC-CR6-C3 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

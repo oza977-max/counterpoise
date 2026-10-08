@@ -8,85 +8,56 @@ import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // TDD-2 mock budget = 1: the only mock is the external boundary (Anthropic SDK).
 // Everything else — IndexedDB via fake-indexeddb, React rendering — is real.
+//
+// R18-A: the pre-check has one route (the guided form), so the skeleton drives
+// the form. With an API key set the SDK is still reached once, after the
+// verdict, for the reasoning trace (P5-C02); nothing reads a description.
 
-// R5-GR-2: on the LLM path every extracted card must be confirmed before
-// Proceed. The skeleton simulates the user, so it does what a user now must.
-// No-ops on the form path (no confirm buttons render there).
-async function confirmAllNodes(user: { click: (el: Element) => Promise<void> }) {
-  for (;;) {
-    const buttons = screen.queryAllByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i });
-    if (buttons.length === 0) break;
-    await user.click(buttons[0]!);
-  }
-  // R16-E §4 (D-103): the jurisdiction confirm button no longer shares a
-  // "— confirm" suffix with the node buttons above (that shared suffix
-  // used to let this same loop catch both by accident) — every caller
-  // already assumes this helper clears the WHOLE review gate before
-  // clicking Proceed/Continue, so it is confirmed here too.
-  const jurisdictionButton = screen.queryByRole('button', { name: /^(these are right|none of these — continue)$/i });
-  if (jurisdictionButton) await user.click(jurisdictionButton);
+async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, description: string) {
+  render(<App />);
+  await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
+  await pressNext(user);
+  await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
+  await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
 
-// Every caller of confirmAllNodes goes on to click "Proceed" — always via
-// findByRole, never getByRole. The last node's "Confirm" click re-renders
-// the graph view, and "Proceed" appearing is that re-render's effect; a
-// synchronous getByRole right after the loop returns can race it under load
-// (intermittent full-suite-only failure — CI flake fix, 2026-09-01).
+// A firm-built scorer whose output is the usual basis for a decision, used by
+// internal teams only: internal-only but MATERIAL, which makes it Medium tier
+// (2LoD notify) — see TC-LC-2-01 in the first test below. `opts.scale` picks
+// the "how widely" answer, so a correction pass can change exactly that one.
+async function fillMaterialForm(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await fillText(user, screen.getByLabelText(/what do you want to call it/i), name);
+  await user.click(screen.getByRole('radio', { name: /something a team in your firm built for this job/i }));
+  await user.click(screen.getByRole('radio', { name: /gives a score, ranking, flag, category or forecast/i }));
+  await user.click(await screen.findByRole('radio', { name: /they can show which factors drove each result/i }));
+  await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
+  await user.click(screen.getByRole('radio', { name: /suggests, ranks or flags things/i }));
+  await user.click(await screen.findByRole('radio', { name: /usually what a decision is based on/i }));
+  await user.click(screen.getByRole('radio', { name: /^only me or my own team$/i }));
+  await user.click(screen.getByRole('radio', { name: /none of these — it.s for day-to-day work/i }));
+  await user.click(screen.getAllByRole('radio', { name: /^yes$/i })[0]!);
+  await user.click(screen.getByRole('radio', { name: /just me, or a small trial/i }));
+  await user.click(screen.getByRole('checkbox', { name: /somewhere else, or not sure/i }));
+  await user.click(screen.getByRole('radio', { name: /^no$/i }));
+}
 
-// BC-003: the mock reply carries quotes the real producer would write —
-// verbatim substrings of the description each test types (the typed text is
-// always `<unique phrase> + DETAIL`). A field with no verified quote is
-// "guessed" and becomes a question, which these flows do not expect.
-const DETAIL =
-  ' Traditional ML model, internal vendor, Zone C, no autonomy, replacing no prior model; recommends, internal only, material, reversible, limited scale.';
-const PROCESSING_QUOTES = {
-  model_type: 'traditional ML model',
-  autonomy_level: 'no autonomy',
-  data_zone: 'Zone C',
-  vendor: 'internal vendor',
-  replaces_prior_model: 'replacing no prior model',
-};
-const OUTPUT_QUOTES = {
-  action_type: 'recommends',
-  exposure: 'internal only',
-  decision_bindingness: 'material',
-  output_reversibility: 'reversible',
-  scale: 'limited scale',
-};
+// From a filled-in form to the confirmation screen (Continue, then the
+// summary and the "Confirm and evaluate" button).
+async function toConfirmation(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /^continue$/i }));
+  await screen.findByText(/here.s what we understood/i);
+  return screen.findByRole('button', { name: /confirm and evaluate/i });
+}
 
-const MOCK_GRAPH_INPUT = {
-  input_nodes: [],
-  processing_nodes: [
-    {
-      id: 'p1',
-      label: 'email drafting model',
-      model_type: 'traditional-ml',
-      autonomy_level: 0,
-      data_zone: 'Zone C',
-      vendor: 'internal',
-      replaces_prior_model: false,
-      basis_quotes: PROCESSING_QUOTES,
-    },
-  ],
-  output_nodes: [
-    {
-      id: 'o1',
-      label: 'drafted email',
-      action_type: 'recommend',
-      exposure: 'internal-only',
-      decision_bindingness: 'material',
-      output_reversibility: 'reversible',
-      scale: 'limited',
-      basis_quotes: OUTPUT_QUOTES,
-    },
-  ],
-  edges: [],
-  jurisdictions: [],
-};
+async function reachVerdict(user: ReturnType<typeof userEvent.setup>, description: string, name: string) {
+  await reachFormScreen(user, description);
+  await fillMaterialForm(user, name);
+  const confirm = await toConfirmation(user);
+  await user.click(confirm);
+  expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+}
 
-const mockCreate = vi.fn().mockResolvedValue({
-  content: [{ type: 'tool_use', name: 'extract_graph', input: MOCK_GRAPH_INPUT }],
-});
+const mockCreate = vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'A reasoning trace.' }] });
 
 vi.mock('@anthropic-ai/sdk', () => {
   return {
@@ -105,29 +76,14 @@ describe('Walking Skeleton', () => {
 
   it('completes full flow end-to-end with real boundaries', async () => {
     const user = userEvent.setup({ delay: null });
-    render(<App />);
+    // Step 1-2: description entry, similar checks, then the guided form.
+    await reachFormScreen(user, 'A tool that drafts client emails for relationship managers, pulling recent meeting notes, pending requests, preferred greeting style, signature blocks, and followup reminders into a polished first draft');
+    await fillMaterialForm(user, 'email drafting model');
 
-    // Step 1: description entry
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'A tool that drafts client emails for relationship managers, pulling recent meeting notes, pending requests, preferred greeting style, signature blocks, and followup reminders into a polished first draft' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-
-    // Step 2: graph extraction happened (real Anthropic tool_use call, mocked at the SDK boundary)
-    // and the graph review step renders the extracted node.
-    // R9: the checklist header also names the card, so the label appears
-    // twice by design — assert at least one, not exactly one.
-    expect((await screen.findAllByText(/email drafting model/i)).length).toBeGreaterThan(0);
-    // gvm-test 007 (real-chain check): the graph came through the real
-    // extractor and the mocked SDK boundary — not a silent fallback.
-    expect(mockCreate).toHaveBeenCalledTimes(1);
-
-    // Step 3: proceed — zero uncertain fields means no questions, so the
-    // flow lands directly on the real confirmation/attestation screen
-    // (P4-C04, no more silent pass-through).
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-
+    // Step 3: Continue goes straight to the summary and the real
+    // confirmation/attestation screen (P4-C04, no silent pass-through).
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
+    await screen.findByText(/here.s what we understood/i);
     expect(await screen.findByRole('heading', { name: /confirm and evaluate/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
 
@@ -135,7 +91,7 @@ describe('Walking Skeleton', () => {
     expect(screen.getByText(/approved|rejected/i)).toBeInTheDocument();
 
     // Step 4: register shows the use case row (real IndexedDB store write + read),
-    // labelled from the extracted graph's first node per IntakeFlow.tsx.
+    // labelled from the use case's name per IntakeFlow.tsx.
     // Navigate to the Register view (P6-C01) via the sidebar.
     await user.click(screen.getByText('▤ Register'));
     expect(await screen.findByText('Register', { selector: '.register-view h2' })).toBeInTheDocument();
@@ -225,7 +181,6 @@ describe('Walking Skeleton', () => {
     // Continue (FORM_SUBMITTED finds no questions for this graph, same as
     // the old Proceed-from-graph_review did) — there is no Proceed button
     // on this path to click any more.
-    await confirmAllNodes(user);
 
     expect(await screen.findByRole('heading', { name: /confirm and evaluate/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
@@ -249,142 +204,14 @@ describe('Walking Skeleton', () => {
     xhrSpy.mockRestore();
   }, SLOW_FLOW_MS);
 
-  it('P4-C03: an uncertain node generates a real question, answering it reaches a verdict', async () => {
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: 'risk scoring model',
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone A',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                uncertain: true,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'risk score',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-              },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'A risk scoring tool for internal use');
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-
-    expect((await screen.findAllByText(/risk scoring model/i)).length).toBeGreaterThan(0);
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-
-    // A real targeted question renders — not a skipped/fake step. V1.2-B:
-    // the progress line now carries the budget + provisional tier.
-    expect(await screen.findByText(/question 1 of \d+/i)).toBeInTheDocument();
-
-    // Answer every generated question until the flow reaches confirmation.
-    // V2-C: a realistic policy generates questions across many fields, so
-    // this answers whatever option the current question offers rather than
-    // assuming a data-zone question (budget can reach 15).
-    for (let i = 0; i < 20; i++) {
-      const confirmButton = screen.queryByRole('button', { name: /confirm and evaluate/i });
-      if (confirmButton) break;
-      const firstOption = document.querySelector<HTMLButtonElement>('.questionnaire__options button');
-      if (firstOption) {
-        await user.click(firstOption);
-        continue;
-      }
-      const submitAnswer = screen.queryByRole('button', { name: /submit answer/i });
-      if (submitAnswer) {
-        const textbox = screen.getByLabelText(/your answer/i);
-        await fillText(user, textbox, 'test answer');
-        await user.click(submitAnswer);
-        continue;
-      }
-      break;
-    }
-
-    // A real "Confirm and evaluate" click is required — UC-6 attestation,
-    // not a silent pass-through (P4-C04).
-    expect(await screen.findByRole('heading', { name: /confirm and evaluate/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
-
-    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
-  }, SLOW_FLOW_MS);
-
   it('P4-C04: writes graph_confirmed then verdict_produced to the audit trail, in order, before showing the verdict [TC-UC-6-01]', async () => {
     const uniqueLabel = 'audit ordering check model';
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: uniqueLabel,
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone C',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                basis_quotes: PROCESSING_QUOTES,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'output',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-                basis_quotes: OUTPUT_QUOTES,
-              },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
     const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'Audit ordering check: verifies that confirmation events precede verdict events, replaying sequence numbers, timestamps, writer identities, and tie breaking behaviour across rapid consecutive submissions' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+    await reachVerdict(
+      user,
+      'Audit ordering check: verifies that confirmation events precede verdict events, replaying sequence numbers, timestamps, writer identities, and tie breaking behaviour across rapid consecutive submissions',
+      uniqueLabel,
+    );
 
     const { getUseCases } = await import('../../store/register');
     const { getAll } = await import('../../store/audit');
@@ -393,10 +220,8 @@ describe('Walking Skeleton', () => {
     expect(useCase).toBeDefined();
 
     const events = await getAll(useCase!.use_case_id);
-    // R16-F F-3 (DR7-05): the creation record is now written at Confirm, on
-    // EITHER path (not only the form path) — the description path used to
-    // have none at all. Order on the trail is fixed: use_case_created ->
-    // graph_confirmed -> verdict_produced.
+    // R16-F F-3 (DR7-05): the creation record is written at Confirm. Order on
+    // the trail is fixed: use_case_created -> graph_confirmed -> verdict_produced.
     expect(events.map((e) => e.event_type)).toEqual(['use_case_created', 'graph_confirmed', 'verdict_produced']);
     expect(new Date(events[1]!.occurred_at).getTime()).toBeLessThanOrEqual(new Date(events[2]!.occurred_at).getTime());
 
@@ -435,55 +260,13 @@ describe('Walking Skeleton', () => {
   // user-facing path had the same hole.
   it('explore-001 D-001: double-clicking confirm writes graph_confirmed exactly once', async () => {
     const uniqueLabel = 'double click guard model';
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: uniqueLabel,
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone C',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                basis_quotes: PROCESSING_QUOTES,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'output',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-                basis_quotes: OUTPUT_QUOTES,
-              },
-            ],
-            edges: [{ from: 'p1', to: 'o1' }],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
     const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Double click guard: protects the confirm button against impatient repeated presses, suppressing duplicate submissions, stray keyboard activations, and bouncing touchscreen taps during slow renders' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-
-    const confirm = await screen.findByRole('button', { name: /confirm and evaluate/i });
+    await reachFormScreen(
+      user,
+      'Double click guard: protects the confirm button against impatient repeated presses, suppressing duplicate submissions, stray keyboard activations, and bouncing touchscreen taps during slow renders',
+    );
+    await fillMaterialForm(user, uniqueLabel);
+    const confirm = await toConfirmation(user);
     // Two clicks with NO await between them — the real double-click, where
     // both handlers run against the same pre-dispatch state.
     confirm.click();
@@ -500,138 +283,21 @@ describe('Walking Skeleton', () => {
     const confirms = events.filter((e) => e.event_type === 'graph_confirmed');
     // The damage is un-cleanable: the trail is append-only by design.
     expect(confirms).toHaveLength(1);
-    // R16-F F-3 (DR7-05): use_case_created is now written at Confirm too.
+    // R16-F F-3 (DR7-05): use_case_created is written at Confirm too.
     expect(events.map((e) => e.event_type)).toEqual(['use_case_created', 'graph_confirmed', 'verdict_produced']);
-  });
-
-  it('P4-C04: a correction made during graph review survives through questionnaire and confirmation to the graph_confirmed audit event (BC-P4C04-03, review finding: full chain, not just one hop)', async () => {
-    const uniqueLabel = 'correction survival check model';
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: uniqueLabel,
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone C',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                basis_quotes: PROCESSING_QUOTES,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'output',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-                basis_quotes: OUTPUT_QUOTES,
-              },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'Correction survival check: carries a reviewer edited field through questionnaire, attestation, persistence, and ledger entry without losing that human override anywhere downstream' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-
-    // Make a real correction in graph_review before proceeding — V1.1-C01:
-    // a genuine field edit through the correction editor, not the old
-    // stub that appended " (corrected)" to the label.
-    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[0]!);
-    const zoneSelect = await screen.findByLabelText(`${uniqueLabel} — where your information goes`);
-    await user.selectOptions(zoneSelect, 'Zone B');
-    expect(zoneSelect).toHaveValue('Zone B');
-
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
-
-    const { getUseCases } = await import('../../store/register');
-    const { getAll } = await import('../../store/audit');
-    const useCases = await getUseCases('all');
-    const useCase = useCases.find((u) => u.label === uniqueLabel);
-    expect(useCase).toBeDefined();
-
-    const events = await getAll(useCase!.use_case_id);
-    const confirmedEvent = events.find((e) => e.event_type === 'graph_confirmed');
-    expect(confirmedEvent).toBeDefined();
-    if (confirmedEvent?.payload.type === 'graph_confirmed') {
-      expect(confirmedEvent.payload.corrections_count).toBe(1);
-    }
   });
 
   it('TC-UC-6-02: with every question answered but the graph unconfirmed, no verdict is produced until the explicit Confirm click', async () => {
     const uniqueLabel = 'confirmation gate model';
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: 'confirmation gate model',
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone C',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                basis_quotes: PROCESSING_QUOTES,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'output',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-                basis_quotes: OUTPUT_QUOTES,
-              },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
     const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmation gate probe: sits at the final step waiting for a human to press the confirm control before any classification is computed, stored, or displayed to anyone' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+    await reachFormScreen(
+      user,
+      'Confirmation gate probe: sits at the final step waiting for a human to press the confirm control before any classification is computed, stored, or displayed to anyone',
+    );
+    await fillMaterialForm(user, uniqueLabel);
 
     // Awaiting confirmation: the Confirm control is offered, nothing has run.
-    const confirm = await screen.findByRole('button', { name: /confirm and evaluate/i });
+    const confirm = await toConfirmation(user);
     await new Promise((r) => setTimeout(r, 300));
     expect(screen.queryByText('Verdict', { selector: '.verdict__eyebrow' })).not.toBeInTheDocument();
 
@@ -651,124 +317,16 @@ describe('Walking Skeleton', () => {
     expect(events.map((e) => e.event_type)).toContain('verdict_produced');
   }, SLOW_FLOW_MS);
 
-  it('TC-UC-6-03: the graph_confirmed event carries the corrected graph version (2), not the original (1)', async () => {
-    const uniqueLabel = 'confirmed version model';
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'extract_graph',
-          input: {
-            input_nodes: [],
-            processing_nodes: [
-              {
-                id: 'p1',
-                label: 'confirmed version model',
-                model_type: 'traditional-ml',
-                autonomy_level: 0,
-                data_zone: 'Zone C',
-                vendor: 'internal',
-                replaces_prior_model: false,
-                basis_quotes: PROCESSING_QUOTES,
-              },
-            ],
-            output_nodes: [
-              {
-                id: 'o1',
-                label: 'output',
-                action_type: 'recommend',
-                exposure: 'internal-only',
-                decision_bindingness: 'material',
-                output_reversibility: 'reversible',
-                scale: 'limited',
-                basis_quotes: OUTPUT_QUOTES,
-              },
-            ],
-            edges: [],
-            jurisdictions: [],
-          },
-        },
-      ],
-    });
-
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmed version probe: records which numbered edition of the reviewed picture a human signed off, after exactly one reviewer correction was applied to the first extraction' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-
-    // Exactly one correction on the review screen (version 1 -> 2).
-    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[0]!);
-    await user.selectOptions(await screen.findByLabelText(`${uniqueLabel} — where your information goes`), 'Zone B');
-
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
-
-    const { getUseCases } = await import('../../store/register');
-    const { getAll } = await import('../../store/audit');
-    const useCase = (await getUseCases('all')).find((u) => u.label === uniqueLabel);
-    expect(useCase).toBeDefined();
-    const events = await getAll(useCase!.use_case_id);
-    const confirmed = events.find((e) => e.event_type === 'graph_confirmed');
-    expect(confirmed).toBeDefined();
-    if (confirmed?.payload.type !== 'graph_confirmed') throw new Error('wrong payload type');
-    expect(confirmed.payload.corrections_count).toBe(1);
-    expect(confirmed.payload.graph_version).toBe(2);
-    expect(confirmed.payload.graph_version).not.toBe(1);
-  }, SLOW_FLOW_MS);
-
-  it('P5-C01: "Correct this classification?" re-enters graph_review, reuses the same use case, and appends graph_corrected/verdict_corrected without touching the original verdict_produced event', async () => {
+  it('P5-C01: "Correct this classification?" re-opens the form, reuses the same use case, and appends graph_corrected/verdict_corrected without touching the original verdict_produced event', async () => {
     const uniqueLabel = 'correction flow check model';
-    const buildGraphInput = () => ({
-      input_nodes: [],
-      processing_nodes: [
-        {
-          id: 'p1',
-          label: uniqueLabel,
-          model_type: 'traditional-ml',
-          autonomy_level: 0,
-          data_zone: 'Zone C',
-          vendor: 'internal',
-          replaces_prior_model: false,
-          basis_quotes: PROCESSING_QUOTES,
-        },
-      ],
-      output_nodes: [
-        {
-          id: 'o1',
-          label: 'output',
-          action_type: 'recommend',
-          exposure: 'internal-only',
-          decision_bindingness: 'material',
-          output_reversibility: 'reversible',
-          scale: 'limited',
-          basis_quotes: OUTPUT_QUOTES,
-        },
-      ],
-      edges: [],
-      jurisdictions: [],
-    });
-    mockCreate.mockResolvedValueOnce({
-      content: [{ type: 'tool_use', name: 'extract_graph', input: buildGraphInput() }],
-    });
-
     const user = userEvent.setup({ delay: null });
-    render(<App />);
 
     // First pass: reach a verdict normally.
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'Quartz xylophone probe intake: calibrates resonant percussion sensors, logging amplitude drift, harmonic distortion, bar temperature, mallet hardness, and tuning fork reference offsets nightly' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-    expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
+    await reachVerdict(
+      user,
+      'Quartz xylophone probe intake: calibrates resonant percussion sensors, logging amplitude drift, harmonic distortion, bar temperature, mallet hardness, and tuning fork reference offsets nightly',
+      uniqueLabel,
+    );
 
     const { getUseCases } = await import('../../store/register');
     const { getAll } = await import('../../store/audit');
@@ -778,7 +336,7 @@ describe('Walking Skeleton', () => {
     const useCaseId = useCase!.use_case_id;
 
     const eventsBeforeCorrection = await getAll(useCaseId);
-    // R16-F F-3 (DR7-05): use_case_created is now written at Confirm too.
+    // R16-F F-3 (DR7-05): use_case_created is written at Confirm too.
     expect(eventsBeforeCorrection.map((e) => e.event_type)).toEqual([
       'use_case_created',
       'graph_confirmed',
@@ -786,15 +344,13 @@ describe('Walking Skeleton', () => {
     ]);
     const originalVerdictEvent = eventsBeforeCorrection[2]!;
 
-    // Click "Correct this classification?" — re-enters graph_review.
-    await user.click(screen.getByRole('button', { name: /correct this classification/i }));
-    expect(await screen.findByText(/check what we read from your description/i)).toBeInTheDocument();
+    // Click the correction control — re-opens the form with the earlier answers in it.
+    await user.click(document.querySelector<HTMLButtonElement>('.verdict__first-correct')!);
+    await screen.findByText(/you.re correcting your earlier answers/i);
 
-    // Make a real field correction, then walk back through to a new verdict.
-    await user.click(screen.getAllByRole('button', { name: /^edit$/i })[0]!);
-    await user.selectOptions(await screen.findByLabelText(`${uniqueLabel} — where your information goes`), 'Zone B');
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+    // Make a real correction (one answer: how widely it will be used), then walk back through to a new verdict.
+    await user.click(screen.getByRole('radio', { name: /my team, as part of normal work/i }));
+    await user.click(screen.getByRole('button', { name: /^continue$/i }));
     await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
     expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
 
@@ -883,7 +439,6 @@ describe('Walking Skeleton', () => {
 
     // R16-W W-3 (D-69): no Proceed button on this path any more — the form
     // reaches confirmation directly (see the P4-C02 test's comment above).
-    await confirmAllNodes(user);
     await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
 
     // Must NOT hang on "Evaluating..." — a real error renders and the
@@ -937,7 +492,6 @@ describe('Walking Skeleton', () => {
 
     // R16-W W-3 (D-69): no Proceed button on this path any more — the form
     // reaches confirmation directly (see the P4-C02 test's comment above).
-    await confirmAllNodes(user);
     await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
 
     expect(await screen.findByText('Verdict', { selector: '.verdict__eyebrow' })).toBeInTheDocument();
@@ -961,29 +515,19 @@ describe('Walking Skeleton', () => {
   }, SLOW_FLOW_MS);
 
   it('P5-C02: the real LLM-generated reasoning trace renders in the verdict details section', async () => {
-    // Distinguish calls by shape, not by queue order: extractGraph() and
-    // confirmSemanticDuplicate() both pass `tools`; generateReasoningTrace()
-    // does not. Robust against an extra duplicate-check LLM call shifting
-    // a plain call-order queue out of sync.
-    mockCreate.mockImplementation(async (args: { tools?: unknown }) => {
-      if (args.tools) {
-        return { content: [{ type: 'tool_use', name: 'extract_graph', input: MOCK_GRAPH_INPUT }] };
-      }
-      return {
-        content: [{ type: 'text', text: 'Track II applies because the model produces a quantitative recommendation.' }],
-      };
-    });
+    // The only model call left on the route is the reasoning trace, written
+    // after the verdict when a key is configured.
+    mockCreate.mockImplementation(async () => ({
+      content: [{ type: 'text', text: 'Track II applies because the model produces a quantitative recommendation.' }],
+    }));
 
     const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const input = screen.getByLabelText(/what ai tool do you want to use/i);
-    await fillText(user, input, 'Zxqvw plumbing inventory forecaster xyzzy: projects pipe fitting, valve, gasket, solder, flange, and copper elbow stock levels per warehouse, seasonal demand, supplier lead times, and reorder cadence' + DETAIL);
-    await pressNext(user);
-    await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
-    expect(await screen.findByText(/check what we read from your description/i)).toBeInTheDocument();
-    await confirmAllNodes(user);
-    await user.click(await screen.findByRole('button', { name: /^continue$/i }));
+    await reachFormScreen(
+      user,
+      'Zxqvw plumbing inventory forecaster xyzzy: projects pipe fitting, valve, gasket, solder, flange, and copper elbow stock levels per warehouse, seasonal demand, supplier lead times, and reorder cadence',
+    );
+    await fillMaterialForm(user, 'plumbing inventory forecaster');
+    await toConfirmation(user);
     // FX7-6: slow IndexedDB, not an early read — this wait follows the
     // graph confirmation's case lock and hash-chained writes, which can pass
     // the 1 s default on a loaded machine. Same precedent as
@@ -1215,7 +759,6 @@ describe('Register row naming (charter 004 D-004)', () => {
     // R16-W W-3 (D-69): the form path reaches confirmation directly — no
     // graph_review heading and no Proceed button on this path any more.
     await screen.findByText(/here.s what we understood/i);
-    await confirmAllNodes(user);
     await screen.findByRole('heading', { name: /confirm and evaluate/i });
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
     await screen.findByText('Verdict', { selector: '.verdict__eyebrow' });

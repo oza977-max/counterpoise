@@ -35,3 +35,9 @@ confirm flow (intake-flow.md §16.3).
 R6-NF-1 is held by TC-PE-1-01 unchanged; R6-NF-3's provider parity is held
 by both provider paths exiting through the same `parseExtraction` (asserted
 structurally in graph-extractor.test.ts).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R6-QN-1-03 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

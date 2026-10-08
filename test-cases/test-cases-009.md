@@ -22,3 +22,12 @@ covered by TC-R9-SC-4-02's collapse handling plus the unchanged R8
 component tests (the full panel renders inside the disclosure). R9-NF-1/2
 are held by the unchanged R5–R8 gate/guard suites, the suite-wide
 reserved-words guard, and TC-R3-NF-2-01's no-write pattern.
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R9-SC-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R9-SC-4-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+
+| TC-R9-SC-1-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |

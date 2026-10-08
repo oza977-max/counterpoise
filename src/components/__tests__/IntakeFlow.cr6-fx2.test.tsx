@@ -3,7 +3,6 @@ import { StrictMode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
-import * as graphExtractorModule from '../../llm/graph-extractor';
 import * as duplicateCheckModule from '../../llm/duplicate-check';
 import * as registerModule from '../../store/register';
 import * as traceModule from '../../llm/reasoning-trace';
@@ -23,7 +22,7 @@ import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 // IntakeFlow.r16f.test.tsx already spies on internal boundaries directly for
 // identical timing-control needs (confirmationPrecondition,
 // generateReasoningTraceForVerdict); this file follows the same precedent
-// for extractGraph / confirmSemanticDuplicate / addNode.
+// for confirmSemanticDuplicate / addNode.
 //
 // CR8 (EBT labels): the same holds for the other app modules spied below —
 // the reasoning trace (generateReasoningTraceForVerdict), the register
@@ -74,8 +73,6 @@ function held<T>(): { promise: Promise<T>; resolve: (v: T) => void } {
   return { promise, resolve };
 }
 
-type ExtractResult = Awaited<ReturnType<typeof graphExtractorModule.extractGraph>>;
-
 function makeVerdict(overrides: Partial<Verdict> = {}): Verdict {
   return {
     status: 'approved_with_controls',
@@ -112,6 +109,14 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
+// R18-A: the draft written by the CURRENT build is a version-4 envelope. A bare
+// state (the older shape) for any step past the similar-checks screen lands on
+// the form instead, so the drafts below that must restore as they were are
+// written the way saveDraft writes them.
+function seedCurrentDraft(state: Record<string, unknown>): void {
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 4, state }));
+}
+
 // CR6-02 (Critical). handleStartOver released only confirmInFlight and the
 // refusal — dupCheckInFlight/confirmNewInFlight/retryExtractionInFlight/
 // adoptInFlight stayed set until their OWN pending call's `finally` ran, so
@@ -123,64 +128,33 @@ beforeEach(() => {
 // handleStartOver now releasing all four refs and the duplicate-check trio
 // together, exactly like handleStepBack already does.
 describe('CR6-02: "Start over" abandons earlier in-flight work instead of leaving it running', () => {
-  it('TC-CR6-02a: Continue on the new case works while the abandoned case\'s extraction is still pending, and the late result never lands on the new case', async () => {
-    localStorage.setItem('aigate:api-key', 'test-key');
-    const first = held<ExtractResult>();
-    const second = held<ExtractResult>();
-    // EBT exception (owner-accepted, code review 006/008): call-count observation only — the real function still runs, nothing is replaced
-    const spy = vi.spyOn(graphExtractorModule, 'extractGraph');
-    spy.mockImplementationOnce(() => first.promise).mockImplementationOnce(() => second.promise);
-
+  it('TC-CR6-02a: Continue on the new case works after Start over from a case that had already continued to the form', async () => {
     // "Start over instead" (the only reachable handleStartOver control) is
     // offered only once a draft has actually been RESTORED at mount — so
     // the abandoned case starts life as a seeded draft, exactly like a
     // refreshed/reopened tab, rather than being typed fresh.
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Abandoned case alpha' }));
 
-    try {
-      const user = userEvent.setup({ delay: null });
-      render(<App />);
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
 
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-      // The abandoned case's extraction is now pending (held).
-      await screen.findByText(/reading your description/i);
+    await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
+    // R18-A: the abandoned case is now on the guided form, carrying its description.
+    await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('Abandoned case alpha');
 
-      await user.click(screen.getByRole('button', { name: /start over instead/i }));
-      await screen.findByLabelText(/what ai tool do you want to use/i);
+    await user.click(screen.getByRole('button', { name: /start over instead/i }));
+    await screen.findByLabelText(/what ai tool do you want to use/i);
 
-      await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Fresh case beta');
-      await pressNext(user);
-      // Before the fix, Continue here silently did nothing — confirmNewInFlight
-      // was still true from the abandoned case's still-pending call.
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-      await screen.findByText(/reading your description/i);
-
-      second.resolve({
-        ok: true,
-        value: {
-          graph: makeGraph({ intake_method: 'llm', processing_nodes: [{ ...makeGraph().processing_nodes[0]!, label: 'Beta system' }] }),
-          provenance: {},
-          guessed: {},
-        },
-      });
-      await screen.findByText('Beta system');
-
-      // The abandoned case's extraction now resolves late — it must not
-      // replace what the new case is showing.
-      first.resolve({
-        ok: true,
-        value: {
-          graph: makeGraph({ intake_method: 'llm', processing_nodes: [{ ...makeGraph().processing_nodes[0]!, label: 'Alpha system' }] }),
-          provenance: {},
-          guessed: {},
-        },
-      });
-      await new Promise((r) => setTimeout(r, 0));
-      expect(screen.getByText('Beta system')).toBeInTheDocument();
-      expect(screen.queryByText('Alpha system')).not.toBeInTheDocument();
-    } finally {
-      spy.mockRestore();
-    }
+    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Fresh case beta');
+    await pressNext(user);
+    // Before the fix, Continue here silently did nothing — confirmNewInFlight
+    // was still true from the abandoned case's call. It must open the form
+    // for the NEW case, with the new description and none of the old one.
+    await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
+    await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('Fresh case beta');
+    expect(screen.queryByDisplayValue('Abandoned case alpha')).not.toBeInTheDocument();
   });
 
   it('TC-CR6-02b: an abandoned duplicate check\'s match never appears on the new case', async () => {
@@ -232,46 +206,6 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
       await new Promise((r) => setTimeout(r, 0));
       expect(screen.queryByText(/overlapping use case|similar use is already on your firm/i)).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: /^continue →$/i })).toBeInTheDocument();
-    } finally {
-      spy.mockRestore();
-    }
-  });
-
-  it('TC-CR6-02c: "Try again" works on the new case after Start over, even though the abandoned case\'s own retry was still pending', async () => {
-    localStorage.setItem('aigate:api-key', 'test-key');
-    const abandonedRetry = held<ExtractResult>();
-    // EBT exception (owner-accepted, code review 006/008): call-count observation only — the real function still runs, nothing is replaced
-    const spy = vi.spyOn(graphExtractorModule, 'extractGraph');
-    spy
-      .mockResolvedValueOnce({ ok: false, error: { kind: 'network-error', message: 'first case initial failure' } })
-      .mockImplementationOnce(() => abandonedRetry.promise)
-      .mockResolvedValueOnce({ ok: false, error: { kind: 'network-error', message: 'second case initial failure' } })
-      .mockResolvedValueOnce({ ok: true, value: { graph: makeGraph({ intake_method: 'llm' }), provenance: {}, guessed: {} } });
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Case alpha, retry abandoned' }));
-
-    try {
-      const user = userEvent.setup({ delay: null });
-      render(<App />);
-
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-      await screen.findByRole('button', { name: /^try again$/i });
-      // The abandoned case's OWN retry is now pending (held).
-      await user.click(screen.getByRole('button', { name: /^try again$/i }));
-      await screen.findByText(/reading your description/i);
-
-      await user.click(screen.getByRole('button', { name: /start over instead/i }));
-      await screen.findByLabelText(/what ai tool do you want to use/i);
-
-      await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Case beta, fresh');
-      await pressNext(user);
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-      await screen.findByRole('button', { name: /^try again$/i });
-      // Before the fix, this click silently did nothing — retryExtractionInFlight
-      // was still true from the abandoned case's still-pending retry.
-      await user.click(screen.getByRole('button', { name: /^try again$/i }));
-
-      await screen.findByText(/check what we read from your description/i);
-      expect(spy).toHaveBeenCalledTimes(4);
     } finally {
       spy.mockRestore();
     }
@@ -350,104 +284,6 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
   });
 });
 
-// CR6-14 (Important). An extraction error (set in handleConfirmNewUseCase or
-// handleRetryExtraction) was cleared only by a retry or "Answer the
-// questions instead" — not by Start Over, and not when a FRESH case's own
-// first extraction begins. A new case reusing the same mounted IntakeFlow
-// briefly showed the PREVIOUS case's error before its own (pending)
-// extraction had even had a chance to fail.
-describe('CR6-14: a stale extraction error does not leak onto the next case', () => {
-  it('TC-CR6-14: after Start over, a new case\'s pending extraction shows "Reading your description…", never the abandoned case\'s old error', async () => {
-    localStorage.setItem('aigate:api-key', 'test-key');
-    const secondCall = held<ExtractResult>();
-    // EBT exception (owner-accepted, code review 006/008): call-count observation only — the real function still runs, nothing is replaced
-    const spy = vi.spyOn(graphExtractorModule, 'extractGraph');
-    spy
-      .mockResolvedValueOnce({ ok: false, error: { kind: 'network-error', message: 'first case failure' } })
-      .mockImplementationOnce(() => secondCall.promise);
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({ step: 'duplicate_check', description: 'Case with a real extraction failure' }),
-    );
-
-    try {
-      const user = userEvent.setup({ delay: null });
-      render(<App />);
-
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-      expect(await screen.findByRole('alert')).toBeInTheDocument();
-
-      await user.click(screen.getByRole('button', { name: /start over instead/i }));
-      await screen.findByLabelText(/what ai tool do you want to use/i);
-
-      await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Fresh case, extraction pending');
-      await pressNext(user);
-      await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
-
-      // The fresh case's own extraction hasn't resolved yet — it must read
-      // as pending, never as the abandoned case's old failure.
-      expect(await screen.findByText(/reading your description/i)).toBeInTheDocument();
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-      secondCall.resolve({ ok: true, value: { graph: makeGraph({ intake_method: 'llm' }), provenance: {}, guessed: {} } });
-    } finally {
-      spy.mockRestore();
-    }
-  });
-});
-
-// C-3 (Minor). Undo is a single-level, one-use snapshot (v0.7.1) — once
-// consumed, the control must stop offering itself rather than sitting there
-// as a button that does nothing on a second press.
-describe('C-3: Undo disappears once its one snapshot is used', () => {
-  it('TC-CR6-C3: Undo is offered after an answer and gone after it is pressed — even though the PREVIOUS answer is still shown as "Recorded"', async () => {
-    // Three questions: after answering Q1 then Q2 and undoing Q2, the
-    // "Recorded" line falls back to Q1's answer — which is still truthy —
-    // so this actually exercises whether onUndo itself is withheld once
-    // the one snapshot is gone, not just "lastAnswer happened to vanish".
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        version: 3, // CR7-28: a draft the CURRENT build saved (a bare one is the old shape)
-        state: {
-          step: 'questionnaire',
-          description: 'd',
-          graph: makeGraph({ intake_method: 'llm' }),
-          questions: [
-            { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-            { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-            { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-          ],
-          answers: [],
-          resolutionNotes: [],
-          corrections: [],
-          useCaseId: 'uc-c3',
-        },
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    await screen.findByText(/question 1 of 3/i);
-    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /^yes$/i }));
-    await screen.findByText(/question 2 of 3/i);
-    expect(await screen.findByRole('button', { name: /^undo$/i })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /^no$/i }));
-    await screen.findByText(/question 3 of 3/i);
-    const undo = await screen.findByRole('button', { name: /^undo$/i });
-
-    await user.click(undo);
-    // Back to question 2, Recorded line falls back to Q1's answer — the
-    // single snapshot is gone, so Undo must not still be offered even
-    // though there is still a "Recorded" line to attach it to.
-    await screen.findByText(/question 2 of 3/i);
-    expect(screen.getByText(/^recorded:/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
-  });
-});
-
 // CR6-08 (Important). evaluation_pending and verdict shared one step label
 // ("Step 6 of 6: Result"), and the live-region announcement effect just
 // re-rendered that same text for both — a screen-reader user heard nothing
@@ -457,21 +293,18 @@ describe('C-3: Undo disappears once its one snapshot is used', () => {
 describe('CR6-08: the result does not arrive silently for screen-reader users', () => {
   it('TC-CR6-08a: the announcement text when the result is being worked out differs from the announcement once it is ready', async () => {
     const useCaseId = 'uc-cr6-08a';
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'confirmation',
-        description: 'A tool whose result takes a while.',
-        graph: makeGraph(),
-        graphVersion: 1,
-        corrections: [],
-        answers: [],
-        resolutionNotes: [],
-        useCaseId,
-        plainAnswers: { '1': 'Tool' },
-        assumptions: [],
-      }),
-    );
+    seedCurrentDraft({
+      step: 'confirmation',
+      description: 'A tool whose result takes a while.',
+      graph: makeGraph(),
+      graphVersion: 1,
+      corrections: [],
+      answers: [],
+      resolutionNotes: [],
+      useCaseId,
+      plainAnswers: { '1': 'Tool' },
+      assumptions: [],
+    });
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -571,21 +404,18 @@ describe('CR6-08: the result does not arrive silently for screen-reader users', 
 describe('CR6-15: navigating away mid-confirm leaves no stale confirmation screen behind', () => {
   it('TC-CR6-15a: after navigating away mid-confirm and back, the saved draft is gone — no stale confirmation screen, and the result is really on the trail', async () => {
     const useCaseId = 'uc-cr6-15a';
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'confirmation',
-        description: 'A tool the user navigates away from mid-confirm.',
-        graph: makeGraph(),
-        graphVersion: 1,
-        corrections: [],
-        answers: [],
-        resolutionNotes: [],
-        useCaseId,
-        plainAnswers: { '1': 'Tool' },
-        assumptions: [],
-      }),
-    );
+    seedCurrentDraft({
+      step: 'confirmation',
+      description: 'A tool the user navigates away from mid-confirm.',
+      graph: makeGraph(),
+      graphVersion: 1,
+      corrections: [],
+      answers: [],
+      resolutionNotes: [],
+      useCaseId,
+      plainAnswers: { '1': 'Tool' },
+      assumptions: [],
+    });
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -635,19 +465,16 @@ describe('CR6-15: navigating away mid-confirm leaves no stale confirmation scree
 
   it('TC-CR6-15b: the "already has a result" message claims no cause it cannot know', async () => {
     const useCaseId = 'uc-cr6-15b';
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'confirmation',
-        description: 'A tool already confirmed elsewhere.',
-        graph: makeGraph(),
-        graphVersion: 1,
-        corrections: [],
-        answers: [],
-        resolutionNotes: [],
-        useCaseId,
-      }),
-    );
+    seedCurrentDraft({
+      step: 'confirmation',
+      description: 'A tool already confirmed elsewhere.',
+      graph: makeGraph(),
+      graphVersion: 1,
+      corrections: [],
+      answers: [],
+      resolutionNotes: [],
+      useCaseId,
+    });
     const now = new Date().toISOString();
     await appendAuditEvent({
       event_id: crypto.randomUUID(),
@@ -742,27 +569,6 @@ describe('CR6-17: an invalid policy shows a message at the button instead of fai
     expect(screen.queryByText(/here.s what we understood/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument();
   }, SLOW_FLOW_MS);
-
-  it('TC-CR6-17b: on the review screen\'s own Continue, an invalid policy shows a message at the button and never silently does nothing', async () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'graph_review',
-        description: 'An agent reviewed under a policy that just broke.',
-        graph: makeGraph({ intake_method: 'llm' }),
-        graphVersion: 1,
-        corrections: [],
-        useCaseId: 'uc-cr6-17b',
-        unconfirmedNodeIds: [],
-        jurisdictionsConfirmed: true,
-      }),
-    );
-    render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: /^continue$/i }));
-
-    expect(await screen.findByText(/rules file has a problem/i, { selector: '.intake-flow__gate-error' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument();
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -787,128 +593,6 @@ async function seedProbeUseCase(label = REGISTERED_PROBE) {
     },
   });
 }
-
-describe('I-3 / B-10 rewritten: a contradiction is shown iff it still holds when the questions end', () => {
-  const manualGraph = (autonomy: number) =>
-    makeGraph({
-      intake_method: 'llm',
-      processing_nodes: [{ ...makeGraph().processing_nodes[0]!, autonomy_level: autonomy as never }],
-    });
-  const seed = (graph: DataFlowGraph, questions: unknown[], extra: Record<string, unknown> = {}) =>
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        version: 3, // CR7-28: a draft the CURRENT build saved (a bare one is the old shape)
-        state: {
-          step: 'questionnaire',
-          description: 'The process is fully manual',
-          graph,
-          questions,
-          answers: [],
-          resolutionNotes: [],
-          corrections: [],
-          useCaseId: 'uc-b10',
-          ...extra,
-        },
-      }),
-    );
-
-  it('TC-CR6-B10 (a): a contradiction that still holds on the current graph is shown', async () => {
-    seed(manualGraph(3), [
-      { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-    ]);
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
-    expect(await screen.findByText(/says a person approves everything it does/i)).toBeInTheDocument();
-  });
-
-  it('TC-CR6-B10 (b): an answer that resolved the contradiction does not bring it back, even if a stale submission-time copy was saved', async () => {
-    seed(
-      manualGraph(3),
-      [{ id: 'Q1', field: 'autonomy_level', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'select' }],
-      // What the removed carried field looked like in a draft saved by the previous build.
-      {
-        submissionContradictions: [
-          { statement1: 'Your description says a person approves everything it does.', statement2: 'but your answers say it acts by itself.', field: 'autonomy_level' },
-        ],
-      },
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: /a person checks or approves each thing/i }));
-    expect(await screen.findByRole('button', { name: /confirm and evaluate/i })).toBeInTheDocument();
-    expect(screen.queryByText(/says a person approves everything it does/i)).not.toBeInTheDocument();
-  });
-});
-
-describe('B-10c (pass 2): an explained contradiction is not raised again by the next answer', () => {
-  const contradictoryGraph = () =>
-    makeGraph({
-      intake_method: 'llm',
-      processing_nodes: [{ ...makeGraph().processing_nodes[0]!, autonomy_level: 3 as never }],
-    });
-  const questions = [
-    { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-    { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-    { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-  ];
-
-  it('TC-CR6-B10c: explain one, answer the next question -> not re-raised; the explanation is saved with the draft', async () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        version: 3, // CR7-28: a draft the CURRENT build saved (a bare one is the old shape)
-        state: {
-          step: 'questionnaire',
-          description: 'The process is fully manual',
-          graph: contradictoryGraph(),
-          questions,
-          answers: [],
-          resolutionNotes: [],
-          corrections: [],
-          useCaseId: 'uc-b10c',
-        },
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
-    await screen.findByText(/says a person approves everything it does/i);
-    await fillText(user, screen.getByLabelText(/which is right, and why/i), 'The reviewer signs off by hand');
-    await user.click(screen.getByRole('button', { name: /^(explain|resolve|continue)/i }));
-    await screen.findByText(/question 2 of 3/i);
-
-    await user.click(screen.getByRole('button', { name: /^no$/i }));
-    expect(await screen.findByText(/question 3 of 3/i)).toBeInTheDocument();
-    expect(screen.queryByText(/says a person approves everything it does/i)).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(DRAFT_KEY) ?? '').toMatch(/explainedContradictions/);
-  });
-
-  it('TC-CR6-B10c (new one still shows): an explained entry for a different contradiction does not suppress the live one', async () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        version: 3, // CR7-28: a draft the CURRENT build saved (a bare one is the old shape)
-        state: {
-          step: 'questionnaire',
-          description: 'The process is fully manual',
-          graph: contradictoryGraph(),
-          questions,
-          answers: [],
-          resolutionNotes: ['already explained'],
-          explainedContradictions: ['some_other_field|A different statement.'],
-          corrections: [],
-          useCaseId: 'uc-b10c2',
-        },
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
-    expect(await screen.findByText(/says a person approves everything it does/i)).toBeInTheDocument();
-  });
-});
 
 describe('I-4: Start over after "Use the earlier result" leaves nothing of the adopted case behind', () => {
   // Pass 3 (TC-CR6-02k): the adopted screen is a finished case, so the
@@ -1081,45 +765,6 @@ describe('I-2 (pass 2): a finished adoption is finished', () => {
 });
 
 describe('FX-2 pass 3 minors: the decision lock belongs to its own attempt; finished cases say so; failed saves are not silent', () => {
-  it('TC-CR6-02j: an abandoned "Mine is different" finishing late does not unlock the NEW case\'s decision that is still writing', async () => {
-    await seedProbeUseCase('Lock owner probe assistant');
-    localStorage.setItem('aigate:api-key', 'test-key');
-    const oldExtraction = held<ExtractResult>();
-    // EBT exception (owner-accepted, code review 006/008): hold in flight — keeps the call open across a Start over / Back click, which the shared SDK mock cannot do per call
-    const extractSpy = vi.spyOn(graphExtractorModule, 'extractGraph').mockImplementationOnce(() => oldExtraction.promise);
-    // EBT exception (owner-accepted, code review 006/008): fault injection — forces the match result so the test needs no network or model
-    const semanticSpy = vi.spyOn(duplicateCheckModule, 'confirmSemanticDuplicate').mockResolvedValue(true);
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Lock owner probe assistant' }));
-    const newDismissal = held<void>();
-    try {
-      const user = userEvent.setup({ delay: null });
-      render(<App />);
-      // Old attempt: dismissal written for real, then its extraction is held.
-      await user.click(await screen.findByRole('button', { name: /mine is different/i }));
-      await screen.findByText(/reading your description/i);
-      await user.click(screen.getByRole('button', { name: /start over instead/i }));
-
-      // New attempt reaches the same match; its own dismissal write is held.
-      await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'Lock owner probe assistant');
-      await pressNext(user);
-      // EBT exception (owner-accepted, code review 006/008): hold in flight — keeps the call open across a Start over / Back click, which the shared SDK mock cannot do per call
-      const appendSpy = vi.spyOn(auditModule, 'append').mockImplementationOnce(() => newDismissal.promise as never);
-      await user.click(await screen.findByRole('button', { name: /mine is different/i }));
-      expect(screen.getByRole('button', { name: /use the earlier result/i })).toBeDisabled();
-
-      // The abandoned extraction now finishes — its finally must not release
-      // the lock the new attempt holds.
-      oldExtraction.resolve({ ok: false, error: { kind: 'network-error', message: 'simulated' } });
-      await new Promise((r) => setTimeout(r, 0));
-      expect(screen.getByRole('button', { name: /use the earlier result/i })).toBeDisabled();
-      appendSpy.mockRestore();
-    } finally {
-      newDismissal.resolve();
-      extractSpy.mockRestore();
-      semanticSpy.mockRestore();
-    }
-  });
-
   it('TC-CR6-02k: once an earlier result has been used, the "Picked up where you left off" banner is gone — the case is finished, not unfinished', async () => {
     await seedProbeUseCase('Banner probe assistant');
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step: 'duplicate_check', description: 'Banner probe assistant' }));
@@ -1225,11 +870,20 @@ describe('M-4: a draft saved mid-evaluation is not restored into "Evaluating…"
 describe('M-5: App guards IntakeFlow with the ErrorBoundary; an old-shape draft survives Undo', () => {
   it('TC-CR6-04e: a draft that crashes the intake render shows the boundary from inside App, and its button gets a working intake back', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    // No graph at all: IntakeFlow's own render dereferences it and throws.
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({ step: 'confirmation', description: 'd', corrections: [], answers: [], resolutionNotes: [], useCaseId: 'u' }),
-    );
+    // R18-A: a graph-less draft no longer gets this far (the version-4 check
+    // refuses it and the form opens). A draft that passes that check (node
+    // lists present) but holds a broken node still makes IntakeFlow's own
+    // render dereference it and throw.
+    seedCurrentDraft({
+      step: 'confirmation',
+      description: 'd',
+      graph: { input_nodes: [null], processing_nodes: [], output_nodes: [], edges: [] },
+      graphVersion: 1,
+      corrections: [],
+      answers: [],
+      resolutionNotes: [],
+      useCaseId: 'u',
+    });
     try {
       const user = userEvent.setup({ delay: null });
       render(<App />);
@@ -1239,40 +893,5 @@ describe('M-5: App guards IntakeFlow with the ErrorBoundary; an old-shape draft 
     } finally {
       consoleSpy.mockRestore();
     }
-  });
-
-  // CR7-28 (FX7-1): a bare (pre-CR6) questions draft on the DESCRIPTION path now
-  // restores as the review screen, so this test, which pins "the old undo shape
-  // is dropped and the questionnaire still works", uses the form path's
-  // questionnaire (plainAnswers present, the form's graph) — the one an old
-  // draft still restores as a questionnaire.
-  it('TC-CR6-04a (UI): a draft saved with the old undo shape restores without a crash, offers no Undo for that answer, and Undo works for the next one', async () => {
-    const g = makeGraph();
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'questionnaire',
-        description: 'd',
-        plainAnswers: { '1': 'Tool' },
-        graph: g,
-        questions: [
-          { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-          { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-          { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
-        ],
-        answers: [{ questionId: 'Q1', value: true }],
-        resolutionNotes: [],
-        corrections: [],
-        useCaseId: 'uc-old',
-        undo: { graph: g, correctionsLen: 0 },
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-    await screen.findByText(/question 2 of 3/i);
-    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /^no$/i }));
-    await user.click(await screen.findByRole('button', { name: /^undo$/i }));
-    expect(await screen.findByText(/question 2 of 3/i)).toBeInTheDocument();
   });
 });
