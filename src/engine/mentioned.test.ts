@@ -6,6 +6,8 @@ import {
   foldForMention,
   normForQuote,
   CHECKLIST_ITEM_IDS,
+  PREFILL_MAX_CHARS,
+  codePointLength,
 } from './mentioned';
 import type { ChecklistItemId } from './prefill-types';
 
@@ -241,4 +243,16 @@ describe('false-tick guards for the example phrases of the spec table', () => {
       for (const s of no) expect(has(s, id), s).toBe(false);
     });
   }
+});
+
+describe('the length rule counts code points (R18-A, intake-flow §27.3)', () => {
+  it('PREFILL_MAX_CHARS is 8000; an emoji is one code point; 8,000 is within and 8,001 is over', () => {
+    expect(PREFILL_MAX_CHARS).toBe(8000);
+    expect(codePointLength('😀')).toBe(1);
+    expect('😀'.length).toBe(2);
+    expect(codePointLength('😀'.repeat(8000))).toBe(8000);
+    expect(codePointLength('😀'.repeat(8000) + 'x')).toBe(8001);
+    expect(codePointLength('')).toBe(0);
+    expect(codePointLength('é')).toBe(2);
+  });
 });

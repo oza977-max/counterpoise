@@ -1038,7 +1038,7 @@ export const SUMMARY_LABELS = {
   // R16-W §2 (D-71): new section — output_reversibility was computed and
   // never shown on the submitter's own summary.
   reversibility: 'If it gets something wrong',
-  decisions: 'What it helps decide',
+  decisions: 'What it can help decide',
   scaleAndCountries: 'How widely it’s used, and where',
   agentReach: 'What it can reach by itself',
   agentCoordination: 'Whether copies of it work together',
@@ -1317,3 +1317,135 @@ export const RATING_INSTRUCTION_CONFIRM_LINE =
   'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.';
 
 export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its own rating \u2014 check the cards.';
+
+// ── Round 18 (specs/intake-flow.md §27) ────────────────────────────────────
+// Every string this round introduces, in ONE object, so one test can scan them
+// all (TC-R18-GI-13-02: none may contain "approved" or "rejected" — the
+// verdict screen is asserted with a single-match /approved|rejected/i query).
+// Chunks B..G append to this object; do not scatter new Round 18 strings
+// elsewhere. Words only: no logic (the rule is src/engine/mentioned.ts).
+import type { ChecklistItemId, PrefillFailure } from '../engine/prefill-types';
+
+/** A failure sentence for the model places, and for a firm's own server (§27.5). */
+export interface FailureSentence {
+  /** "this computer" and "Ollama's cloud". */
+  ollama: string;
+  /** A server the firm declared. `{host}` is replaced by the caller. */
+  firm: string;
+}
+
+const same = (s: string): FailureSentence => ({ ollama: s, firm: s });
+
+export const R18_COPY = {
+  // The checklist (R18-GI-1). Labels are the form's own short words (NF-11).
+  CHECKLIST_HEADING: 'What your description mentions',
+  CHECKLIST_HELP:
+    'This only notes which topics your words touch. It does not judge what you wrote, and the questions come next either way.',
+  CHECKLIST_LABELS: {
+    'where-ai-comes-from': 'Where does the AI come from',
+    'kind-of-ai': 'What kind of AI it is',
+    'can-explain': 'Whether the people who built it can show why it gave a result',
+    'information-used': 'What information it will see or use',
+    'what-it-does-with-output': 'What happens with what it produces',
+    'weight-of-output': 'How much weight does what it produces carry',
+    'who-receives': 'Who ends up receiving what it produces',
+    'what-it-decides': 'What it can help decide',
+    'mistake-recoverable': 'Whether a mistake can be put right',
+    'how-widely': 'How widely it will be used',
+    countries: 'Which countries does it involve',
+    'replaces-something': 'Does it replace something you already use',
+    'agentic-reach': 'What it can get into by itself',
+  } as Record<ChecklistItemId, string>,
+  // The two state words, and a symbol beside each so colour is never the only cue (NF-2).
+  STATE_MENTIONED: 'mentioned',
+  STATE_NOT_MENTIONED: 'not mentioned',
+  SYMBOL_MENTIONED: '✓',
+  SYMBOL_NOT_MENTIONED: '○',
+
+  // The nudge (R18-GI-2). The straight apostrophe is the one the test cases quote.
+  UNMENTIONED_NOTE_LEAD: "Your description doesn't mention:",
+  UNMENTIONED_NOTE_HELP:
+    'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
+  ADD_EXAMPLE_LABEL: 'Add this example',
+  // One example sentence per item. Each one, typed on its own, ticks its own item
+  // (asserted in plain-copy.r18.test.ts against the real rule).
+  NUDGE_EXAMPLES: {
+    'where-ai-comes-from': 'We bought it from an outside supplier.',
+    'kind-of-ai': 'It gives each case a score.',
+    'can-explain': 'The people who built it can show which factors drove each result.',
+    'information-used': 'It reads client names and account details.',
+    'what-it-does-with-output': 'A person checks each draft before it is used.',
+    'weight-of-output': 'Staff usually go with its suggestion.',
+    'who-receives': 'The results go out to clients.',
+    'what-it-decides': 'It helps decide who gets a loan.',
+    'mistake-recoverable': 'A person can correct any mistake before it is sent.',
+    'how-widely': 'It starts as a small trial with my team.',
+    countries: 'It will be used by our offices in the United Kingdom.',
+    'replaces-something': 'It replaces our old spreadsheet.',
+    'agentic-reach': 'It has its own logins for other systems.',
+  } as Record<ChecklistItemId, string>,
+
+  // Length (R18-GI-14). Used by the model path (C1); defined here with its sentence.
+  TOO_LONG_SENTENCE:
+    'Your description was too long to read automatically, so the form is blank. It is kept in full.',
+
+  // Failure sentences (§27.5 table), keyed by PrefillFailure. {host} is filled in by the caller.
+  FAILURE_SENTENCES: {
+    'not-configured': same(
+      'No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under Make it smarter.',
+    ),
+    'too-long': same(
+      'Your description was too long to read automatically, so the form is blank. It is kept in full.',
+    ),
+    'timed-out': same('Nothing was filled in for you. Answer the questions below.'),
+    skipped: same('Nothing was filled in for you. Answer the questions below.'),
+    'not-read': same(
+      'Nothing was filled in for you. Answer the questions below — or press Read my description again.',
+    ),
+    'setting-changed': same(
+      'The model setting changed while it was reading, so nothing was filled in. Press Read my description again.',
+    ),
+    'invalid-setting': same(
+      "The model setting isn't valid, so nothing was sent. Open Settings and check it.",
+    ),
+    'nothing-found': same(
+      'Nothing in your description could be filled in with a quote, so the form is blank.',
+    ),
+    retired: {
+      ollama: "That model isn't available any more. Pick another one in Settings.",
+      firm: "The server says that model isn't available any more. Pick another in Settings.",
+    },
+    'model-missing': {
+      ollama: "That model isn't on this computer. Pick another in Settings, or pull it with Ollama.",
+      firm: "That model isn't on the server. Pick another in Settings.",
+    },
+    'not-included': {
+      ollama: "That model isn't included in the free allowance. Pick another one in Settings.",
+      firm: "The server says that model isn't included for you. Pick another in Settings.",
+    },
+    'allowance-used': {
+      ollama:
+        'The free allowance for that model is used up for now. Wait a while, or pick another model in Settings.',
+      firm: 'The server says your allowance is used up for now. Wait a while, or pick another model in Settings.',
+    },
+    'signed-out': {
+      ollama: "Ollama isn't signed in. Run `ollama signin` on this computer, then try again.",
+      firm: "The server asked for a sign-in, which this page can't give. Ask whoever runs it.",
+    },
+    'not-answering': {
+      ollama: "The model isn't answering. Start the Ollama app or check the address in Settings.",
+      firm: "The server isn't answering. Check the address in Settings, or ask whoever runs it.",
+    },
+    'blocked-or-unreachable': {
+      ollama:
+        "We couldn't reach Ollama on this computer. Start the Ollama app and check that its allowed-origins setting includes this page.",
+      firm: "We couldn't reach the server at {host}. Check the address in Settings, and that the server allows requests from this page.",
+    },
+    unusable: same("The model's answer couldn't be used, so nothing was filled in for you."),
+    other: same("The model's answer couldn't be used, so nothing was filled in for you."),
+  } as Record<PrefillFailure, FailureSentence>,
+
+  // An earlier saved draft landed on the form (R18-NF-5). Shown role="status" on the form.
+  EARLIER_VERSION_NOTICE:
+    'This was saved by an earlier version of Counterpoise, so please check your answers.',
+} as const;

@@ -294,3 +294,15 @@ export function mentionedItems(
   }
   return out;
 }
+
+// ── Length rule (R18-GI-14, intake-flow §27.3) ─────────────────────────────
+
+/** The longest description the model path reads, counted in Unicode code points. */
+export const PREFILL_MAX_CHARS = 8000;
+
+/** Length in code points ([...text].length), not UTF-16 units and not bytes. */
+export function codePointLength(text: string): number {
+  let n = 0;
+  for (const _ of text) n++;
+  return n;
+}
