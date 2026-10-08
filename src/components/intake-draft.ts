@@ -285,8 +285,20 @@ export function loadDraftInfo(): DraftInfo | null {
       return { state: envelope.state as unknown as IntakeState, migratedFromOldBuild: false, earlierVersionNotice: false };
     }
     const description = salvageDescription(parsed);
-    if (!Number.isInteger(envelope.version) || envelope.version !== DRAFT_VERSION) {
-      // 1-3: an earlier build. 0, negative, fractional: damaged. Above 4: a future build.
+    if (envelope.version !== DRAFT_VERSION) {
+      // The two steps before any answer exist (the typed description, and the
+      // similar-cases screen) kept their shape across versions 1-3, so a valid one
+      // from those builds is exactly what this build would have saved: restored as
+      // it is. Everything else from an earlier build (the card review, the
+      // questions, the confirmation, a model-path extraction, a form with answers
+      // in a shape the form no longer reads) lands on the form without answers.
+      // 0, negative, fractional or non-numeric versions are damaged, and a version
+      // above 4 is a build this one cannot read: both land on the form too.
+      const earlier = Number.isInteger(envelope.version) && envelope.version >= 1 && envelope.version < DRAFT_VERSION;
+      if (earlier && isRecord(envelope.state) && (envelope.state.step === 'description_entry' || envelope.state.step === 'duplicate_check')) {
+        const kept = currentState(envelope.state);
+        if (kept !== null) return { state: kept, migratedFromOldBuild: false, earlierVersionNotice: false };
+      }
       return unusable(description);
     }
     const state = currentState(envelope.state);

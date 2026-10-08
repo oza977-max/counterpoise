@@ -13,7 +13,7 @@ import { append as appendAuditEvent, getAll, getAllForExport } from '../../store
 import { setCurrentPolicyYaml } from '../../store/policy-source';
 import type { DataFlowGraph } from '../../engine/types';
 import type { Verdict } from '../../types/verdict';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // FX-2 (CR6-fixes.md v2) — abandoned work, navigation gates, announcements,
 // crash safety. TDD-2 mock budget would normally be 1 (the Anthropic SDK
@@ -149,7 +149,7 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
       await screen.findByLabelText(/what ai tool do you want to use/i);
 
       await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Fresh case beta');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       // Before the fix, Continue here silently did nothing — confirmNewInFlight
       // was still true from the abandoned case's still-pending call.
       await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
@@ -223,7 +223,7 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
         screen.getByLabelText(/what ai tool do you want to use/i),
         'A chatbot that helps interns book conference rooms',
       );
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       await screen.findByRole('button', { name: /^continue →$/i }, DUP_CHECK_WAIT);
 
       // The abandoned case's LLM confirm now resolves late, "true" — it
@@ -263,7 +263,7 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
       await screen.findByLabelText(/what ai tool do you want to use/i);
 
       await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Case beta, fresh');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
       await screen.findByRole('button', { name: /^try again$/i });
       // Before the fix, this click silently did nothing — retryExtractionInFlight
@@ -303,7 +303,7 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
 
     await user.click(screen.getByRole('button', { name: /new pre-check/i }));
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'Adopt-abandon probe assistant');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /use the earlier result/i }));
     await screen.findByText(ADOPTED_SCREEN);
   });
@@ -335,7 +335,7 @@ describe('CR6-02: "Start over" abandons earlier in-flight work instead of leavin
         </StrictMode>,
       );
       await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'StrictMode duplicate probe assistant');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
 
       await screen.findByRole('button', { name: /mine is different/i });
       // Exactly one real confirm call, and exactly one match card — not two
@@ -381,7 +381,7 @@ describe('CR6-14: a stale extraction error does not leak onto the next case', ()
       await screen.findByLabelText(/what ai tool do you want to use/i);
 
       await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Fresh case, extraction pending');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
       // The fresh case's own extraction hasn't resolved yet — it must read
@@ -720,7 +720,7 @@ describe('CR6-17: an invalid policy shows a message at the button instead of fai
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Invalid-policy form probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     await fillText(user, await screen.findByLabelText(/what do you want to call it/i), 'Gate probe tool');
@@ -925,7 +925,7 @@ describe('I-4: Start over after "Use the earlier result" leaves nothing of the a
 
     await user.click(screen.getByRole('button', { name: /new pre-check/i }));
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'A chatbot that helps interns book conference rooms');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await screen.findByRole('button', { name: /^continue →$/i }, DUP_CHECK_WAIT);
     expect(screen.queryByText(ADOPTED_SCREEN)).not.toBeInTheDocument();
   });
@@ -948,7 +948,7 @@ describe('I-5: going Back mid duplicate check abandons that check', () => {
       const box = await screen.findByLabelText(/what ai tool do you want to use/i);
       await user.clear(box);
       await fillText(user, box, 'A chatbot that helps interns book conference rooms');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       await screen.findByRole('button', { name: /^continue →$/i }, DUP_CHECK_WAIT);
 
       first.resolve(true);
@@ -1101,7 +1101,7 @@ describe('FX-2 pass 3 minors: the decision lock belongs to its own attempt; fini
 
       // New attempt reaches the same match; its own dismissal write is held.
       await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'Lock owner probe assistant');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       // EBT exception (owner-accepted, code review 006/008): hold in flight — keeps the call open across a Start over / Back click, which the shared SDK mock cannot do per call
       const appendSpy = vi.spyOn(auditModule, 'append').mockImplementationOnce(() => newDismissal.promise as never);
       await user.click(await screen.findByRole('button', { name: /mine is different/i }));
@@ -1187,7 +1187,7 @@ describe('Final review M-1: a failed-save message belongs to its own case', () =
       await screen.findByText(/could not be saved/i);
       await user.click(screen.getByRole('button', { name: /start over instead/i }));
       await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'Leftover message probe assistant');
-      await user.click(screen.getByRole('button', { name: /^next/i }));
+      await pressNext(user);
       await screen.findByRole('button', { name: /mine is different/i });
       expect(screen.queryByText(/could not be saved/i)).not.toBeInTheDocument();
     } finally {

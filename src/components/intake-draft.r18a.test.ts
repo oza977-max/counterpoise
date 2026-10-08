@@ -116,6 +116,29 @@ describe('earlier drafts land on the form with the description and no answers (T
   });
 });
 
+describe('earlier drafts at the two steps before any answer keep their shape (specs/intake-flow.md §27.7 lists the steps that land on the form)', () => {
+  it.each([
+    ['a bare (version 1) duplicate_check', { step: 'duplicate_check', description: D }],
+    ['a version 2 duplicate_check', { version: 2, state: { step: 'duplicate_check', description: D } }],
+    ['a version 3 description_entry', { version: 3, state: { step: 'description_entry', description: D } }],
+  ])('%s is restored as it is, with no earlier-version sentence', (_n, draft) => {
+    put(draft);
+    const info = loadDraftInfo()!;
+    expect(info.earlierVersionNotice).toBe(false);
+    expect(info.state.step).toMatch(/^(description_entry|duplicate_check)$/);
+    expect((info.state as { description: string }).description).toBe(D);
+  });
+
+  it('but not when the shape is wrong (description not a string) or the version is not an earlier one', () => {
+    put({ version: 3, state: { step: 'duplicate_check', description: 7 } });
+    expect(loadDraftInfo()!.state).toEqual({ step: 'graph_extraction', description: '', method: 'form' });
+    put({ version: 9, state: { step: 'duplicate_check', description: D } });
+    expect(loadDraftInfo()!.state).toEqual(LANDING);
+    put({ version: 0, state: { step: 'duplicate_check', description: D } });
+    expect(loadDraftInfo()!.state).toEqual(LANDING);
+  });
+});
+
 describe('a damaged earlier draft still opens (TC-R18-NF-5-02)', () => {
   it.each([
     ['a description that is a number', { version: 3, state: { step: 'graph_extraction', description: 42, method: 'form' } }, ''],

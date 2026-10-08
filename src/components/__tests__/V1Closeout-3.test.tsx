@@ -19,7 +19,7 @@ import { evaluate } from '../../engine/evaluate';
 import type { DataFlowGraph, GraphCorrection } from '../../engine/types';
 import type { AuditEvent, RegisterNode } from '../../store/types';
 import type { Verdict } from '../../types/verdict';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 import { questionnaireCopyForField } from '../plain-copy';
 
 // gvm-test 007 close-out, chunk 3 — the UI cases. Only the model SDK is mocked
@@ -218,7 +218,7 @@ async function fillMinimalForm(
 async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, description: string) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
@@ -453,7 +453,7 @@ describe('TC-UC-1-04 — special characters and non-ASCII are accepted as litera
     await user.paste(typed);
     // Accepted: the textbox keeps every character exactly as typed.
     expect((box as HTMLTextAreaElement).value).toBe(typed);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await screen.findAllByText(/has this been checked before/i);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
@@ -503,7 +503,7 @@ describe('TC-UC-2-04 — nothing similar found: intake carries on without a dupl
       await screen.findByLabelText(/what ai tool do you want to use/i),
       'Weekly staff canteen menu translator for the cafeteria noticeboard.',
     );
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // The register is not empty (the seeded portfolio is in it) — it was searched.
     expect(await screen.findByText(/nothing similar found — we looked through \d+ earlier checks?/i, {}, DUP_CHECK_WAIT)).toBeInTheDocument();
@@ -529,7 +529,7 @@ describe('TC-UC-5-03 — several contradictions are shown together and all must 
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste('This tool processes no client data at all. A human approves every action, no autonomy.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     // Declare the opposite on BOTH points: personal information, and acting by itself.
@@ -659,7 +659,7 @@ describe('TC-UC-7-01 / TC-VD-6-01 — a correction keeps both values; a fresh ve
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), UC7_DESCRIPTION);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText(/check what we read from your description/i);
 

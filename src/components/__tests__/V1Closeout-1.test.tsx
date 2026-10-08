@@ -17,7 +17,7 @@ import type { RegisterNode } from '../../store/types';
 import type { Verdict } from '../../types/verdict';
 import type { DataFlowGraph, PolicyFile } from '../../engine/types';
 import appetiteYaml from '../../../policy/appetite.yaml?raw';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // gvm-test 007, close-out builder 1 — UI cases. Real components, real engine,
 // real store on the suite's fake IndexedDB. The only mock is the external
@@ -92,7 +92,7 @@ function mockExtraction(graph: unknown) {
 async function describeAndReachGraph(user: ReturnType<typeof userEvent.setup>, text: string, expectLabel: RegExp) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), text);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findAllByText(expectLabel);
 }
@@ -204,7 +204,7 @@ describe('V1 close-out 1 — intake screens', () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), label);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /use the earlier result/i }));
     expect(screen.queryByText(/new pre-check — tell us about the ai you want to use/i)).not.toBeInTheDocument();
 

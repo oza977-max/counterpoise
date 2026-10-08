@@ -6,6 +6,7 @@ import IntakeFlow from '../IntakeFlow';
 import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import type { DataFlowGraph } from '../../engine/types';
+import { pressNext } from './fillText';
 
 // Round 5 — the graph review that explains itself (requirements-005,
 // intake-flow.md §15). GR-1/3/5 are asserted directly against GraphView;
@@ -235,7 +236,7 @@ async function reachGraphReview(user: ReturnType<typeof userEvent.setup>) {
     // a verbatim substring of what is typed here.
     'Trains an open source model on internal credit risk data containing client PII. It is a large language model with supervised autonomy, running in Zone C, and it recommends advisory, reversible, internal-only answers at limited scale; it replaces no prior model.',
   );
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }));
   await screen.findByText(/check what we read from your description/i);
 }

@@ -9,6 +9,7 @@ import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import { getAllForExport } from '../../store/audit';
 import type { DataFlowGraph } from '../../engine/types';
+import { pressNext } from './fillText';
 
 // Round 6 — show your working (requirements-006, intake-flow.md §16).
 // Provenance quotes verified deterministically; guessed fields resolve via
@@ -246,7 +247,7 @@ describe('R6 — flow level: guessed fields ride to the questionnaire and the an
     const user = userEvent.setup();
     render(<IntakeFlow />);
     await user.type(screen.getByLabelText(/what ai tool do you want to use/i), DESCRIPTION);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }));
     await screen.findByText(/check what we read from your description/i);
 

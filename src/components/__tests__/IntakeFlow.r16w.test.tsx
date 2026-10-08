@@ -5,7 +5,7 @@ import App from '../../App';
 import { addNode, getUseCases } from '../../store/register';
 import { append, getAll } from '../../store/audit';
 import type { Verdict } from '../../types/verdict';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // R16-W (build/prompts/R16-W.md) — the owner-side walkthrough fixes,
 // integration-level coverage. Unit-level coverage for the individual pieces
@@ -93,7 +93,7 @@ async function fillMinimalForm(user: ReturnType<typeof userEvent.setup>, name: s
 async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, description: string) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
@@ -297,7 +297,7 @@ describe('Confirm guard across intakes (found by the R16-W walkthrough)', () => 
     await user.click(screen.getByText('+ New pre-check'));
     const second = 'Marrowdeep lanternfall second tool';
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'The second case in this tab.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     // "Continue →" when nothing similar is found; "Mine is different —
     // continue →" if the first case is offered as similar — either way on.
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));

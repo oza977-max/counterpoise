@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GraphView from '../GraphView';
 import IntakeFlow from '../IntakeFlow';
-import { fillText, DUP_CHECK_WAIT, SLOW_FLOW_MS } from './fillText';
+import { fillText, DUP_CHECK_WAIT, SLOW_FLOW_MS, pressNext } from './fillText';
 
 // Round 9 — the review screen recomposed (requirements-009, §19,
 // ADR-IF-R9-1): aggregation and priority, never deletion.
@@ -51,7 +51,7 @@ const DESCRIPTION = 'Analysts ask questions about internal credit risk data, rep
 async function reachReview(user: ReturnType<typeof userEvent.setup>) {
   render(<IntakeFlow />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), DESCRIPTION);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText(/check what we read from your description/i);
 }
@@ -189,7 +189,7 @@ describe('form path — the trail records the birth event', () => {
     const user = userEvent.setup({ delay: null });
     render(<IntakeFlow />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'A tool that sorts internal mail queues.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     // On the guided form now; fill the minimum and submit. R16-B: the
     // field-by-field form this used to drive (by label, with an sf-* id

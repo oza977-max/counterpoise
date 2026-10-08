@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import appetiteYaml from '../../../policy/appetite.yaml?raw';
 import { setCurrentPolicyYaml } from '../../store/policy-source';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // TDD-2 mock budget = 1: the only mock is the external boundary (Anthropic SDK).
 // Everything else — IndexedDB via fake-indexeddb, React rendering — is real.
@@ -110,7 +110,7 @@ describe('Walking Skeleton', () => {
     // Step 1: description entry
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'A tool that drafts client emails for relationship managers, pulling recent meeting notes, pending requests, preferred greeting style, signature blocks, and followup reminders into a polished first draft' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
 
     // Step 2: graph extraction happened (real Anthropic tool_use call, mocked at the SDK boundary)
@@ -172,7 +172,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'A tool that drafts client emails');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
 
     // Structured intake banner renders instead of the old dead-end message.
@@ -292,7 +292,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'A risk scoring tool for internal use');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
 
     expect((await screen.findAllByText(/risk scoring model/i)).length).toBeGreaterThan(0);
@@ -378,7 +378,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'Audit ordering check: verifies that confirmation events precede verdict events, replaying sequence numbers, timestamps, writer identities, and tie breaking behaviour across rapid consecutive submissions' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
     await confirmAllNodes(user);
@@ -477,7 +477,7 @@ describe('Walking Skeleton', () => {
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Double click guard: protects the confirm button against impatient repeated presses, suppressing duplicate submissions, stray keyboard activations, and bouncing touchscreen taps during slow renders' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
     await confirmAllNodes(user);
@@ -549,7 +549,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'Correction survival check: carries a reviewer edited field through questionnaire, attestation, persistence, and ledger entry without losing that human override anywhere downstream' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
 
@@ -624,7 +624,7 @@ describe('Walking Skeleton', () => {
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmation gate probe: sits at the final step waiting for a human to press the confirm control before any classification is computed, stored, or displayed to anyone' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
     await confirmAllNodes(user);
@@ -695,7 +695,7 @@ describe('Walking Skeleton', () => {
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Confirmed version probe: records which numbered edition of the reviewed picture a human signed off, after exactly one reviewer correction was applied to the first extraction' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
 
@@ -762,7 +762,7 @@ describe('Walking Skeleton', () => {
     // First pass: reach a verdict normally.
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'Quartz xylophone probe intake: calibrates resonant percussion sensors, logging amplitude drift, harmonic distortion, bar temperature, mallet hardness, and tuning fork reference offsets nightly' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(uniqueLabel)).toBeInTheDocument();
     await confirmAllNodes(user);
@@ -853,7 +853,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'No track match check');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(/new pre-check — tell us about the ai you want to use/i)).toBeInTheDocument();
 
@@ -905,7 +905,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'High tier routing check');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(/new pre-check — tell us about the ai you want to use/i)).toBeInTheDocument();
 
@@ -979,7 +979,7 @@ describe('Walking Skeleton', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'Zxqvw plumbing inventory forecaster xyzzy: projects pipe fitting, valve, gasket, solder, flange, and copper elbow stock levels per warehouse, seasonal demand, supplier lead times, and reorder cadence' + DETAIL);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
     expect(await screen.findByText(/check what we read from your description/i)).toBeInTheDocument();
     await confirmAllNodes(user);
@@ -1117,7 +1117,7 @@ describe('Walking Skeleton', () => {
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     // High keyword overlap with the seeded label -> keyword duplicate hit.
     await fillText(user, input, 'quorix zenbat flumtrek checker');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // V2-B: the duplicate check is a GATE — the card renders at the
     // duplicate step and the flow does not proceed without confirmation.
@@ -1159,7 +1159,7 @@ describe('Walking Skeleton', () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'brindle vexomat quarlune probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // V2-B gate: 2LoD sees the full match detail at the duplicate step.
     expect(await screen.findByText(/something similar has been checked before/i)).toBeInTheDocument();
@@ -1181,7 +1181,7 @@ describe('Register row naming (charter 004 D-004)', () => {
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'A tool that drafts client emails');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
 
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
@@ -1239,7 +1239,7 @@ describe('The submitted description is shown back (charter 004 D-001)', () => {
 
     const typed = 'A tool that drafts client emails from CRM notes';
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), typed);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i}, DUP_CHECK_WAIT));
 
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);

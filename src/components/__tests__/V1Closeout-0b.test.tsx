@@ -5,7 +5,7 @@ import IntakeFlow from '../IntakeFlow';
 import { addNode, getUseCases } from '../../store/register';
 import { getAll } from '../../store/audit';
 import { setRole } from '../../store/role';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // gvm-test 007 close-out, chunk 0 (intake flow half). The real IntakeFlow, the
 // real engine, the real store on the suite's fake IndexedDB. The ONLY mock is
@@ -85,7 +85,7 @@ async function confirmEverything(user: ReturnType<typeof userEvent.setup>) {
 
 async function typeAndSubmit(user: ReturnType<typeof userEvent.setup>, text: string) {
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), text);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
 }
 
 beforeEach(() => {

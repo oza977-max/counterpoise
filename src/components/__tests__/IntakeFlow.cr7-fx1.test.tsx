@@ -19,7 +19,7 @@ import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import appetiteYaml from '../../../policy/appetite.yaml?raw';
 import type { DataFlowGraph } from '../../engine/types';
-import { fillText, DUP_CHECK_WAIT } from './fillText';
+import { fillText, DUP_CHECK_WAIT, pressNext } from './fillText';
 import { IB_PREFIX, ibCaseCount } from '../../seeds/ib-portfolio';
 import { AIGATE_USE_CASE_ID } from '../../seeds/aigate-self-assessment';
 
@@ -228,7 +228,7 @@ async function failNextEvaluation() {
 async function reachReview(user: User, description: string) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText('Check what we read from your description');
 }
@@ -545,7 +545,7 @@ describe('CR7-24 — Start over and Back do not keep the previous screen\'s erro
     expect(await screen.findByText(/still need checking/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /start over instead/i }));
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), NSDESC);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText('Check what we read from your description');
     expect(document.querySelector('.intake-flow__gate-error')).toBeNull();
@@ -560,7 +560,7 @@ describe('CR7-37 — a policy problem reads as a plain sentence, not a field pat
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'A policy-problem probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await fillMinimalForm(user, 'Policy problem tool', 'x');
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
@@ -624,7 +624,7 @@ async function reachForm(user: User, description: string) {
   localStorage.removeItem('aigate:api-key');
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByLabelText(/what do you want to call it/i);
 }

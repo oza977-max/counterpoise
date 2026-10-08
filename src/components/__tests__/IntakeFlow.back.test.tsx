@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // FN-006 — user-reported after the v0.1.0 tag: "after describing, if I go to
 // the next step it doesn't go back, there is no back option."
@@ -164,7 +164,7 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste(hostile);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await screen.findAllByText(/has this been checked before/i);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     // The guided form's own description field is prefilled from what was
@@ -192,7 +192,7 @@ describe('IntakeFlow — contradictions are caught on the zero-questions path (U
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste('This tool processes no client data at all. A human approves every action, no autonomy.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     // Declare the opposite of the description. R16-B: adapted to the new
@@ -250,7 +250,7 @@ describe('IntakeFlow — resolving a contradiction cannot dead-end (UC-5)', () =
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste('This tool processes no client data at all.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     // R16-B: the field-by-field form this test drove is replaced by the

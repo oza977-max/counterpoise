@@ -5,6 +5,7 @@ import IntakeFlow from '../IntakeFlow';
 import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import type { DataFlowGraph } from '../../engine/types';
+import { pressNext } from './fillText';
 
 // Round 7 — jurisdictions are confirmed, never assumed (requirements-007,
 // intake-flow.md §17, ADR-IF-R7-1). Motivated by sweep-001: the extractor
@@ -60,7 +61,7 @@ const DESCRIPTION = 'Answers risk analysts questions about internal credit risk 
 async function reachReview(user: ReturnType<typeof userEvent.setup>) {
   render(<IntakeFlow />);
   await user.type(screen.getByLabelText(/what ai tool do you want to use/i), DESCRIPTION);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }));
   await screen.findByText(/check what we read from your description/i);
 }

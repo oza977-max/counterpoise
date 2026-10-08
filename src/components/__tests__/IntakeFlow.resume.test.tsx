@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { addNode, getUseCases } from '../../store/register';
 import { getAll } from '../../store/audit';
-import { fillText, DUP_CHECK_WAIT } from './fillText';
+import { fillText, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 /** A register entry the duplicate check will match on, seeded before render so
  *  the row is present regardless of App's fire-and-forget seeding. */
@@ -146,7 +146,7 @@ describe('Duplicate gate — both decisions exist and both are recorded (UC-2)',
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Dismissal probe assistant');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     // R16-W §4 (D-74): this description keyword-matches the seeded row
     // above, so the match-found screen's own button ("Mine is different —
     // continue →") renders, not the no-match screen's "Continue →".
@@ -165,7 +165,7 @@ describe('Duplicate gate — both decisions exist and both are recorded (UC-2)',
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Adoption probe assistant');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // R16-W §4 (D-74): "Adopt this classification" is now "Use the earlier
     // result".

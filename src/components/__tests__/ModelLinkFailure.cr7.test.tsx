@@ -5,6 +5,7 @@ import App from '../../App';
 import RegisterDetail from '../RegisterDetail';
 import * as registerModule from '../../store/register';
 import { getUseCases } from '../../store/register';
+import { pressNext } from './fillText';
 
 // Review pass 2, M-1. The register says "No AI model is recorded for this use case" when a case has no
 // uses_model edge. The link is written AFTER the use-case node (writing it first
@@ -67,7 +68,7 @@ type User = ReturnType<typeof userEvent.setup>;
 async function reachConfirm(user: User) {
   render(<App />);
   await user.type(screen.getByLabelText(/what ai tool do you want to use/i), DESC);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }));
   await screen.findByText('Check what we read from your description');
   for (;;) {

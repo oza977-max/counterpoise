@@ -1,4 +1,6 @@
+import { screen } from '@testing-library/react';
 import type userEvent from '@testing-library/user-event';
+import { R18_COPY } from '../plain-copy';
 
 // FX7-6: put text into a field in ONE input event instead of one per
 // character. Every keystroke re-renders the whole <App />, so typing a long
@@ -30,3 +32,14 @@ export const SLOW_FLOW_MS = 15000;
 // thing; the 1 s default was too short on a loaded machine (TC-CR6-02a,
 // TC-CR6-02k). Same precedent as confirmAndReachVerdict (IntakeFlow.r16d2).
 export const DUP_CHECK_WAIT = { timeout: 5000 };
+
+// R18-A: the describe screen's one-press nudge. The first Next with unmentioned
+// items lists them and stays on the screen; the second, with the set unchanged,
+// goes on (specs/intake-flow.md §27.3). A test that is not about the nudge but
+// needs to get past the description screen presses Next through it with this.
+export async function pressNext(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole('button', { name: /^next/i }));
+  if (screen.queryByText(R18_COPY.UNMENTIONED_NOTE_LEAD)) {
+    await user.click(screen.getByRole('button', { name: /^next/i }));
+  }
+}
