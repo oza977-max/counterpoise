@@ -9,7 +9,10 @@ import { plainAnswersToFormValues } from './plain-intake';
 import { optionKeyForText } from '../components/plain-copy';
 import type { PlainAnswers, QuestionId } from '../components/plain-copy';
 import type { StructuredFormValues } from './build-graph-from-form';
-import type { JurisdictionPack, PolicyFile } from './types';
+import type { JurisdictionPack, PolicyFile, Verdict } from './types';
+import { WORKED_EXAMPLES } from './worked-examples';
+import type { WorkedExpectation } from './worked-examples';
+import { PLAIN_QUESTIONS } from '../components/plain-copy';
 
 // Pins every outcome printed in `docs/try-these.md`.
 //
@@ -255,5 +258,98 @@ describe('try-these cases driven from the page\u2019s plain answers (CR9-15)', (
     expect(v.downstream_reviews).toHaveLength(2);
     expect([...v.downstream_reviews].sort()).toEqual(['Independent model validation (2LoD)', 'Information security review']);
     expect(v.provisional_reasons).toContain('unsigned_pack_rules');
+  });
+});
+
+// R18-A (specs/intake-flow.md §27.12). The ten scripted cases now live in
+// src/engine/worked-examples.ts as PlainAnswers; this file reads that module.
+// The hand-built StructuredFormValues cases above are kept as the independent
+// oracle: each `expected` in the module copies an assertion made above.
+function assertExpected(v: Verdict, e: WorkedExpectation) {
+  if (e.status !== undefined) expect(v.status).toBe(e.status);
+  if (e.tier !== undefined) expect(v.tier).toBe(e.tier);
+  if (e.track !== undefined) expect(v.track).toBe(e.track);
+  if (e.bindingConstraint !== undefined) expect(v.binding_constraint).toBe(e.bindingConstraint);
+  if (e.controls !== undefined) expect(v.controls).toEqual(e.controls);
+  if (e.controlCount !== undefined) expect(v.controls).toHaveLength(e.controlCount);
+  if (e.inheritedControls !== undefined) expect(v.inheritance?.inherited_controls ?? []).toEqual(e.inheritedControls);
+  if (e.downstreamReviews !== undefined) expect(v.downstream_reviews).toHaveLength(e.downstreamReviews);
+  if (e.provisionalReasons !== undefined) expect(v.provisional_reasons).toEqual(e.provisionalReasons);
+  for (const r of e.provisionalIncludes ?? []) expect(v.provisional_reasons).toContain(r);
+  if (e.unclassifiedDecisionTypes !== undefined) expect(v.unclassified_decision_types).toEqual(e.unclassifiedDecisionTypes);
+}
+
+function runPlain(answers: PlainAnswers, description: string): Verdict {
+  const { values } = plainAnswersToFormValues({ ...answers, '2': description }, policy);
+  return run(values);
+}
+
+describe('worked-examples module: the ten cases of docs/try-these.md (R18-A)', () => {
+  it('holds exactly ten cases with distinct ids', () => {
+    expect(WORKED_EXAMPLES).toHaveLength(10);
+    expect(new Set(WORKED_EXAMPLES.map((c) => c.id)).size).toBe(10);
+  });
+
+  for (const c of WORKED_EXAMPLES) {
+    it(`${c.id}: its authored PlainAnswers reproduce the guide's printed outcome`, () => {
+      assertExpected(runPlain(c.answers, c.description), c.expected);
+    });
+    for (const variant of c.variants ?? []) {
+      it(`${c.id}: variant "${variant.label}" reproduces the outcome the guide promises`, () => {
+        assertExpected(runPlain({ ...c.answers, ...variant.change }, c.description), variant.expected);
+      });
+    }
+  }
+
+  const guide = readFileSync(resolve(__dirname, '../../docs/try-these.md'), 'utf-8');
+  const sections = guide.split(/\n## (\d+)\. /).slice(1);
+
+  it('each description is the text printed in the guide (block-quote line breaks joined by a space)', () => {
+    for (const c of WORKED_EXAMPLES) {
+      const n = Number(c.id.replace('case-', ''));
+      const body = sections[sections.indexOf(String(n)) + 1]!;
+      const quote = body.match(/\n> ([\s\S]*?)\n\n\*\*Answers/)![1]!.split('\n').map((l) => l.replace(/^> ?/, '')).join(' ');
+      expect(c.description, c.id).toBe(quote);
+      expect(body.split('\n')[0], c.id).toBe(c.title);
+    }
+  });
+
+  it('each answer key is the key of the option the guide prints, in the form\u2019s own words', () => {
+    const norm = (t: string) => t.replace(/[\u2018\u2019]/g, "'");
+    const idFor = (q: string): QuestionId | undefined =>
+      q.startsWith('Which version') ? '3a'
+      : q.startsWith('Does your information stay') ? '3platformZone'
+      : q.startsWith('What does it do when it acts') ? '6b'
+      : q.startsWith('How much weight') ? '6a'
+      : q.startsWith('Could the people') ? '4a'
+      : q.startsWith('What can it get into') ? '13'
+      : q.startsWith('Can copies') ? '14'
+      : q.startsWith('What kind of decision is it') ? '8other'
+      : PLAIN_QUESTIONS.find((p) => norm(p.text).startsWith(norm(q).replace(/\?$/, '')))?.id;
+    for (const c of WORKED_EXAMPLES) {
+      const n = c.id.replace('case-', '');
+      const body = sections[sections.indexOf(n) + 1]!;
+      const lines = body.split('**Answers.**')[1]!.split('**Expect:**')[0]!.split('\n').filter((l) => l.startsWith('- **'));
+      expect(lines.length, c.id).toBeGreaterThan(8);
+      for (const line of lines) {
+        const m = line.match(/^- \*\*(.+?)\*\* \u2192 (.*)$/)!;
+        const id = idFor(m[1]!);
+        expect(id, `${c.id}: ${m[1]}`).toBeDefined();
+        const printed = [...m[2]!.matchAll(/\*([^*]+)\*/g)].map((x) => x[1]!);
+        const free = m[2]!.match(/`([^`]+)`/)?.[1];
+        if (free !== undefined) {
+          expect(c.answers['8other'], c.id).toBe(free);
+          continue;
+        }
+        const got = ([] as string[]).concat((c.answers[id!] ?? []) as string | string[]);
+        expect(got, `${c.id} Q${id}`).toHaveLength(printed.length);
+        printed.forEach((text, i) => {
+          const key = got[i]!;
+          if (id === '3' && optionKeyForText('3', text) === undefined) expect(norm(policy.platforms?.find((p) => p.id === key)?.plain_name ?? ''), `${c.id} Q3`).toBe(norm(text));
+          else if (id === '11') expect(policy.jurisdictions?.find((j) => j.code === key)?.name, `${c.id} Q11`).toBe(text);
+          else expect(optionKeyForText(id!, text), `${c.id} Q${id} "${text}"`).toBe(key);
+        });
+      }
+    }
   });
 });
