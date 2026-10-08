@@ -2,7 +2,6 @@ import { useEffect, useCallback, useMemo, useReducer, useState, useRef } from 'r
 import { extractGraph } from '../llm/graph-extractor';
 import { confirmSemanticDuplicate } from '../llm/duplicate-check';
 import { getApiKey } from '../llm/client';
-import { localLlmEnabled } from '../llm/local-provider';
 import { evaluate } from '../engine/evaluate';
 import { normaliseAccessScope, sameAccessScopeSet } from '../engine/access-scope';
 import { findPossibleDuplicates, matchCorpus } from '../engine/duplicate';
@@ -38,6 +37,7 @@ import { saveDraft, loadDraft, loadDraftInfo, clearDraft, clearDraftIfCase, clea
 import type { IntakeState } from './intake-state';
 import StructuredForm from './StructuredForm';
 import type { Assumption, PlainAnswers } from './plain-copy';
+import type { FormAnswerState } from '../engine/prefill-types';
 import {
   extractionErrorMessage,
   EXTRACTION_ERROR_HELP,
@@ -139,6 +139,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // (intake-draft.ts). Said plainly — the person was part-way through the
   // questions and is now at the review screen again.
   const [showMigrated, setShowMigrated] = useState(() => loadDraftInfo()?.migratedFromOldBuild === true);
+  // R18-NF-5. True when the restored draft was saved by an earlier version (or
+  // could not be used) and came back as the form with the description kept and no
+  // answers (intake-draft.ts). Computed once at load, never stored, so it shows
+  // once; cleared as soon as the person leaves the form.
+  const [showEarlierVersion, setShowEarlierVersion] = useState(
+    () => loadDraftInfo()?.earlierVersionNotice === true,
+  );
 
   // CR6-02 (Critical). One "attempt" is one run through intake, from a
   // fresh description to Start Over. Bumped by handleStartOver, by
@@ -318,6 +325,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   const [lastConfirmed, setLastConfirmed] = useState<{
     assumptions: Assumption[];
     plainAnswers?: PlainAnswers;
+    // R18-A: the form's own answer state, handed back to the form on a correction.
+    answerState?: FormAnswerState;
     // CR7-02: so a correction from the result can hand the frozen uncertain
     // list back to the review screen along with the assumptions.
     uncertainNodeIds?: string[];
@@ -385,6 +394,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // R16-W W-4: StructuredForm's own `initialAnswers` prop — present only on
   // a resubmission (CHANGE_ANSWER or the form-path STEP_BACK set it).
   const formInitialAnswers: PlainAnswers | undefined = 'plainAnswers' in state ? state.plainAnswers : undefined;
+  const formInitialAnswerState: FormAnswerState | undefined = 'answerState' in state ? state.answerState : undefined;
   // F-7 (DR7-07). Was a useState, captured while on graph_review and
   // frozen there — a refresh on confirmation lost it (the draft only ever
   // persisted IntakeState, same bug class W-4 already fixed for
@@ -624,6 +634,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // explains; once the person leaves it, it must not come back on return.
   useEffect(() => {
     if (state.step !== 'graph_review') setShowMigrated(false);
+    if (state.step !== 'graph_extraction') setShowEarlierVersion(false);
   }, [state.step]);
 
   // CR7-01 (BC-004: a restored draft). A draft saved while the description was
@@ -712,16 +723,16 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     if (attemptToken.current !== myAttempt) return;
     setDecisionPending(false);
 
-    // The LLM intake path exists if EITHER extractor is configured — the
-    // Anthropic key or a local open model. Which one runs is decided inside
-    // extractGraph (key wins); this flag only picks the intake route.
-    const hasLlm = getApiKey() !== null || localLlmEnabled();
-    dispatch({ type: 'NO_DUPLICATE_FOUND', method: hasLlm ? 'llm' : 'form' });
-
-    if (!hasLlm) {
-      // P4-C02: structured-form fallback (UC-3a) rendered in graph_extraction.
-      return;
-    }
+    // R18-A (specs/intake-flow.md §27.1, R18-GI-10): ONE route. Passing the
+    // similar-cases screen always opens the guided form — the description is
+    // never read by a model on this route, whatever key or local model may be
+    // set. The retired model route below this return is unreachable; R18-E
+    // deletes it.
+    dispatch({ type: 'NO_DUPLICATE_FOUND', method: 'form' });
+    // Typed `boolean` (not `true`) so the compiler keeps checking the retired code
+    // below instead of treating it as dead.
+    const modelRouteRetired: boolean = true;
+    if (modelRouteRetired) return;
 
     // CR6-14 (Important): clears any error left by an earlier, abandoned
     // case's own extraction before this one even starts — otherwise this
@@ -1103,7 +1114,12 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // no actual async gap for two clicks to race across. The ref is kept
   // belt-and-braces, so the handler still cannot re-enter if an await is
   // ever added back here.
-  async function handleFormSubmitted(builtGraph: DataFlowGraph, assumptions: Assumption[], plainAnswers: PlainAnswers) {
+  async function handleFormSubmitted(
+    builtGraph: DataFlowGraph,
+    assumptions: Assumption[],
+    answerState: FormAnswerState,
+    typedDescription: string,
+  ) {
     if (state.step !== 'graph_extraction' || state.method !== 'form') return;
     if (formSubmitInFlight.current) return;
     formSubmitInFlight.current = true;
@@ -1138,7 +1154,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       // node and the memo all read it. The first screen's text is only the
       // fallback for an empty answer (question 2 is required, so this is
       // defensive).
-      const answeredDescription = typeof plainAnswers['2'] === 'string' ? plainAnswers['2'].trim() : '';
+      const answeredDescription = typedDescription.trim();
       const description = answeredDescription || state.description;
       setSubmittedDescription(description);
 
@@ -1170,7 +1186,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         graph,
         useCaseId,
         description,
-        plainAnswers,
+        answerState,
         assumptions,
         questions,
         contradictions,
@@ -1290,6 +1306,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // `assumptions` field.
     const confirmedAssumptions: Assumption[] = 'assumptions' in state && state.assumptions ? state.assumptions : [];
     const confirmedPlainAnswers: PlainAnswers | undefined = 'plainAnswers' in state ? state.plainAnswers : undefined;
+    const confirmedAnswerState: FormAnswerState | undefined = 'answerState' in state ? state.answerState : undefined;
     // CR7-02: the frozen "what the description did not say" list, kept beside
     // the assumptions so a correction from the result can hand both back.
     const confirmedUncertainNodeIds: string[] = 'uncertainNodeIds' in state && state.uncertainNodeIds ? state.uncertainNodeIds : [];
@@ -1338,6 +1355,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
             confirmedPlainAnswers,
             confirmedUncertainNodeIds,
             originalGraph,
+            confirmedAnswerState,
           );
         } catch (err) {
           // A legitimate engine/policy failure (e.g. no-track-match) must not
@@ -1375,6 +1393,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     confirmedPlainAnswers?: PlainAnswers,
     confirmedUncertainNodeIds: string[] = [],
     originalGraph?: DataFlowGraph,
+    confirmedAnswerState?: FormAnswerState,
   ) {
     // Policy checks come FIRST, before any write (R16-F review pass 1). They
     // used to run after use_case_created/graph_confirmed (or graph_corrected)
@@ -1571,6 +1590,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     setLastConfirmed({
       assumptions: confirmedAssumptions,
       plainAnswers: confirmedPlainAnswers,
+      answerState: confirmedAnswerState,
       uncertainNodeIds: confirmedUncertainNodeIds,
     });
 
@@ -1788,7 +1808,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // (graph_review) when either is missing — an older verdict predating
     // lastConfirmed, or a form-built graph last confirmed through the
     // review screen rather than the form.
-    if (lastConfirmed?.plainAnswers && lastGraph.intake_method === 'structured_form') {
+    if (lastConfirmed?.plainAnswers && lastConfirmed.answerState && lastGraph.intake_method === 'structured_form') {
       dispatch({
         type: 'CORRECT_VERDICT_WITH_FORM',
         originalGraph: lastGraph,
@@ -1798,7 +1818,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         // screen's typed text — submittedDescription is set from question
         // 2's final text at every form confirm (handleFormSubmitted).
         description: submittedDescription,
-        plainAnswers: lastConfirmed.plainAnswers,
+        answerState: lastConfirmed.answerState,
         assumptions: lastConfirmed.assumptions,
       });
       return;
@@ -2323,9 +2343,14 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
             )}
             <StructuredForm
               policy={policyResult.valid ? policyResult.policy : EMPTY_POLICY_FALLBACK}
-              initialDescription={state.description}
+              description={state.description}
+              onDescriptionChange={(description) => dispatch({ type: 'DESCRIPTION_EDITED', description })}
+              initialAnswerState={formInitialAnswerState}
               initialAnswers={formInitialAnswers}
-              onSubmit={(graph, assumptions, plainAnswers) => void handleFormSubmitted(graph, assumptions, plainAnswers)}
+              earlierVersionNotice={showEarlierVersion}
+              onSubmit={(graph, assumptions, answerState, description) =>
+                void handleFormSubmitted(graph, assumptions, answerState, description)
+              }
             />
           </>
         )}

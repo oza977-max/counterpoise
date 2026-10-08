@@ -6,11 +6,14 @@ import {
   findQuestion,
   neutralPlatformLabel,
   neutralSupplierLabel,
+  R18_COPY,
 } from './plain-copy';
 import type { Assumption, PlainAnswers, PlainOption, QuestionId } from './plain-copy';
 import { plainAnswersToFormValues, platformZoneOptionKeys, q3ShowsModelQuestion, resolveAccessScopeAnswer } from '../engine/plain-intake';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
-import { saveFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
+import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
+import { toPlainAnswers } from '../engine/form-answer-state';
+import type { FormAnswerState } from '../engine/prefill-types';
 import type { DataFlowGraph, PolicyFile } from '../engine/types';
 
 // R16-B (UC-8, UC-10, UC-11; build/prompts/R16.md v2.1 §2.2). Rule 4
@@ -36,19 +39,28 @@ import type { DataFlowGraph, PolicyFile } from '../engine/types';
 
 interface StructuredFormProps {
   policy: PolicyFile;
-  // W-1 (R16-W §1, D-67): the description typed on the very first screen.
-  // Question 2 starts with it (editable) unless the form's own in-progress
-  // draft or `initialAnswers` (W-4) already holds a question-2 value — see
-  // the precedence comment on the Q2 FreeText render below.
+  // R18-A (specs/intake-flow.md §27.6): Question 2 is the editor of THE
+  // description — the form receives it and reports every change, and keeps no
+  // copy of its own. The intake flow passes both; a form rendered on its own (the
+  // unit tests) may omit them and then holds the text locally, starting from
+  // `initialDescription`.
+  description?: string;
+  onDescriptionChange?: (description: string) => void;
   initialDescription?: string;
-  // W-4 (R16-W §1, D-70): "Change an answer" and the form-path Back both
-  // need the form to reopen FILLED IN, not blank. Precedence on mount: the
-  // form's own saved draft (in-progress edits) -> initialAnswers -> blank.
+  // The reducer's own copy of the answers (present after a trip away from the
+  // form, e.g. "Change an answer"). Precedence on mount: the form's own saved
+  // draft (strictly newer: what the person was doing on this exact screen) ->
+  // this -> initialAnswers -> blank.
+  initialAnswerState?: FormAnswerState;
+  // W-4 (R16-W §1, D-70): the same, as PlainAnswers. Read only when no answer
+  // state is given; every value becomes a `typed` answer, and Question 2 is
+  // ignored (it is the description).
   initialAnswers?: PlainAnswers;
-  // W-4: the raw answers travel with the graph/assumptions so the caller
-  // (IntakeFlow) can carry them on the reducer state — plainAnswersToFormValues()
-  // is already computed here; passing `answers` back avoids recomputing it.
-  onSubmit: (graph: DataFlowGraph, assumptions: Assumption[], answers: PlainAnswers) => void;
+  // R18-NF-5: this form was reached from a draft saved by an earlier version.
+  earlierVersionNotice?: boolean;
+  // The answers travel as the form's own state object; the caller derives
+  // PlainAnswers from it (toPlainAnswers) — there is one source of truth.
+  onSubmit: (graph: DataFlowGraph, assumptions: Assumption[], answerState: FormAnswerState, description: string) => void;
 }
 
 function toArray(v: string | string[] | undefined): string[] {
@@ -217,7 +229,53 @@ function q3KeyShowsModelQuestion(q3: string | undefined): boolean {
   return q3 !== undefined && q3ShowsModelQuestion({ '3': q3 });
 }
 
-export default function StructuredForm({ policy, initialDescription, initialAnswers, onSubmit }: StructuredFormProps) {
+/** An earlier PlainAnswers (a resubmission through the old props) as the form's
+ *  state: every answer `typed`; Question 2 is the description, not an answer. */
+function typedFromPlain(plain: PlainAnswers | undefined): FormAnswerState {
+  const out: FormAnswerState = {};
+  if (!plain) return out;
+  for (const key of Object.keys(plain) as QuestionId[]) {
+    const value = plain[key];
+    if (key === '2' || value === undefined) continue;
+    out[key as Exclude<QuestionId, '2'>] = { value: Array.isArray(value) ? [...value] : value, source: { kind: 'typed' } };
+  }
+  return out;
+}
+
+function sameValue(a: string | string[], b: string | string[]): boolean {
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x, i) => x === b[i]);
+  }
+  return a === b;
+}
+
+/** Turns the answers after a change back into state, keeping the source of every
+ *  answer whose value did not change and marking a new or changed one `typed`. */
+function reconcile(next: PlainAnswers, prev: FormAnswerState): FormAnswerState {
+  const out: FormAnswerState = {};
+  for (const key of Object.keys(next) as QuestionId[]) {
+    const value = next[key];
+    if (key === '2' || value === undefined) continue;
+    const id = key as Exclude<QuestionId, '2'>;
+    const before = prev[id];
+    out[id] =
+      before && sameValue(before.value, value)
+        ? before
+        : { value: Array.isArray(value) ? [...value] : value, source: { kind: 'typed' } };
+  }
+  return out;
+}
+
+export default function StructuredForm({
+  policy,
+  description,
+  onDescriptionChange,
+  initialDescription,
+  initialAnswerState,
+  initialAnswers,
+  earlierVersionNotice = false,
+  onSubmit,
+}: StructuredFormProps) {
   const platformOptions = dynamicOptions(policy.platforms ?? [], neutralPlatformLabel);
   const supplierOptions = dynamicOptions(
     (policy.vendors ?? []).filter((v) => (v.kind ?? 'supplier') === 'supplier'),
@@ -232,39 +290,41 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
     text: j.name,
   }));
 
-  // D-41: probe the OLD draft key once, before first paint, and never
-  // again — an incompatible shape must be reported once and then be gone,
-  // not re-detected on every render.
+  // D-41, extended in R18-A: probe the OLD draft keys (both) once, before first
+  // paint, and never again — an incompatible shape must be reported once and then
+  // be gone, not re-detected on every render.
   const legacyRef = useRef<boolean | null>(null);
   if (legacyRef.current === null) legacyRef.current = probeLegacyFormDraft();
   const [legacyDraftFound] = useState(legacyRef.current);
 
-  // W-1/W-4 (R16-W §1, D-67/D-70). Precedence on mount: the form's own
-  // saved draft (in-progress edits a person is actively making) ->
-  // initialAnswers (a resubmission via "Change an answer" or Back) ->
-  // blank. The draft wins over initialAnswers because it is STRICTLY newer
-  // information about what the person was doing on this exact screen —
-  // initialAnswers is a snapshot from the moment they last left it.
-  const restoredRef = useRef<PlainAnswers | null>(null);
+  // R18-A (§27.6). The form's answers are ONE state object, `FormAnswerState`,
+  // with a source on every answer (`typed` here: a person supplied each). Question
+  // 2 is not in it. Precedence on mount (W-1/W-4): the form's own saved draft ->
+  // the reducer's copy -> initialAnswers -> blank. The baseline's stale
+  // `restoredRef.current['2']` precedence is gone with Question 2's own copy.
+  const restoredRef = useRef<FormAnswerState | null>(null);
   if (restoredRef.current === null) {
-    const draft = loadFormDraft<PlainAnswers>();
-    restoredRef.current = draft ?? initialAnswers ?? {};
+    restoredRef.current = loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers);
   }
-  const [answers, setAnswers] = useState<PlainAnswers>(() => {
-    // W-1: question 2 starts with the description typed on the very first
-    // screen, UNLESS the restored value (draft or initialAnswers) already
-    // holds one — editing Q2 from then on is what carries the description
-    // forward (the form's own words, not the first screen's, once edited).
-    if (restoredRef.current!['2'] !== undefined || !initialDescription) return restoredRef.current!;
-    return { ...restoredRef.current!, '2': initialDescription };
-  });
+  const [answerState, setAnswerState] = useState<FormAnswerState>(restoredRef.current);
+  const [localDescription, setLocalDescription] = useState(description ?? initialDescription ?? '');
+  const currentDescription = onDescriptionChange ? (description ?? '') : localDescription;
+
+  // PlainAnswers is the engine-facing shape, derived here and nowhere kept.
+  const answers: PlainAnswers = toPlainAnswers(answerState, currentDescription);
 
   useEffect(() => {
-    saveFormDraft(answers);
-  }, [answers]);
+    updateFormDraft({ answerState });
+  }, [answerState]);
+
+  // Applies a change written in terms of PlainAnswers (the form's rules are
+  // unchanged) and keeps each untouched answer's source as it was.
+  function updateAnswers(change: (prev: PlainAnswers) => PlainAnswers) {
+    setAnswerState((prev) => reconcile(change(toPlainAnswers(prev, '')), prev));
+  }
 
   function setSingle(id: QuestionId, key: string) {
-    setAnswers((prev) => {
+    updateAnswers((prev) => {
       const next: PlainAnswers = { ...prev, [id]: key };
       // Conditional follow-ups are cleared when their trigger changes
       // (§2.2 Details: "follow-ups are required when shown and cleared
@@ -311,11 +371,17 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
   }
 
   function setText(id: QuestionId, text: string) {
-    setAnswers((prev) => ({ ...prev, [id]: text }));
+    // Question 2 is the editor of the description (§27.6), not a stored answer.
+    if (id === '2') {
+      if (onDescriptionChange) onDescriptionChange(text);
+      else setLocalDescription(text);
+      return;
+    }
+    updateAnswers((prev) => ({ ...prev, [id]: text }));
   }
 
   function toggleMulti(id: QuestionId, key: string) {
-    setAnswers((prev) => {
+    updateAnswers((prev) => {
       const current = toArray(prev[id]);
       let next: string[];
       if (id === '13') {
@@ -447,7 +513,12 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
     // territory) rather than inside src/engine/* is exactly where
     // cross-cutting.md §7 Rule 1 puts it. ENG-ID: the same goes for the ids —
     // the engine draws every graph id from the source passed here.
-    onSubmit(buildGraphFromForm(values, new Date().toISOString(), () => crypto.randomUUID()), describeAssumptions(assumptions), answers);
+    onSubmit(
+      buildGraphFromForm(values, new Date().toISOString(), () => crypto.randomUUID()),
+      describeAssumptions(assumptions),
+      answerState,
+      currentDescription,
+    );
   }
 
   // Bundles the props every question renderer needs, so each call site below
@@ -466,11 +537,21 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
         No AI reads your answers or makes the decision, so the same answers always get the same
         result.
       </p>
-      {legacyDraftFound && (
+      {/* R18-NF-5: a draft saved by an earlier version landed here with the
+          description kept and no answers; say so, once (computed at load, never
+          stored). When an earlier form-draft key was also found, the one sentence
+          covers both. */}
+      {earlierVersionNotice ? (
         <p role="status" className="plain-form__legacy-draft">
-          Your saved draft was from an older version of this form and couldn&rsquo;t be reused — please
-          start again.
+          {R18_COPY.EARLIER_VERSION_NOTICE}
         </p>
+      ) : (
+        legacyDraftFound && (
+          <p role="status" className="plain-form__legacy-draft">
+            Your saved draft was from an older version of this form and couldn&rsquo;t be reused — please
+            start again.
+          </p>
+        )
       )}
 
       <fieldset className="structured-form__section">
