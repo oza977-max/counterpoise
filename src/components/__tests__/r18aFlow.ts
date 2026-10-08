@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import type userEvent from '@testing-library/user-event';
 import { getUseCases } from '../../store/register';
