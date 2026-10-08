@@ -75,8 +75,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const hits = scan(root, readAllow(allowFile));
   if (hits.length > 0) {
     for (const h of hits) {
-      // Print only a short, truncated prefix: the log itself must not carry the secret.
-      console.error(`scan-dist: ${h.label} in ${h.file}: ${h.text.slice(0, 12)}…`);
+      // The pattern's label, the file and the length of the match only: the log itself
+      // (CI output is world-readable on a public repository) must carry no character of the hit.
+      console.error(`scan-dist: ${h.label} in ${h.file} (${h.text.length} characters)`);
     }
     console.error(`scan-dist: ${hits.length} possible secret(s). Remove them, or review and list a benign one in scripts/dist-scan-allow.txt.`);
     process.exit(1);

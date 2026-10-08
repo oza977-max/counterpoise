@@ -767,8 +767,9 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
 
     // R18-A (specs/intake-flow.md §27.1, R18-GI-10): ONE route. Passing the
     // similar-cases screen always opens the guided form — the description is
-    // never read by a model on this route, whatever key or local model may be
-    // set. The retired model route below this return is unreachable; R18-E
+    // never read to fill the form, whatever key or local model may be set (the
+    // similar-cases check above can still send it to Anthropic when
+    // aigate:api-key is stored). The retired model route below this return is unreachable; R18-E
     // deletes it.
     dispatch({ type: 'NO_DUPLICATE_FOUND', method: 'form' });
     // Typed `boolean` (not `true`) so the compiler keeps checking the retired code

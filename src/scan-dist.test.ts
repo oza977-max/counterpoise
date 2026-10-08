@@ -56,6 +56,10 @@ describe('scripts/scan-dist.mjs (R18-A skeleton)', () => {
     const r = scan();
     expect(r.status).not.toBe(0);
     expect(r.stdout + r.stderr).toMatch(/assets\/app\.js/);
+    // R18-A review m11: the log names the pattern, the file and the length of the match, and
+    // carries no character of the hit itself (not even a prefix).
+    expect(r.stderr).toContain(`(${secret.length} characters)`);
+    expect(r.stdout + r.stderr).not.toContain(secret.slice(0, 6));
   });
 
   it('does not match a too-short look-alike (length minimums are part of the pattern)', () => {
