@@ -210,6 +210,60 @@ describe('no stored shape is used unvalidated (TC-R18-NF-5-03, TC-R18-NF-5-04)',
     expect((loadDraftInfo()!.state as { description: string }).description).toBe(ctl);
   });
 
+  describe('R18-A review m9: a current draft is rebuilt from known keys only', () => {
+    function stored(state: IntakeState, junk: Record<string, unknown>) {
+      saveDraft(state);
+      const env = JSON.parse(sessionStorage.getItem(DRAFT_KEY)!);
+      env.state = { ...env.state, ...junk };
+      put(env);
+    }
+    const JUNK = { injected: { evil: true }, isAdmin: true, method2: 'x', onclick: 'alert(1)' };
+
+    it('a real-shaped form draft with extra keys comes back without them', () => {
+      stored({ step: 'graph_extraction', description: D, method: 'form', nudgeFor: ['countries'] } as IntakeState, JUNK);
+      const state = loadDraftInfo()!.state as unknown as Record<string, unknown>;
+      expect(state.step).toBe('graph_extraction');
+      expect(state.nudgeFor).toEqual(['countries']);
+      for (const k of Object.keys(JUNK)) expect(state).not.toHaveProperty(k);
+    });
+
+    it('a real-shaped confirmation draft with extra keys comes back without them, and keeps the keys it should', () => {
+      stored(
+        { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'uc-1', plainAnswers: { '1': 'Tool' }, assumptions: [] } as IntakeState,
+        JUNK,
+      );
+      const state = loadDraftInfo()!.state as unknown as Record<string, unknown>;
+      expect(state.step).toBe('confirmation');
+      expect(state.useCaseId).toBe('uc-1');
+      expect(state.graph).toEqual(graph);
+      for (const k of Object.keys(JUNK)) expect(state).not.toHaveProperty(k);
+    });
+
+    it('a description_entry, duplicate_check, verdict or pending draft with extra keys comes back without them', () => {
+      for (const state of [
+        { step: 'description_entry', description: D },
+        { step: 'duplicate_check', description: D },
+        { step: 'verdict', verdictId: 'uc-9' },
+      ] as IntakeState[]) {
+        put({ version: 4, state: { ...state, ...JUNK } });
+        const got = loadDraftInfo()!.state as unknown as Record<string, unknown>;
+        expect(got.step).toBe(state.step);
+        for (const k of Object.keys(JUNK)) expect(got).not.toHaveProperty(k);
+      }
+      put({ version: 4, state: { step: 'evaluation_pending', ...JUNK } });
+      const pending = loadDraftInfo()!.state as unknown as Record<string, unknown>;
+      expect(pending.step).toBe('evaluation_pending');
+      for (const k of Object.keys(JUNK)) expect(pending).not.toHaveProperty(k);
+    });
+
+    it('a current description longer than the cap is not restored as it is: the form opens, the over-long text is not carried', () => {
+      put({ version: 4, state: { step: 'graph_extraction', method: 'form', description: 'x'.repeat(1_000_001) } });
+      const info = loadDraftInfo()!;
+      expect(info.earlierVersionNotice).toBe(true);
+      expect((info.state as { description: string }).description).toBe('');
+    });
+  });
+
   it('R18-A (property): for any stored value, loading never throws and ends at the form (or a valid current step) keeping a string description', () => {
     fc.assert(
       fc.property(fc.jsonValue({ maxDepth: 4 }), fc.string(), fc.boolean(), (value, desc, wrap) => {

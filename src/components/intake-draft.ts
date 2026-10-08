@@ -88,8 +88,9 @@ function landing(description: string): IntakeState {
 function salvageDescription(parsed: unknown): string {
   if (!isRecord(parsed)) return '';
   const inner = parsed.state;
-  if (isRecord(inner) && typeof inner.description === 'string') return inner.description;
-  if (typeof parsed.description === 'string') return parsed.description;
+  const fits = (d: unknown): d is string => typeof d === 'string' && d.length <= MAX_DESCRIPTION_CHARS;
+  if (isRecord(inner) && fits(inner.description)) return inner.description;
+  if (fits(parsed.description)) return parsed.description;
   return '';
 }
 
@@ -201,6 +202,32 @@ function validPlainAnswers(v: unknown): boolean {
   });
 }
 
+/** The keys each step's state may carry, taken from the IntakeState union. A stored state is
+ *  REBUILT from these (and `step`), so a hostile or damaged draft cannot inject a key the
+ *  reducer or a screen might one day read. Values of known keys are checked above to the
+ *  depth their screen needs; a new field on IntakeState must be added here too
+ *  (intake-draft.r18a.test.ts reads a real saved state back and would drop it). */
+const KNOWN_KEYS: Record<string, readonly string[]> = {
+  description_entry: ['description', 'nudgeFor', 'decidedFor'],
+  duplicate_check: ['description', 'nudgeFor'],
+  graph_extraction: ['description', 'method', 'nudgeFor', 'decidedFor', 'afterFailedEvaluation', 'useCaseId', 'plainAnswers', 'answerState', 'assumptions', 'originalVerdictId', 'originalGraph'],
+  graph_review: ['description', 'graph', 'graphVersion', 'corrections', 'useCaseId', 'originalVerdictId', 'unconfirmedNodeIds', 'provenance', 'guessedFields', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'uncertainNodeIds', 'afterFailedEvaluation', 'assumptions', 'reentry'],
+  questionnaire: ['description', 'graph', 'questions', 'answers', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'undo', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
+  contradiction_review: ['description', 'graph', 'questions', 'answers', 'contradictions', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'ignoredJurisdictions', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
+  confirmation: ['description', 'graph', 'graphVersion', 'corrections', 'answers', 'resolutionNotes', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'afterFailedEvaluation'],
+  evaluation_pending: ['graph', 'useCaseId', 'originalVerdictId', 'originalGraph', 'description', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds'],
+  verdict: ['verdictId'],
+};
+
+/** A copy of `v` holding `step` and the known keys of that step only (own properties). */
+function pickKnown(v: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { step: v.step };
+  for (const k of KNOWN_KEYS[v.step as string] ?? []) {
+    if (Object.prototype.hasOwnProperty.call(v, k)) out[k] = v[k];
+  }
+  return out;
+}
+
 const STEPS_WITH_GRAPH = new Set(['graph_review', 'questionnaire', 'contradiction_review', 'confirmation', 'evaluation_pending']);
 
 /** A state read back from storage, checked field by field for what the screens read.
@@ -211,16 +238,17 @@ function currentState(v: unknown): IntakeState | null {
   if (!isRecord(v) || typeof v.step !== 'string') return null;
   if (Object.prototype.hasOwnProperty.call(v, '__proto__')) return null;
   const desc = v.description;
+  if (typeof desc === 'string' && desc.length > MAX_DESCRIPTION_CHARS) return null;
   switch (v.step) {
     case 'description_entry':
       if (typeof desc !== 'string') return null;
       if (v.nudgeFor !== undefined && !validNudge(v.nudgeFor)) return null;
       if (v.decidedFor !== undefined && !boundedString(v.decidedFor, 64)) return null;
-      return v as unknown as IntakeState;
+      return pickKnown(v) as unknown as IntakeState;
     case 'duplicate_check':
       if (typeof desc !== 'string') return null;
       if (v.nudgeFor !== undefined && !validNudge(v.nudgeFor)) return null;
-      return v as unknown as IntakeState;
+      return pickKnown(v) as unknown as IntakeState;
     case 'graph_extraction':
       if (typeof desc !== 'string' || v.method !== 'form') return null;
       if (v.nudgeFor !== undefined && !validNudge(v.nudgeFor)) return null;
@@ -232,11 +260,11 @@ function currentState(v: unknown): IntakeState | null {
       if (v.answerState !== undefined) {
         const clean = cleanAnswerState(v.answerState);
         if (clean === null) return null;
-        return { ...(v as object), answerState: clean } as unknown as IntakeState;
+        return { ...pickKnown(v), answerState: clean } as unknown as IntakeState;
       }
-      return v as unknown as IntakeState;
+      return pickKnown(v) as unknown as IntakeState;
     case 'verdict':
-      return typeof v.verdictId === 'string' ? (v as unknown as IntakeState) : null;
+      return typeof v.verdictId === 'string' ? (pickKnown(v) as unknown as IntakeState) : null;
     default:
       if (!STEPS_WITH_GRAPH.has(v.step)) return null;
       if (!graphLike(v.graph) || typeof v.useCaseId !== 'string') return null;
@@ -246,9 +274,9 @@ function currentState(v: unknown): IntakeState | null {
       if (v.answerState !== undefined) {
         const clean = cleanAnswerState(v.answerState);
         if (clean === null) return null;
-        return { ...(v as object), answerState: clean } as unknown as IntakeState;
+        return { ...pickKnown(v), answerState: clean } as unknown as IntakeState;
       }
-      return v as unknown as IntakeState;
+      return pickKnown(v) as unknown as IntakeState;
   }
 }
 
@@ -282,7 +310,8 @@ export function loadDraftInfo(): DraftInfo | null {
     // An evaluation that was still running is reported as such whatever build saved
     // it: IntakeFlow only reads its step (the interrupted-check notice) and starts empty.
     if (isRecord(envelope.state) && envelope.state.step === 'evaluation_pending') {
-      return { state: envelope.state as unknown as IntakeState, migratedFromOldBuild: false, earlierVersionNotice: false };
+      // Only its step is ever read (IntakeFlow starts empty); rebuilt from known keys all the same.
+      return { state: pickKnown(envelope.state) as unknown as IntakeState, migratedFromOldBuild: false, earlierVersionNotice: false };
     }
     const description = salvageDescription(parsed);
     if (envelope.version !== DRAFT_VERSION) {
