@@ -385,3 +385,12 @@ next experiment), before building any panel UI on this model.
 
 **Raised by:** R18-A independent review pass 1 (BC-005). The spec's `not-configured` sentence (`intake-flow.md` §27.5) ends "— or connect one under Make it smarter", but that panel is built in R18-G. Until then the form shows `R18_COPY.NO_MODEL_INTERIM_SENTENCE` ("Your description wasn't read automatically, so nothing was filled in for you. Answer the questions below."), which is true in every state of the build. **R18-G must switch the form note to `FAILURE_SENTENCES['not-configured']` in the same commit that ships the panel, and delete the interim sentence.** Status: open.
 
+
+## 2026-10-08 — R18-A carried minors (bind C2, D2/E, G)
+
+**Raised by:** R18-A independent review pass 2 (0 Critical / 0 Important; these are the Minor findings carried). Status: open.
+- **C2:** tighten `loadDraftInfo`'s `graph_extraction` branch (element shape of `assumptions`; `afterFailedEvaluation` boolean; `originalVerdictId` string); give the review/confirmation rating lines description-style wording for form-route cases (`ratingInstructionWarning`, `RATING_INSTRUCTION_CONFIRM_LINE` still say "check each card below"); assert or soften the Track I / no-tier comment in `V1Closeout-0b.test.tsx`.
+- **D2/E:** `handleCorrectVerdict` still falls back to the retired card review when `lastConfirmed` is gone (reload on the verdict screen) — closed by the register correction (D2) and the retirement table (E).
+- **G (NF-2 sweep):** render the nudge and rating-notice status regions empty from the start and fill them, so every screen reader announces them.
+- **Owner wording question:** the earlier-version notice says "please check your answers" while the landing carries none.
+- **Owner question (surfaced):** form-built graphs never mark a node uncertain, so the questionnaire step is unreachable through the live form route (pre-existing).
