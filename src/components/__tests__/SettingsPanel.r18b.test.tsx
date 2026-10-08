@@ -167,7 +167,7 @@ describe('the three places (TC-R18-MS-1-01..09)', () => {
   });
 
   it.each(['http://localhost:11434', 'http://127.0.0.1:11434', 'http://[::1]:11434'])(
-    'TC-R18-MS-1-07: %s is accepted on this computer',
+    'TC-R18-MS-1-07 (Settings, more): %s is accepted on this computer',
     async (good) => {
       const user = userEvent.setup({ delay: null });
       render(<SettingsPanel />);
@@ -403,7 +403,7 @@ describe('the where-it-goes sentence in Settings (TC-R18-MS-2-01, -02, -03, -06,
     ['ollama-cloud', LOCAL, 'gemma4:cloud'],
   ];
 
-  it.each(cases)('TC-R18-MS-2-01: %s shows its own sentence and neither of the other two', async (place, url, model) => {
+  it.each(cases)('TC-R18-MS-2-01 (Settings, more): %s shows its own sentence and neither of the other two', async (place, url, model) => {
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
@@ -722,7 +722,7 @@ describe('Forget the model setting and Clear all data (TC-R18-NF-3-08, MS-5-04, 
     spy.mockRestore();
   });
 
-  it('TC-R18-NF-3-08: Forget the model setting removes both keys, empties the form, and the control and sentence go with it', async () => {
+  it('TC-R18-NF-3-08 (Settings, more): Forget the model setting removes both keys, empties the form, and the control and sentence go with it', async () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, resultsJson);
     const user = userEvent.setup({ delay: null });

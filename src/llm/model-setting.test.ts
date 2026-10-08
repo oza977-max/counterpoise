@@ -61,19 +61,19 @@ describe('isLoopback (TC-R18-MS-1-07)', () => {
     ['http://127.0.0.2:11434', false],
     ['not a url', false],
     ['', false],
-  ])('TC-R18-MS-1-07: %s -> %s', (url, expected) => {
+  ])('TC-R18-MS-1-07 (rule 3): %s -> %s', (url, expected) => {
     expect(isLoopback(url)).toBe(expected);
   });
 });
 
 describe('validateAddress', () => {
-  it('TC-R18-MS-1-07: accepts the three loopback forms under this computer', () => {
+  it('TC-R18-MS-1-07 (rule 4): accepts the three loopback forms under this computer', () => {
     for (const u of ['http://localhost:11434', 'http://127.0.0.1:11434', 'http://[::1]:11434']) {
       expect(validateAddress('this-computer', u)).toEqual({ ok: true, url: u });
     }
   });
 
-  it('TC-R18-MS-1-07: refuses look-alike and credentialed addresses under this computer', () => {
+  it('TC-R18-MS-1-07 (rule 5): refuses look-alike and credentialed addresses under this computer', () => {
     for (const u of [
       'http://localhost.evil.example:11434',
       'http://127.0.0.1.evil.example:11434',
@@ -101,7 +101,7 @@ describe('validateAddress', () => {
     }
   });
 
-  it('TC-R18-MS-1-04: a firm server accepts any http(s) address, with trailing slashes dropped and spaces trimmed', () => {
+  it('TC-R18-MS-1-04 (rule): a firm server accepts any http(s) address, with trailing slashes dropped and spaces trimmed', () => {
     expect(validateAddress('firm-server', FIRM)).toEqual({ ok: true, url: FIRM });
     expect(validateAddress('firm-server', '  http://ai.example-firm.test:8080/ ')).toEqual({
       ok: true,
@@ -113,16 +113,16 @@ describe('validateAddress', () => {
     });
   });
 
-  it('TC-R18-MS-1-08: Ollama cloud needs a loopback address', () => {
+  it('TC-R18-MS-1-08 (rule): Ollama cloud needs a loopback address', () => {
     expect(validateAddress('ollama-cloud', FIRM)).toEqual({ ok: false, reason: 'cloud-needs-app' });
     expect(validateAddress('ollama-cloud', LOCAL)).toEqual({ ok: true, url: LOCAL });
   });
 
-  it('TC-R18-MS-1-04: this computer refuses a non-loopback address', () => {
+  it('TC-R18-MS-1-04 (rule 3): this computer refuses a non-loopback address', () => {
     expect(validateAddress('this-computer', FIRM)).toEqual({ ok: false, reason: 'not-this-computer' });
   });
 
-  it('TC-R18-MS-1-12: an address of 501 characters is refused, 500 is accepted; a host over 253 is refused', () => {
+  it('TC-R18-MS-1-12 (rule): an address of 501 characters is refused, 500 is accepted; a host over 253 is refused', () => {
     const base = 'https://ai.example-firm.test/';
     const ok500 = base + 'a'.repeat(500 - base.length);
     expect(validateAddress('firm-server', ok500).ok).toBe(true);
@@ -132,7 +132,7 @@ describe('validateAddress', () => {
     expect(validateAddress('firm-server', longHost)).toEqual({ ok: false, reason: 'address-too-long' });
   });
 
-  it('TC-R18-MS-1-12: control, format and private-use characters are refused, even where the URL parser would strip them', () => {
+  it('TC-R18-MS-1-12 (rule 3): control, format and private-use characters are refused, even where the URL parser would strip them', () => {
     for (const u of [
       'http://ai.example-firm.test/‮',
       'http://ai.example-firm.test/​',
@@ -155,13 +155,13 @@ describe('validateAddress', () => {
 });
 
 describe('validateModelSetting', () => {
-  it('TC-R18-MS-1-01: a place must be chosen', () => {
+  it('TC-R18-MS-1-01 (rule): a place must be chosen', () => {
     expect(validateModelSetting({ place: undefined, url: LOCAL, model: 'qwen3:4b' })).toEqual({ ok: false, reason: 'no-place' });
     expect(validateModelSetting({ place: '' as never, url: LOCAL, model: 'qwen3:4b' })).toEqual({ ok: false, reason: 'no-place' });
     expect(validateModelSetting({ place: 'elsewhere' as never, url: LOCAL, model: 'qwen3:4b' })).toEqual({ ok: false, reason: 'no-place' });
   });
 
-  it('TC-R18-MS-1-03: a cloud-tagged model is refused on this computer and accepted through Ollama cloud', () => {
+  it('TC-R18-MS-1-03 (rule): a cloud-tagged model is refused on this computer and accepted through Ollama cloud', () => {
     expect(validateModelSetting({ place: 'this-computer', url: LOCAL, model: 'gemma4:cloud' })).toEqual({
       ok: false,
       reason: 'cloud-model-elsewhere',
@@ -172,7 +172,7 @@ describe('validateModelSetting', () => {
     });
   });
 
-  it('TC-R18-MS-1-04: the firm address is refused on this computer and accepted for the firm server', () => {
+  it('TC-R18-MS-1-04 (rule 4): the firm address is refused on this computer and accepted for the firm server', () => {
     expect(validateModelSetting({ place: 'this-computer', url: FIRM, model: 'qwen3:4b' }).ok).toBe(false);
     expect(validateModelSetting({ place: 'firm-server', url: FIRM, model: 'qwen3:4b' })).toEqual({
       ok: true,
@@ -180,21 +180,21 @@ describe('validateModelSetting', () => {
     });
   });
 
-  it('TC-R18-MS-1-06: a cloud-tagged model is refused under the firm server', () => {
+  it('TC-R18-MS-1-06 (rule): a cloud-tagged model is refused under the firm server', () => {
     expect(validateModelSetting({ place: 'firm-server', url: FIRM, model: 'gpt-oss:120b-cloud' })).toEqual({
       ok: false,
       reason: 'cloud-model-elsewhere',
     });
   });
 
-  it('TC-R18-MS-1-08: Ollama cloud with a firm address is refused for the address (before the model)', () => {
+  it('TC-R18-MS-1-08 (rule 3): Ollama cloud with a firm address is refused for the address (before the model)', () => {
     expect(validateModelSetting({ place: 'ollama-cloud', url: FIRM, model: 'gemma4:cloud' })).toEqual({
       ok: false,
       reason: 'cloud-needs-app',
     });
   });
 
-  it('TC-R18-MS-1-09: Ollama cloud needs a cloud-tagged model', () => {
+  it('TC-R18-MS-1-09 (rule): Ollama cloud needs a cloud-tagged model', () => {
     expect(validateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'qwen3:4b' })).toEqual({
       ok: false,
       reason: 'cloud-needs-tag',
@@ -206,7 +206,7 @@ describe('validateModelSetting', () => {
     expect(validateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'Gemma4:CLOUD' }).ok).toBe(true);
   });
 
-  it('TC-R18-MS-1-12: a model name of 101 characters or with U+202E is refused; 100 is accepted', () => {
+  it('TC-R18-MS-1-12 (rule 4): a model name of 101 characters or with U+202E is refused; 100 is accepted', () => {
     expect(validateModelSetting({ place: 'this-computer', url: LOCAL, model: 'm'.repeat(100) }).ok).toBe(true);
     expect(validateModelSetting({ place: 'this-computer', url: LOCAL, model: 'm'.repeat(101) })).toEqual({ ok: false, reason: 'model-too-long' });
     expect(validateModelSetting({ place: 'this-computer', url: LOCAL, model: 'm‮odel' })).toEqual({ ok: false, reason: 'model-characters' });
@@ -227,7 +227,7 @@ describe('readModelSetting and modelSettingState', () => {
     expect(modelSettingState()).toEqual({ kind: 'none' });
   });
 
-  it('TC-R18-MS-1-05: a saved setting reads back as it was written', () => {
+  it('TC-R18-MS-1-05 (rule): a saved setting reads back as it was written', () => {
     const r = updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     expect(r.ok).toBe(true);
     expect(readModelSetting()).toEqual({ version: 1, place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
@@ -246,7 +246,7 @@ describe('readModelSetting and modelSettingState', () => {
     expect(JSON.parse(localStorage.getItem(MODEL_SETTING_KEY)!)).toMatchObject({ place: 'this-computer' });
   });
 
-  it('TC-R18-MS-1-11: an old URL-only setting migrates without inventing a model', () => {
+  it('TC-R18-MS-1-11 (rule 3): an old URL-only setting migrates without inventing a model', () => {
     localStorage.setItem('aigate:local-llm-url', LOCAL);
     const s = readModelSetting();
     expect(s).toEqual({ version: 1, place: 'this-computer', url: LOCAL, model: '' });
@@ -303,7 +303,7 @@ describe('readModelSetting and modelSettingState', () => {
 });
 
 describe('updateModelSetting', () => {
-  it('TC-R18-MS-1-01: refuses to write without a valid place, and leaves storage untouched', () => {
+  it('TC-R18-MS-1-01 (rule 3): refuses to write without a valid place, and leaves storage untouched', () => {
     const r = updateModelSetting({ url: LOCAL, model: 'qwen3:4b' });
     expect(r).toEqual({ ok: false, reason: 'no-place' });
     expect(localStorage.getItem(MODEL_SETTING_KEY)).toBeNull();
@@ -322,7 +322,7 @@ describe('updateModelSetting', () => {
     expect(readModelSetting()).toMatchObject({ place: 'this-computer', model: 'qwen3:4b' });
   });
 
-  it('TC-R18-MS-5-08: mode is kept by a mode-only patch and reset when model, address or place changes', () => {
+  it('TC-R18-MS-5-08 (rule): mode is kept by a mode-only patch and reset when model, address or place changes', () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'alpha:1b' });
     updateModelSetting({ mode: 'tool' });
     expect(readModelSetting()?.mode).toBe('tool');
@@ -342,7 +342,7 @@ describe('updateModelSetting', () => {
     expect(readModelSetting()).toMatchObject({ place: 'firm-server', url: FIRM, model: 'beta:7b' });
   });
 
-  it('TC-R18-MS-5-08: saving the same place, address and model again keeps the remembered mode', () => {
+  it('TC-R18-MS-5-08 (rule 3): saving the same place, address and model again keeps the remembered mode', () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'alpha:1b' });
     updateModelSetting({ mode: 'tool' });
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'alpha:1b' });
@@ -390,7 +390,7 @@ describe('updateModelSetting', () => {
     expect(MODEL_SETTING_CHANGED_EVENT).toBe('aigate:model-setting-changed');
   });
 
-  it('TC-R18-MS-3-03: a setting migrated without a model accepts a typed model later', () => {
+  it('TC-R18-MS-3-03 (rule): a setting migrated without a model accepts a typed model later', () => {
     localStorage.setItem('aigate:local-llm-url', LOCAL);
     readModelSetting();
     expect(updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'epsilon:3b' }).ok).toBe(true);
@@ -446,12 +446,12 @@ describe('listModels', () => {
     expect(init.signal).toBeDefined();
   });
 
-  it('TC-R18-MS-1-13: works under Ollama cloud before any model is typed', async () => {
+  it('TC-R18-MS-1-13 (rule): works under Ollama cloud before any model is typed', async () => {
     fakeFetch(() => json({ models: [{ name: 'alpha:cloud' }, { name: 'beta:cloud' }] }));
     expect(await listModels({ place: 'ollama-cloud', url: LOCAL })).toEqual(['alpha:cloud', 'beta:cloud']);
   });
 
-  it('TC-R18-MS-1-12: drops names over 100 characters and keeps a hidden-character name as it is (display escapes it)', async () => {
+  it('TC-R18-MS-1-12 (rule 5): drops names over 100 characters and keeps a hidden-character name as it is (display escapes it)', async () => {
     fakeFetch(() => json({ models: [{ name: 'ok:1b' }, { name: 'x'.repeat(150) }, { name: 'z​:1b' }, { name: 'x'.repeat(100) }] }));
     const names = await listModels({ place: 'this-computer', url: LOCAL });
     expect(names).toEqual(['ok:1b', 'z​:1b', 'x'.repeat(100)]);
@@ -462,7 +462,7 @@ describe('listModels', () => {
     expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual(['a:1']);
   });
 
-  it('TC-R18-MS-3-03: returns [] on 404, on HTML, on bad JSON, on a wrong shape and on a thrown fetch', async () => {
+  it('TC-R18-MS-3-03 (rule 3): returns [] on 404, on HTML, on bad JSON, on a wrong shape and on a thrown fetch', async () => {
     fakeFetch(() => new Response('nope', { status: 404 }));
     expect(await listModels({ place: 'this-computer', url: LOCAL })).toEqual([]);
     fakeFetch(() => new Response('<html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }));
@@ -538,7 +538,7 @@ const result = (over: Partial<ModelTestResult>): ModelTestResult => ({
 const sett = { model: 'gemma4:cloud', place: 'ollama-cloud' as const, url: 'http://localhost:11434' };
 
 describe('modelLabel (TC-R18-GI-12-*)', () => {
-  it('TC-R18-GI-12-01: no result is untested', () => {
+  it('TC-R18-GI-12-01 (rule 3): no result is untested', () => {
     expect(modelLabel(sett, [])).toEqual({ kind: 'untested' });
   });
 
@@ -546,7 +546,7 @@ describe('modelLabel (TC-R18-GI-12-*)', () => {
     expect(modelLabel(sett, [result({})])).toEqual({ kind: 'tested', matches: 21, date: '2026-10-07' });
   });
 
-  it('TC-R18-GI-12-03: a result belongs to one model, one place and one host', () => {
+  it('TC-R18-GI-12-03 (rule 3): a result belongs to one model, one place and one host', () => {
     const r = [result({})];
     expect(modelLabel({ ...sett, model: 'qwen3:4b' }, r)).toEqual({ kind: 'untested' });
     expect(modelLabel({ ...sett, place: 'firm-server' }, r)).toEqual({ kind: 'untested' });

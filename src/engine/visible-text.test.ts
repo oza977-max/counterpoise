@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { visibleText } from './visible-text';
 
 describe('visibleText (specs/intake-flow.md §27.4)', () => {
-  it('TC-R18-MS-1-12: a zero-width space shows as ⟦U+200B⟧', () => {
+  it('TC-R18-MS-1-12 (rule 6): a zero-width space shows as ⟦U+200B⟧', () => {
     expect(visibleText('alpha​:1b')).toBe('alpha⟦U+200B⟧:1b');
   });
 
-  it('TC-R18-MS-1-12: a bidirectional override shows as ⟦U+202E⟧', () => {
+  it('TC-R18-MS-1-12 (rule 7): a bidirectional override shows as ⟦U+202E⟧', () => {
     expect(visibleText('a‮b')).toBe('a⟦U+202E⟧b');
   });
 

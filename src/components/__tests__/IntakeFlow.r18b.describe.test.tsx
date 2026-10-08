@@ -66,7 +66,7 @@ describe('no model, or none chosen (TC-R18-MS-2-02, TC-R18-PS-4-02)', () => {
     expect(screen.getByRole('heading', { name: R18_COPY.CHECKLIST_HEADING })).toBeInTheDocument();
   });
 
-  it('TC-R18-MS-1-11: an old URL-only setting is migrated and the line says no model is connected, never a promise', () => {
+  it('TC-R18-MS-1-11 (description screen): an old URL-only setting is migrated and the line says no model is connected, never a promise', () => {
     localStorage.setItem('aigate:local-llm-url', LOCAL);
     render(<App />);
     expect(statusLine().textContent).toBe(R18_COPY.NO_MODEL_SENTENCE);
@@ -107,7 +107,7 @@ describe('each place says its own sentence and no other (TC-R18-MS-2-01, -02, -0
     expect(page()).not.toMatch(/never leaves your computer/i);
   });
 
-  it('TC-R18-MS-2-06: the small print stays in Settings and is not on the description screen', () => {
+  it('TC-R18-MS-2-06 (description screen): the small print stays in Settings and is not on the description screen', () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     render(<App />);
     expect(statusLine().textContent).not.toContain(R18_COPY.TUNNEL_SMALL_PRINT);
@@ -166,18 +166,18 @@ describe('a rewritten setting is never under a promise (TC-R18-MS-1-10)', () => 
 });
 
 describe('the unencrypted line (TC-R18-MS-6-01..03)', () => {
-  it('TC-R18-MS-6-01: shown for an http firm address, in the status line', () => {
+  it('TC-R18-MS-6-01 (description screen): shown for an http firm address, in the status line', () => {
     updateModelSetting({ place: 'firm-server', url: 'http://ai.example-firm.test:8080', model: 'qwen3:4b' });
     render(<App />);
     expect(statusLine().textContent).toContain(R18_COPY.UNENCRYPTED_LINE);
   });
-  it('TC-R18-MS-6-02: not shown for an https firm address, which keeps its sentence', () => {
+  it('TC-R18-MS-6-02 (description screen): not shown for an https firm address, which keeps its sentence', () => {
     updateModelSetting({ place: 'firm-server', url: FIRM, model: 'qwen3:4b' });
     render(<App />);
     expect(statusLine().textContent).toContain(sentence.firm('qwen3:4b', FIRM));
     expect(page()).not.toContain(R18_COPY.UNENCRYPTED_LINE);
   });
-  it('TC-R18-MS-6-03: never shown for this computer, even over http', () => {
+  it('TC-R18-MS-6-03 (description screen): never shown for this computer, even over http', () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     render(<App />);
     expect(page()).not.toContain(R18_COPY.UNENCRYPTED_LINE);
@@ -279,7 +279,7 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
   const seed = (r: ModelTestResult) =>
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results: [r] }));
 
-  it('TC-R18-GI-12-01: no result is untested and carries neither a count nor the caveat', () => {
+  it('TC-R18-GI-12-01 (description screen): no result is untested and carries neither a count nor the caveat', () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     render(<App />);
     expect(statusLine().textContent).toContain('qwen3:4b: untested');
@@ -295,7 +295,7 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
     expect(statusLine().textContent).not.toContain('untested');
   });
 
-  it('TC-R18-GI-12-03: a result for one model does not label the next', () => {
+  it('TC-R18-GI-12-03 (description screen): a result for one model does not label the next', () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seed(run());
     updateModelSetting({ place: 'this-computer', model: 'qwen3:4b' });

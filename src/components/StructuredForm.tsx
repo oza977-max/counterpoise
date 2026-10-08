@@ -192,6 +192,9 @@ function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: Q
   );
 }
 
+/** R18-B (§27.8): typed free-text answers are limited so every value fits the record's bounds (§27.13). */
+export const FREE_TEXT_MAX_CHARS = 200;
+
 function FreeText({
   id,
   multiline = false,
@@ -214,7 +217,7 @@ function FreeText({
       {multiline ? (
         <textarea id={inputId} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
       ) : (
-        <input id={inputId} type="text" value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
+        <input id={inputId} type="text" maxLength={FREE_TEXT_MAX_CHARS} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
       )}
     </div>
   );
