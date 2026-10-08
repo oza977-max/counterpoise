@@ -1507,6 +1507,7 @@ export const R18_COPY = {
   FALLBACK_RESEND_NOTE:
     'If the server ignores the strict format, your description is sent a second time to the same address.',
   FIND_MODELS_FAILED: "The list of models couldn't be read. You can still type a model name.",
+  FREE_TEXT_LIMIT_HINT: 'Up to 200 characters.',
   FIND_MODELS_EMPTY: 'The server answered but listed no models. You can type a model name.',
 
   // One plain refusal sentence per validation reason (specs §27.8). None repeats the address.

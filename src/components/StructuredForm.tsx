@@ -195,6 +195,30 @@ function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: Q
 /** R18-B (§27.8): typed free-text answers are limited so every value fits the record's bounds (§27.13). */
 export const FREE_TEXT_MAX_CHARS = 200;
 
+/** Cuts a restored free-text answer to the limit (never in the middle of a surrogate pair). */
+function clampFreeText(text: string): string {
+  if (text.length <= FREE_TEXT_MAX_CHARS) return text;
+  let end = FREE_TEXT_MAX_CHARS;
+  const last = text.charCodeAt(end - 1);
+  if (last >= 0xd800 && last <= 0xdbff) end -= 1;
+  return text.slice(0, end);
+}
+
+const LIMITED_FREE_TEXT_IDS = ['1', '3supplierName', '3model', '8other'] as const;
+
+/** An older draft may hold a longer answer than this build allows; cut it so this build's own export always fits §27.13. */
+function clampRestored(state: FormAnswerState): FormAnswerState {
+  let out = state;
+  for (const id of LIMITED_FREE_TEXT_IDS) {
+    const entry = out[id];
+    if (entry && typeof entry.value === 'string' && entry.value.length > FREE_TEXT_MAX_CHARS) {
+      if (out === state) out = { ...state };
+      out[id] = { ...entry, value: clampFreeText(entry.value) };
+    }
+  }
+  return out;
+}
+
 function FreeText({
   id,
   multiline = false,
@@ -217,7 +241,10 @@ function FreeText({
       {multiline ? (
         <textarea id={inputId} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
       ) : (
-        <input id={inputId} type="text" maxLength={FREE_TEXT_MAX_CHARS} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
+        <>
+          <input id={inputId} type="text" maxLength={FREE_TEXT_MAX_CHARS} aria-describedby={`${inputId}-limit`} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
+          <p className="field-help" id={`${inputId}-limit`}>{R18_COPY.FREE_TEXT_LIMIT_HINT}</p>
+        </>
       )}
     </div>
   );
@@ -307,7 +334,9 @@ export default function StructuredForm({
   // `restoredRef.current['2']` precedence is gone with Question 2's own copy.
   const restoredRef = useRef<FormAnswerState | null>(null);
   if (restoredRef.current === null) {
-    restoredRef.current = loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers);
+    restoredRef.current = clampRestored(
+      loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers),
+    );
   }
   const [answerState, setAnswerState] = useState<FormAnswerState>(restoredRef.current);
   const [localDescription, setLocalDescription] = useState(description ?? initialDescription ?? '');

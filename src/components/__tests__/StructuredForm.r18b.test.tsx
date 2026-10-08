@@ -35,3 +35,38 @@ describe('the 200-character limit on typed answers', () => {
     expect(description.maxLength).toBe(-1);
   });
 });
+
+describe('R18-B fix: the limit is visible, tied to its field, and applied to restored drafts', () => {
+  const FORM_KEY = 'aigate:intake-form-draft:v4';
+  const typed = (value: string | string[]) => ({ value, source: { kind: 'typed' } });
+  const reach: Record<string, Record<string, ReturnType<typeof typed>>> = {
+    '1': {},
+    '3supplierName': { '3': typed('supplier-feature'), '3supplier': typed('not-on-list') },
+    '3model': { '3': typed('supplier-feature') },
+    '8other': { '8': typed('other') },
+  };
+
+  it.each(['1', '3supplierName', '3model', '8other'])('question %s: typing stops at 200 and a hint is linked', async (id) => {
+    const user = userEvent.setup({ delay: null });
+    const draft = { version: 4, answerState: reach[id], lastRead: { fingerprint: '', outcome: 'not-read' } };
+    sessionStorage.setItem(FORM_KEY, JSON.stringify(draft));
+    render(<StructuredForm policy={policy} onSubmit={() => undefined} />);
+    const field = document.getElementById(`pf-${id}`) as HTMLInputElement;
+    expect(field).not.toBeNull();
+    expect(field).toHaveAccessibleDescription(/Up to 200 characters\./);
+    await user.click(field);
+    await user.paste('n'.repeat(250));
+    expect(field.value.length).toBeLessThanOrEqual(200);
+  });
+
+  it.each(['1', '3supplierName', '3model', '8other'])('question %s: a longer answer from an older draft is cut to 200 on load', (id) => {
+    const answerState = { ...reach[id], [id]: typed('x'.repeat(450)) };
+    sessionStorage.setItem(
+      FORM_KEY,
+      JSON.stringify({ version: 4, answerState, lastRead: { fingerprint: '', outcome: 'not-read' } }),
+    );
+    render(<StructuredForm policy={policy} onSubmit={() => undefined} />);
+    const field = document.getElementById(`pf-${id}`) as HTMLInputElement;
+    expect(field.value).toBe('x'.repeat(200));
+  });
+});
