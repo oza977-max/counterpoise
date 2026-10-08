@@ -96,7 +96,11 @@ describe('TC-R18-GI-1-03: a near miss does not tick an item', () => {
   });
 });
 
-describe('TC-R18-GI-1-04: identical text gives identical ticks, with no clock, random or model', () => {
+// What this proves, no more: repeated calls on one text agree, and the rule's source
+// contains no clock, random, network or storage call. "With a model configured or not"
+// is true by construction (mentionedItems takes only the text and the jurisdiction
+// list); a faked clock or a configured model is not exercised here.
+describe('TC-R18-GI-1-04: repeated calls on the same text agree, and the rule source has no clock, random, network or storage call', () => {
   it('returns the same set (same members, same order) on repeated calls', () => {
     const text = ROWS.map((r) => r.ticks).join(' ');
     const a = [...ticked(text)];
@@ -145,6 +149,21 @@ describe('TC-R18-GI-1-09: a two-letter code ticks countries only when written as
     expect(mentionedItems('Offices in Germany', []).has('countries')).toBe(true);
     expect(mentionedItems('Offices in Germany', [{ code: 'WORLD', name: 'The world' }]).has('countries')).toBe(true);
     expect(mentionedItems('x', [{ code: '', name: '' }]).has('countries')).toBe(false);
+  });
+  it('R18-A review m6: a 2-3 letter jurisdiction NAME is held to the capitals rule too', () => {
+    const named = [{ code: 'USA-GOV', name: 'US' }];
+    expect(mentionedItems('It gives us a score.', named).has('countries')).toBe(false);
+    expect(mentionedItems('Our US desk will use it.', named).has('countries')).toBe(true);
+    // Accepted limit, pinned so it is a decision and not an accident: an all-capitals text ticks on "US".
+    expect(mentionedItems('IT GIVES US A SCORE.', named).has('countries')).toBe(true);
+  });
+  it('R18-A review m6: the written-out forms "U.S.", "U.K.", "USA" and "UAE" tick (also with no list)', () => {
+    for (const s of ['our U.S. desk', 'Our u.s. desk', 'the U.K. office', 'staff in the USA', 'a UAE branch', 'U.S.-based']) {
+      expect(mentionedItems(s, []).has('countries')).toBe(true);
+    }
+    for (const s of ['the bus.s thing', 'usable', 'a uaeX tool', 'it gives us a score']) {
+      expect(mentionedItems(s, []).has('countries')).toBe(false);
+    }
   });
   it('a list entry cannot inject a pattern: regex characters in names are literal', () => {
     const odd = [{ code: 'A.B', name: '(x+)+$' }];

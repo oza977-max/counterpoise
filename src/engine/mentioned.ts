@@ -8,6 +8,12 @@
 // The vocabulary is English only and human-reviewed like pack text
 // (grounding/PACK-AUTHORING.md). A phrase added later needs a ticks-on and a
 // stays-unticked sentence in the same commit (mentioned.test.ts).
+//
+// Accepted limit (countries): a two- or three-letter jurisdiction code or name
+// counts only when written in capitals, so a text typed ENTIRELY in capitals
+// ("IT GIVES US A SCORE") ticks "countries" on the pronoun "US". The form asks
+// the question either way, so a false tick costs nothing; guessing at case
+// would miss the real "US office" far more often.
 
 import type { ChecklistItemId } from './prefill-types';
 
@@ -172,7 +178,7 @@ const VOCABULARY: Record<Exclude<ChecklistItemId, 'countries'>, ItemVocabulary> 
       'hong kong', 'taiwan', 'south korea', 'korea', 'india', 'pakistan', 'bangladesh',
       'indonesia', 'malaysia', 'thailand', 'vietnam', 'philippines', 'australia', 'new zealand',
       'japan', 'singapore', 'israel', 'egypt', 'nigeria', 'kenya', 'south africa', 'saudi arabia',
-      'united arab emirates', 'qatar', 'kuwait', 'bahrain', 'oman', 'morocco', 'ghana', 'iran',
+      'united arab emirates', 'uae', 'usa', 'u.s.', 'u.k.', 'qatar', 'kuwait', 'bahrain', 'oman', 'morocco', 'ghana', 'iran',
       'iraq', 'guernsey', 'isle of man', 'liechtenstein', 'monaco', 'turkiye', 'türkiye',
     ],
     stems: [],
@@ -263,8 +269,14 @@ function countriesMentioned(original: string, folded: string, jurisdictions: rea
   const caps: string[] = [];
   const longer: string[] = [];
   for (const j of jurisdictions) {
-    const name = foldForMention(typeof j.name === 'string' ? j.name : '');
-    if (name !== '') longer.push(name);
+    const rawName = typeof j.name === 'string' ? j.name.trim() : '';
+    // A 2-3 letter NAME is held to the same rule as a code (capitals only): "us" the
+    // pronoun must not tick because a list calls a jurisdiction "US".
+    if (isShortCode(rawName)) caps.push(escapeRegex(rawName.toUpperCase()));
+    else {
+      const name = foldForMention(rawName);
+      if (name !== '') longer.push(name);
+    }
     const code = typeof j.code === 'string' ? j.code.trim() : '';
     if (code === '') continue;
     if (isShortCode(code)) caps.push(escapeRegex(code.toUpperCase()));
