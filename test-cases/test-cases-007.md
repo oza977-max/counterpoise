@@ -24,7 +24,6 @@ guard.
 
 | ID | Reason |
 |---|---|
-| TC-R7-JC-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-| TC-R7-JC-3-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-
-| TC-R7-JC-2-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R7-JC-1-01 | Superseded by R18-GI-10 (R18-A): a model-proposed, pre-ticked country no longer exists; the form's countries start unticked. The form's own country ticking is proved by TC-CR7-02c-edit and TC-CR8-08b. No replacement for the model-proposed case — behaviour retired. |
+| TC-R7-JC-3-01 | Superseded by R18-GI-10 (R18-A): unticking a model-proposed country confirmed it implicitly on the card review, which is unreachable. No replacement — behaviour retired. |
+| TC-R7-JC-2-01 | Superseded by R18-GI-10 (R18-A): the card review's refusal to proceed until the countries were confirmed is unreachable; on the form the person ticks countries themselves and is never asked to confirm a model's. No replacement — behaviour retired. |

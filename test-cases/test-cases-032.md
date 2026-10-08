@@ -106,8 +106,7 @@ There is no TC-RA-9-01p: the id was skipped while the tests were written and is 
 
 | ID | Reason |
 |---|---|
-| TC-UC-3-04c-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-| TC-UC-3-04c-03 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-| TC-UC-3-04c-05 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-
-| TC-UC-3-04c-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-UC-3-04c-01 | Superseded by R18-GI-10 (R18-A): the review screen's rating-instruction warning is unreachable. The same warning on the description screen, with a Warning: lead-in and at most the first two phrases quoted, is TC-R18-GI-3-19 (IntakeFlow.r18a.describe.test.tsx and plain-copy.rating.test.ts). |
+| TC-UC-3-04c-03 | Superseded by R18-GI-10 (R18-A): the confirmation step's warning repeated a model-path reading; a form-built case never carries rating instructions (TC-UC-3-04c-04 pins that). No replacement — behaviour retired. |
+| TC-UC-3-04c-05 | Superseded by R18-GI-10 (R18-A): graph_confirmed gets no rating_instructions field from a form-built case. Reading of old records that carry it is TC-UC-3-04d-01 and -02. No replacement for the write — behaviour retired. |
+| TC-UC-3-04c-02 | Superseded by R18-GI-10 (R18-A): the review screen's no-warning case is unreachable. An ordinary description getting no warning on the description screen is part of TC-R18-GI-3-19. |

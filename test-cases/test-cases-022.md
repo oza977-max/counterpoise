@@ -331,4 +331,4 @@ forced evaluation failure on the form path.
 
 | ID | Reason |
 |---|---|
-| TC-R16-F-64 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R16-F-64 | Superseded by R18-GI-10 (R18-A): the review screen's editor that applied a second kind of access is unreachable. The form's own two-kind tick reaching the evaluated graph is TC-R16-E-72 in IntakeFlow.r16e.test.tsx. |

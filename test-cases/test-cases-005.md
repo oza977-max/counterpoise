@@ -44,7 +44,6 @@ rendered string here matches `/approved|rejected/i` (verified by suite run).
 
 | ID | Reason |
 |---|---|
-| TC-R5-GR-2-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-| TC-R5-GX-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-
-| TC-R5-GR-2-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R5-GR-2-01 | Superseded by R18-GI-10 (R18-A): the card review that refused Proceed until every card was confirmed is unreachable (the model no longer reads the description); the form has no proposed values to confirm. No replacement — behaviour retired. |
+| TC-R5-GX-1-01 | Superseded by R18-GI-10 (R18-A): the model's list of countries is never read now, so there is nothing unrecognised to drop and name; the form only offers the policy's own countries. No replacement — behaviour retired. |
+| TC-R5-GR-2-02 | Superseded by R18-GI-10 (R18-A): the review screen that said values were proposed, not scored, is unreachable; the form shows the person's own answers. No replacement — behaviour retired. |

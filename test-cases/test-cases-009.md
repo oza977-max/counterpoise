@@ -27,7 +27,6 @@ reserved-words guard, and TC-R3-NF-2-01's no-write pattern.
 
 | ID | Reason |
 |---|---|
-| TC-R9-SC-1-01 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-| TC-R9-SC-4-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
-
-| TC-R9-SC-1-02 | Superseded by R18-GI-10 (Round 18, chunk R18-A): the description is no longer read by a model and the card review, questionnaire and extraction are unreachable (one route: describe, then the guided form). The case drove only that retired route; what the form route still owes is proved by the TC-R18-* cases and the rewritten tests that remain. |
+| TC-R9-SC-1-01 | Superseded by R18-GI-10 (R18-A): the review screen's checklist of outstanding obligations (guessed fixes, confirms, countries) is unreachable. The description screen's mentioned or not mentioned checklist is a different thing (TC-R18-GI-1-01..09). No replacement — behaviour retired. |
+| TC-R9-SC-4-02 | Superseded by R18-GI-10 (R18-A): the review screen's order of countries and similar cases is unreachable (similar cases now come before the form). No replacement — behaviour retired. |
+| TC-R9-SC-1-02 | Superseded by R18-GI-10 (R18-A): the review screen's done state for zero outstanding obligations is unreachable. No replacement — behaviour retired. |
