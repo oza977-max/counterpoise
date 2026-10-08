@@ -378,3 +378,10 @@ blocker; the runtime path never relied on the judge experiment. Next step
 if picked up again: distinguish decoder-truncation from model-behaviour on
 the no-hard-line-match cases (judge-002 §"Bottom line" has the concrete
 next experiment), before building any panel UI on this model.
+
+---
+
+## 2026-10-08 — R18-A: the no-model form note waits for the panel (binds R18-G)
+
+**Raised by:** R18-A independent review pass 1 (BC-005). The spec's `not-configured` sentence (`intake-flow.md` §27.5) ends "— or connect one under Make it smarter", but that panel is built in R18-G. Until then the form shows `R18_COPY.NO_MODEL_INTERIM_SENTENCE` ("Your description wasn't read automatically, so nothing was filled in for you. Answer the questions below."), which is true in every state of the build. **R18-G must switch the form note to `FAILURE_SENTENCES['not-configured']` in the same commit that ships the panel, and delete the interim sentence.** Status: open.
+
