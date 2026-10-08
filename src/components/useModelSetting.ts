@@ -23,13 +23,22 @@ export interface ModelSnapshot {
   results: ModelTestResult[];
 }
 
+/** A throwing storage is treated as "a key may be stored": the 'never leaves your computer' promise is withheld. */
+function keyMayBeStored(): boolean {
+  try {
+    return getApiKey() !== null;
+  } catch {
+    return true;
+  }
+}
+
 const EMPTY: ModelSnapshot = { ready: false, state: { kind: 'none' }, keyStored: false, results: [] };
 
 export function useModelSetting(): ModelSnapshot {
   const [snapshot, setSnapshot] = useState<ModelSnapshot>(EMPTY);
   useEffect(() => {
     const refresh = () =>
-      setSnapshot({ ready: true, state: modelSettingState(), keyStored: getApiKey() !== null, results: readTestResults() });
+      setSnapshot({ ready: true, state: modelSettingState(), keyStored: keyMayBeStored(), results: readTestResults() });
     refresh();
     window.addEventListener(MODEL_SETTING_CHANGED_EVENT, refresh);
     window.addEventListener('storage', refresh);

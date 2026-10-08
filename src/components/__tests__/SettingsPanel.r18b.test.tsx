@@ -458,6 +458,24 @@ describe('the where-it-goes sentence in Settings (TC-R18-MS-2-01, -02, -03, -06,
     expect(section.textContent).toMatch(/never leaves your computer/i);
   });
 
+  it('R18-B fix: a throwing key read does not crash the section and withholds "never leaves your computer"', async () => {
+    updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
+    const real = Storage.prototype.getItem;
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key: string) {
+      if (key === 'aigate:api-key') throw new Error('storage blocked');
+      return real.call(this, key);
+    });
+    try {
+      const user = userEvent.setup({ delay: null });
+      render(<SettingsPanel />);
+      const section = await open(user);
+      expect(section.textContent).toMatch(/qwen3:4b/);
+      expect(section.textContent).not.toMatch(/never leaves your computer/i);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('TC-R18-MS-2-06: this computer shows the tunnel small print, the firm server shows its own, never both', async () => {
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
