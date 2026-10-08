@@ -264,7 +264,14 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     !adoptedFrom &&
     (state.step === 'duplicate_check' ||
       state.step === 'graph_review' ||
-      state.step === 'questionnaire') &&
+      state.step === 'questionnaire' ||
+      // R18-A (§27.1): the form of a FRESH case. A form that carries a case id,
+      // a correction or an after-failure flag has no Back (the reducer refuses it too).
+      (state.step === 'graph_extraction' &&
+        state.method === 'form' &&
+        state.useCaseId === undefined &&
+        state.originalVerdictId === undefined &&
+        state.afterFailedEvaluation !== true)) &&
     // No Back on a correction pass's ENTRY step — the reducer refuses it
     // (see STEP_BACK), and a control that does nothing is the false-affordance
     // defect FN-006 existed to kill. Deeper correction steps (questionnaire →

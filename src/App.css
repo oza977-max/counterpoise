@@ -3789,3 +3789,75 @@ details input {
   outline: 2px solid var(--navy);
   outline-offset: 2px;
 }
+
+/* R18-A: the describe-first screen - the box with its live checklist beside it. */
+.describe {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .describe {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.describe__input textarea {
+  display: block;
+  width: 100%;
+  min-height: 9rem;
+  box-sizing: border-box;
+}
+.describe__nudge {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--ink-soft);
+  background: var(--paper);
+}
+.describe__nudge-lead {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.describe__nudge-items {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.describe__example {
+  margin: 0.15rem 0;
+  font-size: 0.9em;
+  text-align: left;
+}
+.checklist__heading {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.checklist__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.checklist__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.2rem 0;
+  color: var(--ink-soft);
+}
+.checklist__item--on {
+  color: var(--ink);
+}
+.checklist__symbol {
+  width: 1.2rem;
+  text-align: center;
+}
+.checklist__state {
+  font-size: 0.85em;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.checklist__item--on .checklist__state {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--ink);
+}

@@ -55,6 +55,10 @@ describe('App.css — CR6-09: small text meets 4.5:1', () => {
     ['.verdict__first-also-covers', '--card-bg'],
     ['.graph-node__access-scope-editor > legend', '--card-bg'],
     ['.verdict__chain-source', '--paper'],
+    // R18-A: the describe screen's checklist and nudge
+    ['.checklist__item', '--card-bg'],
+    ['.checklist__state', '--card-bg'],
+    ['.describe__nudge-lead', '--paper'],
   ];
   for (const [selector, bgToken] of cases) {
     it(`TC-CR6-09: ${selector} on ${bgToken} is at least 4.5:1`, () => {
