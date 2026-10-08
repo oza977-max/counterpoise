@@ -895,3 +895,244 @@ describe('M-5: App guards IntakeFlow with the ErrorBoundary; an old-shape draft 
     }
   });
 });
+
+// R18-A review I-3 / m2: restored from main, seeded with the version-4 envelope.
+
+// C-3 (Minor). Undo is a single-level, one-use snapshot (v0.7.1) — once
+// consumed, the control must stop offering itself rather than sitting there
+// as a button that does nothing on a second press.
+describe('C-3: Undo disappears once its one snapshot is used', () => {
+  it('TC-CR6-C3: Undo is offered after an answer and gone after it is pressed — even though the PREVIOUS answer is still shown as "Recorded"', async () => {
+    // Three questions: after answering Q1 then Q2 and undoing Q2, the
+    // "Recorded" line falls back to Q1's answer — which is still truthy —
+    // so this actually exercises whether onUndo itself is withheld once
+    // the one snapshot is gone, not just "lastAnswer happened to vanish".
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        version: 4, // R18-A: the envelope the current build saves
+        state: {
+          step: 'questionnaire',
+          description: 'd',
+          graph: makeGraph({ intake_method: 'llm' }),
+          questions: [
+            { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+            { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+            { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+          ],
+          answers: [],
+          resolutionNotes: [],
+          corrections: [],
+          useCaseId: 'uc-c3',
+        },
+      }),
+    );
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+
+    await screen.findByText(/question 1 of 3/i);
+    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^yes$/i }));
+    await screen.findByText(/question 2 of 3/i);
+    expect(await screen.findByRole('button', { name: /^undo$/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^no$/i }));
+    await screen.findByText(/question 3 of 3/i);
+    const undo = await screen.findByRole('button', { name: /^undo$/i });
+
+    await user.click(undo);
+    // Back to question 2, Recorded line falls back to Q1's answer — the
+    // single snapshot is gone, so Undo must not still be offered even
+    // though there is still a "Recorded" line to attach it to.
+    await screen.findByText(/question 2 of 3/i);
+    expect(screen.getByText(/^recorded:/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('I-3 / B-10 rewritten: a contradiction is shown iff it still holds when the questions end', () => {
+  const manualGraph = (autonomy: number) =>
+    makeGraph({
+      intake_method: 'llm',
+      processing_nodes: [{ ...makeGraph().processing_nodes[0]!, autonomy_level: autonomy as never }],
+    });
+  const seed = (graph: DataFlowGraph, questions: unknown[], extra: Record<string, unknown> = {}) =>
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        version: 4, // R18-A: the envelope the current build saves
+        state: {
+          step: 'questionnaire',
+          description: 'The process is fully manual',
+          graph,
+          questions,
+          answers: [],
+          resolutionNotes: [],
+          corrections: [],
+          useCaseId: 'uc-b10',
+          ...extra,
+        },
+      }),
+    );
+
+  it('TC-CR6-B10 (a): a contradiction that still holds on the current graph is shown', async () => {
+    seed(manualGraph(3), [
+      { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+    ]);
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
+    expect(await screen.findByText(/says a person approves everything it does/i)).toBeInTheDocument();
+  });
+
+  it('TC-CR6-B10 (b): an answer that resolved the contradiction does not bring it back, even if a stale submission-time copy was saved', async () => {
+    seed(
+      manualGraph(3),
+      [{ id: 'Q1', field: 'autonomy_level', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'select' }],
+      // What the removed carried field looked like in a draft saved by the previous build.
+      {
+        submissionContradictions: [
+          { statement1: 'Your description says a person approves everything it does.', statement2: 'but your answers say it acts by itself.', field: 'autonomy_level' },
+        ],
+      },
+    );
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /a person checks or approves each thing/i }));
+    expect(await screen.findByRole('button', { name: /confirm and evaluate/i })).toBeInTheDocument();
+    expect(screen.queryByText(/says a person approves everything it does/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('B-10c (pass 2): an explained contradiction is not raised again by the next answer', () => {
+  const contradictoryGraph = () =>
+    makeGraph({
+      intake_method: 'llm',
+      processing_nodes: [{ ...makeGraph().processing_nodes[0]!, autonomy_level: 3 as never }],
+    });
+  const questions = [
+    { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+    { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+    { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+  ];
+
+  it('TC-CR6-B10c: explain one, answer the next question -> not re-raised; the explanation is saved with the draft', async () => {
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        version: 4, // R18-A: the envelope the current build saves
+        state: {
+          step: 'questionnaire',
+          description: 'The process is fully manual',
+          graph: contradictoryGraph(),
+          questions,
+          answers: [],
+          resolutionNotes: [],
+          corrections: [],
+          useCaseId: 'uc-b10c',
+        },
+      }),
+    );
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
+    await screen.findByText(/says a person approves everything it does/i);
+    await fillText(user, screen.getByLabelText(/which is right, and why/i), 'The reviewer signs off by hand');
+    await user.click(screen.getByRole('button', { name: /^(explain|resolve|continue)/i }));
+    await screen.findByText(/question 2 of 3/i);
+
+    await user.click(screen.getByRole('button', { name: /^no$/i }));
+    expect(await screen.findByText(/question 3 of 3/i)).toBeInTheDocument();
+    expect(screen.queryByText(/says a person approves everything it does/i)).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(DRAFT_KEY) ?? '').toMatch(/explainedContradictions/);
+  });
+
+  it('TC-CR6-B10c (new one still shows): an explained entry for a different contradiction does not suppress the live one', async () => {
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        version: 4, // R18-A: the envelope the current build saves
+        state: {
+          step: 'questionnaire',
+          description: 'The process is fully manual',
+          graph: contradictoryGraph(),
+          questions,
+          answers: [],
+          resolutionNotes: ['already explained'],
+          explainedContradictions: ['some_other_field|A different statement.'],
+          corrections: [],
+          useCaseId: 'uc-b10c2',
+        },
+      }),
+    );
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /^yes$/i }));
+    expect(await screen.findByText(/says a person approves everything it does/i)).toBeInTheDocument();
+  });
+});
+
+describe('TC-CR6-04a: an old-shape undo snapshot in a saved draft', () => {
+  // R18-A: the version-4 loader no longer migrates an earlier questionnaire draft's
+  // undo piece by piece; ANY earlier-version draft opens the form with the
+  // description kept and says so. What CR6-04a owes is unchanged and is proven on
+  // both halves: the old draft restores without a crash and offers no stale Undo,
+  // and Undo then works for the next answer on a draft the current build saved.
+  const questions = [
+    { id: 'Q1', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+    { id: 'Q2', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+    { id: 'Q3', field: 'replaces_prior_model', node_id: 'p1', triggered_by: ['INV-1'], answer_type: 'boolean' },
+  ];
+
+  it('TC-CR6-04a (UI): a draft saved with the old undo shape restores without a crash, keeps the description, and offers no Undo', async () => {
+    const g = makeGraph();
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        version: 3,
+        state: {
+          step: 'questionnaire',
+          description: 'A description that must survive',
+          plainAnswers: { '1': 'Tool' },
+          graph: g,
+          questions,
+          answers: [{ questionId: 'Q1', value: true }],
+          resolutionNotes: [],
+          corrections: [],
+          useCaseId: 'uc-old',
+          undo: { graph: g, correctionsLen: 0 },
+        },
+      }),
+    );
+    render(<App />);
+    await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('A description that must survive');
+    expect(screen.getByText(/saved by an earlier version of counterpoise/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
+  });
+
+  it('TC-CR6-04a (UI): on a draft the current build saved, there is no Undo for an earlier answer and Undo works for the next one', async () => {
+    const g = makeGraph();
+    seedCurrentDraft({
+      step: 'questionnaire',
+      description: 'd',
+      method: 'form',
+      plainAnswers: { '1': 'Tool' },
+      graph: g,
+      questions,
+      answers: [{ questionId: 'Q1', value: true }],
+      resolutionNotes: [],
+      corrections: [],
+      useCaseId: 'uc-old',
+    });
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await screen.findByText(/question 2 of 3/i);
+    expect(screen.queryByRole('button', { name: /^undo$/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^no$/i }));
+    await screen.findByText(/question 3 of 3/i);
+    await user.click(await screen.findByRole('button', { name: /^undo$/i }));
+    expect(await screen.findByText(/question 2 of 3/i)).toBeInTheDocument();
+  });
+});
