@@ -1353,6 +1353,8 @@ export interface FailureSentence {
   ollama: string;
   /** A server the firm declared. `{host}` is replaced by the caller. */
   firm: string;
+  /** Ollama's cloud, when the Ollama wording would be false for it (a model is not "on this computer"). */
+  cloud?: string;
 }
 
 const same = (s: string): FailureSentence => ({ ollama: s, firm: s });
@@ -1452,6 +1454,7 @@ export const R18_COPY = {
     },
     'model-missing': {
       ollama: "That model isn't on this computer. Pick another in Settings, or pull it with Ollama.",
+      cloud: "That model isn't available through Ollama's cloud. Pick another in Settings.",
       firm: "That model isn't on the server. Pick another in Settings.",
     },
     'not-included': {
@@ -1468,8 +1471,8 @@ export const R18_COPY = {
       firm: "The server asked for a sign-in, which this page can't give. Ask whoever runs it.",
     },
     'not-answering': {
-      ollama: "The model isn't answering. Start the Ollama app or check the address in Settings.",
-      firm: "The server isn't answering. Check the address in Settings, or ask whoever runs it.",
+      ollama: 'Ollama answered with an error, so nothing was filled in for you. Try again in a moment, or pick another model in Settings.',
+      firm: 'The server answered with an error, so nothing was filled in for you. Try again in a moment, or ask whoever runs it.',
     },
     'blocked-or-unreachable': {
       ollama:
@@ -1620,6 +1623,6 @@ export function placeRecordWords(place: ModelPlace, host: string): string {
  *  firm's own server gets the neutral wording. `host` (an origin) fills {host} through visibleText. */
 export function failureSentence(reason: PrefillFailure, place: ModelPlace, host: string): string {
   const entry = R18_COPY.FAILURE_SENTENCES[reason];
-  const text = place === 'firm-server' ? entry.firm : entry.ollama;
+  const text = place === 'firm-server' ? entry.firm : place === 'ollama-cloud' ? (entry.cloud ?? entry.ollama) : entry.ollama;
   return text.replace(/\{host\}/g, () => visibleText(host));
 }

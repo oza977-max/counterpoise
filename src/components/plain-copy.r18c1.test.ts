@@ -19,16 +19,37 @@ describe('TC-R18-MS-7-01: each failure becomes one plain sentence that says what
     ['not-included', /Pick another one in Settings/],
     ['allowance-used', /Wait a while, or pick another model/],
     ['signed-out', /ollama signin/],
-    ['not-answering', /Start the Ollama app or check the address/],
+    ['not-answering', /answered with an error/],
     ['blocked-or-unreachable', /Start the Ollama app and check that its allowed-origins setting/],
   ];
   for (const place of ['this-computer', 'ollama-cloud'] as const) {
     it(`under ${place}`, () => {
       for (const [reason, re] of cases) {
-        expect(failureSentence(reason, place, 'http://localhost:11434')).toMatch(re);
+        // Ollama's cloud has its own model-missing wording (review pass 1, M4): it is not "on this computer".
+        const expected = reason === 'model-missing' && place === 'ollama-cloud' ? /Pick another in Settings\./ : re;
+        expect(failureSentence(reason, place, 'http://localhost:11434')).toMatch(expected);
       }
     });
   }
+});
+
+describe('R18-C1 review pass 1 (M4): the sentence is true of the place and of the status', () => {
+  it('a missing model under Ollama\'s cloud does not claim it is missing from this computer or tell the person to pull it', () => {
+    const cloud = failureSentence('model-missing', 'ollama-cloud', 'http://localhost:11434');
+    expect(cloud).not.toMatch(/this computer|pull/i);
+    expect(cloud).toMatch(/Ollama's cloud/);
+    expect(cloud).toMatch(/Pick another in Settings/);
+    expect(failureSentence('model-missing', 'this-computer', 'http://localhost:11434')).toMatch(/isn't on this computer.*pull it with Ollama/);
+    expect(failureSentence('model-missing', 'firm-server', HOST)).toBe("That model isn't on the server. Pick another in Settings.");
+  });
+  it('a 5xx says the server answered with an error and never tells the person to start the app (it did answer)', () => {
+    for (const place of ['this-computer', 'ollama-cloud', 'firm-server'] as const) {
+      const s = failureSentence('not-answering', place, HOST);
+      expect(s).toMatch(/answered with an error/);
+      expect(s).not.toMatch(/\bstart\b/i);
+      expect(s).not.toMatch(/isn't answering/);
+    }
+  });
 });
 
 describe('TC-R18-MS-7-03: a firm server gets neutral sentences', () => {
@@ -56,7 +77,7 @@ describe('TC-R18-PS-6-01: the refused-connection sentence is the one that names 
 describe('TC-R18-PS-6-03: the cause sentence is not shown for other failures', () => {
   it('HTTP 500 (not-answering) is the "isn\'t answering" sentence, never the PS-6-01 one', () => {
     const s = failureSentence('not-answering', 'this-computer', 'http://localhost:11434');
-    expect(s).toMatch(/isn't answering/);
+    expect(s).toMatch(/answered with an error/);
     expect(s).not.toBe(failureSentence('blocked-or-unreachable', 'this-computer', 'http://localhost:11434'));
   });
 });
