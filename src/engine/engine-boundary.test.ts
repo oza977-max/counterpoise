@@ -283,4 +283,26 @@ describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
     expect(offenders).toEqual([]);
     expect(evaluateCallArguments('const r = evaluate(graph, policy, prefill.answers);')).toEqual(['graph, policy, prefill.answers']);
   });
+  it('no production file that imports the reply types or the answer sources also imports evaluate (TC-R18-NF-4-01)', () => {
+    // HEURISTIC, and its limits: it reads import specifiers by text, so it sees a direct import of
+    // prefill-types / answer-sources and of the evaluate module in the same file. It does NOT see a file
+    // that reaches the reply through a re-export or a third module, nor a value passed through an untyped
+    // parameter. The call-argument scan above and the import-closure walk cover those gaps in part; the
+    // rest is review. IntakeFlow.tsx is the one screen that legitimately does both - it holds the form's
+    // answers and runs the verdict - so it is allow-listed, and its evaluate() arguments are scanned above.
+    const ALLOWED = ['components/IntakeFlow.tsx'];
+    const touchesReply = (spec: string) => /(^|\/)(prefill-types|answer-sources)$/.test(spec);
+    const touchesEvaluate = (spec: string) => /(^|\/)evaluate$/.test(spec);
+    const both: string[] = [];
+    for (const file of listAllProductionFiles(SRC_DIR)) {
+      const specs = importedModules(readFileSync(file, 'utf-8'));
+      if (specs.some(touchesReply) && (specs.some(touchesEvaluate) || evaluateCallArguments(readFileSync(file, 'utf-8')).length > 0)) {
+        both.push(file.slice(SRC_DIR.length + 1));
+      }
+    }
+    expect(both.sort()).toEqual(ALLOWED);
+    // the scan can fail
+    const sample = "import type { Prefill } from './prefill-types';\nimport { evaluate } from './evaluate';";
+    expect(importedModules(sample).some(touchesReply) && importedModules(sample).some(touchesEvaluate)).toBe(true);
+  });
 });
