@@ -1622,6 +1622,7 @@ export const R18_COPY = {
   MARK_QUOTE_LEFT_CONFIRMED: 'is no longer in your description',
   MARK_CONFIRMED: 'confirmed by you',
   MARK_CHANGED: 'changed by you',
+  MARK_READ_AS: 'as',
   MARK_RECORD: 'from the earlier record',
   MARK_NOT_CARRIED: 'not carried over from the earlier version',
   // One tick per answer. The accessible name is this plus the question.

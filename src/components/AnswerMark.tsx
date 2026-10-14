@@ -1,7 +1,7 @@
 import { R18_COPY } from './plain-copy';
 import { visibleText } from '../engine/visible-text';
-import { quoteContext, quoteInText } from '../engine/answer-sources';
-import type { AnswerSource, QuoteRef } from '../engine/prefill-types';
+import { quoteContext, quoteStillInText } from '../engine/answer-sources';
+import type { AnswerSource, QuoteRef, ReadRecord } from '../engine/prefill-types';
 
 // R18-C2 (specs/intake-flow.md §27.6 "Marks"). Presentation only: where an answer on the form came from,
 // said in words, with the one tick that confirms it. Every sentence is claimed only in the state where it
@@ -31,6 +31,7 @@ const q = (quote: string) => `“${visibleText(quote)}”`;
 
 function QuoteLines({
   quotes,
+  read,
   description,
   optionText,
   multi,
@@ -38,23 +39,25 @@ function QuoteLines({
   askOnLast,
 }: {
   quotes: QuoteRef[];
+  read: ReadRecord;
   description: string;
   optionText: (key: string) => string;
   multi: boolean;
-  line: (quote: string, present: boolean, ask: boolean) => string;
+  line: (ref: QuoteRef, present: boolean, ask: boolean) => string;
   askOnLast: boolean;
 }) {
   return (
     <>
       {quotes.map((ref, i) => {
-        const present = quoteInText(ref.quote, description);
+        // The decision lives in answer-sources.ts: this one quote, as a source of its own, still in the text?
+        const present = quoteStillInText({ kind: 'changed', from: [ref], read }, description);
         const ctx = present ? quoteContext(description, ref.quote) : null;
         // Several quotes on one question (a tick-all with more than one option): say which option each is for.
         const prefix = multi && quotes.length > 1 ? `${visibleText(optionText(ref.option))}: ` : '';
         const ask = askOnLast && i === quotes.length - 1;
         return (
           <div key={`${ref.option}:${ref.quote}`} className="answer-mark__quote">
-            <p className="answer-mark__claim">{prefix + line(ref.quote, present, ask)}</p>
+            <p className="answer-mark__claim">{prefix + line(ref, present, ask)}</p>
             {ctx && (
               <p className="answer-mark__context">
                 {visibleText(ctx.before)}
@@ -109,13 +112,17 @@ export default function AnswerMark({ questionLabel, source, description, optionT
       <div className="answer-mark answer-mark--changed">
         <QuoteLines
           quotes={source.from}
+          read={source.read}
           description={description}
           optionText={optionText}
           multi={multi}
           askOnLast={false}
-          line={(quote, present) =>
-            `${R18_COPY.MARK_CHANGED} — ${model} had read ${q(quote)}${present ? '' : ` (${R18_COPY.MARK_QUOTE_LEFT_CONFIRMED})`}`
-          }
+          line={(ref, present) => {
+            // What the model had chosen, in the option's own words (visibleText, like every quoted text).
+            const chosen = optionText(ref.option);
+            const as = chosen === '' ? '' : ` ${R18_COPY.MARK_READ_AS} “${visibleText(chosen)}”`;
+            return `${R18_COPY.MARK_CHANGED} — ${model} had read ${q(ref.quote)}${as}${present ? '' : ` (${R18_COPY.MARK_QUOTE_LEFT_CONFIRMED})`}`;
+          }}
         />
       </div>
     );
@@ -127,11 +134,12 @@ export default function AnswerMark({ questionLabel, source, description, optionT
     <div className="answer-mark answer-mark--prefilled">
       <QuoteLines
         quotes={source.quotes}
+        read={source.read}
         description={description}
         optionText={optionText}
         multi={multi}
         askOnLast
-        line={(quote, present, ask) => {
+        line={({ quote }, present, ask) => {
           if (present) {
             const base = `${R18_COPY.MARK_FROM} ${q(quote)}`;
             return confirmed ? `${R18_COPY.MARK_CONFIRMED} — ${base}` : ask ? `${base} ${R18_COPY.MARK_ASK}` : base;
