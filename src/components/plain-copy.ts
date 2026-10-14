@@ -1613,3 +1613,13 @@ export function modelLabelWords(label: ModelLabel): string {
 export function placeRecordWords(place: ModelPlace, host: string): string {
   return R18_COPY.PLACE_RECORD_WORDS[place].replace('{host}', () => visibleText(host));
 }
+
+// ── Round 18-C1: choosing the failure sentence (words only; no decisions) ──
+
+/** The one sentence for a failed read (§27.5 table). The two Ollama places use the Ollama wording; a
+ *  firm's own server gets the neutral wording. `host` (an origin) fills {host} through visibleText. */
+export function failureSentence(reason: PrefillFailure, place: ModelPlace, host: string): string {
+  const entry = R18_COPY.FAILURE_SENTENCES[reason];
+  const text = place === 'firm-server' ? entry.firm : entry.ollama;
+  return text.replace(/\{host\}/g, () => visibleText(host));
+}
