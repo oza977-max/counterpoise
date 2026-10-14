@@ -635,6 +635,9 @@ describe('R18-C1 review pass 1 (I2): the allowance and plan matchers are scoped 
     { name: 'a 403 "your plan does not include this model" is not-included', status: 403, error: 'your plan does not include this model', reason: 'not-included' },
     { name: 'a 403 "daily usage limit reached" is allowance-used', status: 403, error: 'daily usage limit reached', reason: 'allowance-used' },
     { name: 'a 429 is allowance-used whatever the body says', status: 429, error: 'slow down', reason: 'allowance-used' },
+    { name: 'a 403 "quota_exceeded" (underscore-joined code) is allowance-used', status: 403, error: 'quota_exceeded', reason: 'allowance-used' },
+    { name: 'a 403 "usage_limit_reached" is allowance-used', status: 403, error: 'usage_limit_reached', reason: 'allowance-used' },
+    { name: 'a 403 "unlimited" is not an allowance', status: 403, error: 'unlimited access requires a key', reason: 'other' },
   ];
   for (const c of cases) {
     it(c.name, async () => {

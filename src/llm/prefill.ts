@@ -207,7 +207,8 @@ function extractRaw(bodyText: string, mode: Mode): { raw: unknown; truncated: bo
  *  "prompt exceeds the context limit" is a request problem, not a used-up allowance. */
 function classifyHttp(status: number, body: string, mode: Mode): PrefillFailure {
   const b = body.slice(0, MAX_ERROR_BODY_CHARS).toLowerCase();
-  const limit = /\b(?:limits?|quotas?|usage)\b/.test(b);
+  // Letter-bounded, not \b: \b counts '_' as a word character, so 'quota_exceeded' would not match.
+  const limit = /(?<![a-z])(?:limits?|quotas?|usage)(?![a-z])/.test(b);
   if (status === 401) return 'signed-out';
   if (status === 402) return 'not-included';
   if (status === 403) {
