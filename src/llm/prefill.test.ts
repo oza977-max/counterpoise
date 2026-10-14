@@ -14,7 +14,7 @@ import { verifyPrefill } from '../engine/prefill-verify';
 import { buildCatalogue, QUESTION_STRUCTURE } from '../engine/question-structure';
 import { QUESTION_WORDS, failureSentence, R18_COPY } from '../components/plain-copy';
 import type { PolicyFile } from '../engine/types';
-import type { PrefillOutcome } from '../engine/prefill-types';
+import type { PrefillFailure, PrefillOutcome } from '../engine/prefill-types';
 
 // R18-C1 deliverable 5: requestPrefill (specs/intake-flow.md §27.5). Asserted at the level C1 builds:
 // the PrefillOutcome and the sentence chosen for it. C2 adds the on-screen assertions (the form, the
@@ -55,6 +55,11 @@ async function read(
     signal,
     verify: (raw) => verifyPrefill(raw, catalogue, description, policy),
   });
+}
+
+function reasonOf(o: PrefillOutcome): PrefillFailure {
+  if (o.kind !== 'none') throw new Error('expected a failure outcome');
+  return o.reason;
 }
 
 beforeEach(() => localStorage.clear());
@@ -359,7 +364,7 @@ describe('TC-R18-GI-7-04: no error word from the server or the library reaches t
       install(b);
       const out = await read(setting());
       expect(out.kind).toBe('none');
-      const shown = JSON.stringify(out) + failureSentence((out as { reason: never }).reason, 'this-computer', LOCAL);
+      const shown = JSON.stringify(out) + failureSentence(reasonOf(out), 'this-computer', LOCAL);
       for (const bad of ['ECONNREFUSED', '500', 'Internal Server Error', 'TypeError', 'Failed to fetch', 'stack']) {
         expect(shown).not.toContain(bad);
       }
@@ -614,6 +619,6 @@ describe('TC-R18-NF-3-06: a redirect cannot carry the description elsewhere', ()
     expect(out.kind).toBe('none');
     expect(fake.requests.map((r) => new URL(r.url).host)).toEqual(['localhost:11434']);
     expect(fake.requests[0]!.options).toMatchObject({ redirect: 'error', credentials: 'omit', referrerPolicy: 'no-referrer' });
-    expect(failureSentence((out as { reason: never }).reason, 'this-computer', LOCAL).length).toBeGreaterThan(10);
+    expect(failureSentence(reasonOf(out), 'this-computer', LOCAL).length).toBeGreaterThan(10);
   });
 });
