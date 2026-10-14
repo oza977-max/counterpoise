@@ -131,3 +131,70 @@ describe('the form draft and the reducer agree on lastRead (TC-R18-GI-8-11)', ()
     expect(loadFormDraft()!.lastRead).toEqual(lastRead);
   });
 });
+
+describe('an earlier build’s form answers come back as typed where the form still offers them (TC-R18-NF-5-03, spec §27.7)', () => {
+  const put = (raw: unknown) => sessionStorage.setItem(DRAFT_KEY, JSON.stringify(raw));
+  const base = { description: D, corrections: [], useCaseId: 'uc-1' };
+  const plainAnswers = { '1': 'Old tool', '2': D, '3': 'firm-built', '4': 'Gigantic', '5': ['everyday'], '10': 'wide', '11': ['Atlantis'] };
+
+  it.each(['confirmation', 'questionnaire', 'contradiction_review'])('a version 3 %s keeps the valid answers as typed and leaves "Gigantic" and an unknown country blank', (step) => {
+    put({ version: 3, state: { step, ...base, graph, graphVersion: 1, questions: [], answers: [], contradictions: [], resolutionNotes: [], plainAnswers, assumptions: [] } });
+    const info = loadDraftInfo()!;
+    expect(info.earlierVersionNotice).toBe(true);
+    const a = (info.state as { answerState: FormAnswerState }).answerState;
+    expect(a['1']).toEqual({ value: 'Old tool', source: { kind: 'typed' } });
+    expect(a['3']).toEqual({ value: 'firm-built', source: { kind: 'typed' } });
+    expect(a['5']).toEqual({ value: ['everyday'], source: { kind: 'typed' } });
+    expect(a['10']).toEqual({ value: 'wide', source: { kind: 'typed' } });
+    expect(a['4']).toBeUndefined();
+    expect(a['11']).toBeUndefined();
+    expect(JSON.stringify(info.state)).not.toMatch(/Gigantic|Atlantis|uc-1|input_nodes|"confirmed"|"prefilled"/);
+    expect(info.state).toMatchObject({ step: 'graph_extraction', method: 'form', description: D });
+  });
+
+  it('a version 3 form-path graph_extraction keeps them too; a model-path one, a version 4 and a future version keep none', () => {
+    put({ version: 3, state: { step: 'graph_extraction', description: D, method: 'form', plainAnswers } });
+    expect((loadDraftInfo()!.state as { answerState?: FormAnswerState }).answerState?.['3']).toBeDefined();
+    put({ version: 3, state: { step: 'graph_extraction', description: D, method: 'llm', plainAnswers } });
+    expect((loadDraftInfo()!.state as { answerState?: unknown }).answerState).toBeUndefined();
+    put({ version: 99, state: { step: 'confirmation', ...base, graph, plainAnswers } });
+    expect((loadDraftInfo()!.state as { answerState?: unknown }).answerState).toBeUndefined();
+    put({ version: 4, state: { step: 'confirmation', ...base, graph, plainAnswers: 'nope' } });
+    expect((loadDraftInfo()!.state as { answerState?: unknown }).answerState).toBeUndefined();
+  });
+
+  it('a card-review draft (no form answers at all) and an answer set that is entirely invalid land with no answerState field', () => {
+    put({ version: 2, state: { step: 'graph_review', ...base, graph, graphVersion: 1 } });
+    expect(loadDraftInfo()!.state).toEqual({ step: 'graph_extraction', description: D, method: 'form' });
+    put({ version: 3, state: { step: 'confirmation', ...base, graph, plainAnswers: { '4': 'Gigantic' } } });
+    expect(loadDraftInfo()!.state).toEqual({ step: 'graph_extraction', description: D, method: 'form' });
+  });
+});
+
+describe('the form-route graph_extraction step is checked field by field (R18-A forward note, closed in C2)', () => {
+  const put = (state: object) => sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 4, state }));
+  const ok = { step: 'graph_extraction', description: D, method: 'form' };
+  const LANDING = { step: 'graph_extraction', description: D, method: 'form' };
+  const good = { questionId: '4', question: 'q', shortLabel: 's', assumption: 'a', fields: ['f'] };
+
+  it('a well-formed assumption list, afterFailedEvaluation and originalVerdictId are kept', () => {
+    put({ ...ok, assumptions: [good], afterFailedEvaluation: true, originalVerdictId: 'v-1' });
+    const info = loadDraftInfo()!;
+    expect(info.earlierVersionNotice).toBe(false);
+    expect(info.state).toMatchObject({ assumptions: [good], afterFailedEvaluation: true, originalVerdictId: 'v-1' });
+  });
+
+  it.each([
+    ['an assumption that is a number', { assumptions: [1] }],
+    ['an assumption missing its fields', { assumptions: [{ questionId: '4', question: 'q', shortLabel: 's', assumption: 'a' }] }],
+    ['an assumption whose fields are not strings', { assumptions: [{ ...good, fields: [1] }] }],
+    ['an assumption with a __proto__ key', { assumptions: JSON.parse('[{"__proto__":{"x":1},"questionId":"4","question":"q","shortLabel":"s","assumption":"a","fields":[]}]') }],
+    ['afterFailedEvaluation that is a string', { afterFailedEvaluation: 'yes' }],
+    ['originalVerdictId that is a number', { originalVerdictId: 5 }],
+  ])('%s makes the draft incompatible (the safe landing, with the sentence)', (_n, extra) => {
+    put({ ...ok, ...extra });
+    const info = loadDraftInfo()!;
+    expect(info.state).toEqual(LANDING);
+    expect(info.earlierVersionNotice).toBe(true);
+  });
+});

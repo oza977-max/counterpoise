@@ -177,3 +177,40 @@ export function mergePrefill(
   }
   return state;
 }
+
+const MAX_FREE_ANSWER = 200;
+
+/**
+ * R18-C2 (§27.7, TC-R18-NF-5-03): the answers of an earlier build's saved case, as the form's answer
+ * state. Walks the questions in the form's order; an answer is kept — always as `typed`, never as
+ * confirmed or pre-filled — only if its question is shown for the answers kept so far and its value is
+ * one the form offers now (a single key, a valid tick-all list, or non-blank free text within the form's
+ * 200-character limit). Everything else is simply absent, so the form asks again. Question 2 is the
+ * description and is never carried. Reads only own properties of `plain`, so a hostile key does nothing.
+ */
+export function typedAnswersFromPlain(plain: PlainAnswers, policy: PolicyFile): FormAnswerState {
+  const out: FormAnswerState = {};
+  const kept: PlainAnswers = {};
+  const own = (id: QuestionId): unknown => (Object.prototype.hasOwnProperty.call(plain, id) ? plain[id] : undefined);
+  for (const q of QUESTION_STRUCTURE) {
+    if (q.id === '2' || !isShown(q.id, kept, policy)) continue;
+    const value = own(q.id);
+    let accepted: string | string[] | undefined;
+    if (q.kind === 'free') {
+      if (typeof value === 'string' && value.trim() !== '' && value.length <= MAX_FREE_ANSWER) accepted = value;
+    } else if (q.kind === 'single') {
+      if (typeof value === 'string' && validKeys(q.id, kept, policy).includes(value)) accepted = value;
+    } else if (
+      Array.isArray(value) &&
+      value.every((k) => typeof k === 'string') &&
+      isValidMultiSelection(q.id, value as string[]) &&
+      (value as string[]).every((k) => validKeys(q.id, kept, policy).includes(k))
+    ) {
+      accepted = [...(value as string[])];
+    }
+    if (accepted === undefined) continue;
+    kept[q.id] = accepted;
+    out[q.id as Exclude<QuestionId, '2'>] = { value: accepted, source: { kind: 'typed' } };
+  }
+  return out;
+}

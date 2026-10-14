@@ -1,6 +1,9 @@
 import type { IntakeState } from './intake-state';
 import type { FormAnswerState, LastRead, AnswerSource, QuoteRef } from '../engine/prefill-types';
-import type { QuestionId } from '../engine/plain-questions';
+import type { PlainAnswers, QuestionId } from '../engine/plain-questions';
+import { typedAnswersFromPlain } from '../engine/form-visibility';
+import { loadPolicy } from '../store/policy';
+import { getCurrentPolicyYaml } from '../store/policy-source';
 import { CHECKLIST_ITEM_IDS } from '../engine/mentioned';
 
 // explore-001 D-002 / D-003. In-flight intake lived only in React state, so
@@ -78,8 +81,29 @@ export interface DraftInfo {
 const MAX_DESCRIPTION_CHARS = 1_000_000; // not a rule on people: bounds what a hostile draft can make us hold
 
 /** The safe landing for every draft this build cannot use as it is. */
-function landing(description: string): IntakeState {
-  return { step: 'graph_extraction', description, method: 'form' };
+function landing(description: string, answerState?: FormAnswerState): IntakeState {
+  return {
+    step: 'graph_extraction',
+    description,
+    method: 'form',
+    ...(answerState && Object.keys(answerState).length > 0 ? { answerState } : {}),
+  };
+}
+
+const FORM_ROUTE_STEPS = new Set(['questionnaire', 'contradiction_review', 'confirmation', 'graph_extraction']);
+
+/** R18-C2 (§27.7, TC-R18-NF-5-03). A form-route draft from an earlier build (version 1-3) keeps the answers it
+ *  holds that the form still offers, as `typed` (nothing carried as confirmed or pre-filled); every other
+ *  answer, the graph and the case id are left behind. No policy, no answers. */
+function answersFromEarlierBuild(envelope: DraftEnvelope): FormAnswerState | undefined {
+  const earlier = Number.isInteger(envelope.version) && envelope.version >= 1 && envelope.version < DRAFT_VERSION;
+  const st = envelope.state;
+  if (!earlier || !isRecord(st) || typeof st.step !== 'string' || !FORM_ROUTE_STEPS.has(st.step)) return undefined;
+  if (st.step === 'graph_extraction' && st.method !== 'form') return undefined;
+  if (!isRecord(st.plainAnswers) || !validPlainAnswers(st.plainAnswers)) return undefined;
+  const policy = loadPolicy(getCurrentPolicyYaml());
+  if (!policy.valid) return undefined;
+  return typedAnswersFromPlain(st.plainAnswers as PlainAnswers, policy.policy);
 }
 
 /** The description of a stored value, whatever its shape: a string is kept, anything
@@ -188,6 +212,34 @@ function validNudge(v: unknown): boolean {
   return Array.isArray(v) && v.length <= CHECKLIST_ITEM_IDS.length && v.every((x) => typeof x === 'string' && CHECKLIST_IDS.has(x));
 }
 
+/** An `Assumption` list (plain-copy.ts): each element has its five fields, bounded, and no `__proto__`. */
+function validAssumptions(v: unknown): boolean {
+  return (
+    Array.isArray(v) &&
+    v.length <= MAX_LIST &&
+    v.every(
+      (a) =>
+        isRecord(a) &&
+        !Object.prototype.hasOwnProperty.call(a, '__proto__') &&
+        boundedString(a.questionId, MAX_KEY_CHARS) &&
+        boundedString(a.question, MAX_ANSWER_CHARS) &&
+        boundedString(a.shortLabel, MAX_ANSWER_CHARS) &&
+        boundedString(a.assumption, MAX_ANSWER_CHARS) &&
+        Array.isArray(a.fields) &&
+        a.fields.length <= MAX_LIST &&
+        a.fields.every((f) => boundedString(f, MAX_KEY_CHARS)),
+    )
+  );
+}
+
+/** The two scalar fields a failed-evaluation retry carries (graph_extraction, confirmation). */
+function validRetryFields(v: Record<string, unknown>): boolean {
+  return (
+    (v.afterFailedEvaluation === undefined || typeof v.afterFailedEvaluation === 'boolean') &&
+    (v.originalVerdictId === undefined || boundedString(v.originalVerdictId, MAX_KEY_CHARS))
+  );
+}
+
 function graphLike(v: unknown): boolean {
   return isRecord(v) && Array.isArray(v.input_nodes) && Array.isArray(v.processing_nodes) && Array.isArray(v.output_nodes);
 }
@@ -265,7 +317,8 @@ function currentStateShape(v: unknown): IntakeState | null {
       if (v.decidedFor !== undefined && !boundedString(v.decidedFor, 64)) return null;
       if (v.useCaseId !== undefined && typeof v.useCaseId !== 'string') return null;
       if (v.plainAnswers !== undefined && !validPlainAnswers(v.plainAnswers)) return null;
-      if (v.assumptions !== undefined && !Array.isArray(v.assumptions)) return null;
+      if (v.assumptions !== undefined && !validAssumptions(v.assumptions)) return null;
+      if (!validRetryFields(v)) return null;
       if (v.originalGraph !== undefined && !graphLike(v.originalGraph)) return null;
       if (v.answerState !== undefined) {
         const clean = cleanAnswerState(v.answerState);
@@ -302,7 +355,8 @@ function currentStateShape(v: unknown): IntakeState | null {
       if (!graphLike(v.graph) || typeof v.useCaseId !== 'string') return null;
       if (v.step !== 'evaluation_pending' && typeof desc !== 'string') return null;
       if (v.plainAnswers !== undefined && !validPlainAnswers(v.plainAnswers)) return null;
-      if (v.assumptions !== undefined && !Array.isArray(v.assumptions)) return null;
+      if (v.assumptions !== undefined && !validAssumptions(v.assumptions)) return null;
+      if (!validRetryFields(v)) return null;
       if (v.answerState !== undefined) {
         const clean = cleanAnswerState(v.answerState);
         if (clean === null) return null;
@@ -326,8 +380,8 @@ export function loadDraftInfo(): DraftInfo | null {
     return null;
   }
   if (raw === null || raw === '') return null;
-  const unusable = (description: string): DraftInfo => ({
-    state: landing(description),
+  const unusable = (description: string, answerState?: FormAnswerState): DraftInfo => ({
+    state: landing(description, answerState),
     migratedFromOldBuild: false,
     earlierVersionNotice: true,
   });
@@ -360,7 +414,7 @@ export function loadDraftInfo(): DraftInfo | null {
         const kept = currentState(envelope.state);
         if (kept !== null) return { state: kept, migratedFromOldBuild: false, earlierVersionNotice: false };
       }
-      return unusable(description);
+      return unusable(description, answersFromEarlierBuild(envelope));
     }
     const state = currentState(envelope.state);
     if (state === null) return unusable(description);

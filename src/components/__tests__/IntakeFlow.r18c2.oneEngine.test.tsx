@@ -149,7 +149,7 @@ describe('one engine, however the answers were reached (R18-NF-4)', () => {
 
 // ---- NF-4-04 (property): the graph the engine is given depends only on the confirmed values ----
 
-const READ: ReadRecord = { model: 'm', place: 'this-computer', at: '2026-10-14T00:00:00.000Z' } as ReadRecord;
+const READ: ReadRecord = { model: 'm', place: 'this-computer', host: 'http://localhost:11434' };
 const quote = (q: string) => ({ quote: q, option: '' }) as never;
 
 describe('TC-R18-NF-4-04: identical confirmed answers give identical engine input', () => {

@@ -31,19 +31,21 @@ const noticeEl = () => screen.queryByText(R18_COPY.EARLIER_VERSION_NOTICE);
 
 describe('earlier drafts open on the form (TC-R18-NF-5-01)', () => {
   const answers = { ...WORKED_EXAMPLES[0]!.answers, '2': D };
-  it.each([
-    ['version 1 questionnaire', () => ({ step: 'questionnaire', description: D, graph: { ...graph, intake_method: 'llm' }, questions: [], answers: [], resolutionNotes: [], corrections: [], useCaseId: 'u' })],
-    ['version 2 card review', () => ({ version: 2, state: { step: 'graph_review', description: D, graph: { ...graph, intake_method: 'llm' }, graphVersion: 1, corrections: [], useCaseId: 'u' } })],
-    ['version 3 confirmation with form answers', () => ({ version: 3, state: { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'u', plainAnswers: answers, assumptions: [], afterFailedEvaluation: false } })],
-    ['version 3 model-path extraction', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'llm' } })],
-    ['version 3 form step with answers', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'form', useCaseId: 'u', plainAnswers: answers } })],
-  ])('TC-R18-NF-5-01: %s shows the form, the description and one earlier-version sentence, with no answers', (_n, make) => {
+  it.each<[string, () => unknown, boolean]>([
+    ['version 1 questionnaire', () => ({ step: 'questionnaire', description: D, graph: { ...graph, intake_method: 'llm' }, questions: [], answers: [], resolutionNotes: [], corrections: [], useCaseId: 'u' }), false],
+    ['version 2 card review', () => ({ version: 2, state: { step: 'graph_review', description: D, graph: { ...graph, intake_method: 'llm' }, graphVersion: 1, corrections: [], useCaseId: 'u' } }), false],
+    ['version 3 confirmation with form answers', () => ({ version: 3, state: { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'u', plainAnswers: answers, assumptions: [], afterFailedEvaluation: false } }), true],
+    ['version 3 model-path extraction', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'llm' } }), false],
+    ['version 3 form step with answers', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'form', useCaseId: 'u', plainAnswers: answers } }), true],
+  ])('TC-R18-NF-5-01: %s shows the form, the description and one earlier-version sentence, with no answers unless it held form answers (R18-C2, §27.7: those come back as typed)', (_n, make, keepsAnswers) => {
     put(make());
     render(<App />);
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(D);
     expect(noticeEl()).toHaveAttribute('role', 'status');
-    expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true);
-    expect(screen.getByLabelText(/what do you want to call it/i)).toHaveValue('');
+    // R18-C2 supersedes "no answers carried" for a form-route draft that held form answers (spec §27.7,
+    // TC-R18-NF-5-03): they come back, as typed, where the form still offers them.
+    expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(!keepsAnswers);
+    expect(screen.getByLabelText(/what do you want to call it/i)).toHaveValue(keepsAnswers ? answers['1'] : '');
     expect(screen.queryByText(/check what we read from your description/i)).not.toBeInTheDocument();
   });
 

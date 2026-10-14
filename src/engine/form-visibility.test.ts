@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { loadPolicy } from '../store/policy';
 import {
   canContinue,
+  typedAnswersFromPlain,
   clearDependents,
   isValidMultiSelection,
   mergePrefill,
@@ -284,5 +285,37 @@ describe('canContinue and missingQuestionIds', () => {
 
   it('a not-carried answer is blank', () => {
     expect(canContinue({ ...complete, '10': { value: 'small', source: { kind: 'not-carried' } } }, 'x', policy)).toBe(false);
+  });
+});
+
+describe('typedAnswersFromPlain (R18-C2, TC-R18-NF-5-03: valid answers from an earlier build are kept as typed)', () => {
+  it('keeps valid single, tick-all and free answers as typed, and nothing else', () => {
+    const out = typedAnswersFromPlain(
+      { '1': 'Tool', '2': 'a description', '3': 'firm-built', '4': 'Gigantic', '5': ['everyday'], '11': ['UK'], '10': 'wide' },
+      policy,
+    );
+    expect(out['1']).toEqual({ value: 'Tool', source: { kind: 'typed' } });
+    expect(out['3']).toEqual({ value: 'firm-built', source: { kind: 'typed' } });
+    expect(out['5']).toEqual({ value: ['everyday'], source: { kind: 'typed' } });
+    expect(out['10']).toEqual({ value: 'wide', source: { kind: 'typed' } });
+    expect(out['4']).toBeUndefined(); // "Gigantic" is not an option
+    expect(out['2']).toBeUndefined(); // the description is never a form answer
+  });
+
+  it('drops a tick-all list holding any unknown key, a duplicate, or a value of the wrong shape', () => {
+    const out = typedAnswersFromPlain({ '5': ['everyday', 'nonsense'], '11': ['UK', 'UK'], '10': ['wide'], '1': 7 as never }, policy);
+    expect(out).toEqual({});
+  });
+
+  it('drops an answer whose question is not shown for the earlier answers, and a blank or overlong free answer', () => {
+    const out = typedAnswersFromPlain({ '3': 'firm-built', '3supplierName': 'x', '1': '   ' }, policy);
+    expect(out['3supplierName']).toBeUndefined();
+    expect(out['1']).toBeUndefined();
+    expect(typedAnswersFromPlain({ '1': 'x'.repeat(201) }, policy)['1']).toBeUndefined();
+  });
+
+  it('ignores unknown and inherited keys', () => {
+    const plain = JSON.parse('{"__proto__":{"1":"x"},"constructor":"y","99":"z"}');
+    expect(typedAnswersFromPlain(plain, policy)).toEqual({});
   });
 });

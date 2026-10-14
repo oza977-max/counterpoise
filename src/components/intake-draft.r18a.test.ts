@@ -78,16 +78,24 @@ function oldDrafts(): [string, unknown][] {
   ];
 }
 
-describe('earlier drafts land on the form with the description and no answers (TC-R18-NF-5-01)', () => {
+describe('earlier drafts land on the form with the description kept (TC-R18-NF-5-01)', () => {
   it.each(oldDrafts())('R18-A: %s', (_name, draft) => {
     put(draft);
     const info = loadDraftInfo();
     expect(info).not.toBeNull();
-    expect(info!.state).toEqual(LANDING);
+    // R18-C2 (spec §27.7, TC-R18-NF-5-03) supersedes "no answers carried" for a form-route draft that holds
+    // form answers: they come back as typed (see the R18-C2 tests below). Every other shape is the bare landing.
+    const carriesFormAnswers = JSON.stringify(draft).includes('"plainAnswers"');
+    if (carriesFormAnswers) {
+      expect(info!.state).toMatchObject(LANDING);
+      expect((info!.state as { answerState?: object }).answerState).toBeDefined();
+    } else {
+      expect(info!.state).toEqual(LANDING);
+    }
     expect(info!.earlierVersionNotice).toBe(true);
     expect(info!.migratedFromOldBuild).toBe(false);
-    // No answer, case id or graph came with it (the landing is a fresh form).
-    expect(JSON.stringify(info!.state)).not.toMatch(/plainAnswers|useCaseId|answerState|uc-1/);
+    // No plain answers, case id or graph came with it (the landing is a fresh form).
+    expect(JSON.stringify(info!.state)).not.toMatch(/plainAnswers|useCaseId|uc-1|input_nodes/);
   });
 
   it('R18-A: the notice is computed at load and never persisted — once the landing is saved, a reload shows no notice', () => {
