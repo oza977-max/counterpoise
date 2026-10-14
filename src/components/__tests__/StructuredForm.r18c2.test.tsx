@@ -72,7 +72,7 @@ const continueButton = () => screen.getByRole('button', { name: /^continue$/i })
 const tickFor = (question: RegExp) => screen.getByRole('checkbox', { name: new RegExp(`^yes, this is right.*${question.source}`, 'i') });
 
 describe('marks: the quote in its sentence, only where a quote exists', () => {
-  it('TC-R18-GI-3-01: a pre-filled answer shows its quote; a typed answer and an empty question show none', () => {
+  it('TC-R18-GI-3-01c: a pre-filled answer shows its quote; a typed answer and an empty question show none', () => {
     render(<Harness initial={fullState({ '5': PEOPLE, '11': UK })} />);
     const marks = screen.getAllByText(/^from your description:/i);
     expect(marks.map((m) => m.textContent)).toEqual([
@@ -100,7 +100,7 @@ describe('marks: the quote in its sentence, only where a quote exists', () => {
     expect(mark.textContent).not.toMatch(/our uk team will use it/i);
   });
 
-  it('TC-R18-GI-3-16: a tick-all question shows each option\'s own quote and its own sentence', () => {
+  it('TC-R18-GI-3-16b: a tick-all question shows each option\'s own quote and its own sentence', () => {
     const two = prefilled(
       ['people', 'confidential'],
       [
@@ -141,7 +141,7 @@ describe('marks: the quote in its sentence, only where a quote exists', () => {
     expect(mark.querySelector('img')).toBeNull();
   });
 
-  it('TC-R18-GI-4-06: hidden characters inside the quote itself are escaped too', () => {
+  it('TC-R18-GI-4-06b: hidden characters inside the quote itself are escaped too', () => {
     // A stored quote cannot hold one (the verifier refuses it), but a hostile draft could.
     const quote = 'client\u200bnames';
     render(
@@ -179,7 +179,7 @@ describe('confirm controls: one per answer, no accept-all', () => {
     expect(screen.getByText(/confirmed by you/i)).toBeInTheDocument();
   });
 
-  it('TC-R18-GI-4-05: Tab reaches the control with the keyboard alone', async () => {
+  it('TC-R18-GI-4-05b: Tab reaches the control with the keyboard alone', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState({ '11': UK })} />);
     const tick = tickFor(/which countries/);
@@ -217,7 +217,7 @@ describe('the Continue gate', () => {
     expect(continueButton()).toBeEnabled();
   });
 
-  it('TC-R18-GI-4-01: the gate explains itself - the line names the answers still to check, and goes with the last tick', async () => {
+  it('TC-R18-GI-4-01b: the gate explains itself - the line names the answers still to check, and goes with the last tick', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState({ '11': UK })} />);
     expect(screen.getByText(/^still to check:.*countries/i)).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe('the Continue gate', () => {
     expect(continueButton()).toBeEnabled();
   });
 
-  it('TC-R18-GI-4-01: a fully typed form needs no tick and says nothing about checking', () => {
+  it('TC-R18-GI-4-01c: a fully typed form needs no tick and says nothing about checking', () => {
     render(<Harness initial={fullState()} />);
     expect(continueButton()).toBeEnabled();
     expect(screen.queryByText(/still to check/i)).not.toBeInTheDocument();
@@ -281,7 +281,7 @@ describe('change counts as confirmation; change back returns to confirmed', () =
     expect(source).toMatchObject({ kind: 'prefilled', confirmed: true });
   });
 
-  it('TC-R18-GI-4-04: a single-choice answer changes and changes back the same way', async () => {
+  it('TC-R18-GI-4-04b: a single-choice answer changes and changes back the same way', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState({ '10': prefilled('small', [{ option: 'small', quote: 'every morning' }]) })} />);
     await user.click(screen.getByRole('radio', { name: /whole business|wide|across/i }));
@@ -291,7 +291,7 @@ describe('change counts as confirmation; change back returns to confirmed', () =
     expect(loadFormDraft()!.answerState['10']!.source).toMatchObject({ kind: 'prefilled', confirmed: true });
   });
 
-  it('TC-R18-GI-9-02: a changed answer keeps its quote and the model name on the screen and in the draft', async () => {
+  it('TC-R18-GI-9-02b: a changed answer keeps its quote and the model name on the screen and in the draft', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState({ '10': prefilled('small', [{ option: 'small', quote: 'every morning' }]) })} />);
     await user.click(screen.getByRole('radio', { name: /whole business|wide|across/i }));
@@ -303,7 +303,7 @@ describe('change counts as confirmation; change back returns to confirmed', () =
     expect(mark.textContent).not.toMatch(/from your description/i);
   });
 
-  it('TC-R18-GI-13-01: a typed answer shows no source mark at all, and changing it creates none', async () => {
+  it('TC-R18-GI-13-01c: a typed answer shows no source mark at all, and changing it creates none', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState()} />);
     await user.click(screen.getByRole('radio', { name: /whole business|wide|across/i }));
@@ -328,12 +328,12 @@ describe('the quote has left the description', () => {
     expect(continueButton()).toBeEnabled();
   });
 
-  it('TC-R18-GI-13-01: while the quote is still in the text the "no longer" sentence is absent', () => {
+  it('TC-R18-GI-13-01d: while the quote is still in the text the "no longer" sentence is absent', () => {
     render(<Harness initial={fullState({ '11': UK })} />);
     expect(screen.queryByText(/no longer in your description/i)).not.toBeInTheDocument();
   });
 
-  it('TC-R18-GI-8-04: a confirmed answer keeps its value and reads “confirmed by you — the quote … is no longer in your description”', () => {
+  it('TC-R18-GI-8-04b: a confirmed answer keeps its value and reads “confirmed by you — the quote … is no longer in your description”', () => {
     const confirmed = prefilled(['UK'], [{ option: 'UK', quote: 'Our UK team' }], true);
     render(<Harness initial={fullState({ '11': confirmed })} description="We use it in London." />);
     expect(
@@ -385,7 +385,7 @@ describe('the cascade clears hidden state, sources included', () => {
     expect(stored).not.toHaveProperty('3a');
   });
 
-  it('TC-R18-GI-8-05: a pre-filled question that is hidden from the start is dropped, not kept with a source', () => {
+  it('TC-R18-GI-8-05b: a pre-filled question that is hidden from the start is dropped, not kept with a source', () => {
     // 4a is shown only for "a score": with Question 4 = language it is hidden whatever the state holds.
     const state = fullState({ '4': typed('language'), '4a': prefilled('rules', [{ option: 'rules', quote: 'fixed rules' }]) });
     render(<Harness initial={state} description="It follows fixed rules." />);
@@ -406,7 +406,7 @@ describe('an answer from the earlier record', () => {
     expect(loadFormDraft()!.answerState['10']!.source).toEqual({ kind: 'record', confirmed: true });
   });
 
-  it('TC-R18-GI-13-01: no "earlier record" wording on a form with no record answer', () => {
+  it('TC-R18-GI-13-01e: no "earlier record" wording on a form with no record answer', () => {
     render(<Harness initial={fullState()} />);
     expect(screen.queryByText(/earlier record/i)).not.toBeInTheDocument();
   });
@@ -462,7 +462,7 @@ describe('the rating-instruction notice is shown on the form too (TC-R18-GI-3-10
     expect(notice.closest('[role="status"]')).not.toBeNull();
   });
 
-  it('TC-R18-GI-13-01: no warning for an ordinary description', () => {
+  it('TC-R18-GI-13-01f: no warning for an ordinary description', () => {
     render(<Harness initial={fullState()} />);
     expect(screen.queryByText(/we don.t follow that/i)).not.toBeInTheDocument();
   });
