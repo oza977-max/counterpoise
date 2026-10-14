@@ -622,3 +622,94 @@ describe('a redirect is refused at the request level (NF-3-06 is asserted with t
     expect(failureSentence(reasonOf(out), 'this-computer', LOCAL).length).toBeGreaterThan(10);
   });
 });
+
+describe('R18-C1 review pass 1 (I2): the allowance and plan matchers are scoped and word-bounded', () => {
+  const reply = (status: number, error: string) => ({ provisional: true, status, body: JSON.stringify({ error }), situation: 'review-pass test' });
+  const cases: { name: string; status: number; error: string; mode?: 'format' | 'tool'; reason: PrefillFailure }[] = [
+    { name: 'a 400 "prompt exceeds the context limit" is not an allowance (format mode)', status: 400, error: 'the prompt exceeds the context limit of 8192 tokens', reason: 'other' },
+    { name: 'a 400 "invalid usage of the format field" is not an allowance', status: 400, error: 'invalid usage of the format field', reason: 'other' },
+    { name: 'a 400 in tool mode stays unusable even with the word limit in it', status: 400, error: 'the prompt exceeds the context limit', mode: 'tool', reason: 'unusable' },
+    { name: 'a 418 mentioning a rate limit is not an allowance (only 402/403/429 are)', status: 418, error: 'rate limit teapot', reason: 'other' },
+    { name: 'a 403 "explanation" is not a plan', status: 403, error: 'forbidden: see the explanation in the documentation', reason: 'other' },
+    { name: 'a 403 "planned" is not a plan', status: 403, error: 'access is planned for a later release', reason: 'other' },
+    { name: 'a 403 "your plan does not include this model" is not-included', status: 403, error: 'your plan does not include this model', reason: 'not-included' },
+    { name: 'a 403 "daily usage limit reached" is allowance-used', status: 403, error: 'daily usage limit reached', reason: 'allowance-used' },
+    { name: 'a 429 is allowance-used whatever the body says', status: 429, error: 'slow down', reason: 'allowance-used' },
+  ];
+  for (const c of cases) {
+    it(c.name, async () => {
+      install({ kind: 'http', reply: reply(c.status, c.error) });
+      expect(await read(setting(c.mode ? { mode: c.mode } : {}))).toMatchObject({ kind: 'none', reason: c.reason });
+    });
+  }
+});
+
+describe('R18-C1 review pass 1 (M1, M3): the body comes from the validated setting, and a body failure is not a network failure', () => {
+  it('M1: a model name with stray spaces is sent trimmed, exactly as the snapshot holds it', async () => {
+    const fake = install({ kind: 'honours-format' });
+    const s = setting();
+    const out = await read({ ...s, model: `  ${s.model}  ` });
+    expect(out.kind).toBe('ok');
+    expect(fake.requests[0]!.json!.model).toBe(s.model);
+    if (out.kind === 'ok') expect(out.snapshot.model).toBe(s.model);
+  });
+  it('M3: a failure while building the request body is other, sends nothing and logs only the fixed line', async () => {
+    const fake = install({ kind: 'honours-format' });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const real = buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, policy);
+    const broken = new Map(real);
+    broken.keys = () => {
+      throw new Error('secret internals ' + FIXTURE_DESCRIPTION);
+    };
+    const out = await requestPrefill({
+      description: FIXTURE_DESCRIPTION,
+      catalogue: broken,
+      setting: setting(),
+      signal: new AbortController().signal,
+      verify: (raw) => verifyPrefill(raw, real, FIXTURE_DESCRIPTION, policy),
+    });
+    expect(out).toMatchObject({ kind: 'none', reason: 'other' });
+    expect(fake.requests).toHaveLength(0);
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('secret');
+    warn.mockRestore();
+  });
+});
+
+describe('R18-C1 review pass 1 (M2): the reply body is read through a size cap', () => {
+  function endless(chunkChars: number) {
+    const state = { pulled: 0, cancelled: false };
+    const chunk = new TextEncoder().encode('x'.repeat(chunkChars));
+    const body = new ReadableStream<Uint8Array>({
+      pull(c) {
+        state.pulled += chunkChars;
+        c.enqueue(chunk);
+      },
+      cancel() {
+        state.cancelled = true;
+      },
+    });
+    return { state, body };
+  }
+  it('an endless 200 body is unusable, the reader is cancelled, and only a bounded amount was read', async () => {
+    const { state, body } = endless(65_536);
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status: 200 })));
+    const out = await read(setting());
+    expect(out).toMatchObject({ kind: 'none', reason: 'unusable' });
+    expect(state.cancelled).toBe(true);
+    expect(state.pulled).toBeLessThan(2_000_000);
+  });
+  it('an endless error body is classified from its first part by status and the reader is cancelled', async () => {
+    const { state, body } = endless(65_536);
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status: 500 })));
+    const out = await read(setting());
+    expect(out).toMatchObject({ kind: 'none', reason: 'not-answering' });
+    expect(state.cancelled).toBe(true);
+    expect(state.pulled).toBeLessThan(2_000_000);
+  });
+  it('a body with no stream (as some fakes give) still reads through text()', async () => {
+    const text = MODEL_CONTENT.good;
+    const res = { status: 200, body: null, text: () => Promise.resolve(JSON.stringify({ message: { role: 'assistant', content: text }, done: true, done_reason: 'stop' })) };
+    vi.stubGlobal('fetch', () => Promise.resolve(res));
+    expect((await read(setting())).kind).toBe('ok');
+  });
+});

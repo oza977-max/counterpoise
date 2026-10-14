@@ -178,7 +178,6 @@ function parseJsonLoosely(text: string): unknown {
 
 /** The raw answer object of an HTTP 200 body, or undefined when the body is not the shape of §27.4 step 2. */
 function extractRaw(bodyText: string, mode: Mode): { raw: unknown; truncated: boolean } | undefined {
-  if (bodyText.length > MAX_REPLY_CHARS) return undefined;
   let envelope: unknown;
   try {
     envelope = JSON.parse(bodyText);
@@ -203,24 +202,54 @@ function extractRaw(bodyText: string, mode: Mode): { raw: unknown; truncated: bo
   return { raw, truncated };
 }
 
-/** Provisional matchers (§27.5): the status and the body decide; the text is never kept. */
+/** Provisional matchers (§27.5): the status and the body decide; the text is never kept. Word-bounded, and
+ *  the allowance words count only on the statuses a server uses for an allowance (402, 403, 429): a 400
+ *  "prompt exceeds the context limit" is a request problem, not a used-up allowance. */
 function classifyHttp(status: number, body: string, mode: Mode): PrefillFailure {
   const b = body.slice(0, MAX_ERROR_BODY_CHARS).toLowerCase();
-  const limit = /limit|quota|usage/.test(b);
+  const limit = /\b(?:limits?|quotas?|usage)\b/.test(b);
   if (status === 401) return 'signed-out';
   if (status === 402) return 'not-included';
   if (status === 403) {
-    if (/sign.?in|signed.?out|log.?in|unauthori/.test(b)) return 'signed-out';
-    if (/subscri|upgrade|plan/.test(b)) return 'not-included';
+    if (/\b(?:sign(?:ed)?[ -]?in|signed[ -]?out|log[ -]?in|unauthori[sz]ed)\b/.test(b)) return 'signed-out';
+    if (/\b(?:subscription|subscribe|subscribed|upgrade|plan)\b/.test(b)) return 'not-included';
     return limit ? 'allowance-used' : 'other';
   }
   if (status === 429) return 'allowance-used';
   if (status >= 500) return 'not-answering';
-  if (status === 404) return /retired|no longer/.test(b) ? 'retired' : 'model-missing';
+  if (status === 404) return /\b(?:retired|no longer)\b/.test(b) ? 'retired' : 'model-missing';
   if (status === 400 && mode === 'tool') return 'unusable';
-  if (limit) return 'allowance-used';
-  if (/not found/.test(b)) return 'model-missing';
+  if (/\bnot found\b/.test(b)) return 'model-missing';
   return 'other';
+}
+
+/** Reads a body through a size cap: stops, and cancels the stream, once `capChars` characters are in. When the
+ *  response has no stream (some test fakes) it falls back to text() and applies the same cap. */
+async function readCapped(response: Response, capChars: number): Promise<{ text: string; over: boolean }> {
+  const stream = response.body;
+  if (!stream) {
+    const all = await response.text();
+    return all.length > capChars ? { text: all.slice(0, capChars), over: true } : { text: all, over: false };
+  }
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+      if (text.length > capChars) {
+        void reader.cancel().catch(() => undefined);
+        return { text: text.slice(0, capChars), over: true };
+      }
+    }
+    text += decoder.decode();
+    return { text, over: false };
+  } catch (e) {
+    void reader.cancel().catch(() => undefined);
+    throw e;
+  }
 }
 
 // ---- one request ----
@@ -238,6 +267,8 @@ async function attempt(
   delimiter: string,
 ): Promise<Attempt> {
   const { signal } = args;
+  // Built BEFORE the network call: a failure here is not a blocked or unreachable server.
+  const body = buildBody(args, mode, delimiter);
   const child = new AbortController();
   const link = () => child.abort(signal.reason);
   signal.addEventListener('abort', link, { once: true });
@@ -247,22 +278,26 @@ async function attempt(
       response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: buildBody(args, mode, delimiter),
+        body,
         signal: child.signal,
         ...CALL_OPTIONS,
       });
     } catch {
       return signal.aborted ? { kind: 'aborted' } : { kind: 'failed', reason: 'blocked-or-unreachable' };
     }
+    const ok = response.status === 200;
     let text: string;
+    let over: boolean;
     try {
-      text = await response.text();
+      ({ text, over } = await readCapped(response, ok ? MAX_REPLY_CHARS : MAX_ERROR_BODY_CHARS));
     } catch {
       return signal.aborted ? { kind: 'aborted' } : { kind: 'failed', reason: 'other' };
     }
     // The abort is checked BEFORE anything is classified.
     if (signal.aborted) return { kind: 'aborted' };
-    if (response.status !== 200) return { kind: 'failed', reason: classifyHttp(response.status, text, mode) };
+    if (!ok) return { kind: 'failed', reason: classifyHttp(response.status, text, mode) };
+    // An oversized reply is unusable (and never triggers the other mode).
+    if (over) return { kind: 'failed', reason: 'unusable' };
     const extracted = extractRaw(text, mode);
     if (!extracted) return { kind: 'bad-shape' };
     // A reply cut off by num_predict is unusable and never triggers the other mode.
@@ -299,13 +334,15 @@ export async function requestPrefill(args: RequestPrefillArgs): Promise<PrefillO
 
   try {
     const url = `${checked.setting.url}${PREFILL_PATH}`;
+    // The body is built from the validated setting, the same one the snapshot holds.
+    const sent: RequestPrefillArgs = { ...args, setting: checked.setting };
     const delimiter = randomDelimiter(args.description);
     const first: Mode = setting.mode === 'tool' ? 'tool' : 'format';
     const order: Mode[] = first === 'format' ? ['format', 'tool'] : ['tool', 'format'];
 
     for (let i = 0; i < order.length; i++) {
       const mode = order[i]!;
-      const result = await attempt(args, url, mode, delimiter);
+      const result = await attempt(sent, url, mode, delimiter);
       if (signal.aborted || result.kind === 'aborted') return aborted();
       if (result.kind === 'failed') return none(result.reason);
       if (result.kind === 'bad-shape') {
