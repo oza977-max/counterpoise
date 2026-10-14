@@ -612,7 +612,7 @@ describe('failure outcomes never contain the description', () => {
   });
 });
 
-describe('TC-R18-NF-3-06: a redirect cannot carry the description elsewhere', () => {
+describe('a redirect is refused at the request level (NF-3-06 is asserted with the egress harness)', () => {
   it('a 307 to another host: the redirect is refused (redirect:error), nothing reaches the other host, and the outcome is a plain failure', async () => {
     const fake = install({ kind: 'redirect', location: 'https://other.example/steal' });
     const out = await read(setting());
