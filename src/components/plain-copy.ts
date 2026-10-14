@@ -1440,6 +1440,13 @@ export const R18_COPY = {
   RATING_DESCRIPTION_TAIL:
     "). We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
 
+  // R18-C2 review pass 1 (I1, I2): the form note when the "Read my description again" button is not on
+  // screen (so the sentence must not name it), and when earlier model-filled answers are still showing
+  // (so "nothing was filled in" would be false).
+  NOT_READ_NO_BUTTON: 'Nothing was filled in for you. Answer the questions below.',
+  SETTING_CHANGED_NO_BUTTON: 'The model setting changed while it was reading, so nothing was filled in.',
+  KEPT_EARLIER_NOTE: 'This time nothing new was filled in for you. Your earlier answers are kept below.',
+
   // Failure sentences (§27.5 table), keyed by PrefillFailure. {host} is filled in by the caller.
   FAILURE_SENTENCES: {
     'not-configured': same(
@@ -1666,6 +1673,27 @@ export function failureSentence(reason: PrefillFailure, place: ModelPlace, host:
   const entry = R18_COPY.FAILURE_SENTENCES[reason];
   const text = place === 'firm-server' ? entry.firm : place === 'ollama-cloud' ? (entry.cloud ?? entry.ollama) : entry.ollama;
   return text.replace(/\{host\}/g, () => visibleText(host));
+}
+
+/** R18-C2 review pass 1 (I1, I2): the one sentence the form shows for a read that did not fill anything in.
+ *  - earlierKept: model-filled answers from an earlier read are still on the form, so it says nothing new
+ *    was filled in and that the earlier ones are kept (the plain sentences would be false);
+ *  - readAgainShown: the "Read my description again" button is on screen. When it is not, a sentence that
+ *    tells the person to press it is replaced by the one that is true (no model, an invalid setting, or the
+ *    same words without the instruction). */
+export function formReadNote(
+  outcome: PrefillFailure,
+  place: ModelPlace,
+  host: string,
+  opts: { earlierKept: boolean; readAgainShown: boolean; settingKind: 'none' | 'invalid' | 'no-model' | 'valid' | 'unknown' },
+): string {
+  if (opts.earlierKept) return R18_COPY.KEPT_EARLIER_NOTE;
+  if (!opts.readAgainShown && (outcome === 'not-read' || outcome === 'setting-changed')) {
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
+    if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
+    return outcome === 'not-read' ? R18_COPY.NOT_READ_NO_BUTTON : R18_COPY.SETTING_CHANGED_NO_BUTTON;
+  }
+  return failureSentence(outcome, place, host);
 }
 
 /** R18-C2: "N of M answers were filled in by a model and confirmed by you[, and K were changed by you]", or

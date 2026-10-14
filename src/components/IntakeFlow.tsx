@@ -64,7 +64,7 @@ import {
   ratingWarningFor,
   R18_COPY,
   QUESTION_WORDS,
-  failureSentence,
+  formReadNote,
   placeSentence,
 } from './plain-copy';
 import { findRatingInstructions } from '../engine/rating-instructions';
@@ -444,6 +444,16 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // a resubmission (CHANGE_ANSWER or the form-path STEP_BACK set it).
   const formInitialAnswers: PlainAnswers | undefined = 'plainAnswers' in state ? state.plainAnswers : undefined;
   const formInitialAnswerState: FormAnswerState | undefined = 'answerState' in state ? state.answerState : undefined;
+  // The "Read my description again" button is on screen only on a fresh case with a valid model setting.
+  // The note above the form and the button share this one value, so the note never names a missing control.
+  const readAgainShown =
+    state.step === 'graph_extraction' &&
+    state.method === 'form' &&
+    state.useCaseId === undefined &&
+    state.originalVerdictId === undefined &&
+    state.afterFailedEvaluation !== true &&
+    modelSnapshot.ready &&
+    modelSnapshot.state.kind === 'valid';
   // F-7 (DR7-07). Was a useState, captured while on graph_review and
   // frozen there — a refresh on confirmation lost it (the draft only ever
   // persisted IntakeState, same bug class W-4 already fixed for
@@ -1731,8 +1741,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // graph_confirmed, which also carries this field — harmless and
           // intended (each confirmation record states what the description
           // said). The review/confirmation warnings show on every pass.
-          // GT7 L-1 (P12): the description path only — the form's sentence is
-          // never read by a model. Written here, on the first confirmation; a
+          // GT7 L-1 (P12), widened by R18-C2 (§27.4): written for form cases too, from the
+          // description alone (no model's reply is consulted). Written here, on the first confirmation; a
           // correction pass (the isCorrection branch above) does not re-flag,
           // by design: the first record already carries it. Spread-if-present.
           ...(ratingInstructionsFor(typedDescription).length > 0
@@ -2593,10 +2603,17 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               if (state.useCaseId !== undefined || state.originalVerdictId !== undefined) return null;
               const outcome = state.lastRead?.outcome ?? (state.decidedFor !== undefined ? 'not-configured' : undefined);
               if (outcome === undefined || outcome === 'ok') return null;
+              const earlierKept = Object.values(formInitialAnswerState ?? {}).some(
+                (a) => a !== undefined && (a.source.kind === 'prefilled' || a.source.kind === 'changed'),
+              );
               const sentence =
-                outcome === 'not-configured'
+                outcome === 'not-configured' && !earlierKept
                   ? R18_COPY.NO_MODEL_INTERIM_SENTENCE
-                  : failureSentence(outcome, state.lastRead?.read?.place ?? 'this-computer', state.lastRead?.read?.host ?? '');
+                  : formReadNote(outcome, state.lastRead?.read?.place ?? 'this-computer', state.lastRead?.read?.host ?? '', {
+                      earlierKept,
+                      readAgainShown,
+                      settingKind: modelSnapshot.ready ? modelSnapshot.state.kind : 'unknown',
+                    });
               return (
                 <p role="status" className="plain-form__read-note">
                   {sentence}
@@ -2604,11 +2621,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               );
             })()}
             {/* "Read my description again" - a fresh case with a usable model only. */}
-            {state.useCaseId === undefined &&
-              state.originalVerdictId === undefined &&
-              state.afterFailedEvaluation !== true &&
-              modelSnapshot.ready &&
-              modelSnapshot.state.kind === 'valid' && (
+            {readAgainShown && (
                 <p>
                   <button type="button" onClick={handleReadAgain}>
                     {R18_COPY.READ_AGAIN_LABEL}
