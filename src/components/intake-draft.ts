@@ -208,14 +208,15 @@ function validPlainAnswers(v: unknown): boolean {
  *  depth their screen needs; a new field on IntakeState must be added here too
  *  (intake-draft.r18a.test.ts reads a real saved state back and would drop it). */
 const KNOWN_KEYS: Record<string, readonly string[]> = {
-  description_entry: ['description', 'nudgeFor', 'decidedFor'],
-  duplicate_check: ['description', 'nudgeFor'],
-  graph_extraction: ['description', 'method', 'nudgeFor', 'decidedFor', 'afterFailedEvaluation', 'useCaseId', 'plainAnswers', 'answerState', 'assumptions', 'originalVerdictId', 'originalGraph'],
+  description_entry: ['description', 'nudgeFor', 'decidedFor', 'lastRead'],
+  prefill_reading: ['description', 'nudgeFor', 'decidedFor', 'answerState', 'lastRead'],
+  duplicate_check: ['description', 'nudgeFor', 'lastRead'],
+  graph_extraction: ['description', 'method', 'nudgeFor', 'decidedFor', 'afterFailedEvaluation', 'useCaseId', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'originalVerdictId', 'originalGraph'],
   graph_review: ['description', 'graph', 'graphVersion', 'corrections', 'useCaseId', 'originalVerdictId', 'unconfirmedNodeIds', 'provenance', 'guessedFields', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'uncertainNodeIds', 'afterFailedEvaluation', 'assumptions', 'reentry'],
-  questionnaire: ['description', 'graph', 'questions', 'answers', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'undo', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
-  contradiction_review: ['description', 'graph', 'questions', 'answers', 'contradictions', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'ignoredJurisdictions', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
-  confirmation: ['description', 'graph', 'graphVersion', 'corrections', 'answers', 'resolutionNotes', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds', 'afterFailedEvaluation'],
-  evaluation_pending: ['graph', 'useCaseId', 'originalVerdictId', 'originalGraph', 'description', 'plainAnswers', 'answerState', 'assumptions', 'uncertainNodeIds'],
+  questionnaire: ['description', 'graph', 'questions', 'answers', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'undo', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
+  contradiction_review: ['description', 'graph', 'questions', 'answers', 'contradictions', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'ignoredJurisdictions', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
+  confirmation: ['description', 'graph', 'graphVersion', 'corrections', 'answers', 'resolutionNotes', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'afterFailedEvaluation'],
+  evaluation_pending: ['graph', 'useCaseId', 'originalVerdictId', 'originalGraph', 'description', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds'],
   verdict: ['verdictId'],
 };
 
@@ -235,6 +236,15 @@ const STEPS_WITH_GRAPH = new Set(['graph_review', 'questionnaire', 'contradictio
  *  parsed one's `__proto__`) or null. Does not deep-check graphs; it checks that a step
  *  has the pieces its screen indexes into. */
 function currentState(v: unknown): IntakeState | null {
+  const state = currentStateShape(v);
+  // A saved reading step is mapped to the form with the last read marked not-read (above); its own lastRead is dropped.
+  if (state === null || !isRecord(v) || v.lastRead === undefined || v.step === 'prefill_reading') return state;
+  // R18-C2: lastRead rides on every form-route step; it is checked in full, and the clean copy is kept.
+  const lastRead = cleanLastRead(v.lastRead);
+  return lastRead === null ? null : ({ ...state, lastRead } as IntakeState);
+}
+
+function currentStateShape(v: unknown): IntakeState | null {
   if (!isRecord(v) || typeof v.step !== 'string') return null;
   if (Object.prototype.hasOwnProperty.call(v, '__proto__')) return null;
   const desc = v.description;
@@ -263,6 +273,28 @@ function currentState(v: unknown): IntakeState | null {
         return { ...pickKnown(v), answerState: clean } as unknown as IntakeState;
       }
       return pickKnown(v) as unknown as IntakeState;
+    case 'prefill_reading': {
+      // R18-C2 (§27.5): saved like evaluation_pending, but a reload never reads: it lands on the form with
+      // the description, the decision, the nudge and the answers kept, and the last read marked not-read.
+      if (typeof desc !== 'string') return null;
+      if (v.nudgeFor !== undefined && !validNudge(v.nudgeFor)) return null;
+      if (v.decidedFor !== undefined && !boundedString(v.decidedFor, 64)) return null;
+      let answerState: FormAnswerState | undefined;
+      if (v.answerState !== undefined) {
+        const clean = cleanAnswerState(v.answerState);
+        if (clean === null) return null;
+        answerState = clean;
+      }
+      return {
+        step: 'graph_extraction',
+        description: desc,
+        method: 'form',
+        ...(v.decidedFor !== undefined ? { decidedFor: v.decidedFor as string } : {}),
+        ...(v.nudgeFor !== undefined ? { nudgeFor: v.nudgeFor as never } : {}),
+        ...(answerState ? { answerState } : {}),
+        lastRead: { fingerprint: '', outcome: 'not-read' },
+      } as IntakeState;
+    }
     case 'verdict':
       return typeof v.verdictId === 'string' ? (pickKnown(v) as unknown as IntakeState) : null;
     default:

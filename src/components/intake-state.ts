@@ -4,7 +4,7 @@
 import type { Contradiction, DataFlowGraph, GraphCorrection, IntakeQuestion, QuestionAnswer } from '../engine/types';
 import type { Assumption, PlainAnswers } from './plain-copy';
 import type { AuditEvent } from '../store/types';
-import type { ChecklistItemId, FormAnswerState } from '../engine/prefill-types';
+import type { ChecklistItemId, FormAnswerState, LastRead } from '../engine/prefill-types';
 import { textFingerprint, toPlainAnswers } from '../engine/form-answer-state';
 
 export type { Contradiction, IntakeQuestion, QuestionAnswer };
@@ -21,8 +21,22 @@ export type IntakeState =
       // screen was passed, handed back by a Back from the form. A Next with an
       // unchanged fingerprint goes straight to the form.
       decidedFor?: string;
+      // R18-C2 (§27.6): what the model last read, handed back with the Back so a
+      // Next with an unchanged text asks nothing.
+      lastRead?: LastRead;
     }
-  | { step: 'duplicate_check'; description: string; nudgeFor?: ChecklistItemId[] }
+  | { step: 'duplicate_check'; description: string; nudgeFor?: ChecklistItemId[]; lastRead?: LastRead }
+  | {
+      // R18-C2 (§27.1, §27.5): the model is reading the description. Persisted like
+      // evaluation_pending and mapped on load to the form (a reload never reads).
+      step: 'prefill_reading';
+      description: string;
+      nudgeFor?: ChecklistItemId[];
+      decidedFor?: string;
+      // The form's answers as they stood when the read began (Read my description again).
+      answerState?: FormAnswerState;
+      lastRead?: LastRead;
+    }
   | {
       step: 'graph_extraction';
       description: string;
@@ -55,6 +69,7 @@ export type IntakeState =
       // step from here on. `plainAnswers` stays as the derived cache that
       // FORM_SUBMITTED sets from it with toPlainAnswers and nothing else writes.
       answerState?: FormAnswerState;
+      lastRead?: LastRead;
       assumptions?: Assumption[];
       // R16-D2 §5 (D-82, DR7-17/DR7-22). Present only on a CORRECTION of a
       // form-built verdict (`CORRECT_VERDICT_WITH_FORM`, carried forward by
@@ -193,6 +208,7 @@ export type IntakeState =
       // description/LLM path, which never sets them.
       plainAnswers?: PlainAnswers;
       answerState?: FormAnswerState;
+      lastRead?: LastRead;
       assumptions?: Assumption[];
       // F-7 (DR7-07). Node ids the LLM path flagged uncertain/guessed,
       // captured from graph_review's own `guessedFields` at the moment
@@ -274,6 +290,7 @@ export type IntakeState =
       // W-3/W-4: see the questionnaire variant's comment above.
       plainAnswers?: PlainAnswers;
       answerState?: FormAnswerState;
+      lastRead?: LastRead;
       assumptions?: Assumption[];
       // F-7: see the questionnaire variant's comment above.
       uncertainNodeIds?: string[];
@@ -318,6 +335,7 @@ export type IntakeState =
       // IntakeState) silently lost.
       plainAnswers?: PlainAnswers;
       answerState?: FormAnswerState;
+      lastRead?: LastRead;
       assumptions?: Assumption[];
       // F-7: see the questionnaire variant's comment above — this is what
       // IntakeFlow now reads directly for UnderstoodSummary's "uncertain"
@@ -356,6 +374,7 @@ export type IntakeState =
       // onward exactly as any other confirmation re-entry does.
       plainAnswers?: PlainAnswers;
       answerState?: FormAnswerState;
+      lastRead?: LastRead;
       assumptions?: Assumption[];
       // CR7-02: carried from the confirmation state so EVALUATION_FAILED can
       // hand the frozen "what the description did not say" list back to the
@@ -379,8 +398,16 @@ export type IntakeAction =
   // FN-006: one step backwards. Bounded at the confirmation attestation —
   // see the reducer case for why it stops there rather than everywhere.
   | { type: 'STEP_BACK' }
-  | { type: 'SUBMIT_DESCRIPTION' }
-  | { type: 'NO_DUPLICATE_FOUND'; method: 'llm' | 'form' }
+  // R18-C2: `reading` - the caller has a valid model setting and a text the model has not
+  // read, and will start the read from the handler; the route goes through the reading step.
+  // `lastRead` - why nothing is being read (no model), recorded beside the form.
+  | { type: 'SUBMIT_DESCRIPTION'; reading?: boolean; lastRead?: LastRead }
+  | { type: 'NO_DUPLICATE_FOUND'; method: 'llm' | 'form'; reading?: boolean; lastRead?: LastRead }
+  // R18-C2 (§27.1): the read ended; the caller has already written the merged answers to the
+  // form draft, so the form mounts with them. Carries lastRead and the merged answerState.
+  | { type: 'PREFILL_DONE'; answerState: FormAnswerState; lastRead: LastRead }
+  // R18-C2: "Read my description again" - a fresh form back to the reading step.
+  | { type: 'READ_AGAIN' }
   // useCaseId generated once by the caller at graph extraction (P5-C01 —
   // moved earlier than P4-C04's questionnaire-entry generation so a
   // correction pass, which re-enters at graph_review, can reuse it
@@ -499,6 +526,7 @@ export type IntakeAction =
       description: string;
       // R18-A: as FORM_SUBMITTED — the cache is derived, not passed.
       answerState: FormAnswerState;
+      lastRead?: LastRead;
       assumptions: Assumption[];
     }
   // R16-C (§3): "Change an answer" on the UnderstoodSummary. Deliberately
@@ -775,6 +803,17 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
             step: 'description_entry',
             description: state.description,
             ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+            ...(state.lastRead ? { lastRead: state.lastRead } : {}),
+          };
+        // R18-C2 (§27.1). Back from the reading step: the read is released by the caller; the
+        // description comes back with the decision already made, the nudge and what was last read.
+        case 'prefill_reading':
+          return {
+            step: 'description_entry',
+            description: state.description,
+            ...(state.decidedFor !== undefined ? { decidedFor: state.decidedFor } : {}),
+            ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+            ...(state.lastRead ? { lastRead: state.lastRead } : {}),
           };
         // R18-A (§27.1). Back from the form to the description, for a FRESH case
         // only. A form that carries a case id (a retry after a failed evaluation,
@@ -796,6 +835,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
             description: state.description,
             ...(state.decidedFor !== undefined ? { decidedFor: state.decidedFor } : {}),
             ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+            ...(state.lastRead ? { lastRead: state.lastRead } : {}),
           };
         case 'graph_review':
           // A CORRECTION pass re-enters here as its first step (VD-3) with no
@@ -827,6 +867,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
               useCaseId: state.useCaseId,
               plainAnswers: state.plainAnswers,
               answerState: state.answerState,
+              ...(state.lastRead ? { lastRead: state.lastRead } : {}),
               assumptions: state.assumptions,
               // R16-D2 §5: a correction pass must stay a correction pass on
               // the way back into the form too — dropping these here would
@@ -897,28 +938,89 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
       // duplicate check and no second duplicate_dismissed on the trail. A changed
       // text runs the check again.
       if (state.decidedFor !== undefined && state.decidedFor === textFingerprint(state.description)) {
+        const lastRead = action.lastRead ?? state.lastRead;
+        if (action.reading) {
+          return {
+            step: 'prefill_reading',
+            description: state.description,
+            decidedFor: state.decidedFor,
+            ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+            ...(lastRead ? { lastRead } : {}),
+          };
+        }
         return {
           step: 'graph_extraction',
           description: state.description,
           method: 'form',
           decidedFor: state.decidedFor,
           ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+          ...(lastRead ? { lastRead } : {}),
         };
       }
       return {
         step: 'duplicate_check',
         description: state.description,
         ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
       };
 
-    case 'NO_DUPLICATE_FOUND':
+    case 'NO_DUPLICATE_FOUND': {
       if (state.step !== 'duplicate_check') return state;
+      const lastRead = action.lastRead ?? state.lastRead;
+      // R18-C2: the form route reads first when the caller asked for it.
+      if (action.method === 'form' && action.reading) {
+        return {
+          step: 'prefill_reading',
+          description: state.description,
+          decidedFor: textFingerprint(state.description),
+          ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+          ...(lastRead ? { lastRead } : {}),
+        };
+      }
       return {
         step: 'graph_extraction',
         description: state.description,
         method: action.method,
         decidedFor: textFingerprint(state.description),
         ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+        ...(lastRead ? { lastRead } : {}),
+      };
+    }
+
+    // R18-C2 (§27.5, §27.6): the read ended. The caller merged the pre-fill into the form draft
+    // (mergePrefill) BEFORE this dispatch, so the form mounts with it; the reducer carries the same
+    // merged state and the new lastRead for a Back that finds the draft gone.
+    case 'PREFILL_DONE':
+      if (state.step !== 'prefill_reading') return state;
+      return {
+        step: 'graph_extraction',
+        description: state.description,
+        method: 'form',
+        ...(state.decidedFor !== undefined ? { decidedFor: state.decidedFor } : {}),
+        ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+        answerState: action.answerState,
+        lastRead: action.lastRead,
+      };
+
+    // R18-C2: "Read my description again". Only a FRESH form (the reading step's Back returns to the
+    // description, which a case that already carries an id must not do - the same refusal as STEP_BACK).
+    case 'READ_AGAIN':
+      if (
+        state.step !== 'graph_extraction' ||
+        state.method !== 'form' ||
+        state.useCaseId !== undefined ||
+        state.originalVerdictId !== undefined ||
+        state.afterFailedEvaluation === true
+      ) {
+        return state;
+      }
+      return {
+        step: 'prefill_reading',
+        description: state.description,
+        ...(state.decidedFor !== undefined ? { decidedFor: state.decidedFor } : {}),
+        ...(state.nudgeFor ? { nudgeFor: state.nudgeFor } : {}),
+        ...(state.answerState ? { answerState: state.answerState } : {}),
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
       };
 
     case 'GRAPH_EXTRACTED':
@@ -986,6 +1088,8 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         // form's one answer store and THE description (Question 2).
         plainAnswers: toPlainAnswers(action.answerState, action.description),
         answerState: action.answerState,
+        // R18-C2 (§27.6): what the model last read travels beside the answers.
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
         assumptions: action.assumptions,
         // R16-D2 §5: carried from THIS state (the correction's start), not
         // from the action — a correction stays the same correction across
@@ -1288,6 +1392,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         // once it returns to the questionnaire and on to confirmation.
         plainAnswers: state.plainAnswers,
         answerState: state.answerState,
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
         assumptions: state.assumptions,
         // F-7: threaded forward, never re-derived.
         uncertainNodeIds: state.uncertainNodeIds,
@@ -1334,6 +1439,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         // W-4: see CONTRADICTIONS_DETECTED's comment above.
         plainAnswers: state.plainAnswers,
         answerState: state.answerState,
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
         assumptions: state.assumptions,
         // F-7: threaded forward, never re-derived.
         uncertainNodeIds: state.uncertainNodeIds,
@@ -1372,6 +1478,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         // to carry these, same as FORM_SUBMITTED's own confirmation exit.
         plainAnswers: state.plainAnswers,
         answerState: state.answerState,
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
         assumptions: state.assumptions,
         // F-7: threaded forward, never re-derived.
         uncertainNodeIds: state.uncertainNodeIds,
@@ -1404,6 +1511,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
             useCaseId: state.useCaseId,
             plainAnswers: state.plainAnswers,
             answerState: state.answerState,
+            ...(state.lastRead ? { lastRead: state.lastRead } : {}),
             assumptions: state.assumptions,
             originalVerdictId: state.originalVerdictId,
             originalGraph: state.originalGraph,
@@ -1447,6 +1555,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         // graph straight back to the filled-in form.
         plainAnswers: state.plainAnswers,
         answerState: state.answerState,
+        ...(state.lastRead ? { lastRead: state.lastRead } : {}),
         assumptions: state.assumptions,
         // CR7-02: so EVALUATION_FAILED can hand it back.
         uncertainNodeIds: state.uncertainNodeIds,
@@ -1475,6 +1584,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
           useCaseId: state.useCaseId,
           plainAnswers: state.plainAnswers,
           answerState: state.answerState,
+          ...(state.lastRead ? { lastRead: state.lastRead } : {}),
           assumptions: state.assumptions,
           // R16-D2 §5 (v2.1): see CHANGE_ANSWER's identical fix above — a
           // genuine evaluation failure during a form correction must not
@@ -1539,6 +1649,7 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         useCaseId: action.useCaseId,
         plainAnswers: toPlainAnswers(action.answerState, action.description),
         answerState: action.answerState,
+        ...(action.lastRead ? { lastRead: action.lastRead } : {}),
         assumptions: action.assumptions,
         originalVerdictId: action.originalVerdictId,
         originalGraph: action.originalGraph,

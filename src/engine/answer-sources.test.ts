@@ -92,8 +92,8 @@ describe('quoteContext: the quote in its sentence', () => {
   });
 
   it('keeps hostile characters in the text (the screen escapes them through visibleText)', () => {
-    const c = quoteContext('Our UK team reads client names‮ and account details', 'client names')!;
-    expect(c.after).toContain('‮');
+    const c = quoteContext('Our UK team reads client names\u202e and account details', 'client names')!;
+    expect(c.after).toContain('\u202e');
   });
 });
 

@@ -1584,6 +1584,28 @@ export const R18_COPY = {
   // An earlier saved draft landed on the form (R18-NF-5). Shown role="status" on the form.
   EARLIER_VERSION_NOTICE:
     'This was saved by an earlier version of Counterpoise, so please check your answers.',
+
+  // ── Round 18-C2: the reading step and the form with pre-fills (specs/intake-flow.md §27.5-27.6) ──
+  // The reading step. The where-it-goes sentence under it is placeSentence() for the stored setting.
+  READING_HEADING: 'Reading your description…',
+  SKIP_LABEL: "Skip — I'll answer the questions myself",
+  READ_AGAIN_LABEL: 'Read my description again',
+
+  // The marks. A quote is always shown inside curly quotation marks and through visibleText().
+  // MARK_FROM is claimed only while the quote is still in the description; MARK_CONFIRMED only after
+  // a tick (or a change); MARK_GONE only once the quote has left the text (TC-R18-GI-13-01).
+  MARK_FROM: 'from your description:',
+  MARK_ASK: '— is this right?',
+  MARK_QUOTE_LEFT_PREFIX: 'the quote',
+  MARK_QUOTE_LEFT_ASK: 'is no longer in your description — is this right?',
+  MARK_QUOTE_LEFT_CONFIRMED: 'is no longer in your description',
+  MARK_CONFIRMED: 'confirmed by you',
+  MARK_CHANGED: 'changed by you',
+  MARK_RECORD: 'from the earlier record',
+  MARK_NOT_CARRIED: 'not carried over from the earlier version',
+  // One tick per answer. The accessible name is this plus the question.
+  CONFIRM_LABEL: 'Yes, this is right',
+  STILL_TO_CHECK: 'Still to check:',
 } as const;
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   ACCESS_SCOPE_REFUSAL_TEXT,
   INTRO_TEXT,
@@ -10,12 +11,15 @@ import {
 } from './plain-copy';
 import type { Assumption, PlainAnswers, PlainOption, QuestionId } from './plain-copy';
 import { plainAnswersToFormValues, resolveAccessScopeAnswer } from '../engine/plain-intake';
-import { clearDependents, missingQuestionIds, requiredQuestionIds, shownQuestionIds, validOptionKeys } from '../engine/form-visibility';
+import { canContinue, clearDependents, missingQuestionIds, requiredQuestionIds, shownQuestionIds, validOptionKeys } from '../engine/form-visibility';
 import { structureFor } from '../engine/question-structure';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
 import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
 import { toPlainAnswers } from '../engine/form-answer-state';
-import type { FormAnswerState } from '../engine/prefill-types';
+import type { AnswerSource, FormAnswerState } from '../engine/prefill-types';
+import { originalPrefilled, unconfirmedIds } from '../engine/answer-sources';
+import AnswerMark from './AnswerMark';
+import RatingInstructionNotice from './RatingInstructionNotice';
 import type { DataFlowGraph, PolicyFile } from '../engine/types';
 
 // R16-B (UC-8, UC-10, UC-11; build/prompts/R16.md v2.1 §2.2). Rule 4
@@ -115,6 +119,8 @@ interface QuestionProps {
   onSingle: (id: QuestionId, key: string) => void;
   onMulti: (id: QuestionId, key: string) => void;
   onText: (id: QuestionId, text: string) => void;
+  /** R18-C2: where this answer came from, and its tick (null for a typed answer). */
+  markFor: (id: QuestionId) => ReactNode;
 }
 
 function mergeOptions(base: PlainOption[], extra: PlainOption[], atIndex?: number): PlainOption[] {
@@ -131,6 +137,7 @@ function SingleSelect({
   requiredIds,
   answers,
   onSingle,
+  markFor,
 }: QuestionProps) {
   const question = findQuestion(id);
   if (!question) return null;
@@ -166,11 +173,12 @@ function SingleSelect({
           </label>
         ))}
       </div>
+      {markFor(id)}
     </fieldset>
   );
 }
 
-function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: QuestionProps) {
+function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti, markFor }: QuestionProps) {
   const question = findQuestion(id);
   if (!question) return null;
   const options = [...extraOptions, ...question.options];
@@ -190,6 +198,7 @@ function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: Q
           {o.text}
         </label>
       ))}
+      {markFor(id)}
     </fieldset>
   );
 }
@@ -227,6 +236,7 @@ function FreeText({
   requiredIds,
   answers,
   onText,
+  markFor,
 }: QuestionProps & { multiline?: boolean }) {
   const question = findQuestion(id);
   if (!question) return null;
@@ -248,6 +258,7 @@ function FreeText({
           <p className="field-help" id={`${inputId}-limit`}>{R18_COPY.FREE_TEXT_LIMIT_HINT}</p>
         </>
       )}
+      {markFor(id)}
     </div>
   );
 }
@@ -272,21 +283,75 @@ function sameValue(a: string | string[], b: string | string[]): boolean {
   return a === b;
 }
 
-/** Turns the answers after a change back into state, keeping the source of every
- *  answer whose value did not change and marking a new or changed one `typed`. */
-function reconcile(next: PlainAnswers, prev: FormAnswerState): FormAnswerState {
+/** The same set of option keys, in any order (a tick-all answer is a set). */
+function sameSet(a: string | string[], b: string[]): boolean {
+  const left = toArray(a);
+  return left.length === b.length && left.every((x) => b.includes(x)) && b.every((x) => left.includes(x));
+}
+
+/** The source of an answer after the person set it to `value` (§27.6 "Changing"). A change to a pre-filled
+ *  answer is a confirmation of its own, so it becomes `changed`; changing it back to what was read returns it to
+ *  `prefilled`, confirmed (the person looked and chose that value). A record answer and a not-carried answer
+ *  become `typed`: the person now supplied them. */
+function nextEntry(
+  before: FormAnswerState[Exclude<QuestionId, '2'>],
+  value: string | string[],
+): { value: string | string[]; source: AnswerSource } {
+  const copy = Array.isArray(value) ? [...value] : value;
+  if (!before) return { value: copy, source: { kind: 'typed' } };
+  const source = before.source;
+  switch (source.kind) {
+    case 'prefilled': {
+      if (sameValue(before.value, value) || sameSet(value, toArray(before.value))) return before;
+      return { value: copy, source: { kind: 'changed', from: source.quotes, read: source.read } };
+    }
+    case 'changed': {
+      const original = originalPrefilled(source) ?? [];
+      if (sameSet(value, original)) {
+        // Back to what was read: the original value (in its own order), confirmed.
+        return {
+          value: Array.isArray(before.value) || original.length > 1 ? [...original] : original[0]!,
+          source: { kind: 'prefilled', quotes: source.from, read: source.read, confirmed: true },
+        };
+      }
+      return { value: copy, source };
+    }
+    case 'record':
+    case 'not-carried':
+      return sameValue(before.value, value) && source.kind === 'record' ? before : { value: copy, source: { kind: 'typed' } };
+    case 'typed':
+      return sameValue(before.value, value) ? before : { value: copy, source };
+  }
+}
+
+/** Removes the answers of questions that are not shown: a hidden question holds no answer and no source. */
+function dropHidden(state: FormAnswerState, policy: PolicyFile): FormAnswerState {
+  const shown = new Set(shownQuestionIds(toPlainAnswers(state, ''), policy));
+  let out = state;
+  for (const key of Object.keys(state) as Exclude<QuestionId, '2'>[]) {
+    if (!shown.has(key)) {
+      if (out === state) out = { ...state };
+      delete out[key];
+    }
+  }
+  return out;
+}
+
+/** Turns the answers after a change back into state, giving each answer the source it now has (see nextEntry),
+ *  keeping an untouched not-carried marker, and dropping whatever the change hid. */
+function reconcile(next: PlainAnswers, prev: FormAnswerState, policy: PolicyFile): FormAnswerState {
   const out: FormAnswerState = {};
   for (const key of Object.keys(next) as QuestionId[]) {
     const value = next[key];
     if (key === '2' || value === undefined) continue;
     const id = key as Exclude<QuestionId, '2'>;
-    const before = prev[id];
-    out[id] =
-      before && sameValue(before.value, value)
-        ? before
-        : { value: Array.isArray(value) ? [...value] : value, source: { kind: 'typed' } };
+    out[id] = nextEntry(prev[id], value);
   }
-  return out;
+  // toPlainAnswers leaves a not-carried answer out (it is blank); it stays on the screen until answered.
+  for (const key of Object.keys(prev) as Exclude<QuestionId, '2'>[]) {
+    if (prev[key]?.source.kind === 'not-carried' && out[key] === undefined) out[key] = prev[key];
+  }
+  return dropHidden(out, policy);
 }
 
 export default function StructuredForm({
@@ -327,8 +392,9 @@ export default function StructuredForm({
   // `restoredRef.current['2']` precedence is gone with Question 2's own copy.
   const restoredRef = useRef<FormAnswerState | null>(null);
   if (restoredRef.current === null) {
-    restoredRef.current = clampRestored(
-      loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers),
+    restoredRef.current = dropHidden(
+      clampRestored(loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers)),
+      policy,
     );
   }
   const [answerState, setAnswerState] = useState<FormAnswerState>(restoredRef.current);
@@ -345,7 +411,7 @@ export default function StructuredForm({
   // Applies a change written in terms of PlainAnswers (the form's rules are
   // unchanged) and keeps each untouched answer's source as it was.
   function updateAnswers(change: (prev: PlainAnswers) => PlainAnswers) {
-    setAnswerState((prev) => reconcile(change(toPlainAnswers(prev, '')), prev));
+    setAnswerState((prev) => reconcile(change(toPlainAnswers(prev, '')), prev, policy));
   }
 
   function setSingle(id: QuestionId, key: string) {
@@ -414,7 +480,10 @@ export default function StructuredForm({
   const requiredIds: QuestionId[] = requiredQuestionIds(answers, policy);
 
   const missingIds = missingQuestionIds(answers, policy);
-  const isComplete = missingIds.length === 0;
+  // R18-C2 (§27.6): Continue also waits for every pre-filled and every earlier-record answer to be confirmed
+  // or changed, and for a description that is not blank.
+  const isComplete = canContinue(answerState, currentDescription, policy);
+  const toCheckIds = unconfirmedIds(answerState, currentDescription, policy);
   // CR6-07: what is still missing, in the form's own words — the first few,
   // then a count — shown beside Continue and tied to it with aria-describedby.
   // CR6-07d: strip each item's own trailing stop so the line has no doubled
@@ -424,6 +493,10 @@ export default function StructuredForm({
   const missingTexts = missingIds.map((id) =>
     (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, ''),
   );
+  const toCheckTexts = toCheckIds.map((id) =>
+    (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, ''),
+  );
+  const toCheckLine = toCheckTexts.join('; ');
   const missingLine =
     missingTexts.length <= 3
       ? missingTexts.join('; ')
@@ -454,7 +527,38 @@ export default function StructuredForm({
 
   // Bundles the props every question renderer needs, so each call site below
   // stays a one-liner.
-  const qp = { requiredIds, answers, onSingle: setSingle, onMulti: toggleMulti, onText: setText };
+  // R18-C2: a tick confirms ONE answer (a pre-filled or earlier-record answer); there is no other way to
+  // confirm and no control that does several at once.
+  function toggleConfirm(id: QuestionId) {
+    if (id === '2') return;
+    setAnswerState((prev) => {
+      const entry = prev[id];
+      if (!entry) return prev;
+      const source = entry.source;
+      if (source.kind !== 'prefilled' && source.kind !== 'record') return prev;
+      return { ...prev, [id]: { ...entry, source: { ...source, confirmed: !source.confirmed } } };
+    });
+  }
+  const dynamicLists = [...platformOptions, ...supplierOptions, ...companyAssistantOptions, ...jurisdictionOptions];
+  const optionTextFor = (id: QuestionId) => (key: string) =>
+    findQuestion(id)?.options.find((o) => o.key === key)?.text ?? dynamicLists.find((o) => o.key === key)?.text ?? key;
+  const markFor = (id: QuestionId): ReactNode => {
+    if (id === '2') return null;
+    const entry = answerState[id];
+    if (!entry) return null;
+    const label = (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, '');
+    return (
+      <AnswerMark
+        questionLabel={label}
+        source={entry.source}
+        description={currentDescription}
+        optionText={optionTextFor(id)}
+        multi={structureFor(id)?.kind === 'multi'}
+        onToggleConfirm={() => toggleConfirm(id)}
+      />
+    );
+  };
+  const qp = { requiredIds, answers, onSingle: setSingle, onMulti: toggleMulti, onText: setText, markFor };
 
   return (
     <section aria-label="Structured intake form">
@@ -489,6 +593,8 @@ export default function StructuredForm({
         <legend>About it</legend>
         <FreeText id="1" {...qp} />
         <FreeText id="2" multiline {...qp} />
+        {/* R18-C2 (§27.4): a description that dictates its own rating is warned wherever it is shown. */}
+        <RatingInstructionNotice description={currentDescription} />
       </fieldset>
 
       <fieldset className="structured-form__section">
@@ -541,16 +647,25 @@ export default function StructuredForm({
 
       <p className="structured-form__scroll-note">One continuous scroll — no Next/Back paging.</p>
 
-      {!isComplete && (
+      {missingIds.length > 0 && (
         <p id="pf-missing" className="plain-form__missing">
           Still to answer: {missingLine}.
+        </p>
+      )}
+      {toCheckIds.length > 0 && (
+        <p id="pf-to-check" className="plain-form__missing">
+          {R18_COPY.STILL_TO_CHECK} {toCheckLine}.
         </p>
       )}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={!isComplete}
-        aria-describedby={isComplete ? undefined : 'pf-missing'}
+        aria-describedby={
+          isComplete
+            ? undefined
+            : [missingIds.length > 0 ? 'pf-missing' : null, toCheckIds.length > 0 ? 'pf-to-check' : null].filter(Boolean).join(' ') || undefined
+        }
       >
         Continue
       </button>
