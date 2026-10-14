@@ -122,6 +122,31 @@ describe('lastRead is saved on every form-route step and checked on load (TC-R18
   });
 });
 
+describe('lastRead is read only where the step carries it (review pass 1, M6)', () => {
+  const review = { step: 'verdict', verdictId: 'v1' };
+
+  it('TC-R18-GI-8-11: a valid lastRead on a step that does not carry it is dropped, not restored', () => {
+    saveDraft({ ...review, lastRead } as unknown as IntakeState);
+    const state = loadDraftInfo()!.state as unknown as Record<string, unknown>;
+    expect(state.step).toBe('verdict');
+    expect('lastRead' in state).toBe(false);
+  });
+
+  it('TC-R18-GI-8-11: a malformed lastRead on a step that does not carry it cannot make the draft unusable', () => {
+    saveDraft({ ...review, lastRead: { fingerprint: 5, outcome: 'made-up' } } as unknown as IntakeState);
+    const info = loadDraftInfo()!;
+    expect(info.earlierVersionNotice).not.toBe(true);
+    expect(info.state.step).toBe('verdict');
+  });
+
+  it('TC-R18-GI-8-11: on a step that does carry it (the form), a valid lastRead is restored and a malformed one is refused', () => {
+    saveDraft({ step: 'graph_extraction', description: D, method: 'form', lastRead } as unknown as IntakeState);
+    expect(loadDraftInfo()!.state).toMatchObject({ lastRead });
+    saveDraft({ step: 'graph_extraction', description: D, method: 'form', lastRead: { fingerprint: 5, outcome: 'ok' } } as unknown as IntakeState);
+    expect(loadDraftInfo()!.earlierVersionNotice).toBe(true);
+  });
+});
+
 describe('the form draft and the reducer agree on lastRead (TC-R18-GI-8-11)', () => {
   it('updateFormDraft patches lastRead and keeps the answers; patching answers keeps lastRead', () => {
     updateFormDraft({ answerState: answers });

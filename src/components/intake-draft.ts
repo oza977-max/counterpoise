@@ -292,6 +292,9 @@ function currentState(v: unknown): IntakeState | null {
   const state = currentStateShape(v);
   // A saved reading step is mapped to the form with the last read marked not-read (above); its own lastRead is dropped.
   if (state === null || !isRecord(v) || v.lastRead === undefined || v.step === 'prefill_reading') return state;
+  // Only a step that carries lastRead reads it: on any other step the key is ignored (pickKnown already dropped
+  // it), so a stray or malformed one cannot make an otherwise good draft unusable.
+  if (!(KNOWN_KEYS[v.step as string] ?? []).includes('lastRead')) return state;
   // R18-C2: lastRead rides on every form-route step; it is checked in full, and the clean copy is kept.
   const lastRead = cleanLastRead(v.lastRead);
   return lastRead === null ? null : ({ ...state, lastRead } as IntakeState);
