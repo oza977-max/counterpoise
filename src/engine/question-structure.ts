@@ -137,12 +137,12 @@ const CONDITIONAL_REQUIRED_ORDER: readonly QuestionId[] = [
   '3supplier', '3platformZone', '3a', '3aWhich', '4a', '6a', '6b', '8other', '13', '14',
 ];
 
-/** The order "Still to answer" lists missing questions in: the always-required ones in declaration order,
- *  then the conditional ones in their pinned order. Derived from each question's `required` flag, so the flag
- *  and the list cannot disagree (question-structure.test.ts also pins the literal order). */
 /** The most characters a typed free-text answer may hold, so every value fits the record's bounds (§27.13). */
 export const FREE_ANSWER_MAX_CHARS = 200;
 
+/** The order "Still to answer" lists missing questions in: the always-required ones in declaration order,
+ *  then the conditional ones in their pinned order. Derived from each question's `required` flag, so the flag
+ *  and the list cannot disagree (question-structure.test.ts also pins the literal order). */
 export const REQUIRED_ORDER: readonly QuestionId[] = [
   ...QUESTION_STRUCTURE.filter((q) => q.required && !q.shownWhen).map((q) => q.id),
   ...CONDITIONAL_REQUIRED_ORDER.filter((id) => QUESTION_STRUCTURE.some((q) => q.id === id && q.required)),
