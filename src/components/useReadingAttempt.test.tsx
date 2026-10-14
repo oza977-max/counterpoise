@@ -269,6 +269,24 @@ describe('the attempt lifecycle', () => {
     expect(fake.requests).toHaveLength(2);
     expect(result.current.outcome?.kind).toBe('ok');
   });
+  it('release after a settled failure, and after a settled ok, makes the outcome null (I1)', async () => {
+    install({ kind: 'refused' });
+    const failed = renderHook(() => useReadingAttempt());
+    begin(failed.result, setting());
+    await advance(10);
+    expect(reasonOf(failed.result)).toBe('blocked-or-unreachable');
+    act(() => failed.result.current.release());
+    expect(failed.result.current.outcome).toBeNull();
+    expect(failed.result.current.reading).toBe(false);
+
+    install({ kind: 'honours-format' });
+    const ok = renderHook(() => useReadingAttempt());
+    begin(ok.result, setting());
+    await advance(10);
+    expect(ok.result.current.outcome?.kind).toBe('ok');
+    act(() => ok.result.current.release());
+    expect(ok.result.current.outcome).toBeNull();
+  });
   it('the first attempt\'s timer does not leak into the next attempt', async () => {
     install({ kind: 'never' });
     const { result } = renderHook(() => useReadingAttempt());

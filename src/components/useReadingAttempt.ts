@@ -87,6 +87,7 @@ export function useReadingAttempt(): ReadingAttempt {
   const release = useCallback(() => {
     teardown();
     setReading(false);
+    setOutcome(null);
   }, [teardown]);
 
   // Unmount (and a reload) abort with 'leave' and clear the timer. No state is set here.
