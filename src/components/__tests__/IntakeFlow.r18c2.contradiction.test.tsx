@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
-import { detectContradictions } from '../../engine/contradiction';
 import { SLOW_FLOW_MS } from './fillText';
 import { waitForSeeding } from './r18aFlow';
 import { continueButton, describeAndContinue, describeToReadForm, installModel, reply, tickFor, FORM_HEADING } from './r18c2Flow';
@@ -94,34 +93,64 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
     expect(screen.queryByLabelText(EXPLAIN_LABEL)).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-6-04: the check is the same on a second run and the same for a typed and a pre-filled-then-confirmed answer', () => {
-    // The check is a pure function of (description, graph); the form builds the same graph from the
-    // same confirmed values whatever their source, so equality of the call result is the property.
-    const sentences = [
-      'It uses no client data at all.',
-      'No client data. Then more text after it.',
-      'Text first, then: does not process personal data',
-      'NO CLIENT DATA',
-      'It reads client names. Elsewhere: no client data is used.',
-      'The tool is fully manual. Nothing else.',
-      'Without client data it works; none of these apply.',
-    ];
-    const graph = (cls: string, autonomy: number) =>
-      ({
-        input_nodes: [{ id: 'i', label: 'x', data_class: cls, data_zone: 'Zone C' }],
-        processing_nodes: [{ id: 'p', label: 'x', model_type: 'llm', autonomy_level: autonomy, data_zone: 'Zone C', vendor: 'v', replaces_prior_model: false }],
-        output_nodes: [],
-        edges: [],
-      }) as never;
-    for (const d of sentences) {
-      for (const g of [graph('Client PII', 0), graph('Internal', 0), graph('Internal', 3)]) {
-        const first = detectContradictions(d, [], g);
-        expect(detectContradictions(d, [], g)).toEqual(first);
-        // a changed pre-fill and a typed answer arrive as the same graph, so the same result
-        expect(detectContradictions(d, [], structuredClone(g))).toEqual(first);
-      }
+  // TC-R18-GI-6-04 (review pass 1, M1): the same final answers must give the same stops whether they were
+  // typed, pre-filled and ticked, or changed and changed back. Each route is a full walk through the screens;
+  // what is compared is what the person sees at the end of it.
+  type Route = 'typed' | 'prefilled-and-ticked' | 'changed-and-changed-back';
+  async function stopSeenFor(option: 'people' | 'everyday', route: Route) {
+    localStorage.clear();
+    sessionStorage.clear();
+    const user = userEvent.setup({ delay: null });
+    const view = render(<App />);
+    await waitForSeeding();
+    if (route === 'typed') {
+      await describeAndContinue(user, DESC);
+      await screen.findByText(FORM_HEADING);
+    } else {
+      installModel({ kind: 'honours-format', reply: reply([{ question: '5', values: [{ option, quote: 'internal ticket volumes' }] }]) });
+      await describeToReadForm(user, DESC);
+      expect(screen.getByText(/from your description/i)).toBeInTheDocument();
     }
-  });
+    await fillRest(user);
+    const box = () => screen.getByRole('checkbox', { name: option === 'people' ? /information about people/i : /everyday work information/i });
+    if (route === 'typed') await user.click(box());
+    else if (route === 'prefilled-and-ticked') await user.click(tickFor(/what information/));
+    else {
+      await user.click(box()); // off: a change
+      expect(screen.getByText(/changed by you/i)).toBeInTheDocument();
+      await user.click(box()); // back on: the original again, and it counts as confirmed
+      expect(screen.queryByText(/changed by you/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/confirmed by you — from your description/i)).toBeInTheDocument();
+    }
+    await user.click(continueButton());
+    await waitFor(() => expect(screen.queryByLabelText(EXPLAIN_LABEL) ?? screen.queryByText(SUMMARY)).not.toBeNull());
+    const stopped = screen.queryByLabelText(EXPLAIN_LABEL) !== null;
+    const message = stopped ? screen.getByText(/your description says no personal information is involved/i).textContent : '';
+    const seen = { stopped, message, summary: screen.queryByText(SUMMARY) !== null };
+    view.unmount();
+    vi.unstubAllGlobals();
+    return seen;
+  }
+
+  it('TC-R18-GI-6-04: typed, pre-filled-and-ticked and changed-and-changed-back "information about people" give the same stop', async () => {
+    const routes: Route[] = ['typed', 'prefilled-and-ticked', 'changed-and-changed-back'];
+    const seen = [];
+    for (const r of routes) seen.push(await stopSeenFor('people', r));
+    expect(seen[0]).toMatchObject({ stopped: true, summary: false });
+    expect(seen[0]!.message).toMatch(/personal information/i);
+    expect(seen[1]).toEqual(seen[0]);
+    expect(seen[2]).toEqual(seen[0]);
+  }, 3 * SLOW_FLOW_MS);
+
+  it('TC-R18-GI-6-04: typed, pre-filled-and-ticked and changed-and-changed-back "everyday work information" all give no stop', async () => {
+    const routes: Route[] = ['typed', 'prefilled-and-ticked', 'changed-and-changed-back'];
+    const seen = [];
+    for (const r of routes) seen.push(await stopSeenFor('everyday', r));
+    expect(seen[0]).toEqual({ stopped: false, message: '', summary: true });
+    expect(seen[1]).toEqual(seen[0]);
+    expect(seen[2]).toEqual(seen[0]);
+  }, 3 * SLOW_FLOW_MS);
+
   it('a pre-filled "information about people" confirmed by its tick stops exactly as a typed one does (TC-R18-GI-6-04)', async () => {
     installModel({
       kind: 'honours-format',
