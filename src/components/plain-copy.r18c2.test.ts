@@ -5,12 +5,12 @@ import { R18_COPY, formReadNote, failureSentence } from './plain-copy';
 const base = { earlierKept: false, readAgainShown: true, settingKind: 'valid' as const };
 
 describe('formReadNote', () => {
-  it('TC-R18-GI-13-01 (I1): with the button on screen, not-read and setting-changed name it', () => {
+  it('TC-R18-GI-13-01r1a (I1): with the button on screen, not-read and setting-changed name it', () => {
     expect(formReadNote('not-read', 'this-computer', '', base)).toMatch(/read my description again/i);
     expect(formReadNote('setting-changed', 'this-computer', '', base)).toMatch(/read my description again/i);
   });
 
-  it('TC-R18-GI-13-01 (I1): with the button absent, no sentence names it, whatever the setting', () => {
+  it('TC-R18-GI-13-01r1b (I1): with the button absent, no sentence names it, whatever the setting', () => {
     for (const settingKind of ['none', 'invalid', 'no-model', 'valid', 'unknown'] as const) {
       for (const outcome of ['not-read', 'setting-changed'] as const) {
         const s = formReadNote(outcome, 'this-computer', '', { ...base, readAgainShown: false, settingKind });
@@ -27,7 +27,7 @@ describe('formReadNote', () => {
     expect(formReadNote('setting-changed', 'this-computer', '', { ...base, readAgainShown: false })).toBe(R18_COPY.SETTING_CHANGED_NO_BUTTON);
   });
 
-  it('TC-R18-GI-13-01 (I2): earlier answers kept -> the kept sentence; none -> the plain sentence, which never says "kept"', () => {
+  it('TC-R18-GI-13-01r1c (I2): earlier answers kept -> the kept sentence; none -> the plain sentence, which never says "kept"', () => {
     expect(formReadNote('skipped', 'this-computer', '', { ...base, earlierKept: true })).toBe(R18_COPY.KEPT_EARLIER_NOTE);
     const plain = formReadNote('skipped', 'this-computer', '', base);
     expect(plain).toBe(failureSentence('skipped', 'this-computer', ''));

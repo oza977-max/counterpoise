@@ -132,7 +132,7 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
     return seen;
   }
 
-  it('TC-R18-GI-6-04: typed, pre-filled-and-ticked and changed-and-changed-back "information about people" give the same stop', async () => {
+  it('TC-R18-GI-6-04r1a: typed, pre-filled-and-ticked and changed-and-changed-back "information about people" give the same stop', async () => {
     const routes: Route[] = ['typed', 'prefilled-and-ticked', 'changed-and-changed-back'];
     const seen = [];
     for (const r of routes) seen.push(await stopSeenFor('people', r));
@@ -142,7 +142,7 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
     expect(seen[2]).toEqual(seen[0]);
   }, 3 * SLOW_FLOW_MS);
 
-  it('TC-R18-GI-6-04: typed, pre-filled-and-ticked and changed-and-changed-back "everyday work information" all give no stop', async () => {
+  it('TC-R18-GI-6-04r1b: typed, pre-filled-and-ticked and changed-and-changed-back "everyday work information" all give no stop', async () => {
     const routes: Route[] = ['typed', 'prefilled-and-ticked', 'changed-and-changed-back'];
     const seen = [];
     for (const r of routes) seen.push(await stopSeenFor('everyday', r));

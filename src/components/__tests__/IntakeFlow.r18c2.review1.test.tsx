@@ -47,7 +47,7 @@ async function reloadDuringReading(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('I1: the note never names a button that is not on screen', () => {
-  it('TC-R18-GI-7-06 (I1): a reload during reading WITH a valid model names the button, and the button is there', async () => {
+  it('TC-R18-GI-7-06r1a (I1): a reload during reading WITH a valid model names the button, and the button is there', async () => {
     const user = userEvent.setup({ delay: null });
     await reloadDuringReading(user);
     render(<App />);
@@ -57,7 +57,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     expect(readAgainButton()).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-7-06 (I1): a reload during reading with NO model says no model is connected and names no button', async () => {
+  it('TC-R18-GI-7-06r1b (I1): a reload during reading with NO model says no model is connected and names no button', async () => {
     const user = userEvent.setup({ delay: null });
     await reloadDuringReading(user);
     localStorage.removeItem(MODEL_SETTING_KEY);
@@ -68,7 +68,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-7-06 (I1): a reload during reading with an INVALID setting says so and names no button', async () => {
+  it('TC-R18-GI-7-06r1c (I1): a reload during reading with an INVALID setting says so and names no button', async () => {
     const user = userEvent.setup({ delay: null });
     await reloadDuringReading(user);
     localStorage.setItem(MODEL_SETTING_KEY, '{not json');
@@ -78,7 +78,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-7-09 (I1): the setting removed mid-read gives the no-model sentence and names no button', async () => {
+  it('TC-R18-GI-7-09r1d (I1): the setting removed mid-read gives the no-model sentence and names no button', async () => {
     installModel({ kind: 'never' });
     const user = userEvent.setup({ delay: null });
     render(<App />);
@@ -105,7 +105,7 @@ async function earlierAnswersThenSecondRead(user: ReturnType<typeof userEvent.se
 }
 
 describe('I2: earlier model-filled answers that stay on the form are not denied by the note', () => {
-  it('TC-R18-GI-13-01 (I2): Skip after earlier pre-fills says the earlier answers are kept - and they are', async () => {
+  it('TC-R18-GI-13-01r1e (I2): Skip after earlier pre-fills says the earlier answers are kept - and they are', async () => {
     const user = userEvent.setup({ delay: null });
     await earlierAnswersThenSecondRead(user, { kind: 'never' });
     await user.click(await screen.findByRole('button', { name: /skip/i }));
@@ -115,7 +115,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     expect(screen.getAllByText(/confirmed by you — from your description/i).length).toBeGreaterThanOrEqual(1);
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-13-01 (I2): a failed Read again after earlier pre-fills says the earlier answers are kept', async () => {
+  it('TC-R18-GI-13-01r1f (I2): a failed Read again after earlier pre-fills says the earlier answers are kept', async () => {
     const user = userEvent.setup({ delay: null });
     await earlierAnswersThenSecondRead(user, { kind: 'content', content: 'nope' });
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
@@ -123,7 +123,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     expect(screen.getAllByText(/confirmed by you/i).length).toBeGreaterThanOrEqual(1);
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-13-01 (I2, false state): with no earlier pre-fills Skip keeps the plain sentence and never says "kept"', async () => {
+  it('TC-R18-GI-13-01r1g (I2, false state): with no earlier pre-fills Skip keeps the plain sentence and never says "kept"', async () => {
     installModel({ kind: 'never' });
     const user = userEvent.setup({ delay: null });
     render(<App />);

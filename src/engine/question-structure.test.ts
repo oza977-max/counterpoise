@@ -232,7 +232,7 @@ describe('deriveQuestionFields and optionsReproducing (§27.11)', () => {
 });
 
 describe('the free-text limit has one home (review pass 1, M5)', () => {
-  it('TC-R18-NF-5-03: FREE_ANSWER_MAX_CHARS is 200, and the form and the loader use it instead of a number of their own', async () => {
+  it('FREE_ANSWER_MAX_CHARS is 200, and the form and the loader use it instead of a number of their own', async () => {
     expect(FREE_ANSWER_MAX_CHARS).toBe(200);
     const { FREE_TEXT_MAX_CHARS } = await import('../components/StructuredForm');
     expect(FREE_TEXT_MAX_CHARS).toBe(FREE_ANSWER_MAX_CHARS);
