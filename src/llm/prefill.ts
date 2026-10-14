@@ -335,7 +335,7 @@ export async function requestPrefill(args: RequestPrefillArgs): Promise<PrefillO
   try {
     const url = `${checked.setting.url}${PREFILL_PATH}`;
     // The body is built from the validated setting, the same one the snapshot holds.
-    const sent: RequestPrefillArgs = { ...args, setting: checked.setting };
+    const sent: RequestPrefillArgs = { ...args, setting: { ...setting, ...checked.setting } };
     const delimiter = randomDelimiter(args.description);
     const first: Mode = setting.mode === 'tool' ? 'tool' : 'format';
     const order: Mode[] = first === 'format' ? ['format', 'tool'] : ['tool', 'format'];
