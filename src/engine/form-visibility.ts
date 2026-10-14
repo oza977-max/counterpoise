@@ -12,6 +12,7 @@ import {
   isShown,
   structureFor,
   validOptionKeys as validKeys,
+  FREE_ANSWER_MAX_CHARS,
 } from './question-structure';
 import type { PlainAnswers, QuestionId } from './plain-questions';
 import type { FormAnswerState, Prefill, PrefillCatalogue, ReadRecord } from './prefill-types';
@@ -178,8 +179,6 @@ export function mergePrefill(
   return state;
 }
 
-const MAX_FREE_ANSWER = 200;
-
 /**
  * R18-C2 (§27.7, TC-R18-NF-5-03): the answers of an earlier build's saved case, as the form's answer
  * state. Walks the questions in the form's order; an answer is kept — always as `typed`, never as
@@ -197,7 +196,7 @@ export function typedAnswersFromPlain(plain: PlainAnswers, policy: PolicyFile): 
     const value = own(q.id);
     let accepted: string | string[] | undefined;
     if (q.kind === 'free') {
-      if (typeof value === 'string' && value.trim() !== '' && value.length <= MAX_FREE_ANSWER) accepted = value;
+      if (typeof value === 'string' && value.trim() !== '' && value.length <= FREE_ANSWER_MAX_CHARS) accepted = value;
     } else if (q.kind === 'single') {
       if (typeof value === 'string' && validKeys(q.id, kept, policy).includes(value)) accepted = value;
     } else if (

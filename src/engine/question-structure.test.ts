@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { loadPolicy } from '../store/policy';
 import { PLAIN_QUESTIONS, QUESTION_WORDS } from '../components/plain-copy';
 import {
+  FREE_ANSWER_MAX_CHARS,
   QUESTION_STRUCTURE,
   REQUIRED_ORDER,
   allOptionKeys,
@@ -227,5 +228,18 @@ describe('deriveQuestionFields and optionsReproducing (§27.11)', () => {
     expect(optionsReproducing('10', { scale: 'enormous' }, QUESTION_STRUCTURE, realPolicy)).toEqual([]);
     expect(optionsReproducing('1', {}, QUESTION_STRUCTURE, realPolicy)).toEqual([]);
     expect(optionsReproducing('3aWhich', {}, QUESTION_STRUCTURE, realPolicy)).toEqual([]);
+  });
+});
+
+describe('the free-text limit has one home (review pass 1, M5)', () => {
+  it('TC-R18-NF-5-03: FREE_ANSWER_MAX_CHARS is 200, and the form and the loader use it instead of a number of their own', async () => {
+    expect(FREE_ANSWER_MAX_CHARS).toBe(200);
+    const { FREE_TEXT_MAX_CHARS } = await import('../components/StructuredForm');
+    expect(FREE_TEXT_MAX_CHARS).toBe(FREE_ANSWER_MAX_CHARS);
+    const loader = readFileSync(resolve(__dirname, 'form-visibility.ts'), 'utf-8');
+    expect(loader).toMatch(/FREE_ANSWER_MAX_CHARS/);
+    expect(loader).not.toMatch(/=\s*200\b/);
+    const component = readFileSync(resolve(__dirname, '../components/StructuredForm.tsx'), 'utf-8');
+    expect(component).not.toMatch(/=\s*200\b/);
   });
 });

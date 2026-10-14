@@ -12,7 +12,7 @@ import {
 import type { Assumption, PlainAnswers, PlainOption, QuestionId } from './plain-copy';
 import { plainAnswersToFormValues, resolveAccessScopeAnswer } from '../engine/plain-intake';
 import { canContinue, clearDependents, missingQuestionIds, requiredQuestionIds, shownQuestionIds, validOptionKeys } from '../engine/form-visibility';
-import { structureFor } from '../engine/question-structure';
+import { FREE_ANSWER_MAX_CHARS, structureFor } from '../engine/question-structure';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
 import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
 import { toPlainAnswers } from '../engine/form-answer-state';
@@ -204,7 +204,7 @@ function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti, mar
 }
 
 /** R18-B (§27.8): typed free-text answers are limited so every value fits the record's bounds (§27.13). */
-export const FREE_TEXT_MAX_CHARS = 200;
+export const FREE_TEXT_MAX_CHARS = FREE_ANSWER_MAX_CHARS;
 
 /** Cuts a restored free-text answer to the limit (never in the middle of a surrogate pair). */
 function clampFreeText(text: string): string {
