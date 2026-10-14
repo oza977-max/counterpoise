@@ -81,10 +81,10 @@ There is no TC-RA-9-01p: the id was skipped while the tests were written and is 
 | TC-UC-3-04b-16 | 1.5 MB with 30,000 strong and 30,000 weak hits finishes in under two seconds — `rating-instructions.test.ts` |
 | TC-UC-3-04c-01 | The review screen warns, in a status region with a visible "Warning:" lead-in, and quotes at most the first two phrases — `RatingInstructions.gt7.test.tsx` |
 | TC-UC-3-04c-02 | An ordinary description gets no warning on the review screen — `RatingInstructions.gt7.test.tsx` |
-| TC-UC-3-04c-03 | The confirmation step repeats a one-line warning on the description path — `RatingInstructions.gt7.test.tsx` |
-| TC-UC-3-04c-04 | The form path shows no warning anywhere, even when the typed sentence reads like an instruction (no model reads it) — `RatingInstructions.gt7.test.tsx` |
-| TC-UC-3-04c-05 | Confirming a description-path case records the phrases on the "graph confirmed" event; an ordinary description writes no such field — `RatingInstructions.gt7.test.tsx` |
-| TC-UC-3-04c-06 | The register's audit line is one fixed sentence for every role, with no quoted phrase — `RatingInstructions.gt7.test.tsx` |
+| TC-UC-3-04c-03 | Superseded by R18-C2 (§27.4): the warning and the audit field now apply on the form route, from the description alone. The confirmation step repeats a one-line warning on both routes; the form route's names no cards — `RatingInstructions.gt7.test.tsx` (with the wording-by-route case TC-R18-GI-3-19) |
+| TC-UC-3-04c-04 | Superseded by R18-C2 (§27.4): the warning and the audit field now apply on the form route, from the description alone. A form-route description that reads like an instruction shows the warning on the description screen, the form and the confirmation step, and records it; an ordinary one shows no warning and records no field — `RatingInstructions.gt7.test.tsx`, `IntakeFlow.r18c2.reading.test.tsx` (TC-R18-GI-3-10) |
+| TC-UC-3-04c-05 | Superseded by R18-C2 (§27.4): the warning and the audit field now apply on the form route, from the description alone. Confirming a case on either route records the phrases on the "graph confirmed" event; an ordinary description writes no such field — `RatingInstructions.gt7.test.tsx` |
+| TC-UC-3-04c-06 | Superseded by R18-C2 (§27.4): the warning and the audit field now apply on the form route, from the description alone. The register's audit line is one fixed sentence (`R18_COPY.RATING_AUDIT_LINE`) for every role and both routes, with no quoted phrase — `RatingInstructions.gt7.test.tsx` |
 | TC-UC-3-04c-07 | The verdict is identical with and without the phrases when the graph is the same — `RatingInstructions.gt7.test.tsx` |
 | TC-UC-3-04d-01 | A hand-off bundle made from real app output carries the phrases and round-trips; a bundle without them imports too — `RatingInstructions.gt7.test.tsx` |
 | TC-UC-3-04d-02 | A bundle whose phrases field is the wrong shape is rejected, and nothing is imported — `RatingInstructions.gt7.test.tsx` |
@@ -107,6 +107,6 @@ There is no TC-RA-9-01p: the id was skipped while the tests were written and is 
 | ID | Reason |
 |---|---|
 | TC-UC-3-04c-01 | Superseded by R18-GI-10 (R18-A): the review screen's rating-instruction warning is unreachable. The same warning on the description screen, with a Warning: lead-in and at most the first two phrases quoted, is TC-R18-GI-3-19 (IntakeFlow.r18a.describe.test.tsx and plain-copy.rating.test.ts). |
-| TC-UC-3-04c-03 | Superseded by R18-GI-10 (R18-A): the confirmation step's warning repeated a model-path reading; a form-built case never carries rating instructions (TC-UC-3-04c-04 pins that). No replacement — behaviour retired. |
-| TC-UC-3-04c-05 | Superseded by R18-GI-10 (R18-A): graph_confirmed gets no rating_instructions field from a form-built case. Reading of old records that carry it is TC-UC-3-04d-01 and -02. No replacement for the write — behaviour retired. |
+| TC-UC-3-04c-03 | Superseded by R18-GI-10 (R18-A), then by R18-C2 (§27.4): the retirement was reversed — the confirmation step warns on the form route too, in words that name no cards (`RatingInstructions.gt7.test.tsx`). |
+| TC-UC-3-04c-05 | Superseded by R18-GI-10 (R18-A), then by R18-C2 (§27.4): graph_confirmed carries rating_instructions again for a form-built case, written from the description alone (`RatingInstructions.gt7.test.tsx`). Reading of old records is TC-UC-3-04d-01 and -02. |
 | TC-UC-3-04c-02 | Superseded by R18-GI-10 (R18-A): the review screen's no-warning case is unreachable. An ordinary description getting no warning on the description screen is part of TC-R18-GI-3-19. |
