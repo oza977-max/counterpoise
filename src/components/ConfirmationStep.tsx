@@ -3,7 +3,7 @@ import type { DataFlowGraph, GraphCorrection, PolicyFile } from '../engine/types
 import type { Assumption, PlainAnswers } from './plain-copy';
 import UnderstoodSummary from './UnderstoodSummary';
 import SimilarCases from './SimilarCases';
-import { RATING_INSTRUCTION_CONFIRM_LINE, modelFilledLine } from './plain-copy';
+import { ratingConfirmLine, modelFilledLine } from './plain-copy';
 import { answerSourceCounts } from '../engine/answer-sources';
 import type { FormAnswerState } from '../engine/prefill-types';
 import type { EnrichedPrecedent } from './SimilarCases';
@@ -113,7 +113,7 @@ export default function ConfirmationStep({
 
       {ratingInstructionsFound && (
         <p role="status" className="confirmation__rating-warning">
-          <strong>Warning:</strong> {RATING_INSTRUCTION_CONFIRM_LINE}
+          <strong>Warning:</strong> {ratingConfirmLine(graph.intake_method)}
         </p>
       )}
 

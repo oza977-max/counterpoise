@@ -1331,10 +1331,20 @@ export function ratingInstructionDescriptionWarning(phrases: readonly string[]):
   return R18_COPY.RATING_DESCRIPTION_LEAD + quoteRatingPhrases(phrases) + R18_COPY.RATING_DESCRIPTION_TAIL;
 }
 
+/** The confirmation step's line (the card-review wording, kept for the retired model-path graph). */
 export const RATING_INSTRUCTION_CONFIRM_LINE =
   'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.';
 
-export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its own rating \u2014 check the cards.';
+/** R18-C2 (spec §27.4): the wording follows the route. Only a graph a model read out of the description
+ *  (`intake_method: 'llm'`) has cards to check; a form-built case has none, and nothing was read, so its
+ *  lines say only what is true: the description tried to set a rating and the rating comes from the answers. */
+export function ratingWarningFor(intakeMethod: string, phrases: readonly string[]): string {
+  return intakeMethod === 'llm' ? ratingInstructionWarning(phrases) : ratingInstructionDescriptionWarning(phrases);
+}
+
+export function ratingConfirmLine(intakeMethod: string): string {
+  return intakeMethod === 'llm' ? RATING_INSTRUCTION_CONFIRM_LINE : R18_COPY.RATING_CONFIRM_LINE_FORM;
+}
 
 // ── Round 18 (specs/intake-flow.md §27) ────────────────────────────────────
 // Every string this round introduces, in ONE object, so one test can scan them
@@ -1423,6 +1433,10 @@ export const R18_COPY = {
   // been read there and there are no cards, so it says only what is true on that screen.
   // The quoted phrases are built by ratingInstructionDescriptionWarning (approved/rejected scrubbed).
   RATING_DESCRIPTION_LEAD: 'Your description tells us how to rate it (',
+  // The confirmation step's line for a form-built case, and the register's line for any case that recorded phrases.
+  RATING_CONFIRM_LINE_FORM:
+    "Your description tried to set its own rating. We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
+  RATING_AUDIT_LINE: 'The description tried to set its own rating, which is not followed.',
   RATING_DESCRIPTION_TAIL:
     "). We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
 

@@ -61,7 +61,7 @@ import {
   vendorNotOnListValue,
   VENDOR_UNSURE_VALUE,
   VENDOR_UNSURE_ASSUMPTION,
-  ratingInstructionWarning,
+  ratingWarningFor,
   R18_COPY,
   QUESTION_WORDS,
   failureSentence,
@@ -106,15 +106,14 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
 // CR7-21/22 and the count of corrections on the trail: planCorrectionWrites
 // (intake-state.ts, pure and unit-tested).
 
-// GT7 L-1 (P12). Rating instructions are looked for on the DESCRIPTION path
-// only — a graph a model read out of the typed description. The form path's
-// "In a sentence or two" text is never read by a model, so it gets no warning.
-// GB pass-1 C: called up to three times per render, so the (pure) result is
-// remembered for the last description seen.
+// GT7 L-1 (P12), R18-C2 (spec §27.4). Rating instructions are looked for in the DESCRIPTION alone
+// (findRatingInstructions needs no graph), on every route: the form path's description is the same text the
+// description screen warned about. The wording follows the route (ratingWarningFor). Called up to three times
+// per render, so the (pure) result is remembered for the last description seen.
 let lastRatingKey: string | undefined;
 let lastRatingFound: string[] = [];
-function ratingInstructionsFor(graph: { intake_method: string }, description: string | undefined): string[] {
-  if (graph.intake_method !== 'llm' || !description) return [];
+function ratingInstructionsFor(description: string | undefined): string[] {
+  if (!description) return [];
   if (description !== lastRatingKey) {
     lastRatingFound = findRatingInstructions(description);
     lastRatingKey = description;
@@ -1736,8 +1735,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // never read by a model. Written here, on the first confirmation; a
           // correction pass (the isCorrection branch above) does not re-flag,
           // by design: the first record already carries it. Spread-if-present.
-          ...(ratingInstructionsFor(graph, typedDescription).length > 0
-            ? { rating_instructions: ratingInstructionsFor(graph, typedDescription) }
+          ...(ratingInstructionsFor(typedDescription).length > 0
+            ? { rating_instructions: ratingInstructionsFor(typedDescription) }
             : {}),
           // R16-D2 §4 (D-81, DR7-16): the "Not sure" answers this
           // confirmation was based on — written only when non-empty, same
@@ -2658,10 +2657,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                 visible "Warning:" lead-in so it is not colour alone. Display only: the
                 graph, the engine input and the verdict never see this list. */}
             {(() => {
-              const found = ratingInstructionsFor(state.graph, state.description);
+              const found = ratingInstructionsFor(state.description);
               return found.length > 0 ? (
                 <p role="status" className="intake-flow__rating-warning">
-                  <strong>Warning:</strong> {ratingInstructionWarning(found)}
+                  <strong>Warning:</strong> {ratingWarningFor(state.graph.intake_method, found)}
                 </p>
               ) : null;
             })()}
@@ -2893,7 +2892,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               description={state.description}
               plainAnswers={formInitialAnswers}
               answerState={formInitialAnswerState}
-              ratingInstructionsFound={ratingInstructionsFor(state.graph, state.description).length > 0}
+              ratingInstructionsFound={ratingInstructionsFor(state.description).length > 0}
               onChangeAnswer={() => dispatch({ type: 'CHANGE_ANSWER' })}
               onConfirm={(note) => void handleConfirmAndEvaluate(note)}
               // A refusal that will repeat disables Confirm; a failed record

@@ -184,9 +184,16 @@ describe('the form-route graph_extraction step is checked field by field (R18-A 
     expect(info.state).toMatchObject({ assumptions: [good], afterFailedEvaluation: true, originalVerdictId: 'v-1' });
   });
 
+  it('an assumption saved without shortLabel and fields (an older shape) is kept', () => {
+    const old = { questionId: '9', question: 'q', assumption: 'a' };
+    put({ ...ok, assumptions: [old] });
+    expect(loadDraftInfo()!.state).toMatchObject({ assumptions: [old] });
+  });
+
   it.each([
     ['an assumption that is a number', { assumptions: [1] }],
-    ['an assumption missing its fields', { assumptions: [{ questionId: '4', question: 'q', shortLabel: 's', assumption: 'a' }] }],
+    ['an assumption missing its text', { assumptions: [{ questionId: '4', question: 'q', shortLabel: 's', fields: [] }] }],
+    ['an assumption whose shortLabel is a number', { assumptions: [{ ...good, shortLabel: 3 }] }],
     ['an assumption whose fields are not strings', { assumptions: [{ ...good, fields: [1] }] }],
     ['an assumption with a __proto__ key', { assumptions: JSON.parse('[{"__proto__":{"x":1},"questionId":"4","question":"q","shortLabel":"s","assumption":"a","fields":[]}]') }],
     ['afterFailedEvaluation that is a string', { afterFailedEvaluation: 'yes' }],

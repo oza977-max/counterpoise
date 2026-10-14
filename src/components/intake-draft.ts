@@ -212,7 +212,9 @@ function validNudge(v: unknown): boolean {
   return Array.isArray(v) && v.length <= CHECKLIST_ITEM_IDS.length && v.every((x) => typeof x === 'string' && CHECKLIST_IDS.has(x));
 }
 
-/** An `Assumption` list (plain-copy.ts): each element has its five fields, bounded, and no `__proto__`. */
+/** An `Assumption` list (plain-copy.ts): each element an object with its three text fields, and `shortLabel`
+ *  and `fields` typed when present (an assumption saved before those two existed lacks them and renders
+ *  without them - TC-R16-W-61 saves exactly that), all bounded, with no `__proto__`. */
 function validAssumptions(v: unknown): boolean {
   return (
     Array.isArray(v) &&
@@ -223,11 +225,10 @@ function validAssumptions(v: unknown): boolean {
         !Object.prototype.hasOwnProperty.call(a, '__proto__') &&
         boundedString(a.questionId, MAX_KEY_CHARS) &&
         boundedString(a.question, MAX_ANSWER_CHARS) &&
-        boundedString(a.shortLabel, MAX_ANSWER_CHARS) &&
         boundedString(a.assumption, MAX_ANSWER_CHARS) &&
-        Array.isArray(a.fields) &&
-        a.fields.length <= MAX_LIST &&
-        a.fields.every((f) => boundedString(f, MAX_KEY_CHARS)),
+        (a.shortLabel === undefined || boundedString(a.shortLabel, MAX_ANSWER_CHARS)) &&
+        (a.fields === undefined ||
+          (Array.isArray(a.fields) && a.fields.length <= MAX_LIST && a.fields.every((f) => boundedString(f, MAX_KEY_CHARS)))),
     )
   );
 }
