@@ -9,7 +9,9 @@ import {
   R18_COPY,
 } from './plain-copy';
 import type { Assumption, PlainAnswers, PlainOption, QuestionId } from './plain-copy';
-import { plainAnswersToFormValues, platformZoneOptionKeys, q3ShowsModelQuestion, resolveAccessScopeAnswer } from '../engine/plain-intake';
+import { plainAnswersToFormValues, resolveAccessScopeAnswer } from '../engine/plain-intake';
+import { clearDependents, missingQuestionIds, requiredQuestionIds, shownQuestionIds, validOptionKeys } from '../engine/form-visibility';
+import { structureFor } from '../engine/question-structure';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
 import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
 import { toPlainAnswers } from '../engine/form-answer-state';
@@ -250,15 +252,6 @@ function FreeText({
   );
 }
 
-/** CR7-04. Whether the "Model name, if you know it" question is on screen
- *  for this Q3 answer. The rule lives in ONE place — the engine's
- *  `q3ShowsModelQuestion`, which also decides whether a 3model answer is read
- *  — so what renders, what a Q3 change clears and what the engine reads
- *  cannot drift (pinned by TC-CR7-04e). */
-function q3KeyShowsModelQuestion(q3: string | undefined): boolean {
-  return q3 !== undefined && q3ShowsModelQuestion({ '3': q3 });
-}
-
 /** An earlier PlainAnswers (a resubmission through the old props) as the form's
  *  state: every answer `typed`; Question 2 is the description, not an answer. */
 function typedFromPlain(plain: PlainAnswers | undefined): FormAnswerState {
@@ -356,50 +349,12 @@ export default function StructuredForm({
   }
 
   function setSingle(id: QuestionId, key: string) {
-    updateAnswers((prev) => {
-      const next: PlainAnswers = { ...prev, [id]: key };
-      // Conditional follow-ups are cleared when their trigger changes
-      // (§2.2 Details: "follow-ups are required when shown and cleared
-      // when their trigger changes").
-      if (id === '3') {
-        // CR7-04: the model name belongs to the Q3 answers that ask for it.
-        // Moving from one that shows the question to one that does not (e.g.
-        // "outside assistant" -> "something a team in your firm built") used to
-        // leave the typed name behind, hidden: it still reached the engine as
-        // a declared model for a tool that has none.
-        if (q3KeyShowsModelQuestion(typeof prev['3'] === 'string' ? prev['3'] : undefined) && !q3KeyShowsModelQuestion(key)) {
-          delete next['3model'];
-        }
-        delete next['3a'];
-        delete next['3aWhich'];
-        delete next['3supplier'];
-        delete next['3supplierName'];
-        // W-9: a platform-zone answer for one platform must never survive
-        // onto a different Q3 answer, including a different platform.
-        delete next['3platformZone'];
-      }
-      if (id === '3a') {
-        delete next['3aWhich'];
-      }
-      if (id === '3supplier' && key !== 'not-on-list') {
-        delete next['3supplierName'];
-      }
-      if (id === '4') {
-        if (key !== 'score') delete next['4a'];
-        if (key !== 'agentic' && key !== 'not-sure') {
-          delete next['13'];
-          delete next['14'];
-        }
-      }
-      if (id === '6') {
-        if (!['answers', 'drafts', 'suggests'].includes(key)) delete next['6a'];
-        if (!['acts-reviewed', 'acts-bounded', 'acts-alone'].includes(key)) delete next['6b'];
-      }
-      if (id === '8' && key !== 'other') {
-        delete next['8other'];
-      }
-      return next;
-    });
+    // Conditional follow-ups are cleared when their trigger changes (§2.2 Details:
+    // "follow-ups are required when shown and cleared when their trigger changes").
+    // The rule lives in form-visibility.ts (CR7-04's model name, W-9's platform zone
+    // and the rest); `prev` lets it tell a move between two answers that both ask for
+    // the model name from one that stops asking.
+    updateAnswers((prev) => clearDependents({ ...prev, [id]: key }, id, policy, prev));
   }
 
   function setText(id: QuestionId, text: string) {
@@ -415,19 +370,21 @@ export default function StructuredForm({
   function toggleMulti(id: QuestionId, key: string) {
     updateAnswers((prev) => {
       const current = toArray(prev[id]);
+      const exclusive = structureFor(id)?.exclusiveKey;
       let next: string[];
-      if (id === '13') {
-        if (key === 'none') {
-          next = current.includes('none') ? [] : ['none'];
+      if (exclusive !== undefined) {
+        // Question 13: "nothing beyond…" replaces every other tick and is replaced by any.
+        if (key === exclusive) {
+          next = current.includes(exclusive) ? [] : [exclusive];
         } else {
-          const withoutNone = current.filter((k) => k !== 'none');
-          next = withoutNone.includes(key) ? withoutNone.filter((k) => k !== key) : [...withoutNone, key];
+          const without = current.filter((k) => k !== exclusive);
+          next = without.includes(key) ? without.filter((k) => k !== key) : [...without, key];
         }
       } else {
         // CR6-06e: a stale tick can't be unticked (it isn't rendered), so
         // any toggle drops keys that are no longer current options — the
         // person re-picks from what is on screen.
-        const valid = multiSelectValidKeys(id);
+        const valid = validOptionKeys(id, prev, policy);
         const live = current.filter((k) => valid.includes(k));
         next = live.includes(key) ? live.filter((k) => k !== key) : [...live, key];
       }
@@ -435,86 +392,28 @@ export default function StructuredForm({
     });
   }
 
-  // ---- visibility ----
-  const q3 = typeof answers['3'] === 'string' ? (answers['3'] as string) : undefined;
-  const showQ3Supplier = q3 === 'supplier-feature' || q3 === 'specialist-product';
-  const showQ3Model = q3KeyShowsModelQuestion(q3);
-  const showQ3a = q3 === 'outside-assistant';
-  const show3supplierName = answers['3supplier'] === 'not-on-list';
-  const show3aWhich = answers['3a'] === 'firm-account' && companyAssistantOptions.length > 1;
-  // W-9 (D-79): the matched platform, if Q3's answer is one of the dynamic
-  // platform ids rather than a static option key. A platform allowing only
-  // one zone keeps today's mapping with no follow-up.
-  const matchedPlatform = (policy.platforms ?? []).find((p) => p.id === q3);
-  const showQ3platformZone = Boolean(matchedPlatform) && (matchedPlatform!.approved_envelope.data_zones?.length ?? 0) > 1;
-  const q3platformZoneKeys = matchedPlatform ? platformZoneOptionKeys(matchedPlatform) : [];
-  const q4 = typeof answers['4'] === 'string' ? (answers['4'] as string) : undefined;
-  const showQ4a = q4 === 'score';
-  const isAgentic = q4 === 'agentic' || q4 === 'not-sure';
-  const q6 = typeof answers['6'] === 'string' ? (answers['6'] as string) : undefined;
-  const showQ6a = q6 !== undefined && ['answers', 'drafts', 'suggests'].includes(q6);
-  const showQ6b = q6 !== undefined && ['acts-reviewed', 'acts-bounded', 'acts-alone'].includes(q6);
-  const showQ8other = answers['8'] === 'other';
+  // ---- visibility and required-ness: the rules are in form-visibility.ts ----
+  const shown = new Set(shownQuestionIds(answers, policy));
+  const showQ3Supplier = shown.has('3supplier');
+  const showQ3Model = shown.has('3model');
+  const showQ3a = shown.has('3a');
+  const show3supplierName = shown.has('3supplierName');
+  const show3aWhich = shown.has('3aWhich');
+  const showQ3platformZone = shown.has('3platformZone');
+  const q3platformZoneKeys = validOptionKeys('3platformZone', answers, policy);
+  const showQ4a = shown.has('4a');
+  const isAgentic = shown.has('13');
+  const showQ6a = shown.has('6a');
+  const showQ6b = shown.has('6b');
+  const showQ8other = shown.has('8other');
 
-  // ---- required-ness (§2.2 Details: "required = an option chosen") ----
-  // F-8 (DR7-08): Q13 is answered only when its ticks resolve through the
-  // single checker — the same function the mapping itself calls. A tick
-  // list that maps to nothing real (a stale draft, an unexpected value)
-  // must never silently count as answered here and reach the engine as
-  // "not stated" — that was the DR7-08 bug.
+  // F-8 (DR7-08): Q13 is answered only when its ticks resolve through the single
+  // checker — the same function the mapping itself calls (here, for the message).
   const q13Result = resolveAccessScopeAnswer(toArray(answers['13']));
-  // CR6-06: the current, valid key set for a single-select question — its
-  // own static options PLUS whatever policy-driven options this render
-  // actually spliced in (Q3's platforms, Q3supplier's suppliers, Q3aWhich's
-  // company assistants), or Q3platformZone's own platform-restricted subset.
-  // A value outside this set (a stale draft, a registry entry since
-  // renamed or removed, an option an older build offered) is not one of
-  // the choices on screen right now, so it must not count as answered.
-  function singleSelectValidKeys(id: QuestionId): string[] {
-    if (id === '3platformZone') return q3platformZoneKeys;
-    const staticKeys = findQuestion(id)?.options.map((o) => o.key) ?? [];
-    if (id === '3') return [...staticKeys, ...platformOptions.map((o) => o.key)];
-    if (id === '3supplier') return [...staticKeys, ...supplierOptions.map((o) => o.key)];
-    if (id === '3aWhich') return [...staticKeys, ...companyAssistantOptions.map((o) => o.key)];
-    return staticKeys;
-  }
-  // CR6-06e: a multi-select's current keys — its static options plus the
-  // policy-driven extras the render splices in (Q11's jurisdictions). Q13
-  // keeps its own checker (resolveAccessScopeAnswer).
-  function multiSelectValidKeys(id: QuestionId): string[] {
-    const staticKeys = findQuestion(id)?.options.map((o) => o.key) ?? [];
-    if (id === '11') return [...jurisdictionOptions.map((o) => o.key), ...staticKeys];
-    return staticKeys;
-  }
-  function isAnswered(id: QuestionId): boolean {
-    if (id === '13') return q13Result.ok;
-    const q = findQuestion(id);
-    if (q?.multi) {
-      const ticks = toArray(answers[id]);
-      const valid = multiSelectValidKeys(id);
-      return ticks.length > 0 && ticks.every((k) => valid.includes(k));
-    }
-    if (q?.freeText) return Boolean((answers[id] as string | undefined)?.trim());
-    const value = answers[id];
-    if (value === undefined || value === '') return false;
-    // F-8/DR7-08's sibling rule for single-select: counted only when the
-    // stored value names one of THIS render's current options — static or
-    // policy-driven — never merely "is a non-empty string".
-    return singleSelectValidKeys(id).includes(String(value));
-  }
 
-  const requiredIds: QuestionId[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  if (showQ3Supplier) requiredIds.push('3supplier');
-  if (showQ3platformZone) requiredIds.push('3platformZone');
-  if (showQ3a) requiredIds.push('3a');
-  if (show3aWhich) requiredIds.push('3aWhich');
-  if (showQ4a) requiredIds.push('4a');
-  if (showQ6a) requiredIds.push('6a');
-  if (showQ6b) requiredIds.push('6b');
-  if (showQ8other) requiredIds.push('8other');
-  if (isAgentic) requiredIds.push('13', '14');
+  const requiredIds: QuestionId[] = requiredQuestionIds(answers, policy);
 
-  const missingIds = requiredIds.filter((id) => !isAnswered(id));
+  const missingIds = missingQuestionIds(answers, policy);
   const isComplete = missingIds.length === 0;
   // CR6-07: what is still missing, in the form's own words — the first few,
   // then a count — shown beside Continue and tied to it with aria-describedby.

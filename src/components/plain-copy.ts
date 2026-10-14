@@ -41,6 +41,7 @@ import type { PlausibilitySignal } from '../engine/plausibility';
 // keys only, no words) — re-exported here so every existing component
 // import of them from `./plain-copy` keeps working unchanged.
 import type { AssumptionRef, QuestionId, PlainAnswers } from '../engine/plain-questions';
+import type { QuestionWords } from '../engine/question-structure';
 export type { QuestionId, PlainAnswers };
 
 // R16-D2 §1 (D-95). `questionId` is widened to `string` (not `QuestionId`)
@@ -1251,6 +1252,14 @@ export function neutralPlatformLabel(n: number): string {
 export function neutralSupplierLabel(n: number): string {
   return `Supplier ${n}`;
 }
+
+/** R18-C1 (§27.1): the words the engine's catalogue builder needs, passed in as data — the engine
+ *  holds the question STRUCTURE (src/engine/question-structure.ts) and none of these words. */
+export const QUESTION_WORDS: QuestionWords = {
+  optionText: (id, key) => findOption(id, key)?.text,
+  neutralPlatformLabel,
+  neutralSupplierLabel,
+};
 
 /** UNSIGNED-MODEL (owner-approved 2026-10-03): the one label for a model the
  *  policy lists — button, "Recorded:" line and review row all read it. A
