@@ -150,7 +150,12 @@ export function mergePrefill(
       if (!kept) {
         const found = prefill.get(q.id);
         const before = plain();
-        if (found && found.values.length > 0) {
+        // A found value counts only if every option is one the CURRENT merged answers offer (the question
+        // order is the form's, so earlier merged answers are already in `before`): a zone read for platform
+        // A is not written beside a typed platform B that does not allow it.
+        const offered = found && found.values.length > 0 ? validKeys(q.id, before, policy) : [];
+        const usable = found !== undefined && found.values.length > 0 && found.values.every((v) => offered.includes(v.option));
+        if (found && usable) {
           const options = found.values.map((v) => v.option);
           state[id] = {
             value: cataloguedQuestion.kind === 'multi' ? options : options[0]!,

@@ -194,6 +194,59 @@ describe('mergePrefill', () => {
   });
 });
 
+describe('mergePrefill: a found value must be an option the current merged answers allow (review pass 1, I3)', () => {
+  // Two platforms with different zone sets: A reaches Zone A and B, B reaches Zone B and C.
+  const platformA = entry('PLAT-A', 'Platform A', { approved_envelope: { data_zones: ['Zone A', 'Zone B'] } });
+  const platformB = entry('PLAT-B', 'Platform B', { approved_envelope: { data_zones: ['Zone B', 'Zone C'] } });
+  const catalogueFor = (p: PolicyFile) => buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, p);
+  const rows = (r: [string, { option: string; quote: string }[]][]): Prefill =>
+    new Map(r.map(([id, values]) => [id, { values }])) as unknown as Prefill;
+
+  it('the person typed platform B; the model read platform A and a zone only A allows: the zone is left blank, not written invalid', () => {
+    const p = withParts({ platforms: [platformA, platformB] });
+    expect(validOptionKeys('3platformZone', { '3': 'PLAT-B' }, p)).not.toContain('outside-service');
+    const merged = mergePrefill(
+      { '3': typed('PLAT-B') },
+      rows([
+        ['3', [{ option: 'PLAT-A', quote: 'platform a' }]],
+        ['3platformZone', [{ option: 'outside-service', quote: 'outside service' }]],
+      ]),
+      catalogueFor(p),
+      p,
+      READ,
+    );
+    expect(merged['3']).toEqual(typed('PLAT-B'));
+    expect(merged['3platformZone']).toBeUndefined();
+  });
+
+  it('a zone the typed platform does allow is still filled in', () => {
+    const p = withParts({ platforms: [platformA, platformB] });
+    const merged = mergePrefill(
+      { '3': typed('PLAT-B') },
+      rows([['3platformZone', [{ option: 'outside-supplier', quote: 'outside supplier' }]]]),
+      catalogueFor(p),
+      p,
+      READ,
+    );
+    expect(merged['3platformZone']!.value).toBe('outside-supplier');
+  });
+
+  it('a prefilled platform and its prefilled zone together: the zone is checked against the platform just merged', () => {
+    const p = withParts({ platforms: [platformA, platformB] });
+    const ok = mergePrefill({}, rows([['3', [{ option: 'PLAT-A', quote: 'platform a' }]], ['3platformZone', [{ option: 'outside-service', quote: 'outside service' }]]]), catalogueFor(p), p, READ);
+    expect(ok['3platformZone']!.value).toBe('outside-service');
+    const bad = mergePrefill({}, rows([['3', [{ option: 'PLAT-B', quote: 'platform b' }]], ['3platformZone', [{ option: 'outside-service', quote: 'outside service' }]]]), catalogueFor(p), p, READ);
+    expect(bad['3']!.value).toBe('PLAT-B');
+    expect(bad['3platformZone']).toBeUndefined();
+  });
+
+  it('a tick-all value is kept only if every option is valid; one invalid option drops the whole value', () => {
+    const p = withParts({ platforms: [platformA, platformB] });
+    const merged = mergePrefill({}, rows([['5', [{ option: 'people', quote: 'client names' }, { option: 'not-an-option', quote: 'xx yy' }]]]), catalogueFor(p), p, READ);
+    expect(merged['5']).toBeUndefined();
+  });
+});
+
 describe('canContinue and missingQuestionIds', () => {
   const complete: FormAnswerState = {
     '1': typed('Name'), '3': typed('firm-built'), '4': typed('language'), '5': typed(['everyday']), '6': typed('read'),
