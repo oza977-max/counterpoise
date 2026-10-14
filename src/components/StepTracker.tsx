@@ -16,7 +16,7 @@ import type { IntakeState } from './intake-state';
 const STEPS: Array<{ key: string; label: string; matches: (s: IntakeState['step']) => boolean }> = [
   { key: 'describe', label: 'Describe', matches: (s) => s === 'description_entry' },
   { key: 'duplicates', label: 'Similar checks', matches: (s) => s === 'duplicate_check' },
-  { key: 'graph', label: 'Your answers', matches: (s) => s === 'graph_extraction' || s === 'graph_review' },
+  { key: 'graph', label: 'Your answers', matches: (s) => s === 'prefill_reading' || s === 'graph_extraction' || s === 'graph_review' },
   {
     key: 'questions',
     label: 'Questions',
@@ -40,6 +40,7 @@ export function describeStep(current: IntakeState['step']): string {
 const ORDER = [
   'description_entry',
   'duplicate_check',
+  'prefill_reading',
   'graph_extraction',
   'graph_review',
   'questionnaire',

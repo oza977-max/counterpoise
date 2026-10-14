@@ -69,7 +69,7 @@ describe('R18-C2 acceptance: describe, read, pre-fill, confirm, verdict', () => 
       expect(marks).toHaveLength(2);
       expect(marks.map((m) => m.textContent).join(' ')).toMatch(/client names/);
       expect(marks.map((m) => m.textContent).join(' ')).toMatch(/our uk team/i);
-      expect(screen.getByRole('checkbox', { name: /client names|names and details of people/i })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: /information about people/i })).toBeChecked();
       expect(screen.getByRole('checkbox', { name: /united kingdom/i })).toBeChecked();
       expect(fake.requests).toHaveLength(1);
 

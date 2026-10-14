@@ -1606,6 +1606,11 @@ export const R18_COPY = {
   // One tick per answer. The accessible name is this plus the question.
   CONFIRM_LABEL: 'Yes, this is right',
   STILL_TO_CHECK: 'Still to check:',
+  // The confirmation line (§27.6): shown only when at least one answer was filled in by a model and
+  // confirmed, or changed. {n} confirmed model-filled answers, {m} answers with a value, {k} changed.
+  MODEL_FILLED_LINE: '{n} of {m} answers were filled in by a model and confirmed by you',
+  MODEL_CHANGED_TAIL: ', and {k} were changed by you',
+  MODEL_CHANGED_TAIL_ONE: ', and 1 was changed by you',
 } as const;
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────
@@ -1647,4 +1652,13 @@ export function failureSentence(reason: PrefillFailure, place: ModelPlace, host:
   const entry = R18_COPY.FAILURE_SENTENCES[reason];
   const text = place === 'firm-server' ? entry.firm : place === 'ollama-cloud' ? (entry.cloud ?? entry.ollama) : entry.ollama;
   return text.replace(/\{host\}/g, () => visibleText(host));
+}
+
+/** R18-C2: "N of M answers were filled in by a model and confirmed by you[, and K were changed by you]", or
+ *  null when no answer was filled in and confirmed, or changed (the sentence would be false). */
+export function modelFilledLine(counts: { confirmedFilled: number; answered: number; changed: number }): string | null {
+  if (counts.confirmedFilled <= 0 && counts.changed <= 0) return null;
+  const head = R18_COPY.MODEL_FILLED_LINE.replace('{n}', String(counts.confirmedFilled)).replace('{m}', String(counts.answered));
+  if (counts.changed <= 0) return head;
+  return head + (counts.changed === 1 ? R18_COPY.MODEL_CHANGED_TAIL_ONE : R18_COPY.MODEL_CHANGED_TAIL.replace('{k}', String(counts.changed)));
 }

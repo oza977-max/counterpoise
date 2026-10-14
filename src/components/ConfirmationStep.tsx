@@ -3,7 +3,9 @@ import type { DataFlowGraph, GraphCorrection, PolicyFile } from '../engine/types
 import type { Assumption, PlainAnswers } from './plain-copy';
 import UnderstoodSummary from './UnderstoodSummary';
 import SimilarCases from './SimilarCases';
-import { RATING_INSTRUCTION_CONFIRM_LINE } from './plain-copy';
+import { RATING_INSTRUCTION_CONFIRM_LINE, modelFilledLine } from './plain-copy';
+import { answerSourceCounts } from '../engine/answer-sources';
+import type { FormAnswerState } from '../engine/prefill-types';
 import type { EnrichedPrecedent } from './SimilarCases';
 
 // UC-6 (intake-flow.md §9). Rule 4 (cross-cutting.md §7): presentation-only.
@@ -33,6 +35,9 @@ interface ConfirmationStepProps {
    *  path — used only to attribute the destination zone to an explicit
    *  3platformZone answer. */
   plainAnswers?: PlainAnswers;
+  /** R18-C2 (§27.6): the form's answers with their sources, for the model-filled line. Absent on a path
+   *  that has none; the line is then not shown. */
+  answerState?: FormAnswerState;
   /** W-3 (R16-W §1): similar decided cases, computed by the caller — on the
    *  description path only when the graph came from the guided form (the
    *  form path's own graph_review equivalent no longer exists, so this is
@@ -73,6 +78,7 @@ export default function ConfirmationStep({
   uncertainNodeIds,
   description,
   plainAnswers,
+  answerState,
   precedents,
   onChangeAnswer,
   onConfirm,
@@ -81,6 +87,10 @@ export default function ConfirmationStep({
   ratingInstructionsFound = false,
 }: ConfirmationStepProps) {
   const [note, setNote] = useState('');
+  // R18-C2: how many answers a model filled in and the person confirmed, so a reviewer sees bulk
+  // confirmation. Shown only when it is true that some were (never for a typed-only case).
+  const modelLine =
+    answerState && policy ? modelFilledLine(answerSourceCounts(answerState, description ?? '', policy)) : null;
 
   return (
     <section aria-label="Confirm and evaluate">
@@ -106,6 +116,8 @@ export default function ConfirmationStep({
           <strong>Warning:</strong> {RATING_INSTRUCTION_CONFIRM_LINE}
         </p>
       )}
+
+      {modelLine && <p className="confirmation__model-line">{modelLine}</p>}
 
       <UnderstoodSummary
         graph={graph}
