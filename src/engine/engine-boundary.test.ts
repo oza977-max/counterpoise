@@ -191,3 +191,96 @@ describe('engine purity (cross-cutting.md §7 Rule 1, NF-1)', () => {
     expect(nonDeterministicCalls(allowed)).toEqual([]);
   });
 });
+
+// R18-C2 (specs/implementation-guide.md §12; TC-R18-NF-4-03): the one-engine guarantee made mechanical.
+// Round 18 puts a model's reply on the form, so the island must still hold nothing of the model, the
+// screen, the store or the network; and the model's reply, the answer sources and the reading record must
+// not be reachable from evaluate() — by import, or by being handed to it from any screen.
+const SRC_DIR = resolve(__dirname, '..');
+const FORBIDDEN_IN_ENGINE = [/(^|\/)llm(\/|$)/, /(^|\/)store(\/|$)/, /^react(-dom)?(\/|$)/, /^idb$/, /^@anthropic-ai\//];
+
+function forbiddenEngineImports(text: string): string[] {
+  return importedModules(text).filter((spec) => FORBIDDEN_IN_ENGINE.some((re) => re.test(spec)));
+}
+
+function listAllProductionFiles(dir: string): string[] {
+  return listProductionSourceFiles(dir).filter((f) => !/__tests__|__fixtures__|test-support|test-utils/.test(f));
+}
+
+/** Every engine module reachable from `entry` through relative imports. */
+function engineClosure(entry: string): Set<string> {
+  const seen = new Set<string>();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.pop()!;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const spec of importedModules(readFileSync(file, 'utf-8'))) {
+      if (!spec.startsWith('.')) continue;
+      const base = resolve(file, '..', spec);
+      for (const cand of [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')]) {
+        try {
+          if (statSync(cand).isFile()) queue.push(cand);
+        } catch {
+          /* not this candidate */
+        }
+      }
+    }
+  }
+  return seen;
+}
+
+/** The text of the arguments of every call to `evaluate(` in a file. */
+function evaluateCallArguments(text: string): string[] {
+  const source = ts.createSourceFile('x.ts', text, ts.ScriptTarget.Latest, true);
+  const found: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'evaluate') {
+      found.push(node.arguments.map((a) => a.getText(source)).join(', '));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
+  it('TC-R18-NF-4-03: no production file under src/engine/ imports the model call, the store, React, idb or the SDK, and none reads a clock or random number', () => {
+    const offenders: string[] = [];
+    for (const file of listProductionSourceFiles(ENGINE_DIR)) {
+      for (const spec of forbiddenEngineImports(readFileSync(file, 'utf-8'))) offenders.push(`${file}: imports ${spec}`);
+      for (const call of nonDeterministicCalls(readFileSync(file, 'utf-8'))) offenders.push(`${file}: ${call}`);
+    }
+    expect(offenders).toEqual([]);
+    // the scan can fail
+    expect(forbiddenEngineImports("import { requestPrefill } from '../llm/prefill';\nimport { a } from '../store/audit';\nimport React from 'react';")).toEqual([
+      '../llm/prefill',
+      '../store/audit',
+      'react',
+    ]);
+  });
+
+  it('TC-R18-NF-4-01: evaluate() cannot reach the reply, the answer sources or the reading record through its imports', () => {
+    const closure = [...engineClosure(join(ENGINE_DIR, 'evaluate.ts'))].map((f) => f.slice(ENGINE_DIR.length + 1));
+    const reply = ['prefill-types.ts', 'prefill-verify.ts', 'answer-sources.ts', 'form-answer-state.ts', 'question-structure.ts'];
+    expect(closure.filter((f) => reply.includes(f))).toEqual([]);
+    expect(closure).toContain('evaluate.ts'); // the walk found something
+    // and the walk can fail: from a module that does import one, it finds it
+    const viaVerify = [...engineClosure(join(ENGINE_DIR, 'prefill-verify.ts'))].map((f) => f.slice(ENGINE_DIR.length + 1));
+    expect(viaVerify).toContain('prefill-types.ts');
+  });
+
+  it('TC-R18-NF-4-01: no screen or store hands evaluate() anything but the graph, the policy and the packs', () => {
+    const offenders: string[] = [];
+    let calls = 0;
+    for (const file of listAllProductionFiles(SRC_DIR)) {
+      for (const args of evaluateCallArguments(readFileSync(file, 'utf-8'))) {
+        calls += 1;
+        if (/prefill|reply|answerState|lastRead|outcome|quote/i.test(args)) offenders.push(`${file}: evaluate(${args})`);
+      }
+    }
+    expect(calls).toBeGreaterThan(0);
+    expect(offenders).toEqual([]);
+    expect(evaluateCallArguments('const r = evaluate(graph, policy, prefill.answers);')).toEqual(['graph, policy, prefill.answers']);
+  });
+});
