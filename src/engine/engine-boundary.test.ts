@@ -260,7 +260,7 @@ describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
     ]);
   });
 
-  it('TC-R18-NF-4-01: evaluate() cannot reach the reply, the answer sources or the reading record through its imports', () => {
+  it('evaluate() cannot reach the reply, the answer sources or the reading record through its imports (TC-R18-NF-4-01)', () => {
     const closure = [...engineClosure(join(ENGINE_DIR, 'evaluate.ts'))].map((f) => f.slice(ENGINE_DIR.length + 1));
     const reply = ['prefill-types.ts', 'prefill-verify.ts', 'answer-sources.ts', 'form-answer-state.ts', 'question-structure.ts'];
     expect(closure.filter((f) => reply.includes(f))).toEqual([]);
@@ -270,7 +270,7 @@ describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
     expect(viaVerify).toContain('prefill-types.ts');
   });
 
-  it('TC-R18-NF-4-01: no screen or store hands evaluate() anything but the graph, the policy and the packs', () => {
+  it('no screen or store hands evaluate() anything but the graph, the policy and the packs (TC-R18-NF-4-01)', () => {
     const offenders: string[] = [];
     let calls = 0;
     for (const file of listAllProductionFiles(SRC_DIR)) {

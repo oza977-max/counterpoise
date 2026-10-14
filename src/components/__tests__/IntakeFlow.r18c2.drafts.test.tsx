@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 describe('the landing from an earlier incompatible draft keeps the valid typed answers (TC-R18-NF-5-03)', () => {
-  it('TC-R18-NF-5-03: valid answers are selected, "Gigantic" is not, and the earlier-version sentence is shown', async () => {
+  it('valid answers are selected, "Gigantic" is not, and the earlier-version sentence is shown (TC-R18-NF-5-03)', async () => {
     sessionStorage.setItem(
       'aigate:intake-draft',
       JSON.stringify({

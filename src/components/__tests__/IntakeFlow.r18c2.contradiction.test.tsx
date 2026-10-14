@@ -122,7 +122,7 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
       }
     }
   });
-  it('TC-R18-GI-6-04: a pre-filled "information about people" confirmed by its tick stops exactly as a typed one does', async () => {
+  it('a pre-filled "information about people" confirmed by its tick stops exactly as a typed one does (TC-R18-GI-6-04)', async () => {
     installModel({
       kind: 'honours-format',
       reply: reply([{ question: '5', values: [{ option: 'people', quote: 'internal ticket volumes' }] }]),
