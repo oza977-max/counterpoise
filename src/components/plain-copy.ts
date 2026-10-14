@@ -1689,8 +1689,11 @@ export function formReadNote(
   opts: { earlierKept: boolean; readAgainShown: boolean; settingKind: 'none' | 'invalid' | 'no-model' | 'valid' | 'unknown' },
 ): string {
   if (opts.earlierKept) return R18_COPY.KEPT_EARLIER_NOTE;
+  // Until R18-G builds the "Make it smarter" panel, the no-model case uses the interim sentence, which names no
+  // control (FAILURE_SENTENCES['not-configured'] points at that panel).
+  if (outcome === 'not-configured') return R18_COPY.NO_MODEL_INTERIM_SENTENCE;
   if (!opts.readAgainShown && (outcome === 'not-read' || outcome === 'setting-changed')) {
-    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return R18_COPY.NO_MODEL_INTERIM_SENTENCE;
     if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
     return outcome === 'not-read' ? R18_COPY.NOT_READ_NO_BUTTON : R18_COPY.SETTING_CHANGED_NO_BUTTON;
   }

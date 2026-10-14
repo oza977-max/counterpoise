@@ -18,13 +18,29 @@ describe('formReadNote', () => {
       }
     }
     expect(formReadNote('not-read', 'this-computer', '', { ...base, readAgainShown: false, settingKind: 'none' })).toBe(
-      failureSentence('not-configured', 'this-computer', ''),
+      R18_COPY.NO_MODEL_INTERIM_SENTENCE,
+    );
+    expect(formReadNote('setting-changed', 'this-computer', '', { ...base, readAgainShown: false, settingKind: 'no-model' })).toBe(
+      R18_COPY.NO_MODEL_INTERIM_SENTENCE,
     );
     expect(formReadNote('not-read', 'this-computer', '', { ...base, readAgainShown: false, settingKind: 'invalid' })).toBe(
       failureSentence('invalid-setting', 'this-computer', ''),
     );
     expect(formReadNote('not-read', 'this-computer', '', { ...base, readAgainShown: false })).toBe(R18_COPY.NOT_READ_NO_BUTTON);
     expect(formReadNote('setting-changed', 'this-computer', '', { ...base, readAgainShown: false })).toBe(R18_COPY.SETTING_CHANGED_NO_BUTTON);
+  });
+
+  it('TC-R18-GI-13-01r2a (pass 2): until R18-G builds the panel, no form note in any state names "Make it smarter"', () => {
+    const outcomes = [
+      'not-configured', 'too-long', 'timed-out', 'skipped', 'not-read', 'setting-changed', 'invalid-setting', 'nothing-found',
+      'retired', 'model-missing', 'not-included', 'allowance-used', 'signed-out', 'not-answering', 'blocked-or-unreachable', 'unusable', 'other',
+    ] as const;
+    for (const outcome of outcomes)
+      for (const settingKind of ['none', 'invalid', 'no-model', 'valid', 'unknown'] as const)
+        for (const readAgainShown of [true, false])
+          for (const earlierKept of [true, false])
+            for (const place of ['this-computer', 'firm-server', 'ollama-cloud'] as const)
+              expect(formReadNote(outcome, place, 'localhost', { earlierKept, readAgainShown, settingKind })).not.toMatch(/make it smarter/i);
   });
 
   it('TC-R18-GI-13-01r1c (I2): earlier answers kept -> the kept sentence; none -> the plain sentence, which never says "kept"', () => {

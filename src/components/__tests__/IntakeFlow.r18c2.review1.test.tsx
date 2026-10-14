@@ -57,14 +57,15 @@ describe('I1: the note never names a button that is not on screen', () => {
     expect(readAgainButton()).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
-  it('TC-R18-GI-7-06r1b (I1): a reload during reading with NO model says no model is connected and names no button', async () => {
+  it('TC-R18-GI-7-06r1b (I1): a reload during reading with NO model says it was not read and names no control', async () => {
     const user = userEvent.setup({ delay: null });
     await reloadDuringReading(user);
     localStorage.removeItem(MODEL_SETTING_KEY);
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(failureSentence('not-configured', 'this-computer', ''));
-    expect(note()!.textContent).not.toMatch(/read my description again/i);
+    // Until R18-G ships the "Make it smarter" panel, the no-model note is the interim sentence (review pass 2).
+    expect(note()!.textContent).toBe(R18_COPY.NO_MODEL_INTERIM_SENTENCE);
+    expect(note()!.textContent).not.toMatch(/read my description again|make it smarter/i);
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
