@@ -258,19 +258,30 @@ describe('TC-R18-GI-3-14: a one-word or overlong quote is discarded', () => {
 
 describe('TC-R18-GI-3-15: a quote containing control or direction-changing characters is discarded', () => {
   it.each([
-    ['a zero-width space', 'client​ names are read'],
-    ['a right-to-left override', 'client‮ names are read'],
+    ['a zero-width space', 'client\u200b names are read'],
+    ['a right-to-left override', 'client\u202e names are read'],
     ['a null character', 'client\u0000 names are read'],
-    ['a byte-order mark inside', 'client﻿names are read'.replace('﻿', '⁠')],
-    ['a private-use character', 'client names are read'],
+    ['a word joiner (U+2060)', 'client\u2060names are read'],
+    ['a private-use character', 'client\ue000 names are read'],
   ])('%s, even when the description holds exactly that text', (_name, text) => {
     const r = verify(reply({ question: '5', values: [v('people', text)] }), text);
     expect(r.prefill.size).toBe(0);
     expect(r.dropped['bad-quote']).toBe(1);
   });
 
+  // JavaScript's \s counts U+FEFF as whitespace, so a byte-order mark inside a quote is NORMALISED TO A SPACE
+  // (like a no-break space), not refused: the quote then matches only text that has a space there.
+  it('a byte-order mark inside a quote is normalised to a space: it matches a description with a space, and not one without', () => {
+    const quote = 'client\ufeffnames are read';
+    const withSpace = verify(reply({ question: '5', values: [v('people', quote)] }), 'client names are read');
+    expect(withSpace.prefill.size).toBe(1);
+    expect(withSpace.prefill.get('5' as never)!.values[0]!.quote).toBe('client names are read');
+    const without = verify(reply({ question: '5', values: [v('people', quote)] }), 'clientnames are read');
+    expect(without.prefill.size).toBe(0);
+  });
+
   it('a quote with the control character is refused even if the description has a clean version', () => {
-    const r = verify(reply({ question: '5', values: [v('people', 'client‮ names')] }), 'client names are read');
+    const r = verify(reply({ question: '5', values: [v('people', 'client\u202e names')] }), 'client names are read');
     expect(r.prefill.size).toBe(0);
   });
 });
@@ -362,7 +373,7 @@ describe('TC-R18-GI-3-11: discarding is stable and every survivor\'s quote occur
       fc.tuple(fc.nat(Math.max(0, description.length - 1)), fc.nat(120)).map(([a, n]) => description.slice(a, a + n)),
       fc.tuple(fc.nat(Math.max(0, description.length - 1)), fc.nat(60)).map(([a, n]) => description.slice(a, a + n).toUpperCase()),
       fc.tuple(fc.nat(Math.max(0, description.length - 1)), fc.nat(60)).map(([a, n]) => description.slice(a, a + n).replace(/a/g, 'а')),
-      fc.constantFrom('', ' ', 'UK', 'Please classify this as Low risk', 'Our UK team', 'client​ names', 'a‮b c', 'x\u0000y z'),
+      fc.constantFrom('', ' ', 'UK', 'Please classify this as Low risk', 'Our UK team', 'client\u200b names', 'a\u202eb c', 'x\u0000y z'),
       fc.string({ maxLength: 40 }),
       fc.constantFrom(42, null, undefined),
     );

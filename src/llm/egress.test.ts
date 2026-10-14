@@ -17,6 +17,10 @@ import type { PolicyFile } from '../engine/types';
 
 // R18-C1 deliverable 9: egress guards (specs/intake-flow.md §27.5, NF-3). The harness wraps fetch,
 // XMLHttpRequest, sendBeacon, WebSocket, EventSource, image sources and window.open.
+// Limits, stated plainly: the harness records the `Image().src` setter only (an <img> element set another way,
+// or CSS/font loads, are not seen); NF-3-06 proves that the no-redirect option is PASSED, not that a browser
+// honours it; NF-3-05's `./client` mock proves only which HOST the key-based calls reach; and NF-3-07's
+// regex scan is best effort (a call built another way, e.g. through an alias, would not match).
 
 // The Anthropic SDK captures the real `fetch` when it is imported, so stubbing the global alone would let
 // a test call go to the real network (it did, once, with a fake key). The only change here: the client
@@ -108,6 +112,7 @@ describe('TC-R18-NF-3-01: only the declared address receives any part of the des
   });
 });
 
+// The ./client mock above only makes the SDK use the global fetch; this proves which HOST is contacted, nothing more.
 describe('TC-R18-NF-3-05: the key-based calls are declared and covered (request part)', () => {
   const TRACE = { status: 'in_appetite', tier: 'Low', track: 'Standard', binding_constraint_id: 'x', binding_constraint_description: 'd', binding_path: 'p', tripped_invariants: [], track_rationale: null, tier_rationale: null, regulatory_chain: [], binding_reason: null, binding_regulatory_basis: null, controls_required: [], downstream_reviews: [], applied_overrides: [], confidence_caveats: [], policy_version: '1', pack_versions: {} } as unknown as VerdictTraceData;
   it('with aigate:api-key set, the duplicate check and the explanation call only the Anthropic address', async () => {
@@ -133,6 +138,7 @@ describe('TC-R18-NF-3-05: the key-based calls are declared and covered (request 
   });
 });
 
+// Proves the option is passed on the one request (redirect: 'error'); it cannot prove a browser enforces it.
 describe('TC-R18-NF-3-06: a redirect cannot carry the description elsewhere', () => {
   it('a 307 to another host: no request reaches the other host, the options refuse redirects, and the failure is a plain outcome', async () => {
     const { harness: h } = modelAnswering({ kind: 'redirect', location: 'https://other.example/collect' });
@@ -145,6 +151,7 @@ describe('TC-R18-NF-3-06: a redirect cannot carry the description elsewhere', ()
   });
 });
 
+// The image channel records the `.src` setter only.
 describe('the harness itself sees every channel', () => {
   it('records fetch, XHR, beacon, WebSocket, EventSource, image src and window.open', () => {
     harness = installEgressHarness();
@@ -178,6 +185,7 @@ function stripComments(code: string): string {
   return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
 }
 
+// Best effort: a textual scan; it will not see a call reached through an alias or a dynamic import.
 const CALLERS = /\bfetch\(|\bXMLHttpRequest\b|\bsendBeacon\b|\bWebSocket\b|\bEventSource\b|\bcreateClient\b|from\s+['"]@anthropic-ai\/sdk['"]/;
 
 /** The only production files that may reach the network (model-test.ts arrives with R18-F; local-provider.ts and graph-extractor.ts go with R18-E). */
