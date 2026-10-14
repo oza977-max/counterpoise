@@ -6,8 +6,14 @@ import App from '../../App';
 import { evaluate } from '../../engine/evaluate';
 import { __resetDbsForTests } from '../../store/db';
 import { __resetChainStateForTests } from '../../store/audit';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { toPlainAnswers } from '../../engine/form-answer-state';
-import type { FormAnswerState, AnswerSource, ReadRecord } from '../../engine/prefill-types';
+import { mergePrefill } from '../../engine/form-visibility';
+import { QUESTION_STRUCTURE, buildCatalogue } from '../../engine/question-structure';
+import { loadPolicy } from '../../store/policy';
+import { QUESTION_WORDS } from '../plain-copy';
+import type { FormAnswerState, AnswerSource, ReadRecord, Prefill } from '../../engine/prefill-types';
 import { SLOW_FLOW_MS } from './fillText';
 import { waitForSeeding } from './r18aFlow';
 import { continueButton, describeAndContinue, describeToReadForm, installModel, reply, tickFor, FORM_HEADING } from './r18c2Flow';
@@ -183,6 +189,57 @@ describe('TC-R18-NF-4-04: identical confirmed answers give identical engine inpu
         );
       }),
       { numRuns: 100 },
+    );
+  });
+});
+
+// ---- NF-4-04 (review pass 1, M2): the same, through mergePrefill and confirmation ----
+
+describe('TC-R18-NF-4-04: through the merge and the confirmations', () => {
+  it('a pre-fill merged and then confirmed, in any order, gives the plain answers of the same values typed', () => {
+    const loaded = loadPolicy(readFileSync(resolve(__dirname, '../../../policy/appetite.yaml'), 'utf-8'));
+    if (!loaded.valid) throw new Error('policy invalid');
+    const policy = loaded.policy;
+    const catalogue = buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, policy);
+    fc.assert(
+      fc.property(
+        fc.shuffledSubarray(['everyday', 'people', 'unsure'], { minLength: 1 }),
+        fc.constantFrom('small', 'wide', 'unsure'),
+        fc.constantFrom('UK', 'EU'),
+        fc.infiniteStream(fc.nat()),
+        (info, reach, country, picks) => {
+          const prefill = new Map([
+            ['5', { values: info.map((option) => ({ option, quote: 'a quote' })) }],
+            ['10', { values: [{ option: reach, quote: 'another quote' }] }],
+            ['11', { values: [{ option: country, quote: 'a third quote' }] }],
+          ]) as unknown as Prefill;
+          const start: FormAnswerState = { '1': { value: 'Tool', source: { kind: 'typed' } } };
+          const merged = mergePrefill(start, prefill, catalogue, policy, READ);
+          // what the merge produced, all still unconfirmed
+          const modelFilled = (['5', '10', '11'] as const).filter((id) => merged[id]?.source.kind === 'prefilled');
+          expect(modelFilled.length).toBeGreaterThan(0);
+          // confirm one answer at a time, in a drawn order; the plain answers never move
+          const plainBefore = JSON.stringify(toPlainAnswers(merged, 'desc'));
+          const order = [...modelFilled];
+          const draw = picks[Symbol.iterator]();
+          for (let i = order.length - 1; i > 0; i--) {
+            const j = (draw.next().value as number) % (i + 1);
+            [order[i], order[j]] = [order[j]!, order[i]!];
+          }
+          let state: FormAnswerState = merged;
+          for (const id of order) {
+            const e = state[id]!;
+            if (e.source.kind !== 'prefilled') throw new Error('expected a pre-filled answer');
+            state = { ...state, [id]: { value: e.value, source: { ...e.source, confirmed: true } } };
+            expect(JSON.stringify(toPlainAnswers(state, 'desc'))).toBe(plainBefore);
+          }
+          // and the typed twin of those values is the same engine input
+          const typed: FormAnswerState = {};
+          for (const [id, e] of Object.entries(state)) typed[id as keyof FormAnswerState] = { value: e!.value, source: { kind: 'typed' } };
+          expect(toPlainAnswers(state, 'desc')).toEqual(toPlainAnswers(typed, 'desc'));
+        },
+      ),
+      { numRuns: 60 },
     );
   });
 });
