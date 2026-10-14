@@ -52,6 +52,12 @@ describe('structure and words cover exactly the same ids and option keys (R18-C1
     }
   });
 
+  it('REQUIRED_ORDER is the order the form has always listed missing questions in (review pass 1, M7)', () => {
+    expect([...REQUIRED_ORDER]).toEqual([
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+      '3supplier', '3platformZone', '3a', '3aWhich', '4a', '6a', '6b', '8other', '13', '14',
+    ]);
+  });
   it('REQUIRED_ORDER names exactly the questions marked required, once each', () => {
     const marked = QUESTION_STRUCTURE.filter((q) => q.required).map((q) => q.id).sort();
     expect([...REQUIRED_ORDER].sort()).toEqual(marked);
