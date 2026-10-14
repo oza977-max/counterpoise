@@ -75,7 +75,7 @@ function parts(description: string): string[] {
 
 describe('TC-R18-NF-3-01: only the declared address receives any part of the description', () => {
   const DESC =
-    'It reads client names and account details. Our UK team uses it for internal ticket volumes. ZEBRA-4471 quarterly mandate summaries for the Hamilton desk.';
+    'It reads client names and account details. Our UK team uses it for internal ticket volumes. ZEBRA-4471 quarterly mandate summaries for the treasury desk.';
   it('a format-honouring server: exactly one request carries the description, to localhost:11434, and no other channel sees any part', async () => {
     const { model, harness: h } = modelAnswering({ kind: 'honours-format' });
     await read(DESC);
