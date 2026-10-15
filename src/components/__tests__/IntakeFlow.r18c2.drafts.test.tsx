@@ -44,7 +44,7 @@ describe('the landing from an earlier incompatible draft keeps the valid typed a
     expect(screen.getByRole('radio', { name: /^several teams, the whole business/i })).toBeChecked();
     // nothing came back confirmed or pre-filled: no mark, no tick
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: /yes, this is right/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /i've checked this answer/i })).not.toBeInTheDocument();
     // the invalid value is a blank question: nothing selected there, and the word is nowhere
     expect(document.body.textContent).not.toMatch(/Gigantic/);
     expect(screen.getByText(/saved by an earlier version of counterpoise/i)).toBeInTheDocument();

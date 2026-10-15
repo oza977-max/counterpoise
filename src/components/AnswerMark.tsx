@@ -27,6 +27,12 @@ interface AnswerMarkProps {
   onToggleConfirm: () => void;
 }
 
+// The model that suggested the answer: the ReadRecord's model name, or "a model" when there is none.
+const modelName = (read: ReadRecord) =>
+  read.model.trim() === '' ? R18_COPY.MARK_MODEL_FALLBACK : visibleText(read.model);
+
+const sentenceCase = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
 const q = (quote: string) => `“${visibleText(quote)}”`;
 
 function QuoteLines({
@@ -140,11 +146,16 @@ export default function AnswerMark({ questionLabel, source, description, optionT
         multi={multi}
         askOnLast
         line={({ quote }, present, ask) => {
+          const by = `${R18_COPY.MARK_SUGGESTED_BY} ${modelName(source.read)}`;
           if (present) {
-            const base = `${R18_COPY.MARK_FROM} ${q(quote)}`;
-            return confirmed ? `${R18_COPY.MARK_CONFIRMED} — ${base}` : ask ? `${base} ${R18_COPY.MARK_ASK}` : base;
+            const base = `${by} ${R18_COPY.MARK_FROM} ${q(quote)}`;
+            return confirmed
+              ? `${R18_COPY.MARK_CONFIRMED} — ${base}`
+              : ask
+                ? `${sentenceCase(base)} ${R18_COPY.MARK_ASK}`
+                : sentenceCase(base);
           }
-          const gone = `${R18_COPY.MARK_QUOTE_LEFT_PREFIX} ${q(quote)}`;
+          const gone = `${R18_COPY.MARK_QUOTE_LEFT_PREFIX} ${q(quote)} ${by}`;
           return confirmed
             ? `${R18_COPY.MARK_CONFIRMED} — ${gone} ${R18_COPY.MARK_QUOTE_LEFT_CONFIRMED}`
             : ask

@@ -355,7 +355,7 @@ And the screen MUST NOT contain the warning for "It summarises ticket volumes."
 Input: a pre-filled, unconfirmed answer quoting "Our UK team"; Question 2 edited on the form so that sentence is removed
 Given the form shows the pre-filled answer
 When the description changes
-Then the answer's mark MUST contain “the quote “Our UK team” is no longer in your description — is this right?”
+Then the answer's mark MUST contain “the quote “Our UK team” suggested by {model} is no longer in your description — is this right?”
 And Continue MUST contain a disabled state until the person ticks or changes the answer
 And the mark MUST NOT contain “from your description”
 [Requirement: R18-GI-3] [Priority: MUST]
@@ -384,7 +384,7 @@ And Continue MUST NOT contain an enabled state while any pre-filled answer is un
 Input: a pre-fill of "United Kingdom" with the quote "Our UK team"
 Given the form shows the pre-filled countries answer
 When the mark is read
-Then the mark MUST contain the text “from your description: “Our UK team” — is this right?”
+Then the mark MUST contain the text “Suggested by {model} from your description: “Our UK team” — is this right?”
 And the mark MUST NOT contain "confirmed by you" before the person ticks
 [Requirement: R18-GI-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -700,7 +700,7 @@ Input: answer A confirmed with quote "Our UK team"; the edit deletes "Our UK tea
 Given answer A is confirmed
 When the person returns after the edit
 Then answer A MUST contain its value "United Kingdom" and the state confirmed
-And the mark MUST contain “confirmed by you — the quote “Our UK team” is no longer in your description”
+And the mark MUST contain “confirmed by you — the quote “Our UK team” suggested by {model} is no longer in your description”
 And the screen MUST NOT contain the claim “from your description” for that answer, and the record MUST contain the original quote unchanged
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -748,7 +748,7 @@ Input: on the form, change Question 2's text so the sentence "Our UK team" is re
 Given an answer pre-filled and confirmed with the quote "Our UK team"
 When the text changes
 Then the description in the reducer, the draft and the record MUST contain the new text
-And the answer's mark MUST contain “the quote “Our UK team” is no longer in your description”
+And the answer's mark MUST contain “the quote “Our UK team” suggested by {model} is no longer in your description”
 And the form draft MUST NOT contain an entry for Question 2
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -842,7 +842,7 @@ And the browser storage MUST NOT contain the previous description, quotes or con
 Input: a draft saved with a confirmed pre-fill quoting "Our UK team", and a description edited elsewhere so that sentence is gone; reload
 Given the draft is in this browser
 When the page reloads
-Then the answer MUST contain “confirmed by you — the quote “Our UK team” is no longer in your description”
+Then the answer MUST contain “confirmed by you — the quote “Our UK team” suggested by {model} is no longer in your description”
 And the form MUST NOT contain the words “from your description” for that answer
 [Requirement: R18-GI-9] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1829,7 +1829,7 @@ And at 29 s the screen MUST NOT contain an open blank form
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-1-02: Skip opens the blank form at once, by keyboard too [EXAMPLE]
-Input: at 5 s, Tab to "Skip — I'll answer the questions myself" and press Enter
+Input: at 5 s, Tab to "Skip — don't read it; I'll answer the questions myself" and press Enter
 Given the model is working
 When the person presses Enter on the skip control
 Then the form MUST contain every question blank immediately, without the clock advancing
@@ -2119,7 +2119,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 ### Open points (all settled by the tech spec, 2026-10-07)
 
-1. **GI-8 and GI-13** — a kept answer whose quote has left the edited description reads “confirmed by you — the quote “…” is no longer in your description”; the record keeps the original quote (`intake-flow.md` §27.6; TC-R18-GI-8-04 amended).
+1. **GI-8 and GI-13** — a kept answer whose quote has left the edited description reads “confirmed by you — the quote “…” suggested by {model} is no longer in your description”; the record keeps the original quote (`intake-flow.md` §27.6; TC-R18-GI-8-04 amended).
 2. **PS-6** — a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (§27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; recorded for the owner to ratify.
 3. **MS-1, Ollama's cloud with a non-loopback address** — refused; the cloud choice also needs a cloud-tagged model (§27.8; TC-R18-MS-1-08, -09 added).
 4. **MS-1, cloud tag case** — matched without regard to case (§27.8; `gemma4:Cloud` added to TC-R18-MS-1-02).
@@ -2138,6 +2138,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-15 | owner-approved: pre-fill mark names the model; tick reads 'I've checked this answer' (newcomer check, R18-C2): TC-R18-GI-3-20, GI-4-02, GI-8-04, GI-9-05 and NF-1-02 quote the new wording. |
 | 2026-10-08 | R18-A: TC-R18-NF-5-04 states the exemption for valid earlier drafts at the description and similar-checks steps (restored as they were, no sentence). |
 | 2026-10-07 | Design review 008, strict third pass fixes (211 cases): the rating-instruction notice on the description screen (GI-3-19) and an unconfirmed quote that left the text (GI-3-20); Back refused for corrections and retries, unchanged text skips the second duplicate check, last read survives a submit, Read again merges (GI-8-07 retyped, GI-8-10..14); same-page setting change (GI-7-11); the invalid-setting sentence and bounds, Find models under Ollama's cloud (MS-1-10 rewritten, MS-1-12, -13); MS-5-01/-02 assert the outcome; `verdict_corrected` description (GI-5-11); older cases restore only description and "Not sure" answers, "Correct this check" is a submitter action (GI-10-04..08); a question the form cannot express is not scored (GI-12-08); the docs declare the optional key (NF-3-09); the dropped-fills wording; ten examples, not eleven; no `file://`. |
 | 2026-10-07 | Design review 008, strict second pass fixes (197 cases): `UK` is the policy's code (GI-1-09); direction-changing characters in the context sentence (GI-3-18); "typed by you" (GI-5-01..04); host is an origin; tampered `constructor`/`__proto__` values and out-of-range reads (GI-5-05); export and import statements, quote-no-longer, retry keeps sources (GI-5-08..10); `{"answers": []}` removed from GI-7-03 (it is GI-7-10); Back from the form, a stale draft never beats a fresh read, Question 2 edits the description (GI-8-07..09); record answers need a tick (GI-10-07); the scorer is the only measurement route (GI-12-07); the key-stored sentence (MS-2-07); stopped runs and dropped fills (MS-4-09); the confirmation line's counting rule (GI-3-17); the fetch-site grep covers the SDK (NF-3-07); Clear-all wording and Forget (NF-3-08); the github.io sentence (PS-4-05); the examples note (PS-3-05). |

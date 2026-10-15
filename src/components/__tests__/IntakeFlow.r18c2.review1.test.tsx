@@ -98,7 +98,7 @@ async function earlierAnswersThenSecondRead(user: ReturnType<typeof userEvent.se
   installModel({ kind: 'custom', handle: (_req, index): FakeBehaviour => (index === 0 ? { kind: 'honours-format', reply: GOOD } : later) });
   render(<App />);
   await describeToReadForm(user, DESC);
-  for (const tick of screen.getAllByRole('checkbox', { name: /^yes, this is right/i })) await user.click(tick);
+  for (const tick of screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })) await user.click(tick);
   expect(screen.getAllByText(/confirmed by you/i)).toHaveLength(2);
   await user.click(backButton());
   await retype(user, EDITED);
@@ -113,7 +113,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     expect(note()!.textContent).toBe(R18_COPY.KEPT_EARLIER_NOTE);
     expect(note()!.textContent).not.toMatch(/nothing was filled in for you\. answer/i);
-    expect(screen.getAllByText(/confirmed by you — from your description/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/confirmed by you — suggested by .+ from your description/i).length).toBeGreaterThanOrEqual(1);
   }, SLOW_FLOW_MS);
 
   it('TC-R18-GI-13-01r1f (I2): a failed Read again after earlier pre-fills says the earlier answers are kept', async () => {

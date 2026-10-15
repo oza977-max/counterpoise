@@ -57,4 +57,4 @@ export async function describeToReadForm(user: User, text: string) {
 export const backButton = () => screen.getAllByRole('button', { name: /back/i })[0]!;
 export const continueButton = () => screen.getByRole('button', { name: /^continue$/i });
 export const tickFor = (question: RegExp) =>
-  screen.getByRole('checkbox', { name: new RegExp(`^yes, this is right.*${question.source}`, 'i') });
+  screen.getByRole('checkbox', { name: new RegExp(`^i've checked this answer.*${question.source}`, 'i') });

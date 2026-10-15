@@ -1609,12 +1609,16 @@ export const R18_COPY = {
   // ── Round 18-C2: the reading step and the form with pre-fills (specs/intake-flow.md §27.5-27.6) ──
   // The reading step. The where-it-goes sentence under it is placeSentence() for the stored setting.
   READING_HEADING: 'Reading your description…',
-  SKIP_LABEL: "Skip — I'll answer the questions myself",
+  SKIP_LABEL: "Skip — don't read it; I'll answer the questions myself",
   READ_AGAIN_LABEL: 'Read my description again',
 
   // The marks. A quote is always shown inside curly quotation marks and through visibleText().
   // MARK_FROM is claimed only while the quote is still in the description; MARK_CONFIRMED only after
   // a tick (or a change); MARK_GONE only once the quote has left the text (TC-R18-GI-13-01).
+  // Owner wording (2026-10-15): the mark names the model that suggested the answer. The name is the
+  // model in the answer's ReadRecord, through visibleText; with none, MARK_MODEL_FALLBACK.
+  MARK_SUGGESTED_BY: 'suggested by',
+  MARK_MODEL_FALLBACK: 'a model',
   MARK_FROM: 'from your description:',
   MARK_ASK: '— is this right?',
   MARK_QUOTE_LEFT_PREFIX: 'the quote',
@@ -1626,7 +1630,7 @@ export const R18_COPY = {
   MARK_RECORD: 'from the earlier record',
   MARK_NOT_CARRIED: 'not carried over from the earlier version',
   // One tick per answer. The accessible name is this plus the question.
-  CONFIRM_LABEL: 'Yes, this is right',
+  CONFIRM_LABEL: "I've checked this answer",
   STILL_TO_CHECK: 'Still to check:',
   // The confirmation line (§27.6): shown only when at least one answer was filled in by a model and
   // confirmed, or changed. {n} confirmed model-filled answers, {m} answers with a value, {k} changed.

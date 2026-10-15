@@ -120,7 +120,7 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
       expect(screen.getByText(/changed by you/i)).toBeInTheDocument();
       await user.click(box()); // back on: the original again, and it counts as confirmed
       expect(screen.queryByText(/changed by you/i)).not.toBeInTheDocument();
-      expect(screen.getByText(/confirmed by you — from your description/i)).toBeInTheDocument();
+      expect(screen.getByText(/confirmed by you — suggested by .+ from your description/i)).toBeInTheDocument();
     }
     await user.click(continueButton());
     await waitFor(() => expect(screen.queryByLabelText(EXPLAIN_LABEL) ?? screen.queryByText(SUMMARY)).not.toBeNull());

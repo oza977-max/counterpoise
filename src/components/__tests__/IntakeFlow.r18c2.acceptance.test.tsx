@@ -80,7 +80,7 @@ describe('R18-C2 acceptance: describe, read, pre-fill, confirm, verdict', () => 
       expect(continueButton).toBeDisabled();
 
       // 6. One tick each - there is no accept-all - and then Continue opens.
-      const ticks = screen.getAllByRole('checkbox', { name: /^yes, this is right/i });
+      const ticks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
       expect(ticks).toHaveLength(2);
       await user.click(ticks[0]!);
       expect(continueButton).toBeDisabled();
