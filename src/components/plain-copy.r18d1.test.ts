@@ -23,7 +23,7 @@ describe('R18_COPY - register strings', () => {
   });
 
   it('the register never repeats the present-tense promise', () => {
-    const mine = [R18_COPY.READ_LINE, R18_COPY.PLACE_UNRECOGNISED_WORDS, R18_COPY.READ_NOTE, R18_COPY.ORIGIN_TYPED, R18_COPY.ORIGIN_PREFILLED_CONFIRMED, R18_COPY.ORIGIN_CHANGED, R18_COPY.ORIGIN_RECORD, R18_COPY.ORIGIN_UNRECOGNISED, R18_COPY.ORIGIN_QUOTE_GONE, R18_COPY.HANDOFF_EXPORT_STATEMENT, R18_COPY.HANDOFF_IMPORT_PROVENANCE, ...Object.values(R18_COPY.PLACE_RECORD_WORDS)];
+    const mine = [R18_COPY.READ_LINE, R18_COPY.READ_LINE_UNRECOGNISED, R18_COPY.PLACE_UNRECOGNISED_WORDS, R18_COPY.READ_NOTE, R18_COPY.ORIGIN_TYPED, R18_COPY.ORIGIN_PREFILLED_CONFIRMED, R18_COPY.ORIGIN_CHANGED, R18_COPY.ORIGIN_RECORD, R18_COPY.ORIGIN_UNRECOGNISED, R18_COPY.ORIGIN_QUOTE_GONE, R18_COPY.HANDOFF_EXPORT_STATEMENT, R18_COPY.HANDOFF_IMPORT_PROVENANCE, ...Object.values(R18_COPY.PLACE_RECORD_WORDS)];
     for (const s of mine) expect(s).not.toMatch(/never leaves|will be read|is read/i);
     // and it claims no more than it holds: no verification, no digest
     expect(R18_COPY.READ_NOTE).toMatch(/does not check/);
@@ -33,9 +33,17 @@ describe('R18_COPY - register strings', () => {
 
 describe('readLineWords / originLineWords', () => {
   it('words a read in the past tense, and shows an unrecognised place as such, never the word', () => {
-    expect(readLineWords(read())).toBe('read by alpha:7b by the program at http://localhost:11434 on the computer in use');
+    expect(readLineWords(read())).toBe('read by alpha:7b — the program at http://localhost:11434 on the computer in use');
     const odd = readLineWords(read({ place: null, host: 'http://h' }));
     expect(odd).toBe("read by alpha:7b at http://h, a place this version doesn't recognise");
+  });
+
+  it('reads naturally: one dash between the model and the place, never "by ... by" (review pass 1 minor 4)', () => {
+    expect(readLineWords(read({ model: 'gemma4:cloud', place: 'ollama-cloud' }))).toBe("read by gemma4:cloud — Ollama's cloud, through the Ollama app on the computer in use");
+    expect(readLineWords(read({ model: 'firm-model:2', place: 'firm-server', host: 'https://f.test' }))).toBe("read by firm-model:2 — the server at https://f.test, which the person declared as the firm's");
+    for (const place of ['this-computer', 'firm-server', 'ollama-cloud'] as const) {
+      expect(readLineWords(read({ place }))).not.toMatch(/ by .* by /);
+    }
   });
 
   it('says only what the row holds', () => {

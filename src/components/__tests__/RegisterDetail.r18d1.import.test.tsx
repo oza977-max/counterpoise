@@ -34,7 +34,7 @@ async function openImported(file: string, id: string) {
 describe('RegisterDetail - an imported case', () => {
   it('TC-R18-GI-5-02d1c: shows the sender\'s model, place, quotes and origins, with none changed in transit', async () => {
     const { container } = await openImported('r18-d1-handoff-with-sources.json', 'uc-r18d1-sample-cloud');
-    expect(screen.getByText("read by gemma4:cloud by Ollama's cloud, through the Ollama app on the computer in use")).toBeInTheDocument();
+    expect(screen.getByText("read by gemma4:cloud — Ollama's cloud, through the Ollama app on the computer in use")).toBeInTheDocument();
     const rows = within(screen.getByRole('list', { name: R18_COPY.SOURCES_HEADING })).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
     expect(container.textContent).toContain('filled from your description and confirmed by you — “internal ticket volumes” (suggested by gemma4:cloud)');

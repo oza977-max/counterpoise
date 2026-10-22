@@ -44,7 +44,7 @@ const noSources = () => screen.queryByRole('list', { name: R18_COPY.SOURCES_HEAD
 describe('RegisterDetail - answer sources, the lines (TC-R18-GI-5-01, MS-2-04, GI-5-06)', () => {
   it('TC-R18-GI-5-01d1: names the model and where it ran, the value in words, and who supplied each answer', async () => {
     const { container } = await open({ sources: cloudSources() });
-    expect(screen.getByText("read by gemma4:cloud by Ollama's cloud, through the Ollama app on the computer in use")).toBeInTheDocument();
+    expect(screen.getByText("read by gemma4:cloud — Ollama's cloud, through the Ollama app on the computer in use")).toBeInTheDocument();
     expect(rowFor(/Which countries/)).toHaveTextContent('United Kingdom');
     expect(rowFor(/Which countries/)).toHaveTextContent('typed by you');
     expect(rowFor(/What information will it see/)).toHaveTextContent(/Everyday work information/);
@@ -72,9 +72,9 @@ describe('RegisterDetail - answer sources, the lines (TC-R18-GI-5-01, MS-2-04, G
 
   it('TC-R18-GI-5-06: each of the three places is stated as configured, past tense, with the model and host, never as a promise', async () => {
     const cases: [typeof READ_LOCAL, RegExp][] = [
-      [READ_LOCAL, /read by alpha:7b by the program at http:\/\/localhost:11434 on the computer in use/],
-      [READ_FIRM, /read by firm-model:2 by the server at https:\/\/models\.example\.internal:8443, which the person declared as the firm's/],
-      [READ_CLOUD, /read by gemma4:cloud by Ollama's cloud, through the Ollama app on the computer in use/],
+      [READ_LOCAL, /read by alpha:7b — the program at http:\/\/localhost:11434 on the computer in use/],
+      [READ_FIRM, /read by firm-model:2 — the server at https:\/\/models\.example\.internal:8443, which the person declared as the firm's/],
+      [READ_CLOUD, /read by gemma4:cloud — Ollama's cloud, through the Ollama app on the computer in use/],
     ];
     for (const [read, line] of cases) {
       const { container, unmount } = await open({ sources: cloudSources(read) });

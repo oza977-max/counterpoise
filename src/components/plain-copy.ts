@@ -1643,7 +1643,9 @@ export const R18_COPY = {
   // state where it is true (TC-R18-GI-13-01): no model line without a read, no share line when nothing was filled
   // in or changed, "no longer in your description" only when the record says so.
   SOURCES_HEADING: 'Where each answer came from',
-  READ_LINE: 'read by {model} {place}',
+  READ_LINE: 'read by {model} — {place}',
+  // The unrecognised-place words already start with their own preposition ("at {host}, ..."), so no dash.
+  READ_LINE_UNRECOGNISED: 'read by {model} {place}',
   // A place word this version does not know is never shown as the word; the host is still shown, as text.
   PLACE_UNRECOGNISED_WORDS: "at {host}, a place this version doesn't recognise",
   // Honest about what the record is: configured, not proven; self-asserted (GI-5-06, GI-5-08).
@@ -1741,10 +1743,13 @@ export function modelFilledLine(counts: { confirmedFilled: number; answered: num
 
 /** "read by {model} {place words}" for one read, in the past tense. An unrecognised place says so, with the host. */
 export function readLineWords(read: ReadView): string {
-  const place =
-    read.place !== null
-      ? placeRecordWords(read.place, read.host)
-      : R18_COPY.PLACE_UNRECOGNISED_WORDS.replace('{host}', () => visibleText(read.host));
+  if (read.place === null) {
+    const odd = R18_COPY.PLACE_UNRECOGNISED_WORDS.replace('{host}', () => visibleText(read.host));
+    return R18_COPY.READ_LINE_UNRECOGNISED.replace('{model}', () => visibleText(read.model)).replace('{place}', () => odd);
+  }
+  // PLACE_RECORD_WORDS start with "by" (they are also used on their own); in the line the dash replaces it,
+  // so the line never reads "read by {model} by ...".
+  const place = placeRecordWords(read.place, read.host).replace(/^by /, '');
   return R18_COPY.READ_LINE.replace('{model}', () => visibleText(read.model)).replace('{place}', () => place);
 }
 

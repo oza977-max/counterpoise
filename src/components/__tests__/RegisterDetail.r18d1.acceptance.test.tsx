@@ -142,7 +142,7 @@ describe('R18-D1 acceptance: the register shows where each answer came from', ()
     const { container } = render(<RegisterDetail useCaseId={id} role="2LoD" policy={POLICY} onBack={() => {}} />);
 
     // The model and where it ran, in the past tense, as configured.
-    expect(await screen.findByText(/read by alpha:7b by the program at http:\/\/localhost:11434 on the computer in use/i)).toBeInTheDocument();
+    expect(await screen.findByText(/read by alpha:7b — the program at http:\/\/localhost:11434 on the computer in use/i)).toBeInTheDocument();
 
     // The same share line as the confirmation screen, counted from the rows: 2 confirmed, 1 changed, 4 select answers.
     expect(
