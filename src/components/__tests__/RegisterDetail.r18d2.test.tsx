@@ -42,6 +42,9 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     const submitter = render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
     expect(await screen.findByRole('button', { name: LABEL })).toBeInTheDocument();
     expect(screen.getByText(R18_COPY.CORRECT_THIS_CHECK_NOTE)).toBeInTheDocument();
+    // the note must not imply the answers come back confirmed (owner decision 2026-10-22)
+    expect(R18_COPY.CORRECT_THIS_CHECK_NOTE).toMatch(/need your tick again/);
+    expect(R18_COPY.CORRECT_THIS_CHECK_NOTE).not.toMatch(/your answers|confirmed answers/i);
     submitter.unmount();
     render(<RegisterDetail useCaseId={id} role="2LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
     await screen.findByRole('region', { name: /where each answer came from/i });
@@ -117,7 +120,7 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     expect(onCorrect).toHaveBeenCalledTimes(1);
     const opening = onCorrect.mock.calls[0]![0];
     expect(opening).toMatchObject({ useCaseId: id, originalVerdictId: `v-${id}`, description: DESCRIPTION });
-    expect(opening.answerState['11'].source).toMatchObject({ kind: 'prefilled', confirmed: true, read: READ_LOCAL });
+    expect(opening.answerState['11'].source).toMatchObject({ kind: 'prefilled', confirmed: false, read: READ_LOCAL }); // owner decision 2026-10-22: a restored model answer owes a fresh tick
     expect(opening.answerState['1'].source).toEqual({ kind: 'typed' });
     expect(opening.originalGraph.version).toBe(1); // the seeded verdict names no version: read as 1
     expect(opening.originalGraph.processing_nodes).toHaveLength(1);

@@ -1667,10 +1667,12 @@ export const R18_COPY = {
     "Where each answer came from, in a file you import, is whatever the person who made the file recorded. The checks above do not verify it, or who made the file.",
   // ── Round 18-D2: correcting a check from the register (§27.10) ──
   CORRECT_THIS_CHECK_LABEL: 'Correct this check',
-  // Shown beside the action and only when it is shown. Each clause is true of the build: opening writes nothing
-  // (the correction is written at Confirm), and opening replaces whatever unfinished check this tab holds.
+  // Shown beside the action and only when it is shown. Each clause is true of the build: opening restores the
+  // recorded answers but never a tick (owner decision 2026-10-22: a model-filled or earlier-record answer owes
+  // this person's own tick), opening writes nothing (the correction is written at Confirm), and opening replaces
+  // whatever unfinished check this tab holds.
   CORRECT_THIS_CHECK_NOTE:
-    'Opens this check on the form with your answers filled in. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+    'Opens this check on the form with its recorded answers filled in. Answers a model filled in, or carried from an earlier record, need your tick again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
 } as const;
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────

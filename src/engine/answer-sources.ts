@@ -311,7 +311,10 @@ function copyQuotes(quotes: readonly QuoteRef[]): QuoteRef[] {
  *  row. A `typed` or confirmed answer is a row; an answer that is not confirmed, a blank one and a not-carried
  *  one are not (the form cannot reach Confirm with an unconfirmed answer, and a row would claim one). `reads`
  *  holds each distinct model/place/host once, in first-seen order, and `read` is the index into it. */
-export function toAnswerSources(answerState: FormAnswerState, description: string): AnswerSources {
+export function toAnswerSources(answerState: FormAnswerState, description: string, policy?: PolicyFile): AnswerSources {
+  // A question that is not shown for these answers is never a row (a stale entry for a hidden question would
+  // otherwise be recorded as an answer the person never gave). Without a policy nothing can be judged hidden.
+  const shown = policy ? new Set<string>(shownQuestionIds(toPlainAnswers(answerState, description), policy)) : null;
   const reads: ReadRecord[] = [];
   const answers: AnswerSourceRecord[] = [];
   const indexOfRead = (r: ReadRecord): number => {
@@ -322,6 +325,7 @@ export function toAnswerSources(answerState: FormAnswerState, description: strin
   };
   for (const q of QUESTION_STRUCTURE) {
     if (q.id === '2') continue;
+    if (shown && !shown.has(q.id)) continue;
     const entry = answerState[q.id as Exclude<QuestionId, '2'>];
     if (!entry || !hasAnswer(entry.value)) continue;
     const source = entry.source;
@@ -411,16 +415,24 @@ function restoreValue(id: Exclude<QuestionId, '2'>, v: unknown, kept: PlainAnswe
 
 /** The form's answers rebuilt from a saved `answer_sources` (§27.10), for "Correct this check". Walks the
  *  questions in the form's order; a row is kept only if its question is shown for the answers kept so far, its
- *  value is one the form offers now, and its origin is one of the four this build writes:
+ *  value is one the form offers now, and its origin is one of the four this build writes. OWNER DECISION
+ *  2026-10-22: nothing comes back confirmed that this person has not ticked. A record can be self-asserted (a
+ *  hand-off file someone else made), so a restored model answer must be ticked afresh, and the new record then
+ *  says "confirmed" only of THIS person:
  *   - `typed` stays typed;
- *   - a pre-fill whose quotes and read are well-formed comes back confirmed, with both (`changed` stays changed);
- *   - `from_earlier_record`, and a pre-fill that cannot be checked, come back as an UNCONFIRMED earlier-record
- *     answer that needs its tick again;
+ *   - `prefilled_confirmed` comes back as a pre-fill with its quotes and read, UNCONFIRMED;
+ *   - `prefilled_changed` comes back as an UNCONFIRMED earlier-record answer (value kept), so unless it is
+ *     changed it is written as `from_earlier_record` and never claims this person made the earlier change;
+ *   - `from_earlier_record`, and a pre-fill that cannot be checked, come back as an unconfirmed earlier-record
+ *     answer;
  *   - an unknown origin word is dropped (blank), never believed.
- *  One row per question (the first wins); Question 2 and unknown ids are ignored. A copy; the record is untouched. */
-export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerState {
+ *  One row per question (the first wins); Question 2 and unknown ids are ignored. A copy; the record is untouched.
+ *  `dropped` names, in the form's order, the questions that had a recorded row which could not be restored
+ *  (the value is not one the form offers now, or the question is no longer shown), so the person can be told. */
+export function restoreFromRecord(raw: unknown, policy: PolicyFile): { answerState: FormAnswerState; dropped: string[] } {
   const out: FormAnswerState = {};
-  if (!isRecord(raw) || !Array.isArray(raw.answers)) return out;
+  const dropped: string[] = [];
+  if (!isRecord(raw) || !Array.isArray(raw.answers)) return { answerState: out, dropped };
   const reads: (ReadRecord | null)[] = Array.isArray(raw.reads) ? raw.reads.slice(0, MAX_RESTORE_READS).map(restoreRead) : [];
   const rows = new Map<string, Record<string, unknown>>();
   for (const row of raw.answers.slice(0, MAX_RESTORE_ROWS)) {
@@ -432,9 +444,16 @@ export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerS
     if (q.id === '2') continue;
     const id = q.id as Exclude<QuestionId, '2'>;
     const row = rows.get(id);
-    if (!row || !isShown(id, kept, policy)) continue;
+    if (!row) continue;
+    if (!isShown(id, kept, policy)) {
+      dropped.push(id);
+      continue;
+    }
     const value = restoreValue(id, row.value, kept, policy);
-    if (value === null) continue;
+    if (value === null) {
+      dropped.push(id);
+      continue;
+    }
     const index = row.read;
     const read = typeof index === 'number' && Number.isInteger(index) && index >= 0 && index < reads.length ? (reads[index] ?? null) : null;
     let source: AnswerSource | null = null;
@@ -447,8 +466,12 @@ export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerS
         if (q.kind === 'free') break;
         const changed = row.origin === 'prefilled_changed';
         const quotes = restoreQuotes(changed ? (row.changed_from ?? row.quotes) : row.quotes);
-        if (quotes && read) {
-          source = changed ? { kind: 'changed', from: quotes, read } : { kind: 'prefilled', quotes, read, confirmed: true };
+        if (changed) {
+          // A well-formed row keeps its read; the earlier change is not this person's to claim, so it is not
+          // confirmed. A row whose quotes cannot be believed keeps nothing.
+          source = quotes && read ? { kind: 'record', confirmed: false, read } : { kind: 'record', confirmed: false };
+        } else if (quotes && read) {
+          source = { kind: 'prefilled', quotes, read, confirmed: false };
         } else {
           source = { kind: 'record', confirmed: false };
         }
@@ -462,5 +485,10 @@ export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerS
     out[id] = { value: copyValue(value), source };
     kept[id] = copyValue(value);
   }
-  return out;
+  return { answerState: out, dropped };
+}
+
+/** The restored answers alone (see restoreFromRecord). */
+export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerState {
+  return restoreFromRecord(raw, policy).answerState;
 }

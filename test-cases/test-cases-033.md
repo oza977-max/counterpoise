@@ -901,7 +901,7 @@ And the form MUST NOT contain a blank question for an answer that was confirmed
 Input: a case with one typed answer, one confirmed pre-fill, one changed pre-fill and one `from_earlier_record` answer; reload the page; open the case on the register in the submitter view; press "Correct this check"
 Given nothing from the earlier session is in memory
 When the person presses the action
-Then the form MUST contain every answer with its recorded value, the typed answer as typed, the confirmed and changed pre-fills still confirmed with their quotes, and the earlier-record answer unconfirmed and needing its tick
+Then the form MUST contain every answer with its recorded value, the typed answer as typed; confirmed and changed pre-fills MUST come back with their quotes and recorded values but unconfirmed, each needing the person's own tick, and the earlier-record answer MUST be unconfirmed
 And the corrected case's `verdict_corrected` event MUST contain the new sources
 And the form MUST NOT contain a blank question for an answer that was recorded, and MUST NOT contain a Back control
 [Requirement: R18-GI-10] [Priority: MUST]
@@ -2138,6 +2138,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-22 | owner decision 2026-10-22: answers restored from a stored record need a fresh tick (a self-asserted record must not let the record claim ticks the person never made). TC-R18-GI-10-06 now states it: confirmed and changed pre-fills come back with their quotes and recorded values but unconfirmed. |
 | 2026-10-15 | owner-approved: pre-fill mark names the model; tick reads 'I've checked this answer' (newcomer check, R18-C2): TC-R18-GI-3-20, GI-4-02, GI-8-04, GI-9-05 and NF-1-02 quote the new wording. |
 | 2026-10-08 | R18-A: TC-R18-NF-5-04 states the exemption for valid earlier drafts at the description and similar-checks steps (restored as they were, no sentence). |
 | 2026-10-07 | Design review 008, strict third pass fixes (211 cases): the rating-instruction notice on the description screen (GI-3-19) and an unconfirmed quote that left the text (GI-3-20); Back refused for corrections and retries, unchanged text skips the second duplicate check, last read survives a submit, Read again merges (GI-8-07 retyped, GI-8-10..14); same-page setting change (GI-7-11); the invalid-setting sentence and bounds, Find models under Ollama's cloud (MS-1-10 rewritten, MS-1-12, -13); MS-5-01/-02 assert the outcome; `verdict_corrected` description (GI-5-11); older cases restore only description and "Not sure" answers, "Correct this check" is a submitter action (GI-10-04..08); a question the form cannot express is not scored (GI-12-08); the docs declare the optional key (NF-3-09); the dropped-fills wording; ten examples, not eleven; no `file://`. |

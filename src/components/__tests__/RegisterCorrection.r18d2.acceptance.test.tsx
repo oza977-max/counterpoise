@@ -107,9 +107,12 @@ describe('R18-D2 acceptance: confirm, read it in the register, correct it from t
       await screen.findByText(/new pre-check — tell us about the ai you want to use/i, undefined, { timeout: 5000 });
       expect(screen.getByRole('checkbox', { name: /information about people/i })).toBeChecked();
       expect(screen.getByRole('checkbox', { name: /united kingdom/i })).toBeChecked();
+      // Owner decision 2026-10-22: nothing a model filled in comes back ticked. The two confirmed pre-fills and the
+      // changed answer (now an earlier-record answer) each owe THIS person's own tick; the quotes are still shown.
       const restoredTicks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
-      expect(restoredTicks).toHaveLength(2);
-      for (const tick of restoredTicks) expect(tick).toBeChecked();
+      expect(restoredTicks).toHaveLength(3);
+      for (const tick of restoredTicks) expect(tick).not.toBeChecked();
+      expect(screen.getByRole('button', { name: /^continue$/i })).toBeDisabled();
       expect(screen.getAllByText(/client names/).length).toBeGreaterThan(0);
       expect(screen.getByRole('radio', { name: /^only me or my own team$/i })).toBeChecked();
       expect(screen.getByLabelText(/what do you want to call it/i)).toHaveValue(NAME);
@@ -119,6 +122,7 @@ describe('R18-D2 acceptance: confirm, read it in the register, correct it from t
 
       // 5. Change one answer and confirm: a verdict_corrected carries the new sources.
       await user.click(screen.getAllByRole('radio', { name: /^no$/i })[0]!);
+      for (const tick of screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })) await user.click(tick);
       await user.click(screen.getByRole('button', { name: /^continue$/i }));
       await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
       await screen.findByText('Verdict', { selector: '.verdict__eyebrow' }, { timeout: 5000 });
@@ -130,7 +134,8 @@ describe('R18-D2 acceptance: confirm, read it in the register, correct it from t
       expect(newSources).toBeDefined();
       const newOrigin = (id: string) => newSources!.answers.find((a) => a.question_id === id)?.origin;
       expect(newOrigin('5')).toBe('prefilled_confirmed');
-      expect(newOrigin('7')).toBe('prefilled_changed');
+      // 7 was changed by the earlier person; this person did not change it, so the new record does not say they did
+      expect(newOrigin('7')).toBe('from_earlier_record');
       expect(newOrigin('1')).toBe('typed');
       expect(fake.requests).toHaveLength(1);
 

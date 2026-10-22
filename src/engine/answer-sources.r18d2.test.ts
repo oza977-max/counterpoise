@@ -5,7 +5,7 @@ import fc from 'fast-check';
 import { loadPolicy } from '../store/policy';
 import { QUESTION_WORDS, findQuestion } from '../components/plain-copy';
 import { buildCatalogue, QUESTION_STRUCTURE } from './question-structure';
-import { readAnswerSources, answerSourceCounts, toAnswerSources, answersFromRecord, type SourceWords } from './answer-sources';
+import { readAnswerSources, answerSourceCounts, toAnswerSources, answersFromRecord, restoreFromRecord, type SourceWords } from './answer-sources';
 import { typedAnswersFromPlain } from './form-visibility';
 import { toPlainAnswers } from './form-answer-state';
 import { WORKED_EXAMPLES } from './worked-examples';
@@ -209,10 +209,38 @@ describe('round trip: the register shows the same origins and counts the confirm
 });
 
 describe('answersFromRecord - the inverse, over an untrusted record', () => {
-  it('restores a written record exactly: typed stays typed, confirmed and changed pre-fills keep quotes and read', () => {
+  it('restores a written record with FRESH ticks owed: typed stays typed, a confirmed pre-fill keeps its quotes but is unconfirmed, a changed one is an unconfirmed record answer (owner decision 2026-10-22)', () => {
     let state = withSource(base(), '5', { kind: 'prefilled', quotes: [{ option: 'people', quote: 'client names' }], read: READ_A, confirmed: true }, ['people']);
     state = withSource(state, '11', { kind: 'changed', from: [{ option: 'UK', quote: 'Our UK team' }], read: READ_B }, ['US']);
-    expect(answersFromRecord(toAnswerSources(state, DESCRIPTION), policy)).toEqual(state);
+    const out = answersFromRecord(toAnswerSources(state, DESCRIPTION), policy);
+    expect(out['5']).toEqual({
+      value: ['people'],
+      source: { kind: 'prefilled', quotes: [{ option: 'people', quote: 'client names' }], read: READ_A, confirmed: false },
+    });
+    expect(out['11']).toEqual({ value: ['US'], source: { kind: 'record', confirmed: false, read: READ_B } });
+    expect(out['1']).toEqual(state['1']); // typed stays typed
+    // nothing at all comes back confirmed except typed answers
+    for (const e of Object.values(out)) {
+      if (e!.source.kind === 'prefilled' || e!.source.kind === 'record') expect(e!.source.confirmed).toBe(false);
+      expect(e!.source.kind).not.toBe('changed');
+    }
+  });
+
+  it('a restored record is written back as from_earlier_record for a changed answer, and prefilled_confirmed only once ticked', () => {
+    let state = withSource(base(), '5', { kind: 'prefilled', quotes: [{ option: 'people', quote: 'client names' }], read: READ_A, confirmed: true }, ['people']);
+    state = withSource(state, '11', { kind: 'changed', from: [{ option: 'UK', quote: 'Our UK team' }], read: READ_B }, ['US']);
+    const restored = answersFromRecord(toAnswerSources(state, DESCRIPTION), policy);
+    // un-ticked: neither is written at all (the form cannot reach Confirm like this)
+    expect(toAnswerSources(restored, DESCRIPTION).answers.map((a) => a.question_id)).not.toContain('5');
+    expect(toAnswerSources(restored, DESCRIPTION).answers.map((a) => a.question_id)).not.toContain('11');
+    const ticked = {
+      ...restored,
+      '5': { ...restored['5']!, source: { ...(restored['5']!.source as Extract<AnswerSource, { kind: 'prefilled' }>), confirmed: true } },
+      '11': { ...restored['11']!, source: { kind: 'record', confirmed: true } },
+    } as FormAnswerState;
+    const rows = toAnswerSources(ticked, DESCRIPTION).answers;
+    expect(rows.find((a) => a.question_id === '5')!.origin).toBe('prefilled_confirmed');
+    expect(rows.find((a) => a.question_id === '11')!.origin).toBe('from_earlier_record'); // never claims this person made the earlier change
   });
 
   it('restores a from_earlier_record answer as an unconfirmed record answer', () => {
@@ -312,5 +340,40 @@ describe('answersFromRecord - the inverse, over an untrusted record', () => {
     const out = answersFromRecord(record, policy);
     (record.answers.find((a: { question_id: string }) => a.question_id === '5').value as string[]).push('public');
     expect(out['5']!.value).toEqual(['people']);
+  });
+});
+
+describe('toAnswerSources - a question that is not shown is never a row (blind hardening)', () => {
+  it('drops a stale entry for a hidden question when the policy is given', () => {
+    // Question 6a is shown only after 6 = answers/drafts/suggests; this state answers 6 = read.
+    const state: FormAnswerState = { ...base(), '6': { value: 'read', source: { kind: 'typed' } }, '6a': { value: 'little', source: { kind: 'typed' } } };
+    const without = toAnswerSources(state, DESCRIPTION, policy).answers.map((a) => a.question_id);
+    expect(without).toContain('6');
+    expect(without).not.toContain('6a');
+  });
+
+  it('keeps a row for a question that IS shown (false-state)', () => {
+    const state: FormAnswerState = { ...base(), '6': { value: 'drafts', source: { kind: 'typed' } }, '6a': { value: 'little', source: { kind: 'typed' } } };
+    expect(toAnswerSources(state, DESCRIPTION, policy).answers.map((a) => a.question_id)).toContain('6a');
+  });
+});
+
+describe('restoreFromRecord - what was left blank on restore', () => {
+  it('names the questions whose recorded value the form no longer offers', () => {
+    const rows = [
+      { question_id: '10', value: 'small', origin: 'typed' },
+      { question_id: '9', value: 'maybe-ish', origin: 'typed' },
+      { question_id: '4', value: ['score'], origin: 'typed' },
+    ];
+    const r = restoreFromRecord({ reads: [], answers: rows }, policy);
+    expect(Object.keys(r.answerState)).toEqual(['10']);
+    expect(r.dropped).toEqual(['4', '9']); // in the form's order
+  });
+
+  it('names nothing when nothing was dropped (false-state), and ignores Question 2 and unknown ids', () => {
+    const written = toAnswerSources(base(), DESCRIPTION);
+    expect(restoreFromRecord(written, policy).dropped).toEqual([]);
+    const rows = [{ question_id: '2', value: 'x', origin: 'typed' }, { question_id: 'nope', value: 'x', origin: 'typed' }];
+    expect(restoreFromRecord({ reads: [], answers: rows }, policy).dropped).toEqual([]);
   });
 });
