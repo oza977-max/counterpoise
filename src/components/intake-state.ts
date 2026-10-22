@@ -529,6 +529,20 @@ export type IntakeAction =
       lastRead?: LastRead;
       assumptions: Assumption[];
     }
+  // R18-D2 (§27.10). "Correct this check" on the register: the case's description and its answers, restored from
+  // its saved record (answersFromRecord), reopen on the FORM as a correction. The register keeps no graph, so
+  // `originalGraph` is the one the caller rebuilt from the same restored answers; `useCaseId` and
+  // `originalVerdictId` make it the same correction CORRECT_VERDICT_WITH_FORM makes (Back refused, verdict_corrected).
+  // Allowed from any step but evaluation_pending, because the caller is the register, not the verdict screen.
+  | {
+      type: 'OPEN_CORRECTION_FROM_RECORD';
+      originalGraph: DataFlowGraph;
+      useCaseId: string;
+      originalVerdictId: string;
+      description: string;
+      answerState: FormAnswerState;
+      assumptions: Assumption[];
+    }
   // R16-C (§3): "Change an answer" on the UnderstoodSummary. Deliberately
   // its OWN action rather than reusing STEP_BACK — STEP_BACK's existing
   // reducer case and canStepBack's UI gate stay exactly as they are
@@ -1650,6 +1664,25 @@ export function intakeReducer(state: IntakeState, action: IntakeAction): IntakeS
         plainAnswers: toPlainAnswers(action.answerState, action.description),
         answerState: action.answerState,
         ...(action.lastRead ? { lastRead: action.lastRead } : {}),
+        assumptions: action.assumptions,
+        originalVerdictId: action.originalVerdictId,
+        originalGraph: action.originalGraph,
+      };
+
+    // R18-D2 (§27.10). See the action's comment. `lastRead` is seeded with the opened description's own
+    // fingerprint and the outcome 'not-read': the text counts as already dealt with, so nothing asks a model
+    // about it again, and the outcome claims nothing about a read this session (the record does not say what text
+    // was read). A correction has no Back, so no read can be started from here in any case.
+    case 'OPEN_CORRECTION_FROM_RECORD':
+      if (state.step === 'evaluation_pending') return state;
+      return {
+        step: 'graph_extraction',
+        description: action.description,
+        method: 'form',
+        useCaseId: action.useCaseId,
+        plainAnswers: toPlainAnswers(action.answerState, action.description),
+        answerState: action.answerState,
+        lastRead: { fingerprint: textFingerprint(action.description), outcome: 'not-read' },
         assumptions: action.assumptions,
         originalVerdictId: action.originalVerdictId,
         originalGraph: action.originalGraph,

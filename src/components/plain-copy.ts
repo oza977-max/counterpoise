@@ -1665,6 +1665,12 @@ export const R18_COPY = {
   HANDOFF_EXPORT_STATEMENT: 'This file contains the description of every case in it, and any quotes taken from them.',
   HANDOFF_IMPORT_PROVENANCE:
     "Where each answer came from, in a file you import, is whatever the person who made the file recorded. The checks above do not verify it, or who made the file.",
+  // ── Round 18-D2: correcting a check from the register (§27.10) ──
+  CORRECT_THIS_CHECK_LABEL: 'Correct this check',
+  // Shown beside the action and only when it is shown. Each clause is true of the build: opening writes nothing
+  // (the correction is written at Confirm), and opening replaces whatever unfinished check this tab holds.
+  CORRECT_THIS_CHECK_NOTE:
+    'Opens this check on the form with your answers filled in. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
 } as const;
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────

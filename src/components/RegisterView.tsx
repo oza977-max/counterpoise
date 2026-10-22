@@ -9,6 +9,7 @@ import type { PolicyFile } from '../engine/types';
 import type { ProvisionalReason } from '../engine/provisional';
 import { classifyProvisionalReason } from './VerdictDisplay';
 import { STAGE_LABELS, STATUS_LABEL } from './field-copy';
+import type { CorrectionOpening } from './correction-from-record';
 
 // Rule 4 (cross-cutting.md §7): presentation-only, calls store functions,
 // no direct IndexedDB/audit access. register-lifecycle.md §10.
@@ -27,13 +28,15 @@ interface RegisterViewProps {
   selectedId: string | null;
   onSelectRow: (id: string) => void;
   onCloseDetail: () => void;
+  // R18-D2 (§27.10): passed to the detail's "Correct this check". App opens the intake on the form.
+  onCorrectFromRecord?: (opening: CorrectionOpening) => void;
 }
 
 // code-review-004 F15: this was a third, local copy of the exact map
 // field-copy.ts consolidated (its comment claims the consolidation was
 // complete — this file predated it and was missed). One source now.
 
-export default function RegisterView({ role, currentPolicyVersion, policy, selectedId, onSelectRow, onCloseDetail }: RegisterViewProps) {
+export default function RegisterView({ role, currentPolicyVersion, policy, selectedId, onSelectRow, onCloseDetail, onCorrectFromRecord }: RegisterViewProps) {
   const [rows, setRows] = useState<UseCaseSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [policyUpdatePending, setPolicyUpdatePending] = useState(false);
@@ -416,6 +419,7 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
         role={role}
         policy={policy}
         onBack={onCloseDetail}
+        onCorrectFromRecord={onCorrectFromRecord}
       />
     );
   }

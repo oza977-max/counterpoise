@@ -69,6 +69,10 @@ import {
 } from './plain-copy';
 import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
+import { correctionOpening, effectiveDescription } from './correction-from-record';
+import type { CorrectionOpening } from './correction-from-record';
+import { currentVerdictAttestationFields } from './RegisterDetail';
+import { toAnswerSources } from '../engine/answer-sources';
 import GraphView from './GraphView';
 import StepTracker, { describeStep } from './StepTracker';
 import QuestionnaireStep from './QuestionnaireStep';
@@ -121,7 +125,16 @@ function ratingInstructionsFor(description: string | undefined): string[] {
   return lastRatingFound;
 }
 
-export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?: number } = {}) {
+export default function IntakeFlow({
+  newPrecheckNonce = 0,
+  correctionRequest = null,
+  onCorrectionOpened,
+}: {
+  newPrecheckNonce?: number;
+  // R18-D2 (§27.10): a case the register asked to reopen on the form. Taken once; see the effect below.
+  correctionRequest?: CorrectionOpening | null;
+  onCorrectionOpened?: () => void;
+} = {}) {
   // explore-001 D-002/D-003: restore any in-flight draft so a refresh,
   // browser Back, or a trip to the Register mid-intake no longer discards
   // the description, the guided-form answers and the extracted graph.
@@ -217,6 +230,21 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     if (state.step === 'verdict' || adoptedFrom) handleStartOver();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newPrecheckNonce]);
+
+  // R18-D2 (§27.10): open the case the register handed over, once. The caller is the register, so whatever this
+  // tab held is replaced: handleStartOver clears both drafts and every guard (the same reset "Start over" makes),
+  // then the reducer opens the form as a correction (OPEN_CORRECTION_FROM_RECORD). Nothing is written here; the
+  // only audit write of a correction is Confirm. A ref keeps StrictMode's second effect run from opening it twice.
+  const openedCorrection = useRef<CorrectionOpening | null>(null);
+  useEffect(() => {
+    if (correctionRequest === null || openedCorrection.current === correctionRequest) return;
+    openedCorrection.current = correctionRequest;
+    handleStartOver();
+    setSubmittedDescription(correctionRequest.description);
+    dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...correctionRequest });
+    onCorrectionOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [correctionRequest]);
 
   function handleStartOver() {
     // Final review M-1: a failed-save message belongs to the case it was
@@ -1643,6 +1671,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // event is never modified (append-only, per-event UUIDs).
     const isCorrection = Boolean(originalVerdictId);
 
+    // R18-D2 (§27.13 Writer): where every confirmed answer came from, worked out ONCE for this confirm attempt,
+    // here, under the case lock the caller holds, and put on the one event this attempt writes for the
+    // confirmation (graph_confirmed, or verdict_corrected for a correction). There is no other writer. A retry
+    // after a failed evaluation is a new attempt: it comes through here again with the same answerState, so its
+    // own graph_confirmed carries the same sources. Pure and deterministic; nothing here touches the trail.
+    const answerSources = confirmedAnswerState ? toAnswerSources(confirmedAnswerState, typedDescription ?? '') : undefined;
+
     // CR7-21/22. Read once, inside the case lock: which of this confirm's
     // corrections are NOT already on the trail since the last result (see
     // correctionsNotOnTrail). They are written BEFORE evaluate(), not after —
@@ -1752,6 +1787,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // confirmation was based on — written only when non-empty, same
           // spread-if-present discipline as the three fields above.
           ...(confirmedAssumptions.length > 0 ? { assumptions: confirmedAssumptions } : {}),
+          // R18-D2 (§27.13): see answerSources above.
+          ...(answerSources ? { answer_sources: answerSources } : {}),
         },
       });
     }
@@ -1881,6 +1918,14 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // R16-D2 §4 (D-81): same field as graph_confirmed's, on whichever
           // event recorded THIS correction's own confirmation.
           ...(confirmedAssumptions.length > 0 ? { assumptions: confirmedAssumptions } : {}),
+          // R18-D2 (§27.13): the sources of THIS correction's own confirmation (see answerSources above), and the
+          // description only when it differs from the one now in force - the latest correction's, else the one the
+          // case was created with. A correction that puts the text back therefore writes it, so the register
+          // never keeps showing an older "as corrected" text; one that leaves it alone writes none.
+          ...(answerSources ? { answer_sources: answerSources } : {}),
+          ...(typedDescription !== undefined && typedDescription !== effectiveDescription(existingEvents)
+            ? { description: typedDescription }
+            : {}),
           // R16-D2 §4b (D-97): see the computation above.
           ...(evidenceScope ? { evidence_scope: evidenceScope } : {}),
         },
@@ -2037,6 +2082,27 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         assumptions: lastConfirmed.assumptions,
       });
       return;
+    }
+    // R18-D2 (closes the R18-A forward note): the answers are not in hand (lastConfirmed is gone, or has none),
+    // but the case's own record may say where every answer came from - then it reopens on the FORM from that
+    // record, the same way the register's "Correct this check" does, instead of the retired card review. A case
+    // whose record has no answer_sources (an older case) still takes the fallback below; that path is R18-E's.
+    if (lastGraph.intake_method === 'structured_form' && policyResult.valid) {
+      const fields = currentVerdictAttestationFields(verdictAuditEvents);
+      if (fields.answer_sources !== undefined) {
+        const opening = correctionOpening({
+          useCaseId: verdict.use_case_id,
+          originalVerdictId: verdict.id,
+          graphVersion: verdict.graph_version,
+          description: effectiveDescription(verdictAuditEvents) || submittedDescription,
+          sources: fields.answer_sources,
+          policy: policyResult.policy,
+        });
+        if (opening) {
+          dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...opening });
+          return;
+        }
+      }
     }
     dispatch({
       type: 'CORRECT_VERDICT',

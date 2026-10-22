@@ -22,6 +22,8 @@ import { getCurrentKnowledgeLensYaml } from '../store/knowledge-lens-source';
 import KnowledgeLensPanel from './KnowledgeLensPanel';
 import AnswerSourcesPanel from './AnswerSourcesPanel';
 import type { AnswerSources } from '../engine/prefill-types';
+import { correctionOpening, effectiveDescription, restorableAnswers } from './correction-from-record';
+import type { CorrectionOpening } from './correction-from-record';
 
 // V1.2-A (design-gap-audit B3/B4/B5/B6). Rule 4 (cross-cutting.md §7):
 // presentation-only — renders the REAL audit store via getAll()
@@ -35,6 +37,9 @@ interface RegisterDetailProps {
   // absence of a policy is not evidence of absent evidence.
   policy?: PolicyFile;
   onBack: () => void;
+  // R18-D2 (§27.10). Given by the register's host (App), which can open the intake on the form. Without it the
+  // action is not offered at all.
+  onCorrectFromRecord?: (opening: CorrectionOpening) => void;
 }
 
 // Per-type detail lines derived from the real payload union — never a
@@ -234,7 +239,7 @@ export function earlierSourcesDropped(events: AuditEvent[]): boolean {
   });
 }
 
-export default function RegisterDetail({ useCaseId, role, policy, onBack }: RegisterDetailProps) {
+export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorrectFromRecord }: RegisterDetailProps) {
   const [summary, setSummary] = useState<UseCaseSummary | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
   // code-review-005 round 2, N4: load() had no error path at all — a
@@ -276,6 +281,8 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
   const [dissentError, setDissentError] = useState<string | null>(null);
   const [dissentBusy, setDissentBusy] = useState(false);
   const dissentInFlight = useRef(false);
+  // R18-D2: a double press of "Correct this check" must open the case once (a synchronous guard; state lands too late).
+  const correctInFlight = useRef(false);
 
   // ADR-RL-R3-1: READ the verdict from the audit trail the page already
   // loads. Never recompute — the verdict a reviewer signs must be the one
@@ -1064,6 +1071,40 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
           someone still has to act on it.
         </p>
       )}
+
+      {/* R18-D2 (§27.10): correcting a check is a submitter action, never the reviewer's, and only for a case whose
+          current record says where its answers came from (an older case is the older-case path). The action
+          reopens the case on the form; nothing is written until the person confirms there. */}
+      {(() => {
+        if (role !== '1LoD' || !onCorrectFromRecord || !policy || !latestVerdict) return null;
+        const f = currentVerdictAttestationFields(events);
+        const description = effectiveDescription(events);
+        if (f.answer_sources === undefined || restorableAnswers(f.answer_sources, description, policy) === null) return null;
+        return (
+          <div className="register-detail__correct">
+            <button
+              type="button"
+              onClick={() => {
+                if (correctInFlight.current) return;
+                const opening = correctionOpening({
+                  useCaseId: summary.use_case_id,
+                  originalVerdictId: latestVerdict.id,
+                  graphVersion: latestVerdict.graph_version,
+                  description,
+                  sources: f.answer_sources,
+                  policy,
+                });
+                if (!opening) return;
+                correctInFlight.current = true;
+                onCorrectFromRecord(opening);
+              }}
+            >
+              {R18_COPY.CORRECT_THIS_CHECK_LABEL}
+            </button>
+            <p className="register-detail__correct-note">{R18_COPY.CORRECT_THIS_CHECK_NOTE}</p>
+          </div>
+        );
+      })()}
 
       {/* R18-D1 (§27.13): where each answer came from, read from the record through the one correction-aware
           reader. Renders nothing for a case that carries no answer_sources, so an older case reads as before. */}
