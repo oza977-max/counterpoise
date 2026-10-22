@@ -47,7 +47,7 @@ async function caseEvents(): Promise<AuditEvent[]> {
 
 describe('R18-D2 acceptance: confirm, read it in the register, correct it from the register', () => {
   it(
-    'TC-R18-GI-10-06: acceptance - a confirmed case writes its sources once, shows in the register, and is corrected from there',
+    'R18-D2 acceptance - a confirmed case writes its sources once, shows in the register, and is corrected from there',
     async () => {
       const fake = createFakeModel({ kind: 'honours-format', reply: REPLY });
       vi.stubGlobal('fetch', fake.fetch);

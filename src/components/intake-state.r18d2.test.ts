@@ -39,7 +39,7 @@ const action = {
 };
 
 describe('OPEN_CORRECTION_FROM_RECORD', () => {
-  it('TC-R18-GI-10-06: from a fresh intake opens the form as a correction, with every answer restored', () => {
+  it('from a fresh intake opens the form as a correction, with every answer restored', () => {
     const next = intakeReducer({ step: 'description_entry', description: '' }, action);
     expect(next).toEqual({
       step: 'graph_extraction',
@@ -56,12 +56,12 @@ describe('OPEN_CORRECTION_FROM_RECORD', () => {
     });
   });
 
-  it('TC-R18-GI-10-06: also opens from the verdict step (the reload fallback of handleCorrectVerdict)', () => {
+  it('also opens from the verdict step (the reload fallback of handleCorrectVerdict)', () => {
     const next = intakeReducer({ step: 'verdict', verdictId: 'uc-1' }, action);
     expect(next).toMatchObject({ step: 'graph_extraction', useCaseId: 'uc-1', originalVerdictId: 'v-1' });
   });
 
-  it('TC-R18-GI-10-06: Back is refused on the opened correction, and the state stays what it was', () => {
+  it('Back is refused on the opened correction, and the state stays what it was', () => {
     const opened = intakeReducer({ step: 'description_entry', description: '' }, action);
     expect(intakeReducer(opened, { type: 'STEP_BACK' })).toBe(opened);
   });

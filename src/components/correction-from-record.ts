@@ -53,7 +53,8 @@ export interface CorrectionOpening {
 export function correctionOpening(args: {
   useCaseId: string;
   originalVerdictId: string;
-  graphVersion: number;
+  /** The version the verdict was produced from; a verdict that predates the field reads as version 1. */
+  graphVersion: number | undefined;
   description: string;
   sources: unknown;
   policy: PolicyFile;
@@ -67,7 +68,7 @@ export function correctionOpening(args: {
     originalVerdictId: args.originalVerdictId,
     description: args.description,
     answerState,
-    originalGraph: { ...built, version: args.graphVersion },
+    originalGraph: { ...built, version: Number.isInteger(args.graphVersion) && args.graphVersion! >= 1 ? args.graphVersion! : 1 },
     assumptions: describeAssumptions(assumptions),
   };
 }
