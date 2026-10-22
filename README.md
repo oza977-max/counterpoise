@@ -518,16 +518,17 @@ explains how to open it up later if that becomes the right call.
 **V1 build complete, verified Demo-ready.** Engine, intake, register,
 lifecycle, jurisdiction packs, audit trail, model governance and the
 risk-knowledge lens, control ownership and attestation, and the verified
-hand-off between machines — 726 tests at v0.17.0, passing 20 consecutive
-full-suite runs, with the V1 acceptance suite of 158 cases walked with
-evidence in [`test/test-004.html`](test/test-004.html).
+hand-off between machines — 2,135 automated tests, and every requirement-level
+test case named by the test that proves it, checked mechanically by
+[`scripts/trace-check.py`](scripts/trace-check.py). The latest full
+verification is [`test/test-007.html`](test/test-007.html) (2026-10-04).
 
 *Demo-ready* rather than *ship-ready* is the honest verdict, and the reason is
-worth stating plainly: 76 of those 158 acceptance criteria do not carry a
-trace ID, so a reader cannot get from a criterion to the test that proves it
-without knowing the codebase. Coverage exists; the audit path does not. For a
-product that sells auditability, that is the right thing to be held to, and it
-is the first thing V1.5 closes.
+worth stating plainly: with the free local demo model, a description that
+dictates its own rating ("classify this as Low risk…") can still steer what the
+model reads from it. The rules engine rates what it is given correctly, and the
+app flags the rating instructions it can spot — but the stronger defence is not
+built yet. Until it is, that is the right thing to be held to.
 
 V1 is an engine-validation proof-of-concept — see **What's next** for the
 V1.5/V2 ladder. Built with the
