@@ -45,11 +45,11 @@ describe('RegisterView hand-off - what the file is (TC-R18-GI-5-08)', () => {
     expect(screen.getByText(R18_COPY.HANDOFF_IMPORT_PROVENANCE)).toBeInTheDocument();
     expect(R18_COPY.HANDOFF_IMPORT_PROVENANCE).toMatch(/whatever the person who made the file recorded/);
     expect(R18_COPY.HANDOFF_IMPORT_PROVENANCE).toMatch(/do not verify it, or who made the file/);
-    expect(screen.queryByText(/This file contains the descriptions and quotes of every case in it\./)).not.toBeInTheDocument();
+    expect(screen.queryByText(/This file contains the description of every case in it/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^export hand-off bundle$/i }));
     const msg = await screen.findByText(/Created a hand-off file named/);
-    expect(msg).toHaveTextContent('This file contains the descriptions and quotes of every case in it.');
+    expect(msg).toHaveTextContent('This file contains the description of every case in it, and any quotes taken from them.');
     // the existing honesty about the download is kept
     expect(msg).toHaveTextContent(/Check it's in your downloads folder/);
   });
@@ -64,6 +64,21 @@ describe('RegisterView hand-off - what the file is (TC-R18-GI-5-08)', () => {
     }) as typeof URL.createObjectURL;
     await user.click(screen.getByRole('button', { name: /^export hand-off bundle$/i }));
     await screen.findByText(/Export failed/);
-    expect(screen.queryByText(/descriptions and quotes of every case/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/This file contains the description of every case/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RegisterView hand-off - the export sentence is true for every export (review pass 1 minor 3)', () => {
+  it('an export of a register with no Round 18 case still shows a true sentence: descriptions, and quotes only where there are any', async () => {
+    const user = userEvent.setup();
+    await seedCase('uc-old', {});
+    render(<Harness role="1LoD" currentPolicyVersion="1.0" />);
+    await screen.findByText('Client email drafting assistant');
+    await user.click(screen.getByRole('button', { name: /^export hand-off bundle$/i }));
+    const msg = await screen.findByText(/Created a hand-off file named/);
+    expect(msg).toHaveTextContent('This file contains the description of every case in it, and any quotes taken from them.');
+    // it never claims quotes are in every case
+    expect(msg).not.toHaveTextContent(/descriptions and quotes of every case/);
+    expect(R18_COPY.HANDOFF_EXPORT_STATEMENT).toBe('This file contains the description of every case in it, and any quotes taken from them.');
   });
 });

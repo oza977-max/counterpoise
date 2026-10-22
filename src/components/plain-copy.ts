@@ -1658,7 +1658,7 @@ export const R18_COPY = {
   ORIGIN_QUOTE_GONE: 'the quote is no longer in your description',
   CORRECTED_DESCRIPTION_HEADING: 'Description, as corrected',
   // The hand-off file (GI-5-08): what it holds, and what its sources are worth.
-  HANDOFF_EXPORT_STATEMENT: 'This file contains the descriptions and quotes of every case in it.',
+  HANDOFF_EXPORT_STATEMENT: 'This file contains the description of every case in it, and any quotes taken from them.',
   HANDOFF_IMPORT_PROVENANCE:
     "Where each answer came from, in a file you import, is whatever the person who made the file recorded. The checks above do not verify it, or who made the file.",
 } as const;
