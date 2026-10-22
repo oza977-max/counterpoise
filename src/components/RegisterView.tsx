@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getUseCases, hasPendingPolicyUpdate, exportAll } from '../store/register';
+import { R18_COPY } from './plain-copy';
 import { exportBundle, importBundle, replaceWithBundle, finishRegisterReplace, type ImportOutcome, type AuditTip } from '../store/handoff';
 import { AIGATE_USE_CASE_ID } from '../seeds/aigate-self-assessment';
 import RegisterDetail from './RegisterDetail';
@@ -122,7 +123,7 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
       // and this content) and asks the user to confirm the rest themselves.
       setHandoffMsg({
         tone: 'ok',
-        text: `Created a hand-off file named ${result.filename} with ${result.bundle.audit_events.length} audit events and ${result.bundle.register.nodes.length} register entries. Check it's in your downloads folder, then send it to the other reviewer directly.`,
+        text: `Created a hand-off file named ${result.filename} with ${result.bundle.audit_events.length} audit events and ${result.bundle.register.nodes.length} register entries. Check it's in your downloads folder, then send it to the other reviewer directly. ${R18_COPY.HANDOFF_EXPORT_STATEMENT}`,
       });
     } else {
       setHandoffMsg({ tone: 'error', text: `Export failed: ${result.error}` });
@@ -521,6 +522,8 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
           merge only when one continues the other&apos;s history; otherwise you can choose to replace yours,
           after saving a backup.
         </p>
+        {/* R18-D1 (GI-5-08, §27.13): the sources in a file are self-asserted, and the chain is not authentication. */}
+        <p className="register-view__handoff-provenance">{R18_COPY.HANDOFF_IMPORT_PROVENANCE}</p>
         {handoffMsg && (
           <p
             className={`register-view__handoff-msg register-view__handoff-msg--${handoffMsg.tone}`}
