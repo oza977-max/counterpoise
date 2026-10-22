@@ -150,6 +150,13 @@ export default function App() {
 
   // F1: RegisterView's row-click and back-link route through these — the
   // component no longer touches window.history itself.
+  // R18-D2 review pass 1: a correction the register handed over is for the intake screen only. If the person
+  // leaves before the intake takes it (the browser's Back, a sidebar click), it is dropped, so a stale request
+  // can never reopen later and replace a draft they have since started.
+  useEffect(() => {
+    if (view !== 'intake') setCorrectionRequest(null);
+  }, [view]);
+
   function correctFromRecord(opening: CorrectionOpening) {
     setCorrectionRequest(opening);
     navigate('intake');

@@ -15,6 +15,7 @@ import { WORKED_EXAMPLES } from '../../engine/worked-examples';
 import { seedCase, DESCRIPTION, READ_LOCAL } from '../../test-support/answer-sources-fixtures';
 import type { FormAnswerState } from '../../engine/prefill-types';
 import { SLOW_FLOW_MS } from './fillText';
+import { findQuestion, restoreDroppedSentence } from '../plain-copy';
 import { confirmAndReachVerdict, ofType, sourcesOf, trailOf } from './r18d2Flow';
 
 // R18-D2, TC-R18-GI-10-06: nothing from an earlier session is in memory (a fresh App over a seeded register). The
@@ -64,6 +65,8 @@ describe('Correct this check, after a reload', () => {
       expect(screen.getByRole('checkbox', { name: /united states/i })).toBeChecked();
       expect(screen.getByRole('radio', { name: /^only me or my own team$/i })).toBeChecked();
       expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
+      // nothing was left blank, so no note says so (false-state)
+      expect(screen.queryByText(/no longer match the form's choices/i)).not.toBeInTheDocument();
       // Owner decision 2026-10-22: the confirmed pre-fill keeps its quote but is NOT ticked; the changed answer and the
       // earlier-record answer are earlier-record answers. All three owe this person's own tick.
       expect(screen.getByRole('checkbox', { name: /^i've checked this answer.*what information/i })).not.toBeChecked();
@@ -141,6 +144,28 @@ describe('Correct this check, after a reload', () => {
     expect(origin('5')).toBe('prefilled_confirmed');
     expect(origin('7')).toBe('prefilled_confirmed');
     expect(origin('11')).toBe('from_earlier_record');
+  });
+
+  // Pass-1 Minor 4: a recorded row the form no longer offers is left blank, and the person is told which.
+  it('names the questions left blank when a recorded answer no longer fits the form, and only then', async () => {
+    const id = crypto.randomUUID();
+    const D = own('dropped');
+    const written = toAnswerSources(record, D);
+    // a stale row: Question 3model is shown only for some platforms, and this record's Question 3 is not one of them
+    const withStale = { ...written, answers: [...written.answers, { question_id: '3model', value: 'Old model', origin: 'typed' }] };
+    await seedCase(id, { sources: withStale, label: 'Dropped row D2', description: D });
+    await updateUseCaseVerdictSummary(id, { currentVerdictId: `v-${id}` });
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await user.click(screen.getByText('▤ Register'));
+    await user.click(await screen.findByText('Dropped row D2'));
+    await user.click(await screen.findByRole('button', { name: /^correct this check$/i }));
+    await screen.findByLabelText(/what do you want to call it/i, undefined, { timeout: 5000 });
+    const note = screen.getByText(/no longer match the form's choices and were left blank:/i);
+    expect(note).toHaveAttribute('role', 'status');
+    expect(note.textContent).toBe(restoreDroppedSentence([findQuestion('3model')!.text]));
+    // one note, not one per row
+    expect(screen.getAllByText(/no longer match the form's choices/i)).toHaveLength(1);
   });
 
   it('a case with no answer_sources has no "Correct this check" in the app (the older-case path is a later chunk)', async () => {

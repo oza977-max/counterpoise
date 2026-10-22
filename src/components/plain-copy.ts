@@ -1673,7 +1673,15 @@ export const R18_COPY = {
   // whatever unfinished check this tab holds.
   CORRECT_THIS_CHECK_NOTE:
     'Opens this check on the form with its recorded answers filled in. Answers a model filled in, or carried from an earlier record, need your tick again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+  // Owner-requested (review pass 1, 2026-10-22): shown on a form reopened from a record when a recorded answer
+  // could not be put back because the form no longer offers it. Only when something was left blank.
+  RESTORE_DROPPED_PREFIX: "Some recorded answers no longer match the form's choices and were left blank:",
 } as const;
+
+/** The one form note for answers left blank on restore: the prefix, then the questions, then a full stop. */
+export function restoreDroppedSentence(questions: readonly string[]): string {
+  return `${R18_COPY.RESTORE_DROPPED_PREFIX} ${questions.join('; ')}.`;
+}
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────
 

@@ -63,6 +63,7 @@ import {
   VENDOR_UNSURE_ASSUMPTION,
   ratingWarningFor,
   R18_COPY,
+  restoreDroppedSentence,
   QUESTION_WORDS,
   formReadNote,
   placeSentence,
@@ -236,17 +237,23 @@ export default function IntakeFlow({
   // then the reducer opens the form as a correction (OPEN_CORRECTION_FROM_RECORD). Nothing is written here; the
   // only audit write of a correction is Confirm. A ref keeps StrictMode's second effect run from opening it twice.
   const openedCorrection = useRef<CorrectionOpening | null>(null);
+  // R18-D2 review pass 1: the questions whose recorded answer the form no longer offers, left blank on a restore.
+  // The form says so in one note; it belongs to the case just opened, so Start over clears it.
+  const [restoreDropped, setRestoreDropped] = useState<string[]>([]);
   useEffect(() => {
     if (correctionRequest === null || openedCorrection.current === correctionRequest) return;
     openedCorrection.current = correctionRequest;
     handleStartOver();
     setSubmittedDescription(correctionRequest.description);
-    dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...correctionRequest });
+    const { droppedQuestions, ...opening } = correctionRequest;
+    dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...opening });
+    setRestoreDropped(droppedQuestions);
     onCorrectionOpened?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [correctionRequest]);
 
   function handleStartOver() {
+    setRestoreDropped([]);
     // Final review M-1: a failed-save message belongs to the case it was
     // about — never carried onto the next one.
     setDecisionError(null);
@@ -1676,7 +1683,7 @@ export default function IntakeFlow({
     // confirmation (graph_confirmed, or verdict_corrected for a correction). There is no other writer. A retry
     // after a failed evaluation is a new attempt: it comes through here again with the same answerState, so its
     // own graph_confirmed carries the same sources. Pure and deterministic; nothing here touches the trail.
-    const answerSources = confirmedAnswerState ? toAnswerSources(confirmedAnswerState, typedDescription ?? '') : undefined;
+    const answerSources = confirmedAnswerState ? toAnswerSources(confirmedAnswerState, typedDescription ?? '', policyResult.valid ? policyResult.policy : undefined) : undefined;
 
     // CR7-21/22. Read once, inside the case lock: which of this confirm's
     // corrections are NOT already on the trail since the last result (see
@@ -2099,7 +2106,9 @@ export default function IntakeFlow({
           policy: policyResult.policy,
         });
         if (opening) {
-          dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...opening });
+          const { droppedQuestions, ...open } = opening;
+          dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...open });
+          setRestoreDropped(droppedQuestions);
           return;
         }
       }
@@ -2655,6 +2664,13 @@ export default function IntakeFlow({
                 plain-copy.ts), never the person's answers, so the old
                 suffix blamed the wrong party on every single occurrence. */}
             {evaluationError && <p role="alert">Evaluation could not complete: {evaluationError}</p>}
+            {/* R18-D2 review pass 1: a correction reopened from a record, when a recorded answer could not be put
+                back because the form no longer offers it. Only then; the questions are named. */}
+            {state.originalVerdictId !== undefined && restoreDropped.length > 0 && (
+              <p role="status" className="plain-form__read-note">
+                {restoreDroppedSentence(restoreDropped)}
+              </p>
+            )}
             {reviewGateError && (
               <p role="alert" className="intake-flow__gate-error">
                 {reviewGateError}

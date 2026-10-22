@@ -8,7 +8,7 @@
 // numbered with the version the case's verdict was produced from. Its node ids are therefore new ones: they name
 // the rebuilt graph, since the original graph was never stored.
 
-import { answersFromRecord } from '../engine/answer-sources';
+import { restoreFromRecord } from '../engine/answer-sources';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
 import { toPlainAnswers } from '../engine/form-answer-state';
 import { missingQuestionIds } from '../engine/form-visibility';
@@ -16,7 +16,9 @@ import { plainAnswersToFormValues } from '../engine/plain-intake';
 import type { FormAnswerState } from '../engine/prefill-types';
 import type { DataFlowGraph, PolicyFile } from '../engine/types';
 import type { AuditEvent } from '../store/types';
-import { describeAssumptions } from './plain-copy';
+import { describeAssumptions, findQuestion } from './plain-copy';
+import { visibleText } from '../engine/visible-text';
+import type { QuestionId } from '../engine/plain-questions';
 import type { Assumption } from './plain-copy';
 
 /** The description the case stands on now: the latest correction that edited it, else the one it was created
@@ -34,9 +36,22 @@ export function effectiveDescription(events: readonly AuditEvent[]): string {
  *  question the form requires has an answer. Null otherwise (the action is then not offered - an older or damaged
  *  record is the older-case path, E's). Pure. */
 export function restorableAnswers(sources: unknown, description: string, policy: PolicyFile): FormAnswerState | null {
+  return restoredFromRecord(sources, description, policy)?.answerState ?? null;
+}
+
+/** The restored answers and the questions of the form (in words) whose recorded answer had to be left blank. */
+function restoredFromRecord(
+  sources: unknown,
+  description: string,
+  policy: PolicyFile,
+): { answerState: FormAnswerState; droppedQuestions: string[] } | null {
   if (description.trim() === '') return null;
-  const answerState = answersFromRecord(sources, policy);
-  return missingQuestionIds(toPlainAnswers(answerState, description), policy).length === 0 ? answerState : null;
+  const { answerState, dropped } = restoreFromRecord(sources, policy);
+  if (missingQuestionIds(toPlainAnswers(answerState, description), policy).length > 0) return null;
+  return {
+    answerState,
+    droppedQuestions: dropped.map((id) => visibleText(findQuestion(id as QuestionId)?.text ?? id)),
+  };
 }
 
 export interface CorrectionOpening {
@@ -46,6 +61,8 @@ export interface CorrectionOpening {
   answerState: FormAnswerState;
   originalGraph: DataFlowGraph;
   assumptions: Assumption[];
+  /** The questions (in words) whose recorded answer the form no longer offers, left blank. The form says so. */
+  droppedQuestions: string[];
 }
 
 /** What OPEN_CORRECTION_FROM_RECORD carries. Called when the person presses the action (not during render: it
@@ -59,8 +76,9 @@ export function correctionOpening(args: {
   sources: unknown;
   policy: PolicyFile;
 }): CorrectionOpening | null {
-  const answerState = restorableAnswers(args.sources, args.description, args.policy);
-  if (!answerState) return null;
+  const restored = restoredFromRecord(args.sources, args.description, args.policy);
+  if (!restored) return null;
+  const { answerState, droppedQuestions } = restored;
   const { values, assumptions } = plainAnswersToFormValues(toPlainAnswers(answerState, args.description), args.policy);
   const built = buildGraphFromForm(values, new Date().toISOString(), () => crypto.randomUUID());
   return {
@@ -70,5 +88,6 @@ export function correctionOpening(args: {
     answerState,
     originalGraph: { ...built, version: Number.isInteger(args.graphVersion) && args.graphVersion! >= 1 ? args.graphVersion! : 1 },
     assumptions: describeAssumptions(assumptions),
+    droppedQuestions,
   };
 }
