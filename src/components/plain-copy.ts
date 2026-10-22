@@ -1659,6 +1659,8 @@ export const R18_COPY = {
   ORIGIN_SUGGESTED_BY: 'suggested by',
   ORIGIN_QUOTE_GONE: 'the quote is no longer in your description',
   CORRECTED_DESCRIPTION_HEADING: 'Description, as corrected',
+  // Shown only when an earlier confirmation carried answer_sources and the latest correction carries none.
+  SOURCES_HISTORY_NOTE: 'An earlier confirmation recorded where its answers came from; this correction recorded none.',
   // The hand-off file (GI-5-08): what it holds, and what its sources are worth.
   HANDOFF_EXPORT_STATEMENT: 'This file contains the description of every case in it, and any quotes taken from them.',
   HANDOFF_IMPORT_PROVENANCE:

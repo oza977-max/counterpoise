@@ -218,6 +218,22 @@ export function currentVerdictAttestationFields(events: AuditEvent[]): {
   return {};
 }
 
+/** True when the latest correction carries no answer_sources but an earlier confirmation (or correction) did.
+ *  The register then shows one line so the missing rows are not mistaken for a case that never had any. */
+export function earlierSourcesDropped(events: AuditEvent[]): boolean {
+  let latest = -1;
+  events.forEach((e, i) => {
+    if (e.payload.type === 'verdict_corrected') latest = i;
+  });
+  if (latest < 0) return false;
+  const last = events[latest]!.payload;
+  if (last.type !== 'verdict_corrected' || last.answer_sources !== undefined) return false;
+  return events.slice(0, latest).some((e) => {
+    const p = e.payload;
+    return (p.type === 'graph_confirmed' || p.type === 'verdict_corrected') && typeof p.answer_sources === 'object' && p.answer_sources !== null;
+  });
+}
+
 export default function RegisterDetail({ useCaseId, role, policy, onBack }: RegisterDetailProps) {
   const [summary, setSummary] = useState<UseCaseSummary | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -1055,6 +1071,11 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
         const f = currentVerdictAttestationFields(events);
         return <AnswerSourcesPanel sources={f.answer_sources} correctedDescription={f.description} policy={policy} />;
       })()}
+      {earlierSourcesDropped(events) && (
+        <p className="register-detail__sources-history" role="note">
+          {R18_COPY.SOURCES_HISTORY_NOTE}
+        </p>
+      )}
 
       {/* ADR-RL-R3-1 / §15.1. The verdict a reviewer is being asked to attest
           to, rendered from the persisted record rather than recomputed.

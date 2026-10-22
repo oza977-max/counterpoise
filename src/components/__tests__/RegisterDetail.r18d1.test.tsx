@@ -329,3 +329,37 @@ describe('RegisterDetail - accessible names (review pass 1 minor 5)', () => {
     expect(screen.getByRole('region', { name: R18_COPY.CORRECTED_DESCRIPTION_HEADING })).toBeInTheDocument();
   });
 });
+
+describe('RegisterDetail - the history note (review pass 1 minor 6)', () => {
+  const NOTE = 'An earlier confirmation recorded where its answers came from; this correction recorded none.';
+
+  it('the copy is exactly the agreed sentence', () => {
+    expect(R18_COPY.SOURCES_HISTORY_NOTE).toBe(NOTE);
+  });
+
+  it('shows the note when an earlier confirmation carried sources and the latest correction carries none', async () => {
+    await open({ sources: realisticSources(), corrections: [{}] });
+    expect(screen.getByText(NOTE)).toBeInTheDocument();
+    expect(noSources()).toBeNull(); // the old rows still are not shown
+  });
+
+  it('does not show it when the latest correction carries sources', async () => {
+    await open({ sources: realisticSources(), corrections: [{ answer_sources: cloudSources() }] });
+    expect(screen.queryByText(NOTE)).toBeNull();
+  });
+
+  it('does not show it when no earlier record carried sources (an older case, corrected)', async () => {
+    await open({ corrections: [{}] });
+    expect(screen.queryByText(NOTE)).toBeNull();
+  });
+
+  it('does not show it for an uncorrected case, with or without sources', async () => {
+    await open({ sources: realisticSources() });
+    expect(screen.queryByText(NOTE)).toBeNull();
+  });
+
+  it('does not show it when the earlier sources are not an object the reader can use', async () => {
+    await open({ sources: 'junk', corrections: [{}] });
+    expect(screen.queryByText(NOTE)).toBeNull();
+  });
+});
