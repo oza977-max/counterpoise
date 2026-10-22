@@ -5,11 +5,20 @@
 // restored or edited draft can never show a stale "from your description" mark (DR8-F2-7).
 
 import { normForQuote } from './mentioned';
-import { shownQuestionIds, toPlainAnswers } from './form-visibility';
-import { structureFor } from './question-structure';
-import type { QuestionId } from './plain-questions';
+import { isValidMultiSelection, shownQuestionIds, toPlainAnswers } from './form-visibility';
+import { FREE_ANSWER_MAX_CHARS, isShown, QUESTION_STRUCTURE, structureFor, validOptionKeys } from './question-structure';
+import type { PlainAnswers, QuestionId } from './plain-questions';
 import { visibleText } from './visible-text';
-import type { AnswerSource, FormAnswerState, ModelPlace, PrefillCatalogue } from './prefill-types';
+import type {
+  AnswerSource,
+  AnswerSourceRecord,
+  AnswerSources,
+  FormAnswerState,
+  ModelPlace,
+  PrefillCatalogue,
+  QuoteRef,
+  ReadRecord,
+} from './prefill-types';
 import type { PolicyFile } from './types';
 
 /** True while this one quote still occurs (exactly, case-sensitive) in the whitespace-normalised description. */
@@ -273,4 +282,185 @@ export function readAnswerSources(raw: unknown, words: SourceWords): AnswerSourc
   }
   if (answers.length === 0 && reads.length === 0) return null;
   return { reads, answers, counts: { confirmedFilled, changed, answered } };
+}
+
+// ── R18-D2 (specs/intake-flow.md §27.13 Writer, §27.10): the WRITE side of the record, and its inverse ───────
+//
+// `toAnswerSources` is the one writer: it is called once per confirm attempt, from runConfirmAndEvaluate, and
+// nowhere else. `answersFromRecord` is the one inverse: it rebuilds the form's answers from a saved record for
+// "Correct this check". The record it reads is UNTRUSTED (a saved case, or a hand-off file someone else made and
+// sealed), so every field is checked as it is used, every string is bounded, and nothing is believed beyond what
+// it can be checked against: an answer comes back confirmed only when its origin word, its quotes and its read
+// are all well-formed; anything unknown becomes blank, and a pre-fill that cannot prove who read it comes back as
+// an earlier-record answer that still needs its tick.
+
+function copyValue(value: string | string[]): string | string[] {
+  return Array.isArray(value) ? [...value] : value;
+}
+
+function hasAnswer(value: string | string[]): boolean {
+  return Array.isArray(value) ? value.length > 0 : value !== '';
+}
+
+function copyQuotes(quotes: readonly QuoteRef[]): QuoteRef[] {
+  return quotes.map((q) => ({ option: q.option, quote: q.quote }));
+}
+
+/** The record of where each confirmed answer came from (§27.13), in the form's question order. Pure and
+ *  deterministic: the same state and description give the same bytes. Question 2 (the description) is never a
+ *  row. A `typed` or confirmed answer is a row; an answer that is not confirmed, a blank one and a not-carried
+ *  one are not (the form cannot reach Confirm with an unconfirmed answer, and a row would claim one). `reads`
+ *  holds each distinct model/place/host once, in first-seen order, and `read` is the index into it. */
+export function toAnswerSources(answerState: FormAnswerState, description: string): AnswerSources {
+  const reads: ReadRecord[] = [];
+  const answers: AnswerSourceRecord[] = [];
+  const indexOfRead = (r: ReadRecord): number => {
+    const at = reads.findIndex((x) => x.model === r.model && x.place === r.place && x.host === r.host);
+    if (at >= 0) return at;
+    reads.push({ model: r.model, place: r.place, host: r.host });
+    return reads.length - 1;
+  };
+  for (const q of QUESTION_STRUCTURE) {
+    if (q.id === '2') continue;
+    const entry = answerState[q.id as Exclude<QuestionId, '2'>];
+    if (!entry || !hasAnswer(entry.value)) continue;
+    const source = entry.source;
+    const value = copyValue(entry.value);
+    switch (source.kind) {
+      case 'typed':
+        answers.push({ question_id: q.id, value, origin: 'typed' });
+        break;
+      case 'prefilled':
+        if (!source.confirmed) break;
+        answers.push({
+          question_id: q.id,
+          value,
+          origin: 'prefilled_confirmed',
+          quotes: copyQuotes(source.quotes),
+          quote_in_final_description: quoteStillInText(source, description),
+          read: indexOfRead(source.read),
+        });
+        break;
+      case 'changed':
+        answers.push({
+          question_id: q.id,
+          value,
+          origin: 'prefilled_changed',
+          quotes: copyQuotes(source.from),
+          changed_from: copyQuotes(source.from),
+          quote_in_final_description: quoteStillInText(source, description),
+          read: indexOfRead(source.read),
+        });
+        break;
+      case 'record':
+        if (!source.confirmed) break;
+        answers.push({ question_id: q.id, value, origin: 'from_earlier_record' });
+        break;
+      case 'not-carried':
+        break;
+    }
+  }
+  return { reads, answers };
+}
+
+const MAX_RESTORE_ROWS = 40;
+const MAX_RESTORE_READS = 10;
+const MAX_RESTORE_QUOTES = 20;
+const MAX_ID = 40;
+const MAX_QUOTE = 300;
+const MAX_MODEL = 100;
+const MAX_HOST = 253;
+
+function restoreRead(v: unknown): ReadRecord | null {
+  if (!isRecord(v)) return null;
+  const { model, place, host } = v;
+  if (typeof model !== 'string' || model.length > MAX_MODEL) return null;
+  if (typeof place !== 'string' || !KNOWN_PLACES.has(place)) return null;
+  if (typeof host !== 'string' || host.length > MAX_HOST) return null;
+  return { model, place: place as ModelPlace, host };
+}
+
+/** Quotes that are all well-formed and bounded, or null. One bad quote makes the lot unusable: a pre-fill is
+ *  confirmed only on quotes that can be believed whole. */
+function restoreQuotes(v: unknown): QuoteRef[] | null {
+  if (!Array.isArray(v) || v.length === 0 || v.length > MAX_RESTORE_QUOTES) return null;
+  const out: QuoteRef[] = [];
+  for (const q of v) {
+    if (!isRecord(q)) return null;
+    const { option, quote } = q;
+    if (typeof option !== 'string' || option === '' || option.length > MAX_ID) return null;
+    if (typeof quote !== 'string' || quote === '' || quote.length > MAX_QUOTE) return null;
+    out.push({ option, quote });
+  }
+  return out;
+}
+
+/** The value, if the form would offer it now (given the answers kept so far); null otherwise. */
+function restoreValue(id: Exclude<QuestionId, '2'>, v: unknown, kept: PlainAnswers, policy: PolicyFile): string | string[] | null {
+  const q = structureFor(id);
+  if (!q) return null;
+  if (q.kind === 'free') {
+    return typeof v === 'string' && v.trim() !== '' && v.length <= FREE_ANSWER_MAX_CHARS ? v : null;
+  }
+  const offered = validOptionKeys(id, kept, policy);
+  if (q.kind === 'single') return typeof v === 'string' && offered.includes(v) ? v : null;
+  if (!Array.isArray(v) || !v.every((k): k is string => typeof k === 'string')) return null;
+  if (!isValidMultiSelection(id, v) || !v.every((k) => offered.includes(k))) return null;
+  return [...v];
+}
+
+/** The form's answers rebuilt from a saved `answer_sources` (§27.10), for "Correct this check". Walks the
+ *  questions in the form's order; a row is kept only if its question is shown for the answers kept so far, its
+ *  value is one the form offers now, and its origin is one of the four this build writes:
+ *   - `typed` stays typed;
+ *   - a pre-fill whose quotes and read are well-formed comes back confirmed, with both (`changed` stays changed);
+ *   - `from_earlier_record`, and a pre-fill that cannot be checked, come back as an UNCONFIRMED earlier-record
+ *     answer that needs its tick again;
+ *   - an unknown origin word is dropped (blank), never believed.
+ *  One row per question (the first wins); Question 2 and unknown ids are ignored. A copy; the record is untouched. */
+export function answersFromRecord(raw: unknown, policy: PolicyFile): FormAnswerState {
+  const out: FormAnswerState = {};
+  if (!isRecord(raw) || !Array.isArray(raw.answers)) return out;
+  const reads: (ReadRecord | null)[] = Array.isArray(raw.reads) ? raw.reads.slice(0, MAX_RESTORE_READS).map(restoreRead) : [];
+  const rows = new Map<string, Record<string, unknown>>();
+  for (const row of raw.answers.slice(0, MAX_RESTORE_ROWS)) {
+    if (!isRecord(row) || typeof row.question_id !== 'string' || row.question_id.length > MAX_ID) continue;
+    if (!rows.has(row.question_id)) rows.set(row.question_id, row);
+  }
+  const kept: PlainAnswers = {};
+  for (const q of QUESTION_STRUCTURE) {
+    if (q.id === '2') continue;
+    const id = q.id as Exclude<QuestionId, '2'>;
+    const row = rows.get(id);
+    if (!row || !isShown(id, kept, policy)) continue;
+    const value = restoreValue(id, row.value, kept, policy);
+    if (value === null) continue;
+    const index = row.read;
+    const read = typeof index === 'number' && Number.isInteger(index) && index >= 0 && index < reads.length ? (reads[index] ?? null) : null;
+    let source: AnswerSource | null = null;
+    switch (str(row.origin)) {
+      case 'typed':
+        source = { kind: 'typed' };
+        break;
+      case 'prefilled_confirmed':
+      case 'prefilled_changed': {
+        if (q.kind === 'free') break;
+        const changed = row.origin === 'prefilled_changed';
+        const quotes = restoreQuotes(changed ? (row.changed_from ?? row.quotes) : row.quotes);
+        if (quotes && read) {
+          source = changed ? { kind: 'changed', from: quotes, read } : { kind: 'prefilled', quotes, read, confirmed: true };
+        } else {
+          source = { kind: 'record', confirmed: false };
+        }
+        break;
+      }
+      case 'from_earlier_record':
+        source = { kind: 'record', confirmed: false };
+        break;
+    }
+    if (source === null) continue;
+    out[id] = { value: copyValue(value), source };
+    kept[id] = copyValue(value);
+  }
+  return out;
 }
