@@ -32,18 +32,22 @@ Counterpoise decides — and shows its working:
 
 The outcome is one of three: **approved**, **approved with these controls**, or **rejected** — never "compliant", which no tool can honestly compute.
 
-## Why now: the risk starts after approval
+## Why now: an approval no longer stays true
 
-From **[After Deployment](https://oza977-max.github.io/counterpoise/research/after-deployment.html)**, the expert-reviewed briefing this project publishes (computed from the MIT AI Risk Repository V4 and 20+ verification-graded sources):
+An AI approval used to describe a fixed thing. It doesn't any more — and the gap between what was approved and what is actually running now opens faster than any committee can re-meet.
 
 | | |
 |---|---|
-| **84%** | of timing-classified AI risks materialise **after** deployment *(MIT AI Risk Repository V4, computed for the briefing)* |
-| **18% → 44%** | market share of the top three AI model providers in UK financial services, 2022→2024 — one silent vendor model change now moves many use cases at once *(Bank of England / FCA survey)* |
-| **72%** | of US bankers name model kill-switches (34%) or regulatory failure-reporting (38%) as their *least-prepared* area *(Wolters Kluwer, n=230, 2026)* |
-| **+127%** | one-year growth in US financial-sector AI adoption *(Federal Reserve, Apr 2026)* |
+| **50% → 10%** | GPT-4's rate of directly runnable code over three months, **with no version change**. The system that passed validation in March was a different system by June *(Chen, Zaharia & Zou, Harvard Data Science Review)*. It still happens: one provider's 2025 routing bug hit 16% of requests at its worst hour *(Anthropic postmortem, Sep 2025)*. |
+| **18% → 44%** | the top three model providers' share of UK financial services in two years. One vendor update now changes many approvals at once — and your competitors' too *(Bank of England / FCA survey)*. |
+| **20%** | of breached organisations traced a breach to shadow AI, at $670K above the average cost — the price of a process slow enough that people go around it. 63% of finance workers already use generative AI at work *(IBM/Ponemon 2025; Federal Reserve, Apr 2026)*. |
+| **72%** | of US bankers name kill-switches or AI-failure reporting as their bank's least-prepared area — the two things you cannot do without knowing exactly what you approved *(Wolters Kluwer, n=230, 2026)*. |
 
-The industry's answer is heavier pre-approval. Counterpoise's answer is to automate the pre-check so it stops being the bottleneck — and to make it produce what post-deployment governance cannot exist without: **a register that knows exactly what was approved, under which rules, with which controls, and what would make that approval stale.** You cannot monitor "AI risk". You can only monitor a named thing against a named rule.
+Every one of these needs the same thing first: **a precise record of what was approved — which model, under which rules, with which controls, and what would make it stale.** A committee memo cannot answer *"which of our approvals does this vendor change touch?"* Rules can, because they re-run. Counterpoise already queues every active approval for re-evaluation when your rules change; re-checking when a vendor changes its model is the first thing V2 builds.
+
+And a pre-check that takes minutes instead of weeks is the cheapest defence against shadow AI there is: people stop going around a process that is quicker than going around it.
+
+*Every figure is verification-graded in **[After Deployment](https://oza977-max.github.io/counterpoise/research/after-deployment.html)**, the research briefing this project publishes.*
 
 ## How it works
 
