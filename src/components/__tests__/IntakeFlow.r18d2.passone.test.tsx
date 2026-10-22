@@ -77,7 +77,10 @@ describe('a failure after the event is written never lets a retry write it again
       await screen.findByLabelText(/what do you want to call it/i);
       await user.click(screen.getByRole('button', { name: /^continue$/i }));
       await user.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
-      await screen.findByText(/this result was corrected in another tab or window/i);
+      // Review pass 2 (Important): the same-tab case must not be told "another tab" or "wasn't saved" —
+      // the correction WAS saved (it is on the trail) and no other tab was involved.
+      const refusal = await screen.findByText(/already has a newer result than the one you were correcting/i);
+      expect(refusal.textContent).not.toMatch(/another tab|wasn't saved/i);
 
       trail = await trailOf(DESC);
       expect(ofType(trail, 'verdict_corrected')).toHaveLength(1); // not two

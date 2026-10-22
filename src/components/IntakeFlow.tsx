@@ -104,8 +104,10 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
   // on a later visit, with no other tab or window involved at all. Says
   // only what is known to be true.
   'already-decided': 'This case already has a result. Open it from the register to see it.',
+  // R18-D2 review pass 2: the same refusal is reached when THIS tab's correction was saved and a later step
+  // (the register update) failed, so "another tab" and "wasn't saved" could both be false. Says only what is known.
   'corrected-elsewhere':
-    "This result was corrected in another tab or window while you were working, so your correction wasn't saved. Open the case from the register to see the current result.",
+    'This case already has a newer result than the one you were correcting, so nothing more was recorded. Open the case from the register to see the current result.',
 };
 
 // CR7-21/22 and the count of corrections on the trail: planCorrectionWrites

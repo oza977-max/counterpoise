@@ -329,7 +329,9 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/corrected in another tab/i);
+    // R18-D2 review pass 2: the refusal states only what is known (a newer result exists), true for another tab and
+    // for a same-tab correction saved before a later step failed.
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already has a newer result than the one you were correcting/i);
     expect(screen.getByRole('button', { name: /confirm and evaluate/i })).toBeDisabled();
 
     // This tab's correction never landed.
