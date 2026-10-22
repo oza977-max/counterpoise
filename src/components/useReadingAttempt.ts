@@ -29,7 +29,7 @@ export interface ReadingAttempt {
   /** The settled outcome, or null while reading, before any read, and after release(). */
   outcome: PrefillOutcome | null;
   startReading: (input: ReadingInput) => void;
-  /** The "Skip - I'll answer the questions myself" control. */
+  /** The skip control (R18_COPY.SKIP_LABEL: "Skip — don't read it; I'll answer the questions myself"). */
   skip: () => void;
   /** Back, Start over: stop everything, show nothing. */
   release: () => void;
