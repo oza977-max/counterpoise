@@ -150,7 +150,7 @@ describe('R18-D1 acceptance: the register shows where each answer came from', ()
     ).toBeInTheDocument();
 
     // One line per answer: the value in words, then who supplied it.
-    const list = screen.getByRole('list', { name: /where each answer came from/i });
+    const list = within(screen.getByRole('region', { name: /where each answer came from/i })).getByRole('list');
     const rows = within(list).getAllByRole('listitem');
     expect(rows).toHaveLength(5);
     const row = (re: RegExp) => rows.find((r) => re.test(r.textContent ?? ''))!;

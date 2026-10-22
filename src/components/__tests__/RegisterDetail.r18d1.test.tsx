@@ -37,9 +37,10 @@ async function open(opts: Parameters<typeof seedCase>[1]) {
   await screen.findByRole('heading', { name: 'Client email drafting assistant' });
   return view;
 }
-const sourcesList = () => screen.getByRole('list', { name: R18_COPY.SOURCES_HEADING });
+const sourcesPanel = () => screen.getByRole('region', { name: R18_COPY.SOURCES_HEADING });
+const sourcesList = () => within(sourcesPanel()).getByRole('list');
 const rowFor = (re: RegExp) => within(sourcesList()).getAllByRole('listitem').find((r) => re.test(r.textContent ?? ''))!;
-const noSources = () => screen.queryByRole('list', { name: R18_COPY.SOURCES_HEADING });
+const noSources = () => screen.queryByRole('region', { name: R18_COPY.SOURCES_HEADING });
 
 describe('RegisterDetail - answer sources, the lines (TC-R18-GI-5-01, MS-2-04, GI-5-06)', () => {
   it('TC-R18-GI-5-01d1: names the model and where it ran, the value in words, and who supplied each answer', async () => {
@@ -305,5 +306,26 @@ describe('RegisterDetail - the share line needs the real catalogue (review pass 
     await screen.findByRole('heading', { name: 'Client email drafting assistant' });
     expect(screen.queryByText(/answers were filled in by a model/)).toBeNull();
     expect(screen.getByText(/read by gemma4:cloud/)).toBeInTheDocument();
+  });
+});
+
+describe('RegisterDetail - accessible names (review pass 1 minor 5)', () => {
+  it('"Where each answer came from" names exactly one thing: the section; the heading is not repeated as a label on the list', async () => {
+    await open({ sources: cloudSources() });
+    // the region is found by its name, and it holds the heading and an unnamed list
+    expect(screen.getAllByRole('region', { name: R18_COPY.SOURCES_HEADING })).toHaveLength(1);
+    expect(screen.getAllByRole('heading', { name: R18_COPY.SOURCES_HEADING })).toHaveLength(1);
+    expect(screen.queryAllByRole('list', { name: R18_COPY.SOURCES_HEADING })).toHaveLength(0);
+    expect(within(sourcesPanel()).getByRole('list')).toBeInTheDocument();
+    // the region is named by the heading, not by a copied string
+    const heading = screen.getByRole('heading', { name: R18_COPY.SOURCES_HEADING });
+    expect(sourcesPanel().getAttribute('aria-labelledby')).toBe(heading.id);
+    expect(sourcesPanel().hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('a correction that only edited the description gets a region named by its own heading, not the sources one', async () => {
+    await open({ sources: cloudSources(), corrections: [{ description: 'A reworded description.' }] });
+    expect(noSources()).toBeNull();
+    expect(screen.getByRole('region', { name: R18_COPY.CORRECTED_DESCRIPTION_HEADING })).toBeInTheDocument();
   });
 });

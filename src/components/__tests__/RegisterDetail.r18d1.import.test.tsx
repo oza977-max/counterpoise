@@ -35,7 +35,7 @@ describe('RegisterDetail - an imported case', () => {
   it('TC-R18-GI-5-02d1c: shows the sender\'s model, place, quotes and origins, with none changed in transit', async () => {
     const { container } = await openImported('r18-d1-handoff-with-sources.json', 'uc-r18d1-sample-cloud');
     expect(screen.getByText("read by gemma4:cloud — Ollama's cloud, through the Ollama app on the computer in use")).toBeInTheDocument();
-    const rows = within(screen.getByRole('list', { name: R18_COPY.SOURCES_HEADING })).getAllByRole('listitem');
+    const rows = within(within(screen.getByRole('region', { name: R18_COPY.SOURCES_HEADING })).getByRole('list')).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
     expect(container.textContent).toContain('filled from your description and confirmed by you — “internal ticket volumes” (suggested by gemma4:cloud)');
     expect(container.textContent).toContain('changed by you (from Just me, or a small trial — “a small trial”, suggested by gemma4:cloud)');
@@ -47,7 +47,7 @@ describe('RegisterDetail - an imported case', () => {
 
   it('TC-R18-GI-5-03d1c: a case from a file made before this round shows no source line at all', async () => {
     const { container } = await openImported('r18-d1-handoff-before-round-18.json', 'uc-r18d1-sample-before');
-    expect(screen.queryByRole('list', { name: R18_COPY.SOURCES_HEADING })).toBeNull();
+    expect(screen.queryByRole('region', { name: R18_COPY.SOURCES_HEADING })).toBeNull();
     expect(container.querySelector('.register-detail__sources')).toBeNull();
     expect(container.textContent).not.toMatch(/read by|typed by you|suggested by|filled in by a model|from the earlier record/);
   });

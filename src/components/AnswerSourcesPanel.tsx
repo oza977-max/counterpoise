@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { R18_COPY, QUESTION_WORDS, findQuestion, modelFilledLine, readLineWords, originLineWords } from './plain-copy';
 import { buildCatalogue, QUESTION_STRUCTURE } from '../engine/question-structure';
 import { readAnswerSources } from '../engine/answer-sources';
@@ -27,6 +27,8 @@ interface Props {
 }
 
 export default function AnswerSourcesPanel({ sources, correctedDescription, policy }: Props) {
+  const sourcesId = useId();
+  const correctedId = useId();
   const { view, catalogueAvailable } = useMemo(() => {
     let catalogue: PrefillCatalogue;
     try {
@@ -49,17 +51,19 @@ export default function AnswerSourcesPanel({ sources, correctedDescription, poli
   if (!view && correctedDescription === undefined) return null;
   const share = view && catalogueAvailable ? modelFilledLine(view.counts) : null;
 
+  // One accessible name per thing: the section is named by its own heading (the sources one, or the corrected
+  // description one when that is all there is); the list under the heading carries no label of its own.
   return (
-    <section className="register-detail__sources" aria-label={R18_COPY.SOURCES_HEADING}>
+    <section className="register-detail__sources" aria-labelledby={view ? sourcesId : correctedId}>
       {correctedDescription !== undefined && (
         <div className="register-detail__corrected-description">
-          <h3>{R18_COPY.CORRECTED_DESCRIPTION_HEADING}</h3>
+          <h3 id={correctedId}>{R18_COPY.CORRECTED_DESCRIPTION_HEADING}</h3>
           <p>{visibleText(correctedDescription)}</p>
         </div>
       )}
       {view && (
         <>
-          <h3>{R18_COPY.SOURCES_HEADING}</h3>
+          <h3 id={sourcesId}>{R18_COPY.SOURCES_HEADING}</h3>
           {view.reads.map((r, i) => (
             <p key={i} className="register-detail__read-line">
               {readLineWords(r)}
@@ -67,7 +71,7 @@ export default function AnswerSourcesPanel({ sources, correctedDescription, poli
           ))}
           {view.reads.length > 0 && <p className="register-detail__read-note">{R18_COPY.READ_NOTE}</p>}
           {share && <p className="register-detail__share-line">{share}</p>}
-          <ul aria-label={R18_COPY.SOURCES_HEADING}>
+          <ul>
             {view.answers.map((a, i) => (
               <li key={i}>
                 <div className="register-detail__source-question">{a.question}</div>
