@@ -27,24 +27,27 @@ interface Props {
 }
 
 export default function AnswerSourcesPanel({ sources, correctedDescription, policy }: Props) {
-  const view = useMemo(() => {
+  const { view, catalogueAvailable } = useMemo(() => {
     let catalogue: PrefillCatalogue;
     try {
       catalogue = policy ? buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, policy) : new Map();
     } catch {
       catalogue = new Map(); // a policy the catalogue cannot read: raw option keys are shown, as text
     }
-    return readAnswerSources(sources, {
+    // The register can be open with no valid policy (App passes undefined then). Without the catalogue the
+    // reader cannot tell which typed answers are select answers, so "N of M" would understate M: no share line.
+    const view = readAnswerSources(sources, {
       catalogue,
       questionLabel: (id) => {
         const known = QUESTION_STRUCTURE.some((q) => q.id === id);
         return known ? findQuestion(id as never)?.text : undefined;
       },
     });
+    return { view, catalogueAvailable: catalogue.size > 0 };
   }, [sources, policy]);
 
   if (!view && correctedDescription === undefined) return null;
-  const share = view ? modelFilledLine(view.counts) : null;
+  const share = view && catalogueAvailable ? modelFilledLine(view.counts) : null;
 
   return (
     <section className="register-detail__sources" aria-label={R18_COPY.SOURCES_HEADING}>

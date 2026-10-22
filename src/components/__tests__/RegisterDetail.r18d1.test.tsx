@@ -291,3 +291,19 @@ describe('RegisterDetail - a case without sources reads as before', () => {
     expect(container.querySelector('.register-detail__sources')).toBeNull();
   });
 });
+
+describe('RegisterDetail - the share line needs the real catalogue (review pass 1 minor 2)', () => {
+  it('with a valid policy (what the register passes) the share line is shown with M counted from the catalogue', async () => {
+    await open({ sources: cloudSources() });
+    expect(screen.getByText(/of \d+ answers were filled in by a model and confirmed by you/)).toBeInTheDocument();
+  });
+
+  it('with no valid policy the share line is not shown (M could not be counted), while the rows still are', async () => {
+    const id = 'uc-d1-nopolicy';
+    await seedCase(id, { sources: cloudSources() });
+    render(<RegisterDetail useCaseId={id} role="2LoD" onBack={() => {}} />);
+    await screen.findByRole('heading', { name: 'Client email drafting assistant' });
+    expect(screen.queryByText(/answers were filled in by a model/)).toBeNull();
+    expect(screen.getByText(/read by gemma4:cloud/)).toBeInTheDocument();
+  });
+});
