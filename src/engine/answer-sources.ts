@@ -231,9 +231,13 @@ export function readAnswerSources(raw: unknown, words: SourceWords): AnswerSourc
   let confirmedFilled = 0;
   let changed = 0;
   let answered = 0;
+  const seenQuestions = new Set<string>();
   for (const row of raw.answers) {
     if (!isRecord(row) || typeof row.question_id !== 'string') continue;
     const id = row.question_id;
+    // One answer per question: the first row wins, later duplicates are neither counted nor shown (§27.13).
+    if (seenQuestions.has(id)) continue;
+    seenQuestions.add(id);
     const originWord = str(row.origin);
     const origin: OriginView = KNOWN_ORIGINS.has(originWord) ? (originWord as OriginView) : 'unrecognised';
     const known = words.catalogue.has(id as never);
@@ -246,9 +250,13 @@ export function readAnswerSources(raw: unknown, words: SourceWords): AnswerSourc
     // A prefilled answer is always a select answer, so it counts even when its question id is not one this
     // build knows; a typed answer counts only when it is a select question (free text is not counted).
     const isPrefilled = origin === 'prefilled_confirmed' || origin === 'prefilled_changed';
-    if (id !== '2' && nonEmpty.length > 0 && (known || isPrefilled)) answered += 1;
-    if (origin === 'prefilled_confirmed') confirmedFilled += 1;
-    if (origin === 'prefilled_changed') changed += 1;
+    // N and K sit under the same guard as M, so N + K can never exceed M (an imported row for Question 2 or
+    // with no value cannot make "1 of 0").
+    if (id !== '2' && nonEmpty.length > 0 && (known || isPrefilled)) {
+      answered += 1;
+      if (origin === 'prefilled_confirmed') confirmedFilled += 1;
+      if (origin === 'prefilled_changed') changed += 1;
+    }
 
     const quoteSource = origin === 'prefilled_changed' && Array.isArray(row.changed_from) ? row.changed_from : row.quotes;
     const index = row.read;

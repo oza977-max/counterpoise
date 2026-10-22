@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import fc from 'fast-check';
 import { loadPolicy } from '../store/policy';
 import { QUESTION_WORDS, findQuestion } from '../components/plain-copy';
 import { buildCatalogue, QUESTION_STRUCTURE } from './question-structure';
@@ -228,5 +229,56 @@ describe('readAnswerSources - an imported record is untrusted (TC-R18-GI-5-05)',
     expect(gone({ quote_in_final_description: true })).toBe(false);
     expect(gone({})).toBe(false);
     expect(gone({ quote_in_final_description: 'false' })).toBe(false);
+  });
+});
+
+describe('readAnswerSources - the share line never exceeds sense (review pass 1 minor 1)', () => {
+  const rowsOf = (answers: unknown[]) => ({ reads: [], answers });
+
+  it('a prefilled_confirmed row for Question 2 with no value never yields "1 of 0"', () => {
+    const v = readAnswerSources(rowsOf([{ question_id: '2', origin: 'prefilled_confirmed', value: '' }]), words)!;
+    expect(v.counts).toEqual({ confirmedFilled: 0, changed: 0, answered: 0 });
+  });
+
+  it('a prefilled row with an empty value is not counted as filled or changed', () => {
+    const v = readAnswerSources(
+      rowsOf([
+        { question_id: '5', origin: 'prefilled_confirmed', value: [] },
+        { question_id: '7', origin: 'prefilled_changed', value: '' },
+      ]),
+      words,
+    )!;
+    expect(v.counts).toEqual({ confirmedFilled: 0, changed: 0, answered: 0 });
+  });
+
+  it('duplicate rows for one question count once, and the first row is the one shown', () => {
+    const v = readAnswerSources(
+      rowsOf([
+        { question_id: '9', origin: 'prefilled_confirmed', value: 'yes' },
+        { question_id: '9', origin: 'prefilled_confirmed', value: 'no' },
+        { question_id: '9', origin: 'prefilled_changed', value: 'no' },
+      ]),
+      words,
+    )!;
+    expect(v.counts).toEqual({ confirmedFilled: 1, changed: 0, answered: 1 });
+    expect(v.answers).toHaveLength(1);
+    expect(v.answers[0]!.value).toBe('Yes');
+  });
+
+  it('property: N + K never exceeds M, whatever rows an imported file carries', () => {
+    const ids = ['1', '2', '4', '5', '7', '9', '10', 'zz'];
+    const origins = ['typed', 'prefilled_confirmed', 'prefilled_changed', 'from_earlier_record', 'odd'];
+    const row = fc.record({
+      question_id: fc.constantFrom(...ids),
+      origin: fc.constantFrom(...origins),
+      value: fc.oneof(fc.constant(''), fc.constant([]), fc.constantFrom('yes', 'no', 'people'), fc.array(fc.constantFrom('', 'yes', 'people'), { maxLength: 3 })),
+    });
+    fc.assert(
+      fc.property(fc.array(row, { maxLength: 20 }), (answers) => {
+        const c = readAnswerSources(rowsOf(answers), words)?.counts;
+        if (!c) return true;
+        return c.confirmedFilled + c.changed <= c.answered;
+      }),
+    );
   });
 });
