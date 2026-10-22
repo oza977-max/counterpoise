@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
-import RegisterDetail, { currentVerdictAttestationFields } from '../RegisterDetail';
+import RegisterDetail, { currentVerdictAttestationFields, earlierSourcesDropped } from '../RegisterDetail';
 import { loadPolicy } from '../../store/policy';
 import { getAll } from '../../store/audit';
 import { R18_COPY } from '../plain-copy';
@@ -18,6 +18,7 @@ import {
   READ_LOCAL,
 } from '../../test-support/answer-sources-fixtures';
 import type { PolicyFile } from '../../engine/types';
+import type { AuditEvent } from '../../store/types';
 
 // R18-D1 (specs/intake-flow.md §27.13 "Register detail"). The register shows where each saved answer came from, read
 // from the record: one line per distinct read, the same share line as the confirmation step, then per answer who
@@ -331,7 +332,16 @@ describe('RegisterDetail - accessible names (review pass 1 minor 5)', () => {
 });
 
 describe('RegisterDetail - the history note (review pass 1 minor 6)', () => {
-  const NOTE = 'An earlier confirmation recorded where its answers came from; this correction recorded none.';
+  // Pass 2 minor: the earlier record may itself be a correction, so the note says "record", not "confirmation".
+  const NOTE = 'An earlier record of this case noted where its answers came from; this correction recorded none.';
+
+  it('a list value is not a record of sources (typeof [] is "object")', () => {
+    const ev = (payload: Record<string, unknown>) => ({ payload }) as unknown as AuditEvent;
+    expect(earlierSourcesDropped([ev({ type: 'graph_confirmed', answer_sources: [] }), ev({ type: 'verdict_corrected' })])).toBe(false);
+    expect(
+      earlierSourcesDropped([ev({ type: 'graph_confirmed', answer_sources: { reads: [], answers: [] } }), ev({ type: 'verdict_corrected' })]),
+    ).toBe(true);
+  });
 
   it('the copy is exactly the agreed sentence', () => {
     expect(R18_COPY.SOURCES_HISTORY_NOTE).toBe(NOTE);

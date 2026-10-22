@@ -230,7 +230,7 @@ export function earlierSourcesDropped(events: AuditEvent[]): boolean {
   if (last.type !== 'verdict_corrected' || last.answer_sources !== undefined) return false;
   return events.slice(0, latest).some((e) => {
     const p = e.payload;
-    return (p.type === 'graph_confirmed' || p.type === 'verdict_corrected') && typeof p.answer_sources === 'object' && p.answer_sources !== null;
+    return (p.type === 'graph_confirmed' || p.type === 'verdict_corrected') && typeof p.answer_sources === 'object' && p.answer_sources !== null && !Array.isArray(p.answer_sources);
   });
 }
 
