@@ -20,6 +20,8 @@ import type { KnowledgeMatch } from '../engine/knowledge-lens';
 import { loadKnowledgeLens } from '../store/knowledge-lens-loader';
 import { getCurrentKnowledgeLensYaml } from '../store/knowledge-lens-source';
 import KnowledgeLensPanel from './KnowledgeLensPanel';
+import AnswerSourcesPanel from './AnswerSourcesPanel';
+import type { AnswerSources } from '../engine/prefill-types';
 
 // V1.2-A (design-gap-audit B3/B4/B5/B6). Rule 4 (cross-cutting.md §7):
 // presentation-only — renders the REAL audit store via getAll()
@@ -173,16 +175,33 @@ export function currentVerdictAttestationFields(events: AuditEvent[]): {
   // comment above already anticipated — the case's "Not sure" answers,
   // read from whichever event recorded the CURRENT verdict.
   assumptions?: AssumptionRecord[];
+  // R18-D1 (§27.13, GI-5-11): where each confirmed answer came from, read from the SAME event as the others, so a
+  // correction's own sources win and an older confirmation's never describe a corrected case. Untrusted until
+  // the reader (engine/answer-sources.ts) has checked it.
+  answer_sources?: AnswerSources;
+  // R18-D1 (§27.13 "The corrected description"): the latest description a correction edited, or absent when no
+  // correction did (then use_case_created's description stands, unrewritten).
+  description?: string;
 } {
   const reversed = [...events].reverse();
   const latestCorrection = reversed.find((e) => e.payload.type === 'verdict_corrected');
   if (latestCorrection && latestCorrection.payload.type === 'verdict_corrected') {
     const p = latestCorrection.payload;
+    // Written only when a correction edited the description, so the latest one that did is the current text.
+    let description: string | undefined;
+    for (const e of reversed) {
+      if (e.payload.type === 'verdict_corrected' && typeof e.payload.description === 'string') {
+        description = e.payload.description;
+        break;
+      }
+    }
     return {
       submitter_note: p.submitter_note,
       contradiction_resolutions: p.contradiction_resolutions,
       answer_contexts: p.answer_contexts,
       assumptions: p.assumptions,
+      ...(p.answer_sources !== undefined ? { answer_sources: p.answer_sources } : {}),
+      ...(description !== undefined ? { description } : {}),
     };
   }
   const confirmed = reversed.find((e) => e.payload.type === 'graph_confirmed');
@@ -193,6 +212,7 @@ export function currentVerdictAttestationFields(events: AuditEvent[]): {
       contradiction_resolutions: p.contradiction_resolutions,
       answer_contexts: p.answer_contexts,
       assumptions: p.assumptions,
+      ...(p.answer_sources !== undefined ? { answer_sources: p.answer_sources } : {}),
     };
   }
   return {};
@@ -1028,6 +1048,13 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
           someone still has to act on it.
         </p>
       )}
+
+      {/* R18-D1 (§27.13): where each answer came from, read from the record through the one correction-aware
+          reader. Renders nothing for a case that carries no answer_sources, so an older case reads as before. */}
+      {(() => {
+        const f = currentVerdictAttestationFields(events);
+        return <AnswerSourcesPanel sources={f.answer_sources} correctedDescription={f.description} policy={policy} />;
+      })()}
 
       {/* ADR-RL-R3-1 / §15.1. The verdict a reviewer is being asked to attest
           to, rendered from the persisted record rather than recomputed.

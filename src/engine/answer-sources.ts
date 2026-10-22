@@ -8,7 +8,8 @@ import { normForQuote } from './mentioned';
 import { shownQuestionIds, toPlainAnswers } from './form-visibility';
 import { structureFor } from './question-structure';
 import type { QuestionId } from './plain-questions';
-import type { AnswerSource, FormAnswerState } from './prefill-types';
+import { visibleText } from './visible-text';
+import type { AnswerSource, FormAnswerState, ModelPlace, PrefillCatalogue } from './prefill-types';
 import type { PolicyFile } from './types';
 
 /** True while this one quote still occurs (exactly, case-sensitive) in the whitespace-normalised description. */
@@ -118,4 +119,150 @@ export function unconfirmedIds(answerState: FormAnswerState, description: string
     const source = answerState[id]?.source;
     return source !== undefined && (source.kind === 'prefilled' || source.kind === 'record') && !source.confirmed;
   });
+}
+
+// ── R18-D1 (specs/intake-flow.md §27.13): the READ side of the record ─────────────────────────────────────────
+//
+// `answer_sources` arrives from a saved case or from a hand-off file someone else made, so it is read as
+// untrusted input (BC-002): every field is checked as it is used, every lookup of a word that came from the
+// record goes through a Map or a Set (never an object property), and every string handed back has already been
+// through visibleText(), so the component can render it as text and cannot forget to. Unknown words are
+// tolerated, not crashed on: an unknown origin or place, an unknown question or option, a read index that is not
+// inside `reads`. The reader decides nothing about wording; it returns facts, and plain-copy.ts words them.
+
+const KNOWN_PLACES: ReadonlySet<string> = new Set<ModelPlace>(['this-computer', 'firm-server', 'ollama-cloud']);
+const KNOWN_ORIGINS: ReadonlySet<string> = new Set([
+  'typed',
+  'prefilled_confirmed',
+  'prefilled_changed',
+  'from_earlier_record',
+]);
+
+export type OriginView = 'typed' | 'prefilled_confirmed' | 'prefilled_changed' | 'from_earlier_record' | 'unrecognised';
+
+/** One read, as configured. `place` is null for a word this build does not know (shown neutrally, never as the word). */
+export interface ReadView {
+  model: string;
+  place: ModelPlace | null;
+  host: string;
+}
+
+export interface QuoteView {
+  /** The option in words (or the raw key when the words do not have it). */
+  option: string;
+  quote: string;
+}
+
+export interface AnswerView {
+  /** The question in words, or the raw id when it is not a question this build knows. */
+  question: string;
+  /** The answer in words (option texts, or the typed text). Empty when the row carries no value. */
+  value: string;
+  origin: OriginView;
+  /** The quotes a prefilled origin stands on; for a changed answer, the ones it was changed from. */
+  quotes: QuoteView[];
+  /** The model that read it, from the row's `read` index; null when there is no usable index. */
+  read: ReadView | null;
+  /** True only when the record says so (quote_in_final_description === false). Absent never claims it. */
+  quoteGone: boolean;
+}
+
+export interface AnswerSourcesView {
+  reads: ReadView[];
+  answers: AnswerView[];
+  counts: AnswerSourceCounts;
+}
+
+export interface SourceWords {
+  /** The question's plain words, or undefined for an id this build does not know. */
+  questionLabel: (id: string) => string | undefined;
+  /** The closed select catalogue (a Map of Maps). Free-text questions are not in it. */
+  catalogue: PrefillCatalogue;
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+function readOf(v: unknown): ReadView | null {
+  if (!isRecord(v)) return null;
+  const place = str(v.place);
+  return {
+    model: visibleText(str(v.model)),
+    place: KNOWN_PLACES.has(place) ? (place as ModelPlace) : null,
+    host: visibleText(str(v.host)),
+  };
+}
+
+function optionWords(words: SourceWords, questionId: string, key: string): string {
+  // Map.get with a record-supplied string is safe: a Map has no prototype lookup (DR8-R2-E-N2).
+  const text = words.catalogue.get(questionId as never)?.options.get(key)?.text;
+  return visibleText(text ?? key);
+}
+
+function recordQuotes(v: unknown, questionId: string, words: SourceWords): QuoteView[] {
+  if (!Array.isArray(v)) return [];
+  const out: QuoteView[] = [];
+  for (const q of v) {
+    if (!isRecord(q) || typeof q.quote !== 'string') continue;
+    out.push({ option: optionWords(words, questionId, str(q.option)), quote: visibleText(q.quote) });
+  }
+  return out;
+}
+
+/** Turns a record's `answer_sources` into what the register shows. Null when there is nothing to show (absent, not
+ *  an object, or no usable rows), so a case without sources renders exactly as before this round. */
+export function readAnswerSources(raw: unknown, words: SourceWords): AnswerSourcesView | null {
+  if (!isRecord(raw) || !Array.isArray(raw.answers)) return null;
+
+  // Per original index, so a row's `read` points at the right entry; then the distinct reads for the lines.
+  const byIndex: (ReadView | null)[] = Array.isArray(raw.reads) ? raw.reads.map(readOf) : [];
+  const reads: ReadView[] = [];
+  const seen = new Set<string>();
+  for (const r of byIndex) {
+    if (!r) continue;
+    const key = JSON.stringify([r.model, r.place, r.host]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    reads.push(r);
+  }
+
+  const answers: AnswerView[] = [];
+  let confirmedFilled = 0;
+  let changed = 0;
+  let answered = 0;
+  for (const row of raw.answers) {
+    if (!isRecord(row) || typeof row.question_id !== 'string') continue;
+    const id = row.question_id;
+    const originWord = str(row.origin);
+    const origin: OriginView = KNOWN_ORIGINS.has(originWord) ? (originWord as OriginView) : 'unrecognised';
+    const known = words.catalogue.has(id as never);
+
+    const rawValue = row.value;
+    const keys = Array.isArray(rawValue) ? rawValue.filter((x): x is string => typeof x === 'string') : typeof rawValue === 'string' ? [rawValue] : [];
+    const nonEmpty = keys.filter((k) => k !== '');
+    const value = nonEmpty.map((k) => (known ? optionWords(words, id, k) : visibleText(k))).join(', ');
+
+    // A prefilled answer is always a select answer, so it counts even when its question id is not one this
+    // build knows; a typed answer counts only when it is a select question (free text is not counted).
+    const isPrefilled = origin === 'prefilled_confirmed' || origin === 'prefilled_changed';
+    if (id !== '2' && nonEmpty.length > 0 && (known || isPrefilled)) answered += 1;
+    if (origin === 'prefilled_confirmed') confirmedFilled += 1;
+    if (origin === 'prefilled_changed') changed += 1;
+
+    const quoteSource = origin === 'prefilled_changed' && Array.isArray(row.changed_from) ? row.changed_from : row.quotes;
+    const index = row.read;
+    const read = typeof index === 'number' && Number.isInteger(index) && index >= 0 && index < byIndex.length ? (byIndex[index] ?? null) : null;
+
+    answers.push({
+      question: visibleText(words.questionLabel(id) ?? id),
+      value,
+      origin,
+      quotes: isPrefilled ? recordQuotes(quoteSource, id, words) : [],
+      read,
+      quoteGone: isPrefilled && row.quote_in_final_description === false,
+    });
+  }
+  if (answers.length === 0 && reads.length === 0) return null;
+  return { reads, answers, counts: { confirmedFilled, changed, answered } };
 }

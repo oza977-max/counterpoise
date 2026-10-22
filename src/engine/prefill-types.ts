@@ -147,6 +147,13 @@ export interface AnswerSourceRecord {
   read?: number;
 }
 
+/** The record's answer sources (§27.13): the distinct reads, then one row per confirmed answer.
+ *  Optional on the audit payloads, so records written before Round 18 read as before. */
+export interface AnswerSources {
+  reads: ReadRecord[];
+  answers: AnswerSourceRecord[];
+}
+
 /** One in-app test run (§27.11). */
 export interface ModelTestResult {
   model: string;

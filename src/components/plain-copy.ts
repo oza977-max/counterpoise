@@ -1356,6 +1356,7 @@ import type { ChecklistItemId, ModelPlace, PrefillFailure } from '../engine/pref
 import type { ValidationReason } from '../llm/model-setting';
 import type { ModelLabel } from '../llm/model-setting';
 import { visibleText } from '../engine/visible-text';
+import type { AnswerView, ReadView } from '../engine/answer-sources';
 
 /** A failure sentence for the model places, and for a firm's own server (§27.5). */
 export interface FailureSentence {
@@ -1637,6 +1638,29 @@ export const R18_COPY = {
   MODEL_FILLED_LINE: '{n} of {m} answers were filled in by a model and confirmed by you',
   MODEL_CHANGED_TAIL: ', and {k} were changed by you',
   MODEL_CHANGED_TAIL_ONE: ', and 1 was changed by you',
+
+  // R18-D1 (§27.13): the register's record of where each answer came from. Every sentence is claimed only in the
+  // state where it is true (TC-R18-GI-13-01): no model line without a read, no share line when nothing was filled
+  // in or changed, "no longer in your description" only when the record says so.
+  SOURCES_HEADING: 'Where each answer came from',
+  READ_LINE: 'read by {model} {place}',
+  // A place word this version does not know is never shown as the word; the host is still shown, as text.
+  PLACE_UNRECOGNISED_WORDS: "at {host}, a place this version doesn't recognise",
+  // Honest about what the record is: configured, not proven; self-asserted (GI-5-06, GI-5-08).
+  READ_NOTE: 'The model and where it ran are what was set up when the answers were read. Counterpoise does not check them.',
+  ORIGIN_TYPED: 'typed by you',
+  ORIGIN_PREFILLED_CONFIRMED: 'filled from your description and confirmed by you',
+  ORIGIN_CHANGED: 'changed by you',
+  ORIGIN_CHANGED_FROM: 'from',
+  ORIGIN_RECORD: 'from the earlier record',
+  ORIGIN_UNRECOGNISED: 'source not recognised',
+  ORIGIN_SUGGESTED_BY: 'suggested by',
+  ORIGIN_QUOTE_GONE: 'the quote is no longer in your description',
+  CORRECTED_DESCRIPTION_HEADING: 'Description, as corrected',
+  // The hand-off file (GI-5-08): what it holds, and what its sources are worth.
+  HANDOFF_EXPORT_STATEMENT: 'This file contains the descriptions and quotes of every case in it.',
+  HANDOFF_IMPORT_PROVENANCE:
+    "Where each answer came from, in a file you import, is whatever the person who made the file recorded. The checks above do not verify it, or who made the file.",
 } as const;
 
 // ── Round 18-B: filling the sentences (words only; no decisions) ───────────
@@ -1711,4 +1735,40 @@ export function modelFilledLine(counts: { confirmedFilled: number; answered: num
   const head = R18_COPY.MODEL_FILLED_LINE.replace('{n}', String(counts.confirmedFilled)).replace('{m}', String(counts.answered));
   if (counts.changed <= 0) return head;
   return head + (counts.changed === 1 ? R18_COPY.MODEL_CHANGED_TAIL_ONE : R18_COPY.MODEL_CHANGED_TAIL.replace('{k}', String(counts.changed)));
+}
+
+// ── Round 18-D1: the register's lines (words only; the reader in engine/answer-sources.ts decides) ──
+
+/** "read by {model} {place words}" for one read, in the past tense. An unrecognised place says so, with the host. */
+export function readLineWords(read: ReadView): string {
+  const place =
+    read.place !== null
+      ? placeRecordWords(read.place, read.host)
+      : R18_COPY.PLACE_UNRECOGNISED_WORDS.replace('{host}', () => visibleText(read.host));
+  return R18_COPY.READ_LINE.replace('{model}', () => visibleText(read.model)).replace('{place}', () => place);
+}
+
+const quoted = (q: string) => `“${visibleText(q)}”`;
+
+/** Who supplied one answer, in words; only what the row holds. The model is named only when the row's read gives one. */
+export function originLineWords(a: AnswerView): string {
+  const by = a.read !== null && a.read.model.trim() !== '' ? `${R18_COPY.ORIGIN_SUGGESTED_BY} ${visibleText(a.read.model)}` : null;
+  const gone = a.quoteGone ? `; ${R18_COPY.ORIGIN_QUOTE_GONE}` : '';
+  switch (a.origin) {
+    case 'typed':
+      return R18_COPY.ORIGIN_TYPED;
+    case 'from_earlier_record':
+      return R18_COPY.ORIGIN_RECORD;
+    case 'prefilled_confirmed': {
+      const qs = a.quotes.map((q) => quoted(q.quote)).join(', ');
+      return `${R18_COPY.ORIGIN_PREFILLED_CONFIRMED}${qs ? ` — ${qs}` : ''}${by ? ` (${by})` : ''}${gone}`;
+    }
+    case 'prefilled_changed': {
+      const from = a.quotes.map((q) => `${visibleText(q.option)} — ${quoted(q.quote)}`).join(', ');
+      const inner = [from ? `${R18_COPY.ORIGIN_CHANGED_FROM} ${from}` : '', by ?? ''].filter((x) => x !== '').join(', ');
+      return `${R18_COPY.ORIGIN_CHANGED}${inner ? ` (${inner})` : ''}${gone}`;
+    }
+    default:
+      return R18_COPY.ORIGIN_UNRECOGNISED;
+  }
 }
