@@ -113,7 +113,7 @@ export default function AnswerMark({ questionLabel, source, description, optionT
   }
 
   if (source.kind === 'changed') {
-    const model = visibleText(source.read.model);
+    const model = modelName(source.read);
     return (
       <div className="answer-mark answer-mark--changed">
         <QuoteLines

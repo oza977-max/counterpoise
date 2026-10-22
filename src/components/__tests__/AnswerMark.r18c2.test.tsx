@@ -37,4 +37,11 @@ describe('AnswerMark, changed (M8)', () => {
     mark(changed('everyday'), 'The description was rewritten.');
     expect(document.querySelector('.answer-mark__claim')!.textContent).toMatch(/no longer in your description/);
   });
+
+  it('review pass 1 minor 8 (false state): a read with no model name says "a model", never a double space', () => {
+    mark({ kind: 'changed', from: [{ option: 'everyday', quote: 'internal ticket volumes' }], read: { ...READ, model: '' } });
+    const text = document.querySelector('.answer-mark__claim')!.textContent!;
+    expect(text).toBe('changed by you — a model had read “internal ticket volumes” as “Everyday work information”');
+    expect(text).not.toMatch(/ {2}/);
+  });
 });
