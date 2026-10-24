@@ -290,7 +290,9 @@ describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
     // parameter. The call-argument scan above and the import-closure walk cover those gaps in part; the
     // rest is review. IntakeFlow.tsx is the one screen that legitimately does both - it holds the form's
     // answers and runs the verdict - so it is allow-listed, and its evaluate() arguments are scanned above.
-    const ALLOWED = ['components/IntakeFlow.tsx'];
+    // R18-F adds the in-app test's scorer, the one measurement-only second route from a Prefill to evaluate()
+    // (specs/intake-flow.md §27.11). The next test pins who may import it.
+    const ALLOWED = ['components/IntakeFlow.tsx', 'engine/question-fields.ts'];
     const touchesReply = (spec: string) => /(^|\/)(prefill-types|answer-sources)$/.test(spec);
     const touchesEvaluate = (spec: string) => /(^|\/)evaluate$/.test(spec);
     const both: string[] = [];
@@ -304,5 +306,25 @@ describe('one engine: nothing of a model reaches evaluate() (R18-NF-4)', () => {
     // the scan can fail
     const sample = "import type { Prefill } from './prefill-types';\nimport { evaluate } from './evaluate';";
     expect(importedModules(sample).some(touchesReply) && importedModules(sample).some(touchesEvaluate)).toBe(true);
+  });
+
+  it('TC-R18-GI-12-07: the scorer is the only measurement route to evaluate() - only the in-app test runner imports it, and nothing in the intake route does', () => {
+    const importsScorer = (spec: string) => /(^|\/)question-fields$/.test(spec);
+    const importers: string[] = [];
+    const namedElsewhere: string[] = [];
+    for (const file of listAllProductionFiles(SRC_DIR)) {
+      const rel = file.slice(SRC_DIR.length + 1);
+      const text = readFileSync(file, 'utf-8');
+      if (importedModules(text).some(importsScorer)) importers.push(rel);
+      if (/\bapplyPrefillToGraph\b/.test(text) && rel !== 'engine/question-fields.ts') namedElsewhere.push(rel);
+    }
+    expect(importers.sort()).toEqual(['llm/model-test.ts']);
+    expect(namedElsewhere).toEqual([]);
+    // the intake route itself, by name
+    for (const name of ['components/IntakeFlow.tsx', 'components/StructuredForm.tsx', 'components/useReadingAttempt.ts', 'components/ConfirmationStep.tsx']) {
+      expect(importedModules(readFileSync(join(SRC_DIR, name), 'utf-8')).some(importsScorer), name).toBe(false);
+    }
+    // the scan can fail
+    expect(importedModules("import { scoreCase } from '../engine/question-fields';").some(importsScorer)).toBe(true);
   });
 });

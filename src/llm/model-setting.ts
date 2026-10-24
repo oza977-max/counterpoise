@@ -268,7 +268,7 @@ export function forgetModelSetting(): void {
   announceChange();
 }
 
-// ---- test results (read side; R18-F appends) ------------------------------
+// ---- test results ----------------------------------------------------------
 
 const resultSchema = z.object({
   model: z.string().max(400),
@@ -278,6 +278,7 @@ const resultSchema = z.object({
   casesRun: z.number().int().min(0).max(1000),
   stopped: z.boolean(),
   verdictMatches: z.number().int().min(0).max(1000),
+  noAnswer: z.number().int().min(0).max(1000).optional(),
   discarded: z.record(z.string(), z.number()),
   perQuestion: z.record(
     z.string(),
@@ -298,9 +299,25 @@ export function readTestResults(): ModelTestResult[] {
   }
 }
 
+/**
+ * Saves one test run, newest first, keeping the latest MAX_TEST_RESULTS. The only writer of the results key: it
+ * re-reads what is stored, so a run saved from another tab is never overwritten. Announces the change so the
+ * labels redraw. False when storage refuses the write.
+ */
+export function appendTestResult(result: ModelTestResult): boolean {
+  const next = { version: 1 as const, results: [result, ...readTestResults()].slice(0, MAX_TEST_RESULTS) };
+  try {
+    localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify(next));
+  } catch {
+    return false;
+  }
+  announceChange();
+  return true;
+}
+
 export type ModelLabel =
   | { kind: 'untested' }
-  | { kind: 'partial'; casesRun: number }
+  | { kind: 'partial'; casesRun: number; stopped: boolean }
   | { kind: 'tested'; matches: number; date: string };
 
 /** The test label as DATA. A result belongs to one (model, place, host); only a completed run makes a model tested. */
@@ -314,7 +331,7 @@ export function modelLabel(
   const done = mine.find((r) => !r.stopped && r.casesRun === CORPUS_CASE_COUNT);
   if (done) return { kind: 'tested', matches: done.verdictMatches, date: done.date };
   const partial = mine[0];
-  if (partial) return { kind: 'partial', casesRun: partial.casesRun };
+  if (partial) return { kind: 'partial', casesRun: partial.casesRun, stopped: partial.stopped };
   return { kind: 'untested' };
 }
 

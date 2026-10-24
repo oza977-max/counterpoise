@@ -1572,8 +1572,34 @@ export const R18_COPY = {
   // The test label (R18-GI-12). The suffix is fixed and never dropped from a "tested" label.
   LABEL_UNTESTED: 'untested',
   LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
+  // A partial result that was not stopped can only be inconsistent stored data; it never says "stopped" (R18-B carried minor).
+  LABEL_PARTIAL_RAN: 'untested (a partial test ran {n} of 31 cases)',
   LABEL_TESTED: 'tested {matches}/31 on {date}',
   TEST_ASSUMPTION_SUFFIX: '(measured as if you check every filled answer)',
+
+  // The in-app test (R18-F, §27.11). Every sentence is true only in the state that shows it; each has a false-state test.
+  TEST_BUTTON: 'Test it',
+  TEST_STOP: 'Stop',
+  TEST_INTRO:
+    'Test it sends the 31 public worked cases that come with Counterpoise, and nothing you have typed, to the model you saved. The model reads them the way it reads a real description. Then Counterpoise checks how often the answers it filled in would have led to the right verdict.',
+  TEST_NEEDS_SETTING: 'Save a model setting first. The test runs on the saved setting.',
+  TEST_PROGRESS: 'Case {n} of 31',
+  TEST_LIMIT: 'Each case gets 60 seconds.',
+  TEST_STOPPED: 'Stopped after {n} of 31 cases.',
+  TEST_DISCARDED: '{n} filled-in answers were dropped because they failed the checks.',
+  TEST_DISCARDED_ONE: '1 filled-in answer was dropped because it failed the checks.',
+  TEST_NOT_A_GUARANTEE: 'These 31 cases are public examples; they are not a guarantee about your own descriptions.',
+  TEST_NOT_COMPARABLE:
+    'These numbers cannot be compared with the 2026-10-04 comparison. That one took the countries from the case; this test asks the model to find them in the description.',
+  TEST_RESULT_HEADING: 'Latest test of this model',
+  TEST_RESULT_DONE: 'Reached the right verdict in {matches} of 31 cases {suffix}.',
+  TEST_RESULT_STOPPED: 'Reached the right verdict in {matches} of the {n} cases that ran {suffix}.',
+  TEST_NO_ANSWER: 'Cases with no usable answer from the model: {n}. Each counts as blank, with no right verdict.',
+  TEST_PER_QUESTION_HEADING: 'How each question was filled in',
+  TEST_QUESTION_LINE: '{question}: {right} right, {blank} left blank, {wrong} wrong (cases scored: {n})',
+  TEST_NOT_SCORED_NOTE:
+    'A question is left out for a case when the form has no single answer that matches the known correct one, so the counts can be lower than 31.',
+  TEST_CANNOT_START: 'The test could not start: the rules or the worked cases could not be loaded.',
 
   // Clear all data keeps the model setting and says so only when one exists.
   CLEAR_KEEPS_SETTING: "Your model setting (including its address) is kept. Use 'Forget the model setting' to remove it.",
@@ -1732,10 +1758,49 @@ export function modelLabelWords(label: ModelLabel): string {
     case 'untested':
       return R18_COPY.LABEL_UNTESTED;
     case 'partial':
-      return R18_COPY.LABEL_PARTIAL.replace('{n}', String(label.casesRun));
+      return (label.stopped ? R18_COPY.LABEL_PARTIAL : R18_COPY.LABEL_PARTIAL_RAN).replace('{n}', String(label.casesRun));
     case 'tested':
       return `${R18_COPY.LABEL_TESTED.replace('{matches}', String(label.matches)).replace('{date}', visibleText(label.date))} ${R18_COPY.TEST_ASSUMPTION_SUFFIX}`;
   }
+}
+
+/** "Case n of 31" for the case now being read. */
+export function testProgressWords(n: number): string {
+  return R18_COPY.TEST_PROGRESS.replace('{n}', String(n));
+}
+
+/** "Stopped after n of 31 cases." */
+export function testStoppedWords(n: number): string {
+  return R18_COPY.TEST_STOPPED.replace('{n}', String(n));
+}
+
+/** The dropped-fills sentence; nothing at all when none were dropped. */
+export function testDiscardedWords(total: number): string | null {
+  if (total < 1) return null;
+  return total === 1 ? R18_COPY.TEST_DISCARDED_ONE : R18_COPY.TEST_DISCARDED.replace('{n}', String(total));
+}
+
+/** The result line. A stopped run never reads as a count out of 31. */
+export function testResultWords(result: { stopped: boolean; casesRun: number; verdictMatches: number }): string {
+  const template = result.stopped ? R18_COPY.TEST_RESULT_STOPPED : R18_COPY.TEST_RESULT_DONE;
+  return template
+    .replace('{matches}', String(result.verdictMatches))
+    .replace('{n}', String(result.casesRun))
+    .replace('{suffix}', R18_COPY.TEST_ASSUMPTION_SUFFIX);
+}
+
+/** One question's counts, in the question's own words. */
+export function testQuestionWords(questionText: string, t: { right: number; blank: number; wrong: number }): string {
+  return R18_COPY.TEST_QUESTION_LINE.replace('{question}', () => visibleText(questionText))
+    .replace('{right}', String(t.right))
+    .replace('{blank}', String(t.blank))
+    .replace('{wrong}', String(t.wrong))
+    .replace('{n}', String(t.right + t.blank + t.wrong));
+}
+
+/** The no-usable-answer sentence; nothing when every case was answered. */
+export function testNoAnswerWords(n: number): string | null {
+  return n > 0 ? R18_COPY.TEST_NO_ANSWER.replace('{n}', String(n)) : null;
 }
 
 /** How the register words the place of a read, in the past tense. */

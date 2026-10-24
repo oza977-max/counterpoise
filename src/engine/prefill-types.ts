@@ -163,6 +163,8 @@ export interface ModelTestResult {
   casesRun: number;
   stopped: boolean;
   verdictMatches: number;
+  /** Cases with no usable answer (timeout, refusal, unreadable or empty reply). Absent in a result saved before it was counted. */
+  noAnswer?: number;
   discarded: Record<string, number>;
   perQuestion: Record<string, { right: number; blank: number; wrong: number }>;
 }

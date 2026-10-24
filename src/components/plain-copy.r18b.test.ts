@@ -131,7 +131,7 @@ describe('TC-R18-GI-13-02: the new strings and the functions that fill them neve
       placeSentence({ place: 'firm-server', model: 'm:1', url: 'https://f.test' }, false),
       placeSentence({ place: 'ollama-cloud', model: 'm:cloud', url: 'http://localhost:11434' }, false),
       modelLabelWords({ kind: 'untested' }),
-      modelLabelWords({ kind: 'partial', casesRun: 5 }),
+      modelLabelWords({ kind: 'partial', casesRun: 5, stopped: true }),
       modelLabelWords({ kind: 'tested', matches: 21, date: '2026-10-07' }),
       placeRecordWords('this-computer', 'http://localhost:11434'),
       placeRecordWords('firm-server', 'https://f.test'),
@@ -152,7 +152,7 @@ describe('TC-R18-GI-12-01 / -02 / -06: the label words and their caveat', () => 
     );
   });
   it('a stopped run reads as untested with the partial note, and carries no suffix', () => {
-    const w = modelLabelWords({ kind: 'partial', casesRun: 12 });
+    const w = modelLabelWords({ kind: 'partial', casesRun: 12, stopped: true });
     expect(w).toBe('untested (a partial test stopped after 12 of 31 cases)');
     expect(w).not.toMatch(/measured/);
   });

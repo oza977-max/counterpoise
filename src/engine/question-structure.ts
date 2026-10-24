@@ -367,6 +367,23 @@ export function deriveQuestionFields(
   structure: readonly QuestionStructure[],
   policy: PolicyFile,
 ): ReadonlyMap<QuestionId, QuestionFieldEntry> {
+  // R18-F: the same (structure, policy) pair is asked for once per question per case by the in-app test, so
+  // the table is derived once and reused. Pure memoisation: the table depends on nothing else.
+  const byStructure = DERIVED.get(policy) ?? new WeakMap<object, ReadonlyMap<QuestionId, QuestionFieldEntry>>();
+  DERIVED.set(policy, byStructure);
+  const cached = byStructure.get(structure);
+  if (cached) return cached;
+  const table = computeQuestionFields(structure, policy);
+  byStructure.set(structure, table);
+  return table;
+}
+
+const DERIVED = new WeakMap<object, WeakMap<object, ReadonlyMap<QuestionId, QuestionFieldEntry>>>();
+
+function computeQuestionFields(
+  structure: readonly QuestionStructure[],
+  policy: PolicyFile,
+): ReadonlyMap<QuestionId, QuestionFieldEntry> {
   const out = new Map<QuestionId, QuestionFieldEntry>();
   for (const q of structure) {
     if (q.kind === 'free') continue;
@@ -384,6 +401,53 @@ export function deriveQuestionFields(
     out.set(q.id, fields.length > 0 ? { scored: true, fields } : { scored: false, why: 'no option changes the graph' });
   }
   return out;
+}
+
+/** True when the graph's fields (flattened) equal the gold fields on every one of `fields`. */
+function fieldsEqual(graph: Map<string, string[]>, fields: readonly string[], goldFields: GoldFields): boolean {
+  return fields.every((f) => {
+    const want = goldValues(goldFields, f);
+    const have = graph.get(f);
+    if (want === undefined || have === undefined) return want === undefined && have === undefined;
+    return want.join('|') === have.join('|');
+  });
+}
+
+/**
+ * The graph the real mapping gives for one question's answer on that question's own base (§27.11): the
+ * earlier answers that make the question shown, a neutral choice elsewhere, constant ids and timestamp.
+ * `keys` is the option (or, for a tick-all question, the ticked options). Null for a free-text question or
+ * one the policy cannot show. Measurement only (R18-F); the intake route never calls it.
+ */
+export function graphForAnswer(id: QuestionId, keys: readonly string[], policy: PolicyFile): DataFlowGraph | null {
+  const q = BY_ID.get(id);
+  if (!q || q.kind === 'free' || keys.length === 0) return null;
+  const base = baseFor(id, policy);
+  if (!base) return null;
+  return graphFor({ ...base, [id]: q.kind === 'multi' ? [...keys] : keys[0]! }, policy);
+}
+
+/** A graph's fields as the scorer compares them: field name -> every value, from every node, as the gold-side lookup expects. */
+export function goldFieldsOf(graph: DataFlowGraph): GoldFields {
+  const out: Record<string, unknown[]> = Object.create(null) as Record<string, unknown[]>;
+  const nodes = [...graph.input_nodes, ...graph.processing_nodes, ...graph.output_nodes] as unknown as Record<string, unknown>[];
+  for (const node of nodes) {
+    for (const key of Object.keys(node)) {
+      if (NON_FIELDS.has(key)) continue;
+      const v = node[key];
+      (out[key] ??= []).push(...(Array.isArray(v) ? v : [v]));
+    }
+  }
+  out.jurisdictions = [...graph.jurisdictions];
+  return out;
+}
+
+/** Whether answering `keys` to question `id` gives the gold graph's fields for that question (§27.11). */
+export function keysReproduce(id: QuestionId, keys: readonly string[], goldFields: GoldFields, policy: PolicyFile): boolean {
+  const entry = deriveQuestionFields(QUESTION_STRUCTURE, policy).get(id);
+  if (!entry || !entry.scored) return false;
+  const graph = graphForAnswer(id, keys, policy);
+  return graph !== null && fieldsEqual(flatten(graph), entry.fields, goldFields);
 }
 
 /**
@@ -405,13 +469,7 @@ export function optionsReproducing(
   const keys: string[] = [];
   for (const key of validOptionKeys(id, base, policy)) {
     const graph = flatten(graphFor(answerWith(base, q, key), policy));
-    const same = entry.fields.every((f) => {
-      const want = goldValues(goldFields, f);
-      const have = graph.get(f);
-      if (want === undefined || have === undefined) return want === undefined && have === undefined;
-      return want.join('|') === have.join('|');
-    });
-    if (same) keys.push(key);
+    if (fieldsEqual(graph, entry.fields, goldFields)) keys.push(key);
   }
   return keys;
 }
