@@ -19,29 +19,34 @@ export default function NudgeNote({
   items: readonly ChecklistItemId[];
   onAddExample: (sentence: string) => void;
 }) {
-  if (items.length === 0) return null;
+  // R18-G (NF-2): the status region is always in the page and starts empty; the note is put into it. A region
+  // inserted already filled is not reliably announced by screen readers.
   return (
-    <div role="status" className="describe__nudge">
-      <p className="describe__nudge-lead">{R18_COPY.UNMENTIONED_NOTE_LEAD}</p>
-      <ul className="describe__nudge-items">
-        {items.map((id) => {
-          const sentence = R18_COPY.NUDGE_EXAMPLES[id];
-          return (
-            <li key={id}>
-              <span className="describe__nudge-label">{R18_COPY.CHECKLIST_LABELS[id]}</span>{' '}
-              <button
-                type="button"
-                className="describe__example"
-                aria-label={`${R18_COPY.ADD_EXAMPLE_LABEL}: ${sentence}`}
-                onClick={() => onAddExample(sentence)}
-              >
-                {sentence}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="field-help">{R18_COPY.UNMENTIONED_NOTE_HELP}</p>
+    <div role="status" className="describe__nudge-region">
+      {items.length > 0 && (
+        <div className="describe__nudge">
+          <p className="describe__nudge-lead">{R18_COPY.UNMENTIONED_NOTE_LEAD}</p>
+          <ul className="describe__nudge-items">
+            {items.map((id) => {
+              const sentence = R18_COPY.NUDGE_EXAMPLES[id];
+              return (
+                <li key={id}>
+                  <span className="describe__nudge-label">{R18_COPY.CHECKLIST_LABELS[id]}</span>{' '}
+                  <button
+                    type="button"
+                    className="describe__example"
+                    aria-label={`${R18_COPY.ADD_EXAMPLE_LABEL}: ${sentence}`}
+                    onClick={() => onAddExample(sentence)}
+                  >
+                    {sentence}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="field-help">{R18_COPY.UNMENTIONED_NOTE_HELP}</p>
+        </div>
+      )}
     </div>
   );
 }
