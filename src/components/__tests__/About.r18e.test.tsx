@@ -70,6 +70,9 @@ describe('About - what stays in the browser (review pass 1)', () => {
     expect(L).toMatch(/save an Anthropic key/);
     expect(L).toMatch(/only if/);
     expect(L).not.toMatch(/nothing|never|entirely|approved|rejected/i);
+    // Review pass 2: with a saved key the explanation sends answer content too, so the line must not
+    // promise that answers stay in the browser.
+    expect(L).not.toMatch(/answers[^.]*kept in this browser/i);
   });
 
   it('GI-13-01: the model paragraph says a saved Anthropic key sends text for the similar-case check and the explanation - as PLACE_SENTENCES does', () => {

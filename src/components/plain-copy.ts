@@ -1687,7 +1687,7 @@ export const R18_COPY = {
     'Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.',
   // Review pass 1: true in every state; replaces the About page's "nothing you enter leaves this machine".
   ABOUT_BROWSER_LINE:
-    'Your rules, answers and audit trail are kept in this browser. What you wrote about a use case leaves it only if you connect a model in Settings, or save an Anthropic key, as described above.',
+    'Your rules and audit trail are kept in this browser. Text about a use case leaves it only if you connect a model in Settings (your description goes to it), or save an Anthropic key (case text goes to Anthropic for the similar-case check and the explanation), as described above.',
   ABOUT_MODEL_PARAGRAPH:
     "Full transparency: connecting a model is optional, and it is done in Settings. When one is connected, your description can go to one of three places: a model on this computer, a model on your firm's own server, or Ollama's cloud. The sentence under your choice in Settings says which, before anything is sent. The model fills in some of the form's answers from what you wrote and shows the words it relied on. It can misread, so you have to check and tick every answer it fills in before you can continue. With no model connected, you answer the questions yourself. Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.",
 
