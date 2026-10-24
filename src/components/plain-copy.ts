@@ -1422,13 +1422,6 @@ export const R18_COPY = {
   TOO_LONG_SENTENCE:
     'Your description was too long to read automatically, so the form is blank. It is kept in full.',
 
-  // The form's note while no model route exists in this build (R18-GI-7-01). It says only
-  // what is true in every state: the description was not read automatically. It must not
-  // claim "no model is connected" (a key or local setting may exist) nor point at a panel
-  // that is not built yet. R18-G switches the form to FAILURE_SENTENCES['not-configured'].
-  NO_MODEL_INTERIM_SENTENCE:
-    "Your description wasn't read automatically, so nothing was filled in for you. Answer the questions below.",
-
   // The rating-instruction warning on the description screen (R18-GI-3-19). Nothing has
   // been read there and there are no cards, so it says only what is true on that screen.
   // The quoted phrases are built by ratingInstructionDescriptionWarning (approved/rejected scrubbed).
@@ -1525,6 +1518,23 @@ export const R18_COPY = {
   } as Record<'this-computer' | 'this-computer-with-key' | 'firm-server' | 'ollama-cloud', string>,
 
   NO_MODEL_SENTENCE: 'No model is connected.',
+
+  // ── Round 18-G: the "Make it smarter" panel and "Try an example" (specs/intake-flow.md §27.12) ──
+  // The panel names exactly two commands and no model, version or price; Ollama's own pages cover the rest.
+  PANEL_HEADING: 'Make it smarter',
+  PANEL_EXPLANATION:
+    "A model you connect can fill in some of the form's answers from your description and show the words it relied on. You still check and tick every answer it fills in. Without one, you answer the questions yourself.",
+  PANEL_SIGNIN_LEAD: "To use Ollama's cloud, sign in once:",
+  PANEL_ORIGINS_LEAD:
+    "To let this page reach Ollama on your computer, set its allowed origins to this page's address:",
+  PANEL_AFTER: 'Then choose the model under Settings. Ollama\u2019s own documentation covers everything else:',
+  PANEL_LINK_TEXT: "Ollama's documentation",
+  PANEL_LINK_CHECKED: 'Link last checked {date}',
+  PANEL_COMMAND_SIGNIN: 'ollama signin',
+  PANEL_COMMAND_ORIGINS_NAME: 'OLLAMA_ORIGINS',
+  EXAMPLES_BUTTON: 'Try an example',
+  EXAMPLES_LIST_LABEL: 'Examples',
+  EXAMPLES_NOTE: 'Examples are short \u2014 the checklist shows what they leave out.',
   INVALID_SETTING_SENTENCE: "The model setting isn't valid. Open Settings and check it.",
   UNENCRYPTED_LINE:
     "This address isn't encrypted, so your description travels unprotected inside your firm's network.",
@@ -1774,6 +1784,18 @@ export function placeSentence(
     .replace('{address}', () => visibleText(setting.url));
 }
 
+/** The page the "Make it smarter" panel links for everything beyond its two commands. */
+export const OLLAMA_DOCS_URL = 'https://docs.ollama.com/faq';
+/** The day the link above was last opened and found to answer and to cover OLLAMA_ORIGINS. Update it with the link. */
+export const OLLAMA_DOCS_CHECKED = '2026-10-24';
+/** The address the public demo is served from; the docs print the allowed-origins setting for it. */
+export const PUBLIC_SITE_ORIGIN = 'https://oza977-max.github.io';
+
+/** The allowed-origins setting for a page address (`origin` is a URL origin, with no path). */
+export function originsCommand(origin: string): string {
+  return `${R18_COPY.PANEL_COMMAND_ORIGINS_NAME}=${origin}`;
+}
+
 /** The label words for a model: "untested", the partial note, or "tested N/31 on DATE (suffix)". */
 export function modelLabelWords(label: ModelLabel): string {
   switch (label.kind) {
@@ -1900,11 +1922,16 @@ export function formReadNote(
   opts: { earlierKept: boolean; readAgainShown: boolean; settingKind: 'none' | 'invalid' | 'no-model' | 'valid' | 'unknown' },
 ): string {
   if (opts.earlierKept) return R18_COPY.KEPT_EARLIER_NOTE;
-  // Until R18-G builds the "Make it smarter" panel, the no-model case uses the interim sentence, which names no
-  // control (FAILURE_SENTENCES['not-configured'] points at that panel).
-  if (outcome === 'not-configured') return R18_COPY.NO_MODEL_INTERIM_SENTENCE;
+  // R18-G: the panel exists, so the no-model case is the spec sentence (§27.5), which names it. That sentence says no
+  // model is connected, so it is shown only when that is so; a form that was not read although a model is set (an
+  // invalid policy, a draft from before reads existed) says only that nothing was filled in.
+  if (outcome === 'not-configured') {
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
+    if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
+    return R18_COPY.NOT_READ_NO_BUTTON;
+  }
   if (!opts.readAgainShown && (outcome === 'not-read' || outcome === 'setting-changed')) {
-    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return R18_COPY.NO_MODEL_INTERIM_SENTENCE;
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
     if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
     return outcome === 'not-read' ? R18_COPY.NOT_READ_NO_BUTTON : R18_COPY.SETTING_CHANGED_NO_BUTTON;
   }

@@ -59,7 +59,13 @@ describe('the first screen (TC-R18-GI-1-08, TC-R18-PS-1-02)', () => {
     expect(checklist()).toBeInTheDocument();
     // The pre-check's own screen: no sign-in, key or model set-up step in front of the box.
     const main = box().closest('.intake-flow')!;
-    expect(main.textContent ?? '').not.toMatch(/sign in|sign-in|api key|connect a model first|set up a model|set-up/i);
+    // R18-G: the optional "Make it smarter" panel (PS-2) explains how to connect a model and so says "sign in";
+    // it is an explanation, not a step: it holds no field or button and nothing waits on it. Everything else is scanned.
+    const panel = main.querySelector('.make-it-smarter');
+    if (panel) expect(panel.querySelector('input, textarea, select, button')).toBeNull();
+    const rest = main.cloneNode(true) as HTMLElement;
+    rest.querySelectorAll('.make-it-smarter').forEach((n) => n.remove());
+    expect(rest.textContent ?? '').not.toMatch(/sign in|sign-in|api key|connect a model first|set up a model|set-up/i);
     // The description box is the first control in the work area: nothing to press or fill in before it.
     const controls = [...main.querySelectorAll('textarea, input, select, button')];
     const firstField = controls.find((el) => el.matches('textarea, input, select'));
@@ -265,19 +271,19 @@ describe('the rating-instruction notice on the description screen (TC-R18-GI-3-1
 });
 
 describe('the no-model note is true in every state (BC-005, TC-R18-GI-7-01)', () => {
-  it('TC-R18-GI-7-01 (false state): with a stored key and a local setting the note still never claims no model, nor points at a panel this build lacks', async () => {
+  it('TC-R18-GI-7-01 (false state, R18-G): a stored key and an address with no model name are not a model: the form says no model is connected and names the panel, which the describe screen shows', async () => {
     localStorage.setItem('aigate:api-key', 'sk-test-not-real');
     localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
     const user = userEvent.setup({ delay: null });
     render(<App />);
+    expect(await screen.findByRole('region', { name: /make it smarter/i })).toBeInTheDocument();
     await fillText(user, box(), 'It reads client names and account details.');
     await user.click(next());
     await user.click(next());
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
-    expect(screen.getByText(R18_COPY.NO_MODEL_INTERIM_SENTENCE)).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/no model is connected/i);
-    expect(document.body.textContent).not.toMatch(/make it smarter/i);
+    expect(screen.getByText(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama)).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/no model is connected/i);
   });
 });
 
@@ -310,7 +316,7 @@ describe('no model: the form opens blank with one plain sentence (TC-R18-GI-7-01
     const user = userEvent.setup({ delay: null });
     const text = 'It reads client names and account details.';
     await toForm(user, text);
-    const sentence = screen.getByText(R18_COPY.NO_MODEL_INTERIM_SENTENCE);
+    const sentence = screen.getByText(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama);
     expect(sentence.closest('[role="status"]')).not.toBeNull();
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(text);
     expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true);
@@ -332,7 +338,7 @@ describe('no model: the form opens blank with one plain sentence (TC-R18-GI-7-01
     await user.click(next());
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
-    expect(screen.getByText(R18_COPY.NO_MODEL_INTERIM_SENTENCE)).toBeInTheDocument();
+    expect(screen.getByText(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

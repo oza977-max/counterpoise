@@ -37,6 +37,8 @@ import ChecklistPanel from './ChecklistPanel';
 import NudgeNote, { appendExample } from './NudgeNote';
 import RatingInstructionNotice from './RatingInstructionNotice';
 import ModelStatus from './ModelStatus';
+import MakeItSmarter from './MakeItSmarter';
+import TryExample from './TryExample';
 import { CHECKLIST_ITEM_IDS, mentionedItems } from '../engine/mentioned';
 import type { MentionJurisdiction } from '../engine/mentioned';
 import type { Assumption, PlainAnswers } from './plain-copy';
@@ -2151,6 +2153,16 @@ export default function IntakeFlow({
                   descriptionRef.current?.focus();
                 }}
               />
+              {/* R18-G (§27.12, PS-3): ten one-click examples from the single source the guide's test reads. A click
+                  fills the box with the example's exact text; the checklist beside it then shows the real ticks. */}
+              <TryExample
+                onPick={(description) => {
+                  dispatch({ type: 'DESCRIPTION_CHANGED', description });
+                  descriptionRef.current?.focus();
+                }}
+              />
+              {/* R18-G (§27.12, PS-2): the "Make it smarter" panel while no model is set; nothing once one is. */}
+              <MakeItSmarter />
               {/* R18-B (§27.8): where the description will go and which model reads it,
                   directly above Next. Shown from the stored setting only when it validates. */}
               <ModelStatus />
@@ -2348,7 +2360,7 @@ export default function IntakeFlow({
                 one for the last read's outcome (specs §27.5), with role="status". Not shown on a form that
                 carries a case (a correction, a retry or a trip back from the questions): it is about this
                 arrival from the describe screen. A form reached before reads existed (decidedFor, no
-                lastRead) was never read: the interim no-model sentence (R18-G switches it to the spec's). */}
+                lastRead) was never read: formReadNote treats it as 'not-configured' (R18-G). */}
             {(() => {
               if (state.useCaseId !== undefined || state.originalVerdictId !== undefined) return null;
               const outcome = state.lastRead?.outcome ?? (state.decidedFor !== undefined ? 'not-configured' : undefined);
@@ -2356,14 +2368,11 @@ export default function IntakeFlow({
               const earlierKept = Object.values(formInitialAnswerState ?? {}).some(
                 (a) => a !== undefined && (a.source.kind === 'prefilled' || a.source.kind === 'changed'),
               );
-              const sentence =
-                outcome === 'not-configured' && !earlierKept
-                  ? R18_COPY.NO_MODEL_INTERIM_SENTENCE
-                  : formReadNote(outcome, state.lastRead?.read?.place ?? 'this-computer', state.lastRead?.read?.host ?? '', {
-                      earlierKept,
-                      readAgainShown,
-                      settingKind: modelSnapshot.ready ? modelSnapshot.state.kind : 'unknown',
-                    });
+              const sentence = formReadNote(outcome, state.lastRead?.read?.place ?? 'this-computer', state.lastRead?.read?.host ?? '', {
+                earlierKept,
+                readAgainShown,
+                settingKind: modelSnapshot.ready ? modelSnapshot.state.kind : 'unknown',
+              });
               return (
                 <p role="status" className="plain-form__read-note">
                   {sentence}

@@ -3861,3 +3861,45 @@ details input {
   font-weight: 600;
   color: var(--ink);
 }
+
+/* R18-G: the "Make it smarter" panel and the example list on the describe screen. */
+.make-it-smarter {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--ink-soft);
+  background: var(--paper);
+  color: var(--ink);
+}
+.make-it-smarter__heading {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.make-it-smarter p {
+  margin: 0.35rem 0;
+}
+.make-it-smarter__command {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--ink-soft);
+  background: var(--card-bg);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+.describe__examples {
+  margin: 0.5rem 0;
+}
+.describe__examples-note {
+  margin: 0.25rem 0;
+  color: var(--ink-soft);
+}
+.describe__examples-list {
+  margin: 0.25rem 0;
+  padding-left: 1.1rem;
+}
+.describe__example-pick {
+  margin: 0.15rem 0;
+  font-size: 0.9em;
+  text-align: left;
+}
