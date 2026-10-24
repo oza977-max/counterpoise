@@ -3,9 +3,10 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { CSP_META } from './csp';
 
 // R18-G hardening of the public-site scan (specs/intake-flow.md §27.9): the pattern scan also covers the
-// repository's other public files (docs/, README.md, backtest/cases.json), a script tag naming another
+// repository's other public files (docs/, README.md, backtest/cases.json, backtest/engine-verdicts.json), a script tag naming another
 // origin is a hit, an optional confidentiality word list held outside the repository is applied (and a
 // release run fails closed without it), and both workflows run the scan after the build.
 
@@ -24,6 +25,7 @@ beforeEach(() => {
   writeFileSync(join(repo, 'docs', 'guide.md'), '# Guide\nnothing secret');
   writeFileSync(join(repo, 'README.md'), '# Readme');
   writeFileSync(join(repo, 'backtest', 'cases.json'), '{"cases":[]}');
+  writeFileSync(join(repo, 'backtest', 'engine-verdicts.json'), '{}');
   writeFileSync(join(repo, 'allow.txt'), '');
 });
 afterEach(() => rmSync(repo, { recursive: true, force: true }));
@@ -35,18 +37,19 @@ function run(extra: string[] = [], env: Record<string, string> = {}) {
   });
 }
 
-describe('TC-R18-PS-5-01: the pattern scan covers docs/, README.md and backtest/cases.json', () => {
+describe('TC-R18-PS-5-01: the pattern scan covers docs/, README.md, backtest/cases.json and backtest/engine-verdicts.json', () => {
   it('a clean build and clean public files pass, and the run says what it covered', () => {
     const r = run(['--with-public']);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/no secrets found/i);
-    expect(r.stdout).toMatch(/docs\/, README\.md and backtest\/cases\.json/);
+    expect(r.stdout).toMatch(/docs\/, README\.md, backtest\/cases\.json and backtest\/engine-verdicts\.json/);
   });
 
   it.each([
     ['docs/guide.md', () => writeFileSync(join(repo, 'docs', 'guide.md'), `key ${KEY}`)],
     ['README.md', () => writeFileSync(join(repo, 'README.md'), `key ${KEY}`)],
     ['backtest/cases.json', () => writeFileSync(join(repo, 'backtest', 'cases.json'), `{"k":"${KEY}"}`)],
+    ['backtest/engine-verdicts.json', () => writeFileSync(join(repo, 'backtest', 'engine-verdicts.json'), `{"k":"${KEY}"}`)],
   ])('a key in %s fails the scan and names that file, without echoing the key', (file, plant) => {
     plant();
     const r = run(['--with-public']);
@@ -75,6 +78,13 @@ describe('TC-R18-PS-5-01: the pattern scan covers docs/, README.md and backtest/
     expect(r.stderr).toMatch(/backtest\/cases\.json/);
   });
 
+  it('a missing backtest/engine-verdicts.json is not silently skipped either', () => {
+    rmSync(join(repo, 'backtest', 'engine-verdicts.json'));
+    const r = run(['--with-public']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/engine-verdicts\.json/);
+  });
+
   it('a reviewed allow-list entry (file|text) works for a public file too, and for no other file', () => {
     writeFileSync(join(repo, 'docs', 'guide.md'), `key ${KEY}`);
     writeFileSync(join(repo, 'allow.txt'), `docs/guide.md|${KEY}\n`);
@@ -83,10 +93,44 @@ describe('TC-R18-PS-5-01: the pattern scan covers docs/, README.md and backtest/
     expect(run(['--with-public']).status).toBe(1);
   });
 
-  it('the repository\'s own docs, README and backtest/cases.json hold no credential-shaped string today', () => {
+  it('the repository\'s own docs, README and both backtest JSON files hold no credential-shaped string today', () => {
     const r = spawnSync('node', [SCRIPT, '--public-only', '--repo', ROOT, '--allow', resolve(ROOT, 'scripts/dist-scan-allow.txt')], { encoding: 'utf8' });
     expect(r.stderr).toBe('');
     expect(r.status).toBe(0);
+  });
+});
+
+describe('TC-R18-NF-3-03: the built page carries the exact CSP meta (--require-csp, which npm run scan:dist passes)', () => {
+  const page = (head: string) => `<html><head>${head}</head><script type="module" src="./assets/index.js"></script></html>`;
+
+  it('a built page holding the exact meta passes', () => {
+    writeFileSync(join(repo, 'dist', 'index.html'), page(`<meta charset="UTF-8" />\n    ${CSP_META}`));
+    expect(run(['--require-csp']).status).toBe(0);
+  });
+
+  it.each([
+    ['no meta at all (a reformatted charset line the plugin no longer matches)', '<meta charset="utf-8">'],
+    ['a meta with a weaker policy', '<meta http-equiv="Content-Security-Policy" content="script-src *" />'],
+  ])('%s fails and names the page', (_n, head) => {
+    writeFileSync(join(repo, 'dist', 'index.html'), page(head));
+    const r = run(['--require-csp']);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/Content-Security-Policy/);
+    expect(r.stderr).toContain('index.html');
+  });
+
+  it('a build with no index.html fails rather than passing unchecked', () => {
+    rmSync(join(repo, 'dist', 'index.html'));
+    expect(run(['--require-csp']).status).toBe(1);
+  });
+
+  it('without the flag nothing about the meta is checked (the older behaviour)', () => {
+    expect(run().status).toBe(0);
+  });
+
+  it('the meta the script looks for is the one src/csp.ts builds, and npm run scan:dist passes the flag', () => {
+    expect(readFileSync(SCRIPT, 'utf8')).toContain(CSP_META);
+    expect(JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).scripts['scan:dist']).toContain('--require-csp');
   });
 });
 
@@ -137,6 +181,15 @@ describe('TC-R18-MS-8-02: the confidentiality word list is held outside the repo
     expect(r.stdout + r.stderr).not.toMatch(new RegExp(WORD, 'i'));
   });
 
+  it('applies to backtest/engine-verdicts.json with --with-public', () => {
+    writeFileSync(join(repo, 'backtest', 'engine-verdicts.json'), `{"n":"${WORD}"}`);
+    const f = list(`${WORD}\n`);
+    const r = run(['--with-public', '--wordlist', f]);
+    rmSync(f);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('backtest/engine-verdicts.json');
+  });
+
   it('applies to docs, README and cases.json with --with-public', () => {
     writeFileSync(join(repo, 'README.md'), `about ${WORD}`);
     const f = list(`${WORD}\n`);
@@ -165,6 +218,20 @@ describe('TC-R18-MS-8-02: the confidentiality word list is held outside the repo
     expect(ordinary.status).toBe(0);
     expect(ordinary.stdout).toMatch(/word list not applied/i);
   });
+
+  it.each([['empty', ''], ['comment-only', '# nothing yet\n\n# still nothing\n']])(
+    'a release run fails closed on a word list that is %s, like a missing one; an ordinary run says it was not applied',
+    (_n, text) => {
+      const f = list(text);
+      const rel = run(['--release', '--wordlist', f]);
+      const ordinary = run(['--wordlist', f]);
+      rmSync(f);
+      expect(rel.status).toBe(2);
+      expect(rel.stderr).toMatch(/word list/i);
+      expect(ordinary.status).toBe(0);
+      expect(ordinary.stdout).toMatch(/word list not applied/i);
+    },
+  );
 
   it('the list can be named by an environment variable, so the local ritual need not retype a path', () => {
     writeFileSync(join(repo, 'dist', 'assets', 'index.js'), `var a = "${WORD}";`);

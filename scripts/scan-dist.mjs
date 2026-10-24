@@ -3,18 +3,20 @@
 // looks like a credential, or a script loaded from another origin. R18-A skeleton,
 // hardened in R18-G (specs/intake-flow.md §27.9): anchored patterns with length minimums,
 // a reviewed allow-list, a non-zero exit on a hit; the same pattern scan over the
-// repository's other public files (docs/, README.md and backtest/cases.json); a hit
+// repository's other public files (docs/, README.md, backtest/cases.json and backtest/engine-verdicts.json); a hit
 // for any <script src> that names another origin; and an optional confidentiality word
 // list held OUTSIDE the repository.
 //
 // Usage: node scripts/scan-dist.mjs [dir=dist] [--allow FILE] [--with-public] [--public-only]
-//          [--repo DIR] [--wordlist FILE] [--release]
-//   --with-public  also scan docs/, README.md and backtest/cases.json (relative to --repo,
+//          [--repo DIR] [--wordlist FILE] [--release] [--require-csp]
+//   --with-public  also scan docs/, README.md, backtest/cases.json and backtest/engine-verdicts.json (relative to --repo,
 //                  default: the repository this script is in)
 //   --public-only  scan only those public files (no dist/)
 //   --wordlist     one term per line, '#' starts a comment; a case-insensitive substring
 //                  match in any scanned file is a hit. The log names the file and the
 //                  line of the list, never the word. Also read from COUNTERPOISE_WORDLIST.
+//   --require-csp  the built index.html must hold the exact Content-Security-Policy <meta> (the same
+//                  text as src/csp.ts; a test keeps the two equal); a missing one is a hit (exit 1)
 //   --release      the word list is required: without one the run fails closed (exit 2)
 // Exit: 0 clean, 1 a hit, 2 something to scan or a required list is missing.
 //
@@ -57,7 +59,7 @@ function readAllow(file) {
   );
 }
 
-export const PUBLIC_FILES_NOTE = 'docs/, README.md and backtest/cases.json';
+export const PUBLIC_FILES_NOTE = 'docs/, README.md, backtest/cases.json and backtest/engine-verdicts.json';
 
 /** Third-party script: a <script> whose src is absolute or protocol-relative (the build uses relative paths only). */
 const THIRD_PARTY_SCRIPT = /<script\b[^>]*?\bsrc\s*=\s*["']?(?:https?:)?\/\/[^"'\s>]+/gi;
@@ -67,13 +69,13 @@ function filesUnder(root, shownPrefix = '') {
   return walk(root).map((file) => [file, shownPrefix + relative(root, file).split('\\').join('/')]);
 }
 
-/** The public files outside dist/: docs/ (recursive), README.md, backtest/cases.json. Throws if one is missing. */
+/** The public files outside dist/: docs/ (recursive), README.md, backtest/cases.json, backtest/engine-verdicts.json. Throws if one is missing. */
 export function publicFiles(repo) {
   const out = [];
   const docs = join(repo, 'docs');
   if (!existsSync(docs)) throw new Error('docs/ does not exist');
   out.push(...filesUnder(docs, 'docs/'));
-  for (const name of ['README.md', 'backtest/cases.json']) {
+  for (const name of ['README.md', 'backtest/cases.json', 'backtest/engine-verdicts.json']) {
     const full = join(repo, name);
     if (!existsSync(full)) throw new Error(`${name} does not exist`);
     out.push([full, name]);
@@ -120,6 +122,9 @@ export function scan(root, allow, words = null) {
   return scanFiles(filesUnder(root), allow, words);
 }
 
+/** The CSP meta the build adds to index.html (kept equal to CSP_META in src/csp.ts by a test). */
+export const CSP_META_BUILT = `<meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />`;
+
 const here = dirname(fileURLToPath(import.meta.url));
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -139,12 +144,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const withPublic = flag('--with-public');
   const publicOnly = flag('--public-only');
   const release = flag('--release');
+  const requireCsp = flag('--require-csp');
   const root = resolve(args[0] ?? join(repo, 'dist'));
 
   let words = null;
   if (wordlistArg && existsSync(wordlistArg)) words = readWordList(wordlistArg);
+  // A list with no terms checks nothing, so it counts as no list.
+  if (words !== null && words.length === 0) words = null;
   if (release && words === null) {
-    console.error('scan-dist: this is a release run and the confidentiality word list is missing (name it with --wordlist FILE or COUNTERPOISE_WORDLIST). Failing closed.');
+    console.error('scan-dist: this is a release run and the confidentiality word list is missing or holds no terms (name it with --wordlist FILE or COUNTERPOISE_WORDLIST). Failing closed.');
     process.exit(2);
   }
 
@@ -166,11 +174,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
 
   const hits = scanFiles(files, readAllow(allowFile), words);
+  if (requireCsp && !publicOnly) {
+    const page = join(root, 'index.html');
+    if (!existsSync(page) || !readFileSync(page, 'utf8').includes(CSP_META_BUILT)) {
+      hits.push({ file: 'index.html', label: 'the built page is missing its Content-Security-Policy meta', length: 0 });
+    }
+  }
   if (hits.length > 0) {
     for (const h of hits) {
       // The pattern's label, the file and the length of the match only: the log itself
       // (CI output is world-readable on a public repository) must carry no character of the hit.
-      console.error(`scan-dist: ${h.label} in ${h.file} (${h.length} characters)`);
+      console.error(`scan-dist: ${h.label} in ${h.file}${h.length > 0 ? ` (${h.length} characters)` : ''}`);
     }
     console.error(`scan-dist: ${hits.length} possible problem(s). Remove them, or review and list a benign one in scripts/dist-scan-allow.txt.`);
     process.exit(1);
