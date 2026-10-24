@@ -15,7 +15,7 @@ import { WORKED_EXAMPLES } from '../../engine/worked-examples';
 import { seedCase, DESCRIPTION, READ_LOCAL } from '../../test-support/answer-sources-fixtures';
 import type { FormAnswerState } from '../../engine/prefill-types';
 import { SLOW_FLOW_MS } from './fillText';
-import { findQuestion, restoreDroppedSentence } from '../plain-copy';
+import { findQuestion, restoreDroppedSentence, R18_COPY } from '../plain-copy';
 import { confirmAndReachVerdict, ofType, sourcesOf, trailOf } from './r18d2Flow';
 
 // R18-D2, TC-R18-GI-10-06: nothing from an earlier session is in memory (a fresh App over a seeded register). The
@@ -168,7 +168,9 @@ describe('Correct this check, after a reload', () => {
     expect(screen.getAllByText(/no longer match the form's choices/i)).toHaveLength(1);
   });
 
-  it('a case with no answer_sources has no "Correct this check" in the app (the older-case path is a later chunk)', async () => {
+  // R18-E: re-pointed from "has no Correct this check" - the older-case path is built; the acceptance test
+  // (OlderCaseCorrection.r18e.acceptance) walks it through to a verdict_corrected.
+  it('a case with no answer_sources offers "Correct this check" in the app, with the older-case note', async () => {
     const id = crypto.randomUUID();
     await seedCase(id, { label: 'Older case D2' });
     await updateUseCaseVerdictSummary(id, { currentVerdictId: `v-${id}` });
@@ -177,7 +179,8 @@ describe('Correct this check, after a reload', () => {
     await user.click(screen.getByText('▤ Register'));
     await user.click(await screen.findByText('Older case D2'));
     await screen.findByRole('heading', { name: 'Older case D2' });
-    expect(screen.queryByRole('button', { name: /correct this check/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /correct this check/i })).toBeInTheDocument();
+    expect(screen.getByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).toBeInTheDocument();
   });
 
   // The note beside the action says two things; each is tested in the state where it could be false.

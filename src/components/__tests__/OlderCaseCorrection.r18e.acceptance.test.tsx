@@ -62,8 +62,8 @@ describe('R18-E acceptance: an older case is opened from the register and correc
       expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(DESCRIPTION);
 
       // 4. The two recorded "Not sure" answers are back, marked as from the earlier record, and owe a tick.
-      expect(within(screen.getByRole('group', { name: /what kind of ai is it/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
-      expect(within(screen.getByRole('group', { name: /can the mistake be caught/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
+      expect(within(screen.getByRole('radiogroup', { name: /what kind of ai is it/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
+      expect(within(screen.getByRole('radiogroup', { name: /can the mistake be caught/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
       expect(screen.getAllByText(/^from the earlier record$/i)).toHaveLength(2);
       const ticks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
       expect(ticks).toHaveLength(2);
@@ -85,8 +85,8 @@ describe('R18-E acceptance: an older case is opened from the register and correc
       await user.click(screen.getByRole('radio', { name: /^only me or my own team$/i }));
       await user.click(screen.getByRole('radio', { name: /none of these — it.s for day-to-day work/i }));
       await user.click(screen.getByRole('radio', { name: /just me, or a small trial/i }));
-      await user.click(within(screen.getByRole('group', { name: /does it replace something/i })).getByRole('radio', { name: /^no$/i }));
-      await user.click(within(screen.getByRole('group', { name: /can copies of it/i })).getByRole('radio', { name: /^no$/i }));
+      await user.click(within(screen.getByRole('radiogroup', { name: /does it replace something/i })).getByRole('radio', { name: /^no$/i }));
+      await user.click(within(screen.getByRole('radiogroup', { name: /can copies of it/i })).getByRole('radio', { name: /^no — it works alone$/i }));
       await user.click(screen.getByRole('checkbox', { name: /nothing beyond what it.s given/i }));
       await typeFiveAndEleven(user);
       await tickAll(user);
@@ -113,6 +113,8 @@ describe('R18-E acceptance: an older case is opened from the register and correc
       // 9. The 2LoD reviewer is not offered the action on an older case either.
       await user.selectOptions(screen.getByLabelText(/viewing as/i), '2LoD');
       await user.click(screen.getByText('▤ Register'));
+      // The reviewer's queue shows what awaits sign-off; this case is not in it, so show them all.
+      await user.click(await screen.findByRole('button', { name: /show all/i }));
       await user.click(await screen.findByText(LABEL));
       await screen.findByRole('heading', { name: LABEL });
       await waitFor(() => expect(screen.queryByRole('button', { name: /correct this check/i })).not.toBeInTheDocument());

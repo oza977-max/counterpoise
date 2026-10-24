@@ -1072,14 +1072,17 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
         </p>
       )}
 
-      {/* R18-D2 (§27.10): correcting a check is a submitter action, never the reviewer's, and only for a case whose
-          current record says where its answers came from (an older case is the older-case path). The action
+      {/* R18-D2/E (§27.10): correcting a check is a submitter action, never the reviewer's. A case whose current
+          record says where its answers came from reopens from them; an older case reopens from its "Not sure"
+          answers, with its own note (R18-E). The action
           reopens the case on the form; nothing is written until the person confirms there. */}
       {(() => {
         if (role !== '1LoD' || !onCorrectFromRecord || !policy || !latestVerdict) return null;
         const f = currentVerdictAttestationFields(events);
         const description = effectiveDescription(events);
-        if (f.answer_sources === undefined || restorableAnswers(f.answer_sources, description, policy) === null) return null;
+        // A case with answer_sources reopens from them; an older case (none) reopens from its "Not sure" assumptions.
+        const older = f.answer_sources === undefined;
+        if (restorableAnswers(f.answer_sources, description, policy, f.assumptions) === null) return null;
         return (
           <div className="register-detail__correct">
             <button
@@ -1092,6 +1095,7 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
                   graphVersion: latestVerdict.graph_version,
                   description,
                   sources: f.answer_sources,
+                  assumptions: f.assumptions,
                   policy,
                 });
                 if (!opening) return;
@@ -1101,7 +1105,9 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
             >
               {R18_COPY.CORRECT_THIS_CHECK_LABEL}
             </button>
-            <p className="register-detail__correct-note">{R18_COPY.CORRECT_THIS_CHECK_NOTE}</p>
+            <p className="register-detail__correct-note">
+              {older ? R18_COPY.CORRECT_OLDER_CHECK_NOTE : R18_COPY.CORRECT_THIS_CHECK_NOTE}
+            </p>
           </div>
         );
       })()}

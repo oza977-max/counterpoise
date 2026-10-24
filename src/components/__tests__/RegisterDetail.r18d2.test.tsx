@@ -52,21 +52,46 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     expect(screen.queryByText(R18_COPY.CORRECT_THIS_CHECK_NOTE)).not.toBeInTheDocument();
   });
 
-  it('GI-13-01: it is not offered for a case with no answer_sources (an older case), and neither is the note', async () => {
+  // R18-E: the older-case path exists now, so these two D2 tests (which asserted the action was ABSENT for a record
+  // with no answer_sources) are re-pointed: it is offered, with its own note, and the new-case note is the one absent.
+  it('GI-13-01: for a case with no answer_sources (an older case) it is offered with the older-case note, and the new-case note is absent', async () => {
     const id = crypto.randomUUID();
     await seedCase(id, {});
     render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
     await screen.findByRole('heading', { name: /client email drafting assistant/i });
-    expect(screen.queryByRole('button', { name: LABEL })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: LABEL })).toBeInTheDocument();
+    expect(screen.getByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).toBeInTheDocument();
     expect(screen.queryByText(R18_COPY.CORRECT_THIS_CHECK_NOTE)).not.toBeInTheDocument();
   });
 
-  it('GI-13-01: it is not offered when the CURRENT record has none, even if an earlier confirmation did', async () => {
+  it('GI-13-01: the older-case note is absent for a case that has answer_sources, and the 2LoD reviewer sees neither note on an older case', async () => {
+    const withSources = crypto.randomUUID();
+    const older = crypto.randomUUID();
+    await seedCase(withSources, { sources: sources() });
+    await seedCase(older, {});
+    const first = render(<RegisterDetail useCaseId={withSources} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
+    await screen.findByRole('button', { name: LABEL });
+    expect(screen.queryByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).not.toBeInTheDocument();
+    first.unmount();
+    render(<RegisterDetail useCaseId={older} role="2LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
+    await screen.findByRole('heading', { name: /client email drafting assistant/i });
+    expect(screen.queryByRole('button', { name: LABEL })).not.toBeInTheDocument();
+    expect(screen.queryByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).not.toBeInTheDocument();
+  });
+
+  it('GI-13-01: when the CURRENT record has none, even if an earlier confirmation did, it is the older-case path - the earlier record is not believed', async () => {
     const id = crypto.randomUUID();
     await seedCase(id, { sources: sources(), corrections: [{}] });
-    render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
+    const onCorrect = vi.fn();
+    const user = userEvent.setup({ delay: null });
+    render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={onCorrect} />);
     await screen.findByText(R18_COPY.SOURCES_HISTORY_NOTE);
-    expect(screen.queryByRole('button', { name: LABEL })).not.toBeInTheDocument();
+    expect(screen.getByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: LABEL }));
+    const opening = onCorrect.mock.calls[0]![0];
+    // nothing from the earlier record's sources comes back: every answer is blank and marked
+    expect(Object.values(opening.answerState).every((e) => (e as { source: { kind: string } }).source.kind === 'not-carried')).toBe(true);
+    expect(opening.originalVerdictId).toBe(`v-${id}-c1`);
   });
 
   it('GI-13-01: it is offered from a correction\'s own sources, and reopens on the correction\'s description', async () => {

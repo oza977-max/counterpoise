@@ -1676,7 +1676,22 @@ export const R18_COPY = {
   // Owner-requested (review pass 1, 2026-10-22): shown on a form reopened from a record when a recorded answer
   // could not be put back because the form no longer offers it. Only when something was left blank.
   RESTORE_DROPPED_PREFIX: "Some recorded answers no longer match the form's choices and were left blank:",
+
+  // ── Round 18-E: correcting a check saved before answers were recorded (§27.10 "An older case") ──
+  // Shown beside the action instead of CORRECT_THIS_CHECK_NOTE when the case carries no record of its answers. Each
+  // clause is true only there: the description is kept, the answers you were not sure about come back and need a
+  // tick, every other answer is blank, nothing is recorded until Confirm, an unfinished check in this tab is replaced.
+  CORRECT_OLDER_CHECK_NOTE:
+    'This check was saved before Counterpoise recorded where answers came from. It opens on the form with your description kept and the answers you were not sure about filled in; each needs your tick. Every other answer is blank, for you to answer again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+  // Shown on the form of an older case when a "Not sure" the earlier record names could not be put back (the form
+  // does not show that question until an earlier one is answered, or offers no such answer). Only when one was.
+  OLDER_DROPPED_PREFIX: 'These “Not sure” answers from the earlier record could not be put back and were left blank:',
 } as const;
+
+/** The form note for an older case's “Not sure” answers that could not be put back: the prefix, the questions, a full stop. */
+export function olderDroppedSentence(questions: readonly string[]): string {
+  return `${R18_COPY.OLDER_DROPPED_PREFIX} ${questions.join('; ')}.`;
+}
 
 /** The one form note for answers left blank on restore: the prefix, then the questions, then a full stop. */
 export function restoreDroppedSentence(questions: readonly string[]): string {

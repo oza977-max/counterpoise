@@ -63,14 +63,13 @@ import {
   VENDOR_UNSURE_ASSUMPTION,
   ratingWarningFor,
   R18_COPY,
-  restoreDroppedSentence,
   QUESTION_WORDS,
   formReadNote,
   placeSentence,
 } from './plain-copy';
 import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
-import { correctionOpening, effectiveDescription } from './correction-from-record';
+import { correctionOpening, effectiveDescription, isRebuiltFromEarlierRecord } from './correction-from-record';
 import type { CorrectionOpening } from './correction-from-record';
 import { currentVerdictAttestationFields } from './RegisterDetail';
 import { toAnswerSources } from '../engine/answer-sources';
@@ -241,21 +240,21 @@ export default function IntakeFlow({
   const openedCorrection = useRef<CorrectionOpening | null>(null);
   // R18-D2 review pass 1: the questions whose recorded answer the form no longer offers, left blank on a restore.
   // The form says so in one note; it belongs to the case just opened, so Start over clears it.
-  const [restoreDropped, setRestoreDropped] = useState<string[]>([]);
+  const [restoreDropped, setRestoreDropped] = useState<string | null>(null);
   useEffect(() => {
     if (correctionRequest === null || openedCorrection.current === correctionRequest) return;
     openedCorrection.current = correctionRequest;
     handleStartOver();
     setSubmittedDescription(correctionRequest.description);
-    const { droppedQuestions, ...opening } = correctionRequest;
+    const { droppedNote, ...opening } = correctionRequest;
     dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...opening });
-    setRestoreDropped(droppedQuestions);
+    setRestoreDropped(droppedNote);
     onCorrectionOpened?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [correctionRequest]);
 
   function handleStartOver() {
-    setRestoreDropped([]);
+    setRestoreDropped(null);
     // Final review M-1: a failed-save message belongs to the case it was
     // about — never carried onto the next one.
     setDecisionError(null);
@@ -1425,7 +1424,9 @@ export default function IntakeFlow({
       // one) are actually in hand; the result rides the same `corrections`
       // field every other path already threads through to
       // runConfirmAndEvaluate's existing per-correction write loop.
-      const corrections = state.originalGraph
+      // R18-E: an older case's stand-in "original" is mostly strict defaults for answers that were never kept, so
+      // nothing is diffed against it: a graph_corrected record would claim original values the case never had.
+      const corrections = state.originalGraph && !isRebuiltFromEarlierRecord(state.originalGraph)
         ? formCorrections(state.originalGraph, graph, { by: getRole(), at: new Date().toISOString(), newId: () => crypto.randomUUID() })
         : [];
       dispatch({
@@ -1916,7 +1917,9 @@ export default function IntakeFlow({
           // wrote — a zero-correction resubmission writes none, and
           // eventDetail (RegisterDetail.tsx) reads this to render it as a
           // re-check rather than implying something changed.
-          corrections_count: correctionsOnTrail,
+          // R18-E: absent for an older case's correction - it has no real original to differ from, and a count of
+          // zero would read "Re-checked - no answers changed", which nobody can know.
+          ...(isRebuiltFromEarlierRecord(originalGraph) ? {} : { corrections_count: correctionsOnTrail }),
           // F-4 (DR7-12, DR7-16): same spread-if-present discipline as
           // graph_confirmed below — a correction keeps what the person
           // typed, instead of dropping it the way only writing it on a
@@ -2108,9 +2111,9 @@ export default function IntakeFlow({
           policy: policyResult.policy,
         });
         if (opening) {
-          const { droppedQuestions, ...open } = opening;
+          const { droppedNote, ...open } = opening;
           dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...open });
-          setRestoreDropped(droppedQuestions);
+          setRestoreDropped(droppedNote);
           return;
         }
       }
@@ -2668,9 +2671,9 @@ export default function IntakeFlow({
             {evaluationError && <p role="alert">Evaluation could not complete: {evaluationError}</p>}
             {/* R18-D2 review pass 1: a correction reopened from a record, when a recorded answer could not be put
                 back because the form no longer offers it. Only then; the questions are named. */}
-            {state.originalVerdictId !== undefined && restoreDropped.length > 0 && (
+            {state.originalVerdictId !== undefined && restoreDropped !== null && (
               <p role="status" className="plain-form__read-note">
-                {restoreDroppedSentence(restoreDropped)}
+                {restoreDropped}
               </p>
             )}
             {reviewGateError && (
