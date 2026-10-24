@@ -382,7 +382,9 @@ export function selectResults(
   if (host === null) return { main: undefined, later: undefined };
   const mine = results.filter((r) => r.model === setting.model && r.place === setting.place && r.host === host);
   const complete = mine.filter(isComplete);
-  const main = complete.find((r) => r.noAnswer === undefined || r.noAnswer < r.casesRun) ?? complete[0] ?? mine[0];
+  // The newest complete run is main, even one where the model gave no usable answer: an older success must never
+  // hide a newer failure (R18-F review pass 2).
+  const main = complete[0] ?? mine[0];
   if (!main || !isComplete(main)) return { main, later: undefined };
   const newer = mine.slice(0, mine.indexOf(main)).find((r) => r.stopped);
   return { main, later: newer };

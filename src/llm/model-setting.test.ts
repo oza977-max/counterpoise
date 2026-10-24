@@ -611,10 +611,13 @@ describe('review pass 1: label and main result agree (fixes 2 and 3)', () => {
     expect(modelLabel(sett, [result({ noAnswer: 0 })])).toMatchObject({ kind: 'tested' });
   });
 
-  it('an older complete run with usable answers wins over a newer all-no-answer one', () => {
+  // Review pass 2 (Important): an older success must never hide a newer failure. The newest complete run is
+  // main even when the model gave no usable answer in it, so the label reads "untested (…no usable answer…)".
+  it('a newer all-no-answer run is main over an older run with usable answers - the newer failure is shown', () => {
     const rs = [result({ noAnswer: 31, date: '2026-10-09' }), result({ noAnswer: 2, date: '2026-10-08' })];
-    expect(modelLabel(sett, rs)).toMatchObject({ kind: 'tested', date: '2026-10-08' });
-    expect(selectResults(sett, rs).main).toBe(rs[1]);
+    expect(modelLabel(sett, rs)).toMatchObject({ kind: 'no-answer' });
+    expect(modelLabel(sett, rs)).not.toMatchObject({ kind: 'tested' });
+    expect(selectResults(sett, rs).main).toBe(rs[0]);
   });
 
   it('selectResults: the newest complete run is main; a newer stopped run is "later"; an older one is not', () => {
