@@ -144,13 +144,23 @@ describe('an older case is corrected without inventing an original (TC-R18-GI-10
     const payload = ofType(trail, 'verdict_corrected')[0]!.payload as { corrections_count?: number; answer_sources?: unknown };
     expect(payload.answer_sources).toBeDefined();
     expect('corrections_count' in payload).toBe(false);
+    // review pass 1: nothing else says the correction started from an unrecorded original, so the event does
+    expect((payload as { corrected_from_earlier_record?: boolean }).corrected_from_earlier_record).toBe(true);
     expect((await getAllForExport()).filter((e) => e.use_case_id === 'uc-r18e-write' && e.payload.type === 'use_case_created')).toHaveLength(1);
     // the register's account of the correction
     await user.click(screen.getByText('▤ Register'));
     await user.click(await screen.findByText('Older write E'));
     await screen.findByRole('region', { name: /where each answer came from/i });
     expect(document.body.textContent).not.toMatch(/no answers changed/i);
+    expect(document.body.textContent).toContain(R18_COPY.CORRECTED_FROM_EARLIER_RECORD);
   }, SLOW_FLOW_MS * 2);
+});
+
+describe('the earlier-record line is claimed only where true (review pass 1)', () => {
+  it('GI-13-01: the line says what is true - the earlier record did not keep its answers, so the changes cannot be listed - and uses no reserved word', () => {
+    expect(R18_COPY.CORRECTED_FROM_EARLIER_RECORD).toBe('Corrected from an earlier record that did not keep its answers, so the changes cannot be listed.');
+    expect(R18_COPY.CORRECTED_FROM_EARLIER_RECORD).not.toMatch(/approved|rejected/i);
+  });
 });
 
 describe('an older multi-node case still opens and its verdict renders (TC-R18-GI-10-03)', () => {

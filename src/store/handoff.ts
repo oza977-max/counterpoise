@@ -384,6 +384,8 @@ const auditPayloadSchema = z.discriminatedUnion('type', [
     // R18-D1 (§27.13): as graph_confirmed above; the description is written only when a correction edited it.
     answer_sources: answerSourcesSchema.optional(),
     description: z.string().max(1_000_000).optional(),
+    // R18-E review pass 1: tolerant - a value that is not a boolean reads as absent rather than refusing the file.
+    corrected_from_earlier_record: z.boolean().optional().catch(undefined),
   }).passthrough(),
   z.object({
     type: z.literal('lifecycle_stage_changed'),

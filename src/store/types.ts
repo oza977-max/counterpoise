@@ -175,6 +175,9 @@ export type AuditEventPayload =
       // R18-D1 (§27.13 "The corrected description"): written only when a correction edited the description.
       // use_case_created's description is never rewritten.
       description?: string;
+      // R18-E review pass 1 (§27.10): true when the case was an older one whose record kept no answers, so this
+      // correction wrote no graph_corrected and no corrections_count. Absent otherwise; absence is not a claim.
+      corrected_from_earlier_record?: boolean;
     }
   | { type: 'lifecycle_stage_changed'; from_stage: LifecycleStage; to_stage: LifecycleStage }
   | { type: 're_evaluation_queued'; policy_version: string }

@@ -95,7 +95,9 @@ export function eventDetail(event: AuditEvent, viewerRole?: string): string {
       // a pre-D2 event lacking the field is honestly unknown, not zero.
       return `${p.corrections_count === 0 ? 'Re-checked — no answers changed. ' : ''}${
         STATUS_LABEL[p.new_verdict.status] ?? p.new_verdict.status
-      } · ${p.new_verdict.tier} · Track ${p.new_verdict.track}. Supersedes verdict ${p.original_verdict_id.slice(0, 8)}…${assumptionsCountClause(p.assumptions)}`;
+      } · ${p.new_verdict.tier} · Track ${p.new_verdict.track}. Supersedes verdict ${p.original_verdict_id.slice(0, 8)}…${assumptionsCountClause(p.assumptions)}${
+        p.corrected_from_earlier_record === true ? ` ${R18_COPY.CORRECTED_FROM_EARLIER_RECORD}` : ''
+      }`;
     case 'lifecycle_stage_changed':
       // design-review-003 (Panel B): this used to print the raw enum
       // ("pre_checked → approved") while the stage chip two sections above,

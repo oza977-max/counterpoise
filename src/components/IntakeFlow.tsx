@@ -1632,7 +1632,9 @@ export default function IntakeFlow({
           // re-check rather than implying something changed.
           // R18-E: absent for an older case's correction - it has no real original to differ from, and a count of
           // zero would read "Re-checked - no answers changed", which nobody can know.
-          ...(isRebuiltFromEarlierRecord(originalGraph) ? {} : { corrections_count: correctionsOnTrail }),
+          ...(isRebuiltFromEarlierRecord(originalGraph)
+            ? { corrected_from_earlier_record: true }
+            : { corrections_count: correctionsOnTrail }),
           // F-4 (DR7-12, DR7-16): same spread-if-present discipline as
           // graph_confirmed below — a correction keeps what the person
           // typed, instead of dropping it the way only writing it on a

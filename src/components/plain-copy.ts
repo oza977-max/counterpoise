@@ -1680,6 +1680,9 @@ export const R18_COPY = {
   // Settings choice) and that the person confirms every answer a model fills in. Makes no promise about where text
   // does or does not go: that depends on the setting, and the sentence under the Settings choice says which.
   // Review pass 1: the saved Anthropic key is a fourth way text can leave (PLACE_SENTENCES 'this-computer-with-key').
+  // Review pass 1: the register's line on a correction of an older case (verdict_corrected.corrected_from_earlier_record).
+  CORRECTED_FROM_EARLIER_RECORD:
+    'Corrected from an earlier record that did not keep its answers, so the changes cannot be listed.',
   ABOUT_KEY_SENTENCE:
     'Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.',
   // Review pass 1: true in every state; replaces the About page's "nothing you enter leaves this machine".

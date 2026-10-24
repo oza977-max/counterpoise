@@ -130,6 +130,8 @@ describe('R18-D2 acceptance: confirm, read it in the register, correct it from t
       expect(second.filter((e) => e.payload.type === 'graph_confirmed')).toHaveLength(1);
       const corrected = second.filter((e) => e.payload.type === 'verdict_corrected');
       expect(corrected).toHaveLength(1);
+      // R18-E review pass 1 false state: a correction that started from recorded answers does not claim an earlier record lost them
+      expect('corrected_from_earlier_record' in corrected[0]!.payload).toBe(false);
       const newSources = (corrected[0]!.payload as { answer_sources?: { answers: { question_id: string; origin: string }[] } }).answer_sources;
       expect(newSources).toBeDefined();
       const newOrigin = (id: string) => newSources!.answers.find((a) => a.question_id === id)?.origin;
