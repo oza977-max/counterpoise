@@ -75,7 +75,7 @@ function toArray(v: string | string[] | undefined): string[] {
 // F-8 (DR7-08). The one place Q13's form-option ticks (none / credentialed /
 // deployment / shared / not-sure) become engine `SystemAccessScope` values
 // AND are validated, through `normaliseAccessScope` — the SAME checker
-// `GraphView`'s correction editor and the questionnaire's multi-select use,
+// the questionnaire's multi-select uses,
 // so the four legal values, their canonical order and the `none`-exclusivity
 // rule can never drift between call sites. Exported so `StructuredForm.tsx`'s
 // required-field check calls this exact function rather than re-deriving

@@ -5,8 +5,8 @@ import App from '../../App';
 import { setCurrentPolicyYaml } from '../../store/policy-source';
 import { seedFormRoute, workedAnswers } from './formRoute';
 
-// R16-A1 (§1.4, CF-5). IntakeFlow's first evaluation gate (graph_review's
-// "Proceed", handleProceedFromGraphReview) must refuse evaluation the same
+// R16-A1 (§1.4, CF-5). IntakeFlow's first evaluation gate (the form's own
+// Continue) must refuse evaluation the same
 // way App's start-up gate does, when checkPolicyReferences finds a
 // reference error — through the existing reviewGateError message slot,
 // not a thrown exception (unlike a structurally-invalid policy file).

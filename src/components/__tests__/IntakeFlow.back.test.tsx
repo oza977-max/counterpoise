@@ -188,7 +188,7 @@ describe('IntakeFlow — contradictions are caught on the zero-questions path (U
     sessionStorage.clear();
   });
 
-  it('a description denying what the form declares blocks the skip to confirmation [TC-R16-W-57: a contradiction on the form path stops at contradiction_review, never passing through graph_review]', async () => {
+  it('a description denying what the form declares blocks the skip to confirmation [TC-R16-W-57: a contradiction on the form path stops at contradiction_review]', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
@@ -220,7 +220,7 @@ describe('IntakeFlow — contradictions are caught on the zero-questions path (U
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
     // R16-W W-3 (D-69): the form path computes contradictions itself when
     // it finds no questions, and goes straight to contradiction_review —
-    // there is no graph_review/Proceed step on this path to click through.
+    // there is no Proceed step on this path to click through.
 
     // The old behaviour sailed to "Confirm and evaluate". The fix surfaces
     // the contradiction review instead — both statements, resolution required.

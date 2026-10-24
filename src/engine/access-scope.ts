@@ -4,9 +4,8 @@ import type { SystemAccessScope } from './types';
 // helper — no I/O, no clock, no randomness. This is the SINGLE
 // implementation of the system_access_scope validation + canonicalisation
 // rule. Every caller that accepts a tick-all answer for "what can this
-// system reach by itself" (the extraction zod gate, the guided form's Q13,
-// GraphView's correction control, the questionnaire's multi-select, and
-// coerceAnswerValue) calls this rather than re-deriving the rule, so the
+// system reach by itself" (the guided form's Q13, the questionnaire's
+// multi-select, and coerceAnswerValue) calls this rather than re-deriving the rule, so the
 // four legal values, their canonical order and the `none`-exclusivity rule
 // can never drift between call sites.
 //

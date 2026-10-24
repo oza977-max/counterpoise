@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import SettingsPanel from '../SettingsPanel';
 import { R18_COPY } from '../plain-copy';
 import { MODEL_SETTING_KEY, MODEL_TEST_RESULTS_KEY, forgetModelSetting, updateModelSetting } from '../../llm/model-setting';
-import { enableLocalLlm } from '../../llm/local-provider';
 import type { ModelPlace, ModelTestResult } from '../../engine/prefill-types';
 
 // R18-B, the Settings model section (specs/intake-flow.md §27.8). Real component,
@@ -220,7 +219,9 @@ describe('the three places (TC-R18-MS-1-01..09)', () => {
 
 describe('migration (TC-R18-MS-1-11)', () => {
   it('BC-003: the old keys as the baseline wrote them show as this computer, with the model, in Settings', async () => {
-    enableLocalLlm('http://localhost:11434/', 'qwen3:4b');
+    // The two keys as the earlier build's setter wrote them (trimmed).
+    localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
+    localStorage.setItem('aigate:local-llm-model', 'qwen3:4b');
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     await open(user);

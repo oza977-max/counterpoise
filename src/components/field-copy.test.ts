@@ -3,7 +3,7 @@ import { systemAccessScopeLabel, SYSTEM_ACCESS_LABELS, plainWithCode } from './f
 
 // R16-A1 (PE-9 §1.1): system_access_scope widened to accept a list. Every
 // renderer that displays the field must handle a list without crashing —
-// this is the shared helper graph-summary.ts and GraphView.tsx both use.
+// this is the shared helper graph-summary.ts uses.
 describe('systemAccessScopeLabel', () => {
   it('TC-R16-A1-21: a single value renders exactly as plainWithCode(SYSTEM_ACCESS_LABELS[value]) did before this change', () => {
     expect(systemAccessScopeLabel('shared_infrastructure')).toBe(

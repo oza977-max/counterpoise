@@ -10,6 +10,7 @@ import { textFingerprint } from '../engine/form-answer-state';
 import type { DataFlowGraph } from '../engine/types';
 import type { IntakeState } from './intake-state';
 import type { FormAnswerState, LastRead, ReadRecord } from '../engine/prefill-types';
+import { EARLIER_CARD_REVIEW_STEP } from '../test-support/earlier-drafts';
 
 // R18-C2 drafts (specs/intake-flow.md §27.5 "Reload while reading", §27.7): prefill_reading is saved like
 // evaluation_pending and mapped on load to the form with the description kept and outcome not-read;
@@ -189,7 +190,7 @@ describe('an earlier build’s form answers come back as typed where the form st
   });
 
   it('a card-review draft (no form answers at all) and an answer set that is entirely invalid land with no answerState field', () => {
-    put({ version: 2, state: { step: 'graph_review', ...base, graph, graphVersion: 1 } });
+    put({ version: 2, state: { step: EARLIER_CARD_REVIEW_STEP, ...base, graph, graphVersion: 1 } });
     expect(loadDraftInfo()!.state).toEqual({ step: 'graph_extraction', description: D, method: 'form' });
     put({ version: 3, state: { step: 'confirmation', ...base, graph, plainAnswers: { '4': 'Gigantic' } } });
     expect(loadDraftInfo()!.state).toEqual({ step: 'graph_extraction', description: D, method: 'form' });

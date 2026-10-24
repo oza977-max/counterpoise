@@ -16,7 +16,7 @@ import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 // R16-F — design-review-007.html Group 1. Integration-level coverage for
 // the items that need the real App wiring to prove: F-1 (cross-tab
 // confirm/correction refusal), F-2 (a form-path evaluation failure returns
-// to the form, not graph_review), F-3 (the creation record's new timing).
+// to the form), F-3 (the creation record's new timing).
 // Unit-level coverage for the individual pieces lives in intake-state.test.ts
 // (the reducer — including EVALUATION_FAILED's intake_method branch and
 // STEP_BACK's afterFailedEvaluation refusal), db.test.ts (withCaseLock),
@@ -99,7 +99,7 @@ function makeVerdict(overrides: Partial<Verdict> = {}): Verdict {
 }
 
 describe('F-6 (DR7-13): checkPolicyGate is the one policy-gate check, on the form path too', () => {
-  it('TC-R16-F-59: a covers_reviews reference error on the FORM path\'s own Continue shows the message and never dispatches FORM_SUBMITTED (mirrors TC-R16-A1-63\'s graph_review coverage)', async () => {
+  it('TC-R16-F-59: a covers_reviews reference error on the FORM path\'s own Continue shows the message and never dispatches FORM_SUBMITTED (mirrors TC-R16-A1-63)', async () => {
     localStorage.clear();
     const { setCurrentPolicyYaml } = await import('../../store/policy-source');
     setCurrentPolicyYaml(`
@@ -342,7 +342,7 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
 });
 
 describe('F-2 (DR7-04): an evaluation error never orphans the case', () => {
-  it('TC-R16-F-24: a form-path evaluation failure returns to the FORM, filled in, not graph_review, and orphans nothing on the trail', async () => {
+  it('TC-R16-F-24: a form-path evaluation failure returns to the FORM, filled in, and orphans nothing on the trail', async () => {
     localStorage.clear(); // no API key — structured form path
 
     // Force a genuine evaluation failure the same way WalkingSkeleton's own
@@ -382,9 +382,7 @@ describe('F-2 (DR7-04): an evaluation error never orphans the case', () => {
     await screen.findByText(/here.s what we understood/i);
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
 
-    // F-2: back on the FORM, filled in — never graph_review, which this
-    // path has never visited on the way forward either (W-3) — and the
-    // error renders (previously only wired up on graph_review's own JSX).
+    // F-2: back on the FORM, filled in, and the error renders there.
     expect(await screen.findByRole('alert')).toHaveTextContent(/evaluation could not complete/i);
     expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('No-track-match tool');
 

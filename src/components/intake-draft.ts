@@ -68,9 +68,6 @@ export function saveDraft(state: IntakeState): void {
 
 export interface DraftInfo {
   state: IntakeState;
-  /** Retired. The CR7-28 return to the card review no longer exists; kept as a
-   *  constant false so existing readers compile until R18-E removes the field. */
-  migratedFromOldBuild: boolean;
   /** R18-NF-5. True when `state` is NOT what was saved: a draft from an earlier
    *  build (or one that fails validation) was turned into the safe landing, the
    *  form with the description kept and no answers. Computed at load and never
@@ -265,9 +262,8 @@ const KNOWN_KEYS: Record<string, readonly string[]> = {
   prefill_reading: ['description', 'nudgeFor', 'decidedFor', 'answerState', 'lastRead'],
   duplicate_check: ['description', 'nudgeFor', 'lastRead'],
   graph_extraction: ['description', 'method', 'nudgeFor', 'decidedFor', 'afterFailedEvaluation', 'useCaseId', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'originalVerdictId', 'originalGraph'],
-  graph_review: ['description', 'graph', 'graphVersion', 'corrections', 'useCaseId', 'originalVerdictId', 'unconfirmedNodeIds', 'provenance', 'guessedFields', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'uncertainNodeIds', 'afterFailedEvaluation', 'assumptions', 'reentry'],
-  questionnaire: ['description', 'graph', 'questions', 'answers', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'undo', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'ignoredJurisdictions', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
-  contradiction_review: ['description', 'graph', 'questions', 'answers', 'contradictions', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'ignoredJurisdictions', 'guessedFields', 'provenance', 'unconfirmedNodeIds', 'jurisdictionsConfirmed', 'backGraph', 'backCorrections', 'askedGuessedFields', 'reentry', 'backAssumptions', 'backUncertainNodeIds', 'backAfterFailedEvaluation'],
+  questionnaire: ['description', 'graph', 'questions', 'answers', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'undo', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds'],
+  contradiction_review: ['description', 'graph', 'questions', 'answers', 'contradictions', 'resolutionNotes', 'explainedContradictions', 'corrections', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds'],
   confirmation: ['description', 'graph', 'graphVersion', 'corrections', 'answers', 'resolutionNotes', 'useCaseId', 'originalVerdictId', 'originalGraph', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds', 'afterFailedEvaluation'],
   evaluation_pending: ['graph', 'useCaseId', 'originalVerdictId', 'originalGraph', 'description', 'plainAnswers', 'answerState', 'lastRead', 'assumptions', 'uncertainNodeIds'],
   verdict: ['verdictId'],
@@ -282,7 +278,7 @@ function pickKnown(v: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-const STEPS_WITH_GRAPH = new Set(['graph_review', 'questionnaire', 'contradiction_review', 'confirmation', 'evaluation_pending']);
+const STEPS_WITH_GRAPH = new Set(['questionnaire', 'contradiction_review', 'confirmation', 'evaluation_pending']);
 
 /** A state read back from storage, checked field by field for what the screens read.
  *  Returns the state itself (its own object, never a prototype-carrying copy of the
@@ -386,7 +382,6 @@ export function loadDraftInfo(): DraftInfo | null {
   if (raw === null || raw === '') return null;
   const unusable = (description: string, answerState?: FormAnswerState): DraftInfo => ({
     state: landing(description, answerState),
-    migratedFromOldBuild: false,
     earlierVersionNotice: true,
   });
   try {
@@ -401,7 +396,7 @@ export function loadDraftInfo(): DraftInfo | null {
     // it: IntakeFlow only reads its step (the interrupted-check notice) and starts empty.
     if (isRecord(envelope.state) && envelope.state.step === 'evaluation_pending') {
       // Only its step is ever read (IntakeFlow starts empty); rebuilt from known keys all the same.
-      return { state: pickKnown(envelope.state) as unknown as IntakeState, migratedFromOldBuild: false, earlierVersionNotice: false };
+      return { state: pickKnown(envelope.state) as unknown as IntakeState, earlierVersionNotice: false };
     }
     const description = salvageDescription(parsed);
     if (envelope.version !== DRAFT_VERSION) {
@@ -416,13 +411,13 @@ export function loadDraftInfo(): DraftInfo | null {
       const earlier = Number.isInteger(envelope.version) && envelope.version >= 1 && envelope.version < DRAFT_VERSION;
       if (earlier && isRecord(envelope.state) && (envelope.state.step === 'description_entry' || envelope.state.step === 'duplicate_check')) {
         const kept = currentState(envelope.state);
-        if (kept !== null) return { state: kept, migratedFromOldBuild: false, earlierVersionNotice: false };
+        if (kept !== null) return { state: kept, earlierVersionNotice: false };
       }
       return unusable(description, answersFromEarlierBuild(envelope));
     }
     const state = currentState(envelope.state);
     if (state === null) return unusable(description);
-    return { state, migratedFromOldBuild: false, earlierVersionNotice: false };
+    return { state, earlierVersionNotice: false };
   } catch {
     return unusable('');
   }

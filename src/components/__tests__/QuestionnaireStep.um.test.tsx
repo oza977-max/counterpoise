@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import QuestionnaireStep from '../QuestionnaireStep';
 import { approvedModelOptionList } from '../plain-copy';
-import GraphView from '../GraphView';
 import { buildVerdictView } from '../verdict-view-model';
 import { loadPolicy } from '../../store/policy';
 import { evaluate } from '../../engine/evaluate';
@@ -14,8 +13,9 @@ import { checkPolicyReferences } from '../../store/policy-references';
 import type { Verdict } from '../../types/verdict';
 
 // UNSIGNED-MODEL (owner-approved wording 2026-10-03): a model the firm lists
-// but has not accepted says so on the button, the Recorded line and the
-// review row, and its owed review names the right action. REAL policy (BC-003).
+// but has not accepted says so on the button and the Recorded line, and its
+// owed review names the right action. (R18-E: the review row went with the
+// retired card review; TC-UM-02 and the review-row halves of TC-CR7-35b/c went with it.) REAL policy (BC-003).
 
 const SUFFIX = ' — not yet accepted by your firm, so it gets an extra check';
 const LOCAL_LABEL = 'A small open model running on your own computer' + SUFFIX;
@@ -81,17 +81,6 @@ describe('UNSIGNED-MODEL', () => {
     const rec = screen.getByText(/^recorded:/i).closest('p')!;
     expect(rec).toHaveTextContent(VENDOR_NAME);
     expect(rec).not.toHaveTextContent('not yet accepted');
-  });
-
-  it('TC-UM-02: the review screen row for qwen3:4b carries the suffix; VENDOR-LLM-v1 and unlisted ids do not', () => {
-    const { unmount } = render(<GraphView graph={graphWith('qwen3:4b')} policy={policy} />);
-    expect(screen.getByText(LOCAL_LABEL)).toBeInTheDocument();
-    unmount();
-    const second = render(<GraphView graph={graphWith('VENDOR-LLM-v1')} policy={policy} />);
-    expect(screen.getByText(VENDOR_NAME)).toBeInTheDocument();
-    second.unmount();
-    render(<GraphView graph={graphWith('some-new-model-7')} policy={policy} />);
-    expect(screen.getByText('some-new-model-7')).toBeInTheDocument();
   });
 
   it('TC-UM-03: a real evaluate() of a case declaring qwen3:4b owes "your AI risk team accepting this model", never "adding the model"', () => {
@@ -174,7 +163,7 @@ describe('CR7-35 — unnamed models', () => {
     expect(blank.warnings.some((w) => w.includes('qwen3:4b') && /plain_name/.test(w))).toBe(true);
   });
 
-  it('TC-CR7-35b: with no plain_name, button, Recorded line and review row show "Model n" (list order), keeping the suffix when not accepted; never the raw id', () => {
+  it('TC-CR7-35b: with no plain_name, button and Recorded line show "Model n" (list order), keeping the suffix when not accepted; never the raw id', () => {
     const p = withoutPlainNames();
     const models = p.approved_models!.filter((m) => !m.is_family);
     const labelOf = (id: string) => {
@@ -199,12 +188,9 @@ describe('CR7-35 — unnamed models', () => {
     expect(rec).toHaveTextContent(labelOf('qwen3:4b'));
     expect(rec).not.toHaveTextContent('qwen3');
     unmount();
-    render(<GraphView graph={graphWith('qwen3:4b')} policy={p} />);
-    expect(screen.getByText(labelOf('qwen3:4b'))).toBeInTheDocument();
-    expect(screen.queryByText('qwen3:4b')).not.toBeInTheDocument();
   });
 
-  it('TC-CR7-35c: a declared model id not on the list is shown as written on the Recorded line and the review row', () => {
+  it('TC-CR7-35c: a declared model id not on the list is shown as written on the Recorded line', () => {
     const { rerender, unmount } = render(
       <QuestionnaireStep
         questions={[question, { ...question, id: 'Q2', field: 'data_class', answer_type: 'select' }]}
@@ -217,12 +203,10 @@ describe('CR7-35 — unnamed models', () => {
     expect(screen.getByText(/^recorded:/i).closest('p')).toHaveTextContent('some-new-model-7');
     rerender(<div />);
     unmount();
-    render(<GraphView graph={graphWith('some-new-model-7')} policy={policy} />);
-    expect(screen.getByText('some-new-model-7')).toBeInTheDocument();
   });
 });
 
-describe('UNSIGNED-MODEL review — mixed and blank names', () => {
+describe('UNSIGNED-MODEL — mixed and blank names', () => {
   it('TC-CR7-35d: in a mixed list (named, unnamed, blank-named) only the unnamed are numbered, in order, and a blank name is treated as unnamed', () => {
     const opts = approvedModelOptionList([
       { model_id: 'a', plain_name: 'Alpha model', is_approved: true },

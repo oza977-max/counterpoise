@@ -98,7 +98,7 @@ async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, descrip
   await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
 
-describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to confirmation', () => {
+describe('R16-W W-3 (D-69): the form never shows a card review on the way to confirmation', () => {
   it('TC-R16-W-58: reaches "Here’s what we understood" directly — no "Confirm what we understood", no "worth a second look", no graph-review node cards', async () => {
     const user = userEvent.setup({ delay: null });
     await reachFormScreen(user, 'Zephyrquill morandane intake probe');
@@ -108,8 +108,8 @@ describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to
     expect(await screen.findByText(/here.s what we understood/i)).toBeInTheDocument();
     expect(screen.queryByText(/confirm what we understood/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/worth a second look/i)).not.toBeInTheDocument();
-    // graph_review renders GraphView's per-node cards (.graph-node); the
-    // form path must never produce one.
+    // The retired card review rendered per-node cards (.graph-node); the
+    // form must never produce one.
     expect(document.querySelectorAll('.graph-node')).toHaveLength(0);
     // No bare engine field code anywhere on the summary screen.
     expect(document.body.textContent).not.toMatch(/\bDATA_ZONE\b|\bMODEL_TYPE\b/);

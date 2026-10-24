@@ -70,12 +70,10 @@ function runsOnLine(platformId: string | undefined, policy: PolicyFile | undefin
   return `Runs on: ${match?.plain_name ?? 'your firm’s platform'}.`;
 }
 
-// R16-E §4 (v2.1, F1B-1). The description path's own plausibility wording
-// names the review screen's card and row — this is the one place outside
-// GraphView.tsx that needs to resolve WHICH card a warning's node belongs
-// to, since this screen has no per-column loop to read it off directly.
-// R16-E review pass 1: the card titles come from the ONE shared table
-// GraphView's own columns use, so the two can never drift apart.
+// R16-E §4 (v2.1, F1B-1). The double-check wording names the card a
+// warning's node belongs to; this resolves WHICH card, since this screen has
+// no per-column loop to read it off directly. The titles come from the ONE
+// shared table (GRAPH_REVIEW_CARD_TITLES), so they cannot drift apart.
 function cardTitleForNode(graph: DataFlowGraph, nodeId: string): string {
   if (graph.input_nodes.some((n) => n.id === nodeId)) return GRAPH_REVIEW_CARD_TITLES.input;
   if (graph.processing_nodes.some((n) => n.id === nodeId)) return GRAPH_REVIEW_CARD_TITLES.processing;
@@ -140,11 +138,9 @@ export default function UnderstoodSummary({
   const countryNames = countryNameList(graph.jurisdictions, policy);
   // F-9 (DR7-09). Pure, computed at render from the description and the
   // graph already in hand — no new state. Runs for BOTH paths: this
-  // component is the one point the form path reaches that the field-card
-  // screen (graph_review, description-path only) used to be the sole
-  // carrier of this check. The check flags each affected part of the case
-  // separately (right for the field cards, one card each), so the same
-  // sentence can come back several times — the summary shows each once.
+  // component is where this check is shown. The check flags each affected
+  // part of the case separately (one per card), so the same sentence can
+  // come back several times — the summary shows each once.
   const doubleCheckWarnings = [
     ...new Set(plausibilityWarnings(description, graph).map((w) => plausibilityMessage(w, graph))),
   ];

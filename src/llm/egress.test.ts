@@ -188,7 +188,7 @@ function stripComments(code: string): string {
 // Best effort: a textual scan; it will not see a call reached through an alias or a dynamic import.
 const CALLERS = /\bfetch\(|\bXMLHttpRequest\b|\bsendBeacon\b|\bWebSocket\b|\bEventSource\b|\bcreateClient\b|from\s+['"]@anthropic-ai\/sdk['"]/;
 
-/** The only production files that may reach the network (model-test.ts arrives with R18-F; local-provider.ts and graph-extractor.ts go with R18-E). */
+/** The only production files that may reach the network (model-test.ts arrives with R18-F). */
 const ALLOWED = [
   'llm/prefill.ts',
   'llm/model-setting.ts',
@@ -196,8 +196,6 @@ const ALLOWED = [
   'llm/duplicate-check.ts',
   'llm/reasoning-trace.ts',
   'llm/client.ts',
-  'llm/local-provider.ts', // interim until R18-E deletes it
-  'llm/graph-extractor.ts', // interim until R18-E deletes it
 ];
 /** Test support: may name the channels (to fake them) but must never be imported by production code. */
 const TEST_SUPPORT = ['llm/test-utils.ts', 'llm/__fixtures__/server-replies.ts', 'test-support/egress-harness.ts'];

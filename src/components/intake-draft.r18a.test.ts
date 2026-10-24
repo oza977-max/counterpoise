@@ -19,6 +19,7 @@ import { WORKED_EXAMPLES } from '../engine/worked-examples';
 import type { DataFlowGraph } from '../engine/types';
 import type { IntakeState } from './intake-state';
 import type { FormAnswerState } from '../engine/prefill-types';
+import { EARLIER_CARD_REVIEW_STEP } from '../test-support/earlier-drafts';
 
 // R18-A, draft v4 (specs/intake-flow.md §27.7; TC-R18-NF-5-01..04, GI-9).
 // Fixtures are shaped by the REAL producers (BC-003): the graph comes from
@@ -65,7 +66,7 @@ function oldDrafts(): [string, unknown][] {
   return [
     ['version 1 (bare state) questionnaire on the description path', questionnaireLlm],
     ['version 2 envelope, review of cards', { version: 2, state: {
-      step: 'graph_review', ...base, graph: llmGraph, graphVersion: 1, unconfirmedNodeIds: ['n1'], jurisdictionsConfirmed: false } }],
+      step: EARLIER_CARD_REVIEW_STEP, ...base, graph: llmGraph, graphVersion: 1, unconfirmedNodeIds: ['n1'], jurisdictionsConfirmed: false } }],
     ['version 3 envelope, questionnaire with a back snapshot', { version: 3, state: { ...questionnaireLlm, backGraph: llmGraph } }],
     ['version 3 envelope, contradiction review', { version: 3, state: {
       step: 'contradiction_review', ...base, graph, questions: [], answers: [], contradictions: [], resolutionNotes: [], plainAnswers } }],
@@ -93,7 +94,6 @@ describe('earlier drafts land on the form with the description kept (TC-R18-NF-5
       expect(info!.state).toEqual(LANDING);
     }
     expect(info!.earlierVersionNotice).toBe(true);
-    expect(info!.migratedFromOldBuild).toBe(false);
     // No plain answers, case id or graph came with it (the landing is a fresh form).
     expect(JSON.stringify(info!.state)).not.toMatch(/plainAnswers|useCaseId|uc-1|input_nodes/);
   });
@@ -150,7 +150,7 @@ describe('earlier drafts at the two steps before any answer keep their shape (sp
 describe('a damaged earlier draft still opens (TC-R18-NF-5-02)', () => {
   it.each([
     ['a description that is a number', { version: 3, state: { step: 'graph_extraction', description: 42, method: 'form' } }, ''],
-    ['no description at all', { version: 2, state: { step: 'graph_review', graph: llmGraph } }, ''],
+    ['no description at all', { version: 2, state: { step: EARLIER_CARD_REVIEW_STEP, graph: llmGraph } }, ''],
     ['a version from the future (99)', { version: 99, state: { step: 'confirmation', description: D } }, D],
   ])('TC-R18-NF-5-02: %s', (_name, draft, want) => {
     put(draft);

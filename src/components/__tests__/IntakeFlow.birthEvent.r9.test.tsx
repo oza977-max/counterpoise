@@ -1,52 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import GraphView from '../GraphView';
 import IntakeFlow from '../IntakeFlow';
 import { fillText, DUP_CHECK_WAIT, SLOW_FLOW_MS, pressNext } from './fillText';
-
-// Round 9 — the review screen recomposed (requirements-009, §19,
-// ADR-IF-R9-1): aggregation and priority, never deletion.
-
-describe('R9-SC-3/-4 — one alarm per card, visible next step', () => {
-  function guessedGraph() {
-    return {
-      id: 'g1', version: 1, intake_method: 'llm' as const, extracted_at: '2026-01-01T00:00:00.000Z',
-      input_nodes: [], output_nodes: [], edges: [], jurisdictions: [],
-      processing_nodes: [
-        { id: 'p1', label: 'x', model_type: 'llm' as const, autonomy_level: 2 as const, data_zone: 'Zone C' as const, vendor: 'v', replaces_prior_model: false, uncertain: true },
-      ],
-    };
-  }
-
-  it('TC-R15-C5-04 / TC-R9-SC-3-01: uncertainty + guesses + a warning yield exactly one warn-styled alarm', () => {
-    const { container } = render(
-      <GraphView
-        graph={guessedGraph()}
-        editable
-        unconfirmedNodeIds={[]}
-        onConfirmNode={vi.fn()}
-        guessedFields={{ p1: ['model_type'] }}
-        warnings={[{ node_id: 'p1', field: 'autonomy_level', signal: 'sounds-autonomous' }]}
-      />,
-    );
-    expect(container.querySelectorAll('.graph-node__uncertain').length).toBe(1);
-    expect(container.querySelectorAll('.graph-node__guessed-badge').length).toBe(1);
-    expect(container.querySelectorAll('.graph-node__advisory').length).toBe(1);
-    // Advisory is note-role, not alert — advisory ≠ blocking at a glance.
-    expect(within(container.querySelector('.graph-node')! as HTMLElement).getAllByRole('alert')).toHaveLength(1);
-  });
-
-  it('TC-R9-SC-4-01: a guessed card offers "Fix the details we couldn’t tell" (opens the editor) and still no plain confirm', async () => {
-    const user = userEvent.setup({ delay: null });
-    render(
-      <GraphView graph={guessedGraph()} editable onCorrect={vi.fn()} unconfirmedNodeIds={[]} onConfirmNode={vi.fn()} guessedFields={{ p1: ['model_type'] }} />,
-    );
-    expect(screen.queryByRole('button', { name: /^(this is right|i.ve checked this — it.s right)$/i })).toBeNull();
-    await user.click(screen.getByRole('button', { name: /fix the details we couldn.t tell/i }));
-    expect(screen.getByLabelText(/x — what kind of ai it is/i)).toBeInTheDocument();
-  });
-});
 
 // App-run vs seeded trail comparison (2026-08-17): the form path was
 // missing use_case_created — found by actually driving the app, not by
@@ -89,8 +45,7 @@ describe('form path — the trail records the birth event', () => {
     await user.click(screen.getByRole('checkbox', { name: /somewhere else, or not sure/i }));
     await user.click(screen.getByRole('radio', { name: /^no$/i }));
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
-    // R16-W W-3 (D-69): the form path reaches the summary directly — no
-    // graph_review heading on this path any more.
+    // R16-W W-3 (D-69): the form path reaches the summary directly.
     await screen.findByText(/here.s what we understood/i);
     // R16-F F-3 (DR7-05): the write now happens at Confirm, not here.
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));

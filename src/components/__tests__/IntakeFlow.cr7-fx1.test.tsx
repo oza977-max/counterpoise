@@ -560,11 +560,15 @@ describe("CR7-16 — an abandoned confirm or adopt cannot wipe a newer case's dr
   const NEWER_DRAFT = {
     version: 4,
     state: {
-      step: 'graph_review',
+      // R18-E: a confirmation draft (the card review this used to be is gone).
+      step: 'confirmation',
+      afterFailedEvaluation: false,
       description: 'A newer case the person started meanwhile',
       graph: makeGraph(),
       graphVersion: 1,
       corrections: [],
+      answers: [],
+      resolutionNotes: [],
       useCaseId: 'uc-newer-case',
     },
   };
@@ -608,7 +612,7 @@ describe("CR7-16 — an abandoned confirm or adopt cannot wipe a newer case's dr
     await waitFor(async () => {
       expect((await getAll(useCaseId)).map((e) => e.event_type)).toContain('verdict_produced');
     });
-    expect(loadDraft()?.step).toBe('graph_review');
+    expect(loadDraft()?.step).toBe('confirmation');
     expect((loadDraft() as { useCaseId?: string }).useCaseId).toBe('uc-newer-case');
   }, 30000);
 

@@ -38,19 +38,15 @@ interface ConfirmationStepProps {
   /** R18-C2 (§27.6): the form's answers with their sources, for the model-filled line. Absent on a path
    *  that has none; the line is then not shown. */
   answerState?: FormAnswerState;
-  /** W-3 (R16-W §1): similar decided cases, computed by the caller — on the
-   *  description path only when the graph came from the guided form (the
-   *  form path's own graph_review equivalent no longer exists, so this is
-   *  the only screen left to show them on). Rendered after the summary,
-   *  before the optional note, same collapsed panel and posture line as
-   *  graph_review's. */
+  /** W-3 (R16-W §1): similar decided cases, computed by the caller. The form
+   *  has no screen of its own for them, so this is the only screen to show
+   *  them on. Rendered after the summary, before the optional note, in a
+   *  collapsed panel with a posture line. */
   precedents?: EnrichedPrecedent[];
-  /** GT7 L-1 (P12): the typed description (description path only — IntakeFlow
-   *  never sets this on the form path) tried to set its own rating. Display only. */
+  /** GT7 L-1 (P12): the typed description tried to set its own rating. Display only. */
   ratingInstructionsFound?: boolean;
-  /** "Change an answer" on the summary — navigates back to the question
-   *  (form path) or into the existing correction flow (description path,
-   *  UC-7). Not a write; the one write stays onConfirm below. */
+  /** "Change an answer" on the summary - navigates back to the form. Not a
+   *  write; the one write stays onConfirm below. */
   onChangeAnswer: () => void;
   /** Called with the submitter's optional note for the 2LoD reviewer —
    *  `undefined` when nothing was written, never an empty string. The note is
@@ -130,9 +126,8 @@ export default function ConfirmationStep({
         changeAnswerDisabled={pending}
       />
 
-      {/* R16-W W-3 (§1): same collapsed panel and posture line graph_review
-          renders — the form path no longer passes through that screen, so
-          this is the only place left to show them before attestation. */}
+      {/* R16-W W-3 (§1): similar decided cases, collapsed, with a posture line -
+          the only place to show them before attestation. */}
       {precedents && precedents.length > 0 && (
         <details className="similar-cases-collapse">
           <summary>

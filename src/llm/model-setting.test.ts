@@ -16,7 +16,6 @@ import {
   CORPUS_CASE_COUNT,
   readTestResults,
 } from './model-setting';
-import { enableLocalLlm } from './local-provider';
 import type { ModelTestResult } from '../engine/prefill-types';
 
 beforeEach(() => {
@@ -252,8 +251,10 @@ describe('readModelSetting and modelSettingState', () => {
     });
   });
 
-  it('BC-003: the old keys as enableLocalLlm wrote them migrate to this computer, with their model, and are removed', () => {
-    enableLocalLlm('http://localhost:11434/', ' qwen3:4b ');
+  it('BC-003: the old keys as the earlier build wrote them migrate to this computer, with their model, and are removed', () => {
+    // The earlier build's setter trimmed the address and the model and stored them under these two keys.
+    localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
+    localStorage.setItem('aigate:local-llm-model', 'qwen3:4b');
     expect(localStorage.getItem('aigate:local-llm-url')).toBe('http://localhost:11434');
     expect(readModelSetting()).toEqual({ version: 1, place: 'this-computer', url: 'http://localhost:11434', model: 'qwen3:4b' });
     expect(localStorage.getItem('aigate:local-llm-url')).toBeNull();

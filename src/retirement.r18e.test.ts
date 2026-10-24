@@ -39,7 +39,8 @@ describe('R18-E retirement table (specs/intake-flow.md §27.10), one grep test p
   it('row 3 (dead with it): the actions only the retired step could take are deleted too', () => {
     // QUESTIONS_GENERATED was valid only from graph_review; SWITCH_TO_FORM only from the model route's failure screen.
     expect(naming(/QUESTIONS_GENERATED|SWITCH_TO_FORM/)).toEqual([]);
-    expect(naming(/method:\s*'llm'|state\.method === 'llm'|method === 'llm'/, FILES.filter((r) => /^components\/(intake|Intake)/.test(r)))).toEqual([]);
+    // ... and the model route is not a method of the form step: no production intake file says so.
+    expect(naming(/'llm'/, ['components/intake-state.ts', 'components/intake-draft.ts', 'components/IntakeFlow.tsx'])).toEqual([]);
   });
 
   it('row 4: the five state fields are gone from the intake state, its draft and its screen', () => {

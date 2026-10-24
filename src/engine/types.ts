@@ -453,8 +453,8 @@ export interface GraphCorrection {
   corrected_by: string;
   corrected_at: string;
   reason?: string;
-  // R16-D2 §5 (CB-4). Which screen produced this correction: GraphView's
-  // per-field editor ('review'), a questionnaire write-back ('question'),
+  // R16-D2 §5 (CB-4). Which screen produced this correction: the retired
+  // card review's per-field editor ('review' - old records only), a questionnaire write-back ('question'),
   // or a form resubmission's diff against the original graph ('form',
   // src/components/form-corrections.ts). Optional so every pre-D2 record
   // stays valid — absence means the source predates this field, not that

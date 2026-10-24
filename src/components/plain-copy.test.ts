@@ -319,7 +319,7 @@ describe('plausibility wording, by path (R16-E §4, v2.1)', () => {
     expect(message).not.toMatch(/where does the ai come from/i);
   });
 
-  it('TC-R16-E-57: the three card titles are shared between this wording and GraphView\'s own column headings', () => {
+  it('TC-R16-E-57: the three card titles are one shared table, used by this wording and the summary', () => {
     expect(GRAPH_REVIEW_CARD_TITLES).toEqual({ input: 'What it uses', processing: 'The AI', output: 'What comes out' });
   });
 });

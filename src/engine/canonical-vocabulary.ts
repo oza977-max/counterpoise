@@ -10,9 +10,8 @@ import type {
 import { ACCESS_SCOPE_CANONICAL_ORDER } from './access-scope';
 
 // Canonical attribute vocabulary (policy-schema.md §3.0) — single runtime
-// source of truth shared by src/store/policy.ts (condition-value validation)
-// and src/llm/graph-extractor.ts (tool schema + response validation), so
-// the two can't silently drift apart (P4-C01 review finding #2).
+// source of truth for src/store/policy.ts (condition-value validation) and
+// the guards that read the lists below (P4-C01 review finding #2).
 export const DATA_CLASSES = ['Public', 'Internal', 'Confidential', 'Client PII', 'MNPI'] satisfies DataClass[];
 export const DATA_ZONES = ['Zone A', 'Zone B', 'Zone C'] satisfies DataZone[];
 export const MODEL_TYPES = [

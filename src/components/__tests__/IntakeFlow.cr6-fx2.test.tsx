@@ -532,8 +532,7 @@ describe('CR6-15: navigating away mid-confirm leaves no stale confirmation scree
 });
 
 // CR6-17 (Important). checkPolicyGate() THREW when the policy itself failed
-// to load/validate; neither handleProceedFromGraphReview nor
-// handleFormSubmitted caught it, so an uncaught exception inside a React
+// to load/validate; handleFormSubmitted did not catch it, so an uncaught exception inside a React
 // event handler just... went nowhere a user could see. Both buttons
 // "worked" (no crash, no error boundary involved — this is not a render
 // error) but produced no visible result at all.

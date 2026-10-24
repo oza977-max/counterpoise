@@ -174,14 +174,12 @@ describe('Walking Skeleton', () => {
     await user.click(screen.getByRole('radio', { name: /^no$/i }));
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
 
-    // R16-W W-3 (D-69): the form path no longer visits graph_review (whose
-    // heading this used to check) — it goes straight to the summary.
+    // R16-W W-3 (D-69): the form goes straight to the summary.
     expect(await screen.findByText(/here.s what we understood/i)).toBeInTheDocument();
     expect(screen.getAllByText(/email drafting tool/i).length).toBeGreaterThan(0);
     // R16-W W-3 (D-69): the form path reaches confirmation directly from
-    // Continue (FORM_SUBMITTED finds no questions for this graph, same as
-    // the old Proceed-from-graph_review did) — there is no Proceed button
-    // on this path to click any more.
+    // Continue (FORM_SUBMITTED finds no questions for this graph) —
+    // there is no Proceed button on this path to click.
 
     expect(await screen.findByRole('heading', { name: /confirm and evaluate/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
@@ -434,7 +432,7 @@ describe('Walking Skeleton', () => {
     }
   }, SLOW_FLOW_MS);
 
-  it('a genuine engine failure (no-track-match) shows an error and returns to graph_review instead of hanging on "Evaluating..." forever (live-found gap, now fixed)', async () => {
+  it('a genuine engine failure (no-track-match) shows an error and returns to the form instead of hanging on "Evaluating..." forever (live-found gap, now fixed)', async () => {
     localStorage.clear(); // no API key — structured form path, reproduces the exact scenario found live
 
     // Oracle round 001 made the shipped track list TOTAL, so no combination of
@@ -499,11 +497,9 @@ describe('Walking Skeleton', () => {
     // Must NOT hang on "Evaluating..." — a real error renders and the
     // flow returns to a working screen, not a dead end.
     expect(await screen.findByRole('alert')).toHaveTextContent(/evaluation could not complete/i);
-    // R16-F F-2 (DR7-04): a form-path graph now returns to the FORM itself
-    // (filled in, same case), never graph_review — which this path has
-    // never visited on the way forward either (W-3). Superseded assertion:
-    // this test used to check for "Confirm what we understood"
-    // (graph_review's heading), which this path cannot reach.
+    // R16-F F-2 (DR7-04): a failed evaluation returns to the FORM itself
+    // (filled in, same case). Superseded assertion: this test used to check
+    // for "Confirm what we understood", the retired card review's heading.
     expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('No track match tool');
   }, SLOW_FLOW_MS);
 
@@ -812,7 +808,7 @@ describe('Register row naming (charter 004 D-004)', () => {
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
 
     // R16-W W-3 (D-69): the form path reaches confirmation directly — no
-    // graph_review heading and no Proceed button on this path any more.
+    // Proceed button on this path.
     await screen.findByText(/here.s what we understood/i);
     await screen.findByRole('heading', { name: /confirm and evaluate/i });
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
@@ -842,7 +838,7 @@ describe('The submitted description is shown back (charter 004 D-001)', () => {
 
     await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
     // R16-W W-1 (D-67, charter 004 D-001's own guarantee carried onto the
-    // form path): the form path no longer visits graph_review at all
+    // form path): the form never showed the card review
     // (W-3), so "what you told us" is no longer re-displayed there for
     // this path — it is instead PRE-FILLED into question 2, editable,
     // which is the new mechanism that keeps the submitter's own words from

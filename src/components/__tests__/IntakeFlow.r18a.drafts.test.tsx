@@ -9,6 +9,7 @@ import { plainAnswersToFormValues } from '../../engine/plain-intake';
 import { WORKED_EXAMPLES } from '../../engine/worked-examples';
 import { R18_COPY } from '../plain-copy';
 import type { DataFlowGraph } from '../../engine/types';
+import { EARLIER_CARD_REVIEW_STEP } from '../../test-support/earlier-drafts';
 
 // TC-R18-NF-5-01/-02/-03/-04 at screen level: whatever is stored, the app opens
 // on the form with the description kept, says why once, and never throws.
@@ -33,7 +34,7 @@ describe('earlier drafts open on the form (TC-R18-NF-5-01)', () => {
   const answers = { ...WORKED_EXAMPLES[0]!.answers, '2': D };
   it.each<[string, () => unknown, boolean]>([
     ['version 1 questionnaire', () => ({ step: 'questionnaire', description: D, graph: { ...graph, intake_method: 'llm' }, questions: [], answers: [], resolutionNotes: [], corrections: [], useCaseId: 'u' }), false],
-    ['version 2 card review', () => ({ version: 2, state: { step: 'graph_review', description: D, graph: { ...graph, intake_method: 'llm' }, graphVersion: 1, corrections: [], useCaseId: 'u' } }), false],
+    ['version 2 card review', () => ({ version: 2, state: { step: EARLIER_CARD_REVIEW_STEP, description: D, graph: { ...graph, intake_method: 'llm' }, graphVersion: 1, corrections: [], useCaseId: 'u' } }), false],
     ['version 3 confirmation with form answers', () => ({ version: 3, state: { step: 'confirmation', description: D, graph, graphVersion: 1, corrections: [], answers: [], resolutionNotes: [], useCaseId: 'u', plainAnswers: answers, assumptions: [], afterFailedEvaluation: false } }), true],
     ['version 3 model-path extraction', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'llm' } }), false],
     ['version 3 form step with answers', () => ({ version: 3, state: { step: 'graph_extraction', description: D, method: 'form', useCaseId: 'u', plainAnswers: answers } }), true],

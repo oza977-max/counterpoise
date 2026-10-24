@@ -18,21 +18,25 @@ describe('intake draft persistence (D-002 / D-003)', () => {
   beforeEach(() => clearDraft());
 
   it('round-trips a mid-flow state so a refresh does not lose the work', () => {
+    // R18-E: the mid-flow state is a confirmation (the card review this used to be is gone).
     const state = {
-      step: 'graph_review',
+      step: 'confirmation',
       description: 'd',
       graph: { id: 'g1', version: 1, input_nodes: [], processing_nodes: [], output_nodes: [],
                edges: [], jurisdictions: [], intake_method: 'structured_form',
                extracted_at: '2026-01-01T00:00:00.000Z' },
       graphVersion: 1,
       corrections: [],
+      answers: [],
+      resolutionNotes: [],
       useCaseId: 'uc-1',
+      afterFailedEvaluation: false,
     } as unknown as IntakeState;
 
     saveDraft(state);
     const restored = loadDraft();
     expect(restored).not.toBeNull();
-    expect(restored!.step).toBe('graph_review');
+    expect(restored!.step).toBe('confirmation');
     expect(JSON.stringify(restored)).toBe(JSON.stringify(state));
   });
 
@@ -198,14 +202,18 @@ describe('intake draft versioning — an incompatible undo snapshot is dropped, 
 // ---------------------------------------------------------------------------
 describe('clearDraftIfCase — an abandoned confirm or adopt cannot wipe a newer case\'s draft (CR7-16)', () => {
   beforeEach(() => clearDraft());
+  // R18-E: a confirmation draft (the card review this used to use is gone).
   const reviewDraft = (useCaseId?: string) =>
     ({
-      step: 'graph_review',
+      step: 'confirmation',
       description: 'd',
-      graph: { id: 'g1', version: 1, input_nodes: [], processing_nodes: [], output_nodes: [], edges: [], jurisdictions: [], intake_method: 'llm', extracted_at: '2026-01-01T00:00:00.000Z' },
+      graph: { id: 'g1', version: 1, input_nodes: [], processing_nodes: [], output_nodes: [], edges: [], jurisdictions: [], intake_method: 'structured_form', extracted_at: '2026-01-01T00:00:00.000Z' },
       graphVersion: 1,
       corrections: [],
+      answers: [],
+      resolutionNotes: [],
       ...(useCaseId ? { useCaseId } : {}),
+      afterFailedEvaluation: false,
     }) as unknown as IntakeState;
 
   it('TC-CR7-16-1: clears when the stored draft carries this useCaseId', () => {
@@ -222,7 +230,7 @@ describe('clearDraftIfCase — an abandoned confirm or adopt cannot wipe a newer
   it('TC-CR7-16-3: leaves a draft with a different useCaseId', () => {
     saveDraft(reviewDraft('uc-other'));
     clearDraftIfCase('uc-1');
-    expect(loadDraft()?.step).toBe('graph_review');
+    expect(loadDraft()?.step).toBe('confirmation');
   });
 
   it('TC-CR7-16-4: leaves a draft with no useCaseId at all (a case just started)', () => {
@@ -279,6 +287,6 @@ describe('a draft saved by the current build is never migrated (CR7-28 retired b
   it('TC-CR7-28-7: a draft saved by the current build (an envelope at the current version) is never migrated', () => {
     saveDraft(oldQuestionnaire('questionnaire') as unknown as IntakeState);
     expect(loadDraft()?.step).toBe('questionnaire');
-    expect(loadDraftInfo()?.migratedFromOldBuild).toBe(false);
+    expect(loadDraftInfo()?.earlierVersionNotice).toBe(false);
   });
 });
