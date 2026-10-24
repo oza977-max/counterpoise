@@ -1,0 +1,152 @@
+{
+  "P1": {
+    "exampleId": "case-1",
+    "title": "Clean approval — nothing triggers",
+    "prefills": [
+      {
+        "question": "6",
+        "optionKey": "read",
+        "quote": "Nobody acts on it automatically",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "7",
+        "optionKey": "me-or-team",
+        "quote": "for the operations team",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": false,
+    "changesWrongPrefill": false,
+    "tickAllCount": 1
+  },
+  "P2": {
+    "exampleId": "case-3",
+    "title": "Hard line — autonomous lending with nobody in the loop",
+    "prefills": [
+      {
+        "question": "8",
+        "optionKey": "credit",
+        "quote": "approves or declines personal loan applications",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "7",
+        "optionKey": "clients",
+        "quote": "goes straight to the customer",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "6",
+        "optionKey": "acts-alone",
+        "quote": "with no human review",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": true,
+    "changesWrongPrefill": false,
+    "tickAllCount": 1
+  },
+  "P3": {
+    "exampleId": "case-7",
+    "title": "Platform inheritance withdrawn",
+    "prefills": [
+      {
+        "question": "4",
+        "optionKey": "language",
+        "quote": "drafts replies to customer questions",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "6",
+        "optionKey": "answers",
+        "quote": "replies to customer questions",
+        "deliberatelyWrong": true
+      },
+      {
+        "question": "7",
+        "optionKey": "clients",
+        "quote": "customer questions about their accounts",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": false,
+    "changesWrongPrefill": true,
+    "tickAllCount": 1
+  },
+  "P4": {
+    "exampleId": "case-10",
+    "title": "The full picture",
+    "prefills": [
+      {
+        "question": "4",
+        "optionKey": "score",
+        "quote": "scores retail credit card applications",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "8",
+        "optionKey": "credit",
+        "quote": "retail credit card applications",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "7",
+        "optionKey": "clients",
+        "quote": "UK and German customers",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": false,
+    "changesWrongPrefill": false,
+    "tickAllCount": 2
+  },
+  "P5": {
+    "exampleId": "case-8",
+    "title": "Jurisdiction changes the answer",
+    "prefills": [
+      {
+        "question": "8",
+        "optionKey": "hiring",
+        "quote": "screens job applications",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "6",
+        "optionKey": "suggests",
+        "quote": "shortlists candidates for interview",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "10",
+        "optionKey": "wide",
+        "quote": "roles across our European entities",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": false,
+    "changesWrongPrefill": false,
+    "tickAllCount": 1
+  },
+  "P6": {
+    "exampleId": "case-4",
+    "title": "Hard line — an agent that binds the firm",
+    "prefills": [
+      {
+        "question": "4",
+        "optionKey": "agentic",
+        "quote": "An agentic assistant that can decide its own steps",
+        "deliberatelyWrong": false
+      },
+      {
+        "question": "6",
+        "optionKey": "acts-alone",
+        "quote": "without a checkpoint",
+        "deliberatelyWrong": false
+      }
+    ],
+    "ignoresNudge": false,
+    "changesWrongPrefill": false,
+    "tickAllCount": 1
+  }
+}
