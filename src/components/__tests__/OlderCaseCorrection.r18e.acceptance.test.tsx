@@ -64,14 +64,15 @@ describe('R18-E acceptance: an older case is opened from the register and correc
       // 4. The two recorded "Not sure" answers are back, marked as from the earlier record, and owe a tick.
       expect(within(screen.getByRole('radiogroup', { name: /what kind of ai is it/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
       expect(within(screen.getByRole('radiogroup', { name: /can the mistake be caught/i })).getByRole('radio', { name: /^not sure$/i })).toBeChecked();
-      expect(screen.getAllByText(/^from the earlier record$/i)).toHaveLength(2);
+      expect(screen.getAllByText(/^from the earlier record$/i)).toHaveLength(3); // the two Not sure answers and the case name
       const ticks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
-      expect(ticks).toHaveLength(2);
+      expect(ticks).toHaveLength(3);
       for (const tick of ticks) expect(tick).not.toBeChecked();
 
       // 5. Every other answer is blank and says it was not carried over.
       expect(screen.getAllByText(/^not carried over from the earlier version$/i).length).toBeGreaterThan(5);
-      expect(screen.getByLabelText(/what do you want to call it/i)).toHaveValue('');
+      // the name is restored from the register, unconfirmed (review pass 1); it is not blank
+      expect(screen.getByRole('textbox', { name: /what do you want to call it/i })).not.toHaveValue('');
       expect(screen.getByRole('button', { name: /^continue$/i })).toBeDisabled();
 
       // 6. A correction has no Back, and opening it asked no model anything.
@@ -79,7 +80,9 @@ describe('R18-E acceptance: an older case is opened from the register and correc
       expect(fake.requests).toHaveLength(0);
 
       // 7. Answer the rest by hand, tick the two restored answers, confirm.
-      await user.type(screen.getByLabelText(/what do you want to call it/i), LABEL);
+      const nameBox = screen.getByRole('textbox', { name: /what do you want to call it/i });
+      await user.clear(nameBox);
+      await user.type(nameBox, LABEL);
       await user.click(screen.getByRole('radio', { name: /something a team in your firm built for this job/i }));
       await user.click(screen.getByRole('radio', { name: /finds or summarises for people to read/i }));
       await user.click(screen.getByRole('radio', { name: /^only me or my own team$/i }));

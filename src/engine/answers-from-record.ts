@@ -13,7 +13,7 @@
 // row for a question wins, unknown ids and prototype keys are ignored, and the input is never changed.
 
 import { isValidMultiSelection } from './form-visibility';
-import { isShown, QUESTION_STRUCTURE, validOptionKeys } from './question-structure';
+import { FREE_ANSWER_MAX_CHARS, isShown, QUESTION_STRUCTURE, validOptionKeys } from './question-structure';
 import type { PlainAnswers, QuestionId } from './plain-questions';
 import type { FormAnswerState } from './prefill-types';
 import type { PolicyFile } from './types';
@@ -53,13 +53,14 @@ function namedQuestions(assumptions: unknown): Set<string> {
   return ids;
 }
 
-/** The form's answers for an older case (see the file header). The description is not an input: it is the form's
+/** The form's answers for an older case (see the file header). `name` is the case name the register keeps. The description is not an input: it is the form's
  *  Question 2 and the caller keeps it as it is. `dropped` names, in the form's order, the
  *  questions the record said "Not sure" about which could not be put back (the form does not show that question
  *  for the answers restored, or offers no such answer), so the person can be told. Pure and deterministic. */
 export function olderCaseAnswers(
   assumptions: unknown,
   policy: PolicyFile,
+  name?: unknown,
 ): { answerState: FormAnswerState; dropped: string[] } {
   const named = namedQuestions(assumptions);
   const out: FormAnswerState = {};
@@ -67,6 +68,11 @@ export function olderCaseAnswers(
   const kept: PlainAnswers = {};
   for (const q of QUESTION_STRUCTURE) {
     if (q.id === '2') continue;
+    if (q.id === '1' && typeof name === 'string' && name.trim() !== '' && name.length <= FREE_ANSWER_MAX_CHARS) {
+      // The register keeps the case name (the form's Question 1); like every restored answer it needs its tick.
+      out['1'] = { value: name, source: { kind: 'record', confirmed: false } };
+      continue;
+    }
     const id = q.id as Exclude<QuestionId, '2'>;
     const recorded = named.has(id);
     if (!isShown(id, kept, policy)) {

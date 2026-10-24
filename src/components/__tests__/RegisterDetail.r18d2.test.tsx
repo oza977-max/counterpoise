@@ -90,7 +90,10 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     await user.click(screen.getByRole('button', { name: LABEL }));
     const opening = onCorrect.mock.calls[0]![0];
     // nothing from the earlier record's sources comes back: every answer is blank and marked
-    expect(Object.values(opening.answerState).every((e) => (e as { source: { kind: string } }).source.kind === 'not-carried')).toBe(true);
+    // (only the case name, which the register keeps, comes back - from the record, unconfirmed)
+    const entries = Object.entries(opening.answerState) as [string, { source: { kind: string; confirmed?: boolean } }][];
+    expect(entries.filter(([k]) => k !== '1').every(([, e]) => e.source.kind === 'not-carried')).toBe(true);
+    expect(opening.answerState['1'].source).toEqual({ kind: 'record', confirmed: false });
     expect(opening.originalVerdictId).toBe(`v-${id}-c1`);
   });
 
@@ -149,5 +152,27 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     expect(opening.answerState['1'].source).toEqual({ kind: 'typed' });
     expect(opening.originalGraph.version).toBe(1); // the seeded verdict names no version: read as 1
     expect(opening.originalGraph.processing_nodes).toHaveLength(1);
+  });
+});
+
+describe('R18-E review pass 1: the older-case note is true whether or not a Not sure was recorded', () => {
+  it('GI-13-01: the note promises filled-in answers only conditionally, so it is true for a case that recorded none (nothing to fill in)', () => {
+    const N = R18_COPY.CORRECT_OLDER_CHECK_NOTE;
+    expect(N).toMatch(/If you marked any answers as not sure/);
+    expect(N).not.toMatch(/the answers you were not sure about filled in/);
+    expect(N).not.toMatch(/approved|rejected/i);
+  });
+
+  it('GI-13-01: on a case with nothing recorded, the same note is shown and the form it opens has no answer from the record except the name', async () => {
+    const id = crypto.randomUUID();
+    await seedCase(id, {});
+    const onCorrect = vi.fn();
+    const user = userEvent.setup({ delay: null });
+    render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={onCorrect} />);
+    expect(await screen.findByText(R18_COPY.CORRECT_OLDER_CHECK_NOTE)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: LABEL }));
+    const state = onCorrect.mock.calls[0]![0].answerState as Record<string, { source: { kind: string } }>;
+    const fromRecord = Object.keys(state).filter((k) => state[k]!.source.kind === 'record');
+    expect(fromRecord).toEqual(['1']);
   });
 });

@@ -55,8 +55,9 @@ export function restorableAnswers(
   description: string,
   policy: PolicyFile,
   assumptions?: unknown,
+  name?: unknown,
 ): FormAnswerState | null {
-  return restoredFromRecord(sources, description, policy, assumptions)?.answerState ?? null;
+  return restoredFromRecord(sources, description, policy, assumptions, name)?.answerState ?? null;
 }
 
 /** The restored answers and the questions of the form (in words) whose recorded answer had to be left blank. */
@@ -65,10 +66,11 @@ function restoredFromRecord(
   description: string,
   policy: PolicyFile,
   assumptions?: unknown,
+  name?: unknown,
 ): { answerState: FormAnswerState; droppedNote: string | null } | null {
   if (description.trim() === '') return null;
   if (sources === undefined) {
-    const older = olderCaseAnswers(assumptions, policy);
+    const older = olderCaseAnswers(assumptions, policy, name);
     return {
       answerState: older.answerState,
       droppedNote: older.dropped.length > 0 ? olderDroppedSentence(older.dropped.map(wordsFor)) : null,
@@ -108,9 +110,11 @@ export function correctionOpening(args: {
   sources: unknown;
   /** The "Not sure" assumptions of the case's confirmation. Read only for an older case (`sources` absent). */
   assumptions?: unknown;
+  /** The case name the register keeps. Read only for an older case; it comes back as Question 1, needing a tick. */
+  name?: unknown;
   policy: PolicyFile;
 }): CorrectionOpening | null {
-  const restored = restoredFromRecord(args.sources, args.description, args.policy, args.assumptions);
+  const restored = restoredFromRecord(args.sources, args.description, args.policy, args.assumptions, args.name);
   if (!restored) return null;
   const { answerState, droppedNote } = restored;
   const { values, assumptions } = plainAnswersToFormValues(toPlainAnswers(answerState, args.description), args.policy);

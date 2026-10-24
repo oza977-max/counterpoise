@@ -1693,7 +1693,7 @@ export const R18_COPY = {
   // clause is true only there: the description is kept, the answers you were not sure about come back and need a
   // tick, every other answer is blank, nothing is recorded until Confirm, an unfinished check in this tab is replaced.
   CORRECT_OLDER_CHECK_NOTE:
-    'This check was saved before Counterpoise recorded where answers came from. It opens on the form with your description kept and the answers you were not sure about filled in; each needs your tick. Every other answer is blank, for you to answer again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+    'This check was saved before Counterpoise recorded where answers came from. It opens on the form with your description kept and its name filled in from the register; the name needs your tick. If you marked any answers as not sure, those are filled in too and each needs your tick. Every other answer is blank, for you to answer again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
   // Shown on the form of an older case when a "Not sure" the earlier record names could not be put back (the form
   // does not show that question until an earlier one is answered, or offers no such answer). Only when one was.
   OLDER_DROPPED_PREFIX: 'These “Not sure” answers from the earlier record could not be put back and were left blank:',

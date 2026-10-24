@@ -1082,7 +1082,7 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
         const description = effectiveDescription(events);
         // A case with answer_sources reopens from them; an older case (none) reopens from its "Not sure" assumptions.
         const older = f.answer_sources === undefined;
-        if (restorableAnswers(f.answer_sources, description, policy, f.assumptions) === null) return null;
+        if (restorableAnswers(f.answer_sources, description, policy, f.assumptions, summary.label) === null) return null;
         return (
           <div className="register-detail__correct">
             <button
@@ -1096,6 +1096,7 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
                   description,
                   sources: f.answer_sources,
                   assumptions: f.assumptions,
+                  name: summary.label,
                   policy,
                 });
                 if (!opening) return;

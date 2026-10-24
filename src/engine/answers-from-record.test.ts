@@ -114,3 +114,16 @@ describe('olderCaseAnswers', () => {
     expect(JSON.stringify(input)).toBe(frozen);
   });
 });
+
+describe('olderCaseAnswers - the case name (review pass 1)', () => {
+  it('restores the name from the register as an unconfirmed record answer', () => {
+    const { answerState } = olderCaseAnswers([], policy, 'Client email drafting assistant');
+    expect(answerState['1']).toEqual({ value: 'Client email drafting assistant', source: { kind: 'record', confirmed: false } });
+  });
+
+  it('a missing, blank, non-string or over-long name stays blank and not-carried', () => {
+    for (const bad of [undefined, null, '', '   ', 7, {}, ['x'], 'x'.repeat(5000)]) {
+      expect(olderCaseAnswers([], policy, bad).answerState['1']).toEqual({ value: '', source: { kind: 'not-carried' } });
+    }
+  });
+});

@@ -28,7 +28,10 @@ export async function openOlderCase(user: User, label: string) {
 
 /** Answer every question that is blank when 4 and 9 are restored as "Not sure". */
 export async function answerTheRest(user: User, name: string) {
-  await user.type(screen.getByLabelText(/what do you want to call it/i), name);
+  // the name comes back from the register, owing a tick; typing a new one makes it the person's own answer
+  const nameBox = screen.getByRole('textbox', { name: /what do you want to call it/i });
+  await user.clear(nameBox);
+  await user.type(nameBox, name);
   await user.click(screen.getByRole('radio', { name: /something a team in your firm built for this job/i }));
   await user.click(screen.getByRole('radio', { name: /finds or summarises for people to read/i }));
   await user.click(screen.getByRole('radio', { name: /^only me or my own team$/i }));

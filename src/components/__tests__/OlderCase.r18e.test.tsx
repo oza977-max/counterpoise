@@ -31,8 +31,10 @@ describe('an older case opens on the form (TC-R18-GI-10-04)', () => {
     render(<App />);
     await openOlderCase(user, 'Older open E');
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(D);
-    expect(screen.getAllByText(MARK_RECORD)).toHaveLength(2);
-    expect(screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })).toHaveLength(2);
+    // the two Not sure answers and the case name (restored from the register, review pass 1): three ticks owed
+    expect(screen.getAllByText(MARK_RECORD)).toHaveLength(3);
+    expect(screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })).toHaveLength(3);
+    expect(screen.getByRole('textbox', { name: /what do you want to call it/i })).toHaveValue('Older open E');
     // blank: no radio is chosen except the two restored, no checkbox other than the two ticks is checked
     const chosen = screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked);
     expect(chosen).toHaveLength(2);
@@ -41,13 +43,14 @@ describe('an older case opens on the form (TC-R18-GI-10-04)', () => {
     expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
   });
 
-  it('a case that recorded no assumptions opens entirely blank and marked, with nothing marked as from the earlier record and nothing to tick', async () => {
+  it('a case that recorded no assumptions opens with every answer but its name blank and marked, and only the name to tick', async () => {
     await seedCase('uc-r18e-blank', { label: 'Older blank E', description: own('blank') });
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await openOlderCase(user, 'Older blank E');
-    expect(screen.queryByText(MARK_RECORD)).not.toBeInTheDocument();
-    expect(screen.queryAllByRole('checkbox', { name: /^i've checked this answer/i })).toHaveLength(0);
+    // only the name comes from the record (it needs its tick); no Not sure answer is restored
+    expect(screen.getAllByText(MARK_RECORD)).toHaveLength(1);
+    expect(screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })).toHaveLength(1);
     expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true);
     expect(screen.getAllByText(MARK_NOT_CARRIED).length).toBeGreaterThan(5);
     expect(screen.getByRole('button', { name: /^continue$/i })).toBeDisabled();
