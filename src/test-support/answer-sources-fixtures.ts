@@ -155,6 +155,8 @@ export interface SeedOptions {
   description?: string;
   /** The case's name on the register. */
   label?: string;
+  /** The graph_confirmed payload's "Not sure" assumptions (what a build before Round 18 recorded). */
+  assumptions?: unknown;
   /** Extra events after the verdict, e.g. a verdict_corrected. */
   corrections?: { answer_sources?: unknown; description?: string }[];
 }
@@ -188,6 +190,7 @@ export async function seedCase(useCaseId: string, opts: SeedOptions = {}): Promi
       graph_id: 'g-1',
       graph_version: 1,
       corrections_count: 0,
+      ...(opts.assumptions !== undefined ? { assumptions: opts.assumptions } : {}),
       ...(opts.sources !== undefined ? { answer_sources: opts.sources } : {}),
     },
   } as never);
