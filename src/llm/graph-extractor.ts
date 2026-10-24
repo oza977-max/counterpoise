@@ -5,12 +5,14 @@ import type { LlmResult } from './types';
 import type { DataFlowGraph } from '../engine/types';
 import {
   ACTION_TYPES,
+  AGENT_REACH_FIELDS,
   DATA_CLASSES,
   DATA_ZONES,
   DECISION_BINDINGNESS,
   DECISION_TYPES,
   EXPOSURES,
   MODEL_TYPES,
+  QUOTE_FIELDS,
 } from '../engine/canonical-vocabulary';
 import { ACCESS_SCOPE_CANONICAL_ORDER, normaliseAccessScope } from '../engine/access-scope';
 
@@ -284,43 +286,6 @@ export interface GraphExtraction {
   /** guessed[nodeId] = decision-bearing fields with no verified basis. */
   guessed: Record<string, string[]>;
 }
-
-// CR6-25: exported so a test can derive "every field the generator can
-// emit" from the real source instead of hand-typing it (BC-003) — the
-// pattern src/store/plain-language-coverage.test.ts already uses for the
-// policy side of the same question. Exporting changes no behaviour; it is
-// the one place this list is defined, same as before.
-export const QUOTE_FIELDS: Record<'input' | 'processing' | 'output', string[]> = {
-  input: ['data_class', 'data_zone'],
-  processing: [
-    'model_type',
-    'autonomy_level',
-    'data_zone',
-    'vendor',
-    // CR6-05: required on the node (never optional) but previously absent
-    // from this list, so verifyQuotes() never evaluated it — an unquoted
-    // value was silently treated as having a basis instead of being guessed,
-    // and the question machinery (questionsForGuessedFields) never saw it.
-    'replaces_prior_model',
-    'declared_model_id',
-    // R16-E §1 (D-08, D-65): a value with no verified quote is guessed,
-    // same as every other field in this list — the question machinery
-    // picks it up from here with no further change.
-    'system_access_scope',
-    'multi_instance_coordination',
-  ],
-  output: ['action_type', 'exposure', 'decision_bindingness', 'output_reversibility', 'scale', 'decision_type', 'hitl'],
-};
-
-// R16-E §1. Both new fields are OPTIONAL on the schema, so an absent value
-// is ordinarily honest-absence, not a guess (verifyQuotes' own rule for
-// decision_type/hitl, unchanged below). An agentic node is the one
-// exception: its reach is never silently "not stated" — if the model
-// extracted `model_type: 'agentic'` and said nothing about either field,
-// that silence is itself the gap R6's question machinery exists to close,
-// so both are pushed into `guessed` even though neither has a value yet.
-// Exported for the same CR6-25 reason as QUOTE_FIELDS above.
-export const AGENT_REACH_FIELDS = ['system_access_scope', 'multi_instance_coordination'] as const;
 
 /** R6-PV-2. Case- and whitespace-insensitive; no fuzzy matching, no
  *  semantics. The machine only answers "did the user actually write these

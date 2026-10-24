@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ASSUMPTION_GRAPH_FIELDS } from './handoff';
-import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../llm/graph-extractor';
+import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../engine/canonical-vocabulary';
 import { loadPolicy } from './policy';
 import { loadPacks } from './packs';
 import { getPackSources } from './pack-source';
@@ -24,7 +24,7 @@ import type { JurisdictionPack, PolicyFile } from '../engine/types';
 //   1. questionsForGuessedFields — fields come from `guessed[nodeId]`,
 //      whose only possible members are QUOTE_FIELDS[kind] (verifyQuotes'
 //      own iteration set) plus AGENT_REACH_FIELDS (the agentic-node forced-
-//      guess case) — both in src/llm/graph-extractor.ts.
+//      guess case) — both in src/engine/canonical-vocabulary.ts.
 //   2. candidatesFromRules — fields come from `Object.keys(rule.condition)`
 //      for whichever rules generateQuestions calls it with: the real
 //      shipped policy's invariants and hard lines. Packs are not currently

@@ -20,7 +20,7 @@ import type { AssumptionRef } from '../engine/plain-questions';
 // of hand-typing it (BC-003) — the same pattern
 // src/store/plain-language-coverage.test.ts already uses for the policy
 // side of this question.
-import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../llm/graph-extractor';
+import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../engine/canonical-vocabulary';
 import { loadPolicy } from '../store/policy';
 import { loadPacks } from '../store/packs';
 import { getPackSources } from '../store/pack-source';
@@ -137,7 +137,7 @@ describe('summaryDestinationLine (F-9, DR7-09)', () => {
 // R16-E §2 (D-101, DR7-31). QUESTIONNAIRE_COPY is the one source for the
 // targeted questionnaire's questions/options AND the review screen's field
 // labels and value words. Every field the generator can actually emit —
-// every QUOTE_FIELDS entry (graph-extractor.ts) plus every condition-key
+// every QUOTE_FIELDS entry (engine/canonical-vocabulary.ts) plus every condition-key
 // field the real policy uses (verified against policy/appetite.yaml) —
 // must have an explicit entry; a test fails otherwise (D-20's "no bare
 // code ever reaches the first screen", extended to this screen).
@@ -145,8 +145,8 @@ describe('QUESTIONNAIRE_COPY (R16-E §2, D-101/DR7-31)', () => {
   // CR6-25 (BC-003): derived from the real sources at test time instead of
   // hand-typed. questionsForGuessedFields (question-generator.ts) can only
   // ever emit a field that appears in QUOTE_FIELDS/AGENT_REACH_FIELDS
-  // (graph-extractor.ts — the only place `guessed[nodeId]` entries come
-  // from); candidatesFromRules can only ever emit a field that is a
+  // (engine/canonical-vocabulary.ts, where the retired model route's
+  // `guessed[nodeId]` entries came from); candidatesFromRules can only ever emit a field that is a
   // condition key on the real shipped policy's invariants/hard lines or its
   // loaded packs' rules. A hand-typed list could silently drift from
   // either source without this test noticing — exactly the defect class
