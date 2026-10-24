@@ -12,6 +12,7 @@ import {
 import { visibleText } from '../engine/visible-text';
 import type { ModelPlace } from '../engine/prefill-types';
 import { useModelSetting } from './useModelSetting';
+import ModelTestSection from './ModelTestSection';
 
 // R18-B, deliverable 4 (specs/intake-flow.md §27.8). The Settings section for the one model
 // setting. Presentation only: validation, storage and the model list are in
@@ -235,6 +236,8 @@ export default function ModelSettingSection() {
           {outcome?.kind === 'refused' && <p>{outcome.text}</p>}
           {outcome?.kind === 'forgotten' && <p>{R18_COPY.FORGOTTEN_SENTENCE}</p>}
         </div>
+
+        <ModelTestSection />
       </div>
     </details>
   );
