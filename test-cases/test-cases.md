@@ -1609,6 +1609,7 @@ Amended (gvm-test 007, 2026-10-04): the label is the app header's chip "translat
 
 | ID | Reason |
 |---|---|
+| TC-UC-4-04 | Superseded by R18-GI-10 (R18-G): questions that differ with what each description leaves unstated belonged to `questionsForGuessedFields` (the model's guessed fields as data), removed as callerless. On the form route every question is asked of everyone and the description only feeds the checklist and the pre-fill. No replacement — behaviour retired. |
 | TC-VD-1-01 | R16 chunk D1 (`build/prompts/R16.md` v2.1, VD-9/VD-10 — `requirements/requirements.md`'s round-16 amendment to VD-1) replaces this case's fit criterion. The formal status/tier/track `<h2>` this case required to be "visible above the fold... MUST NOT be hidden below a fold" now sits inside the collapsed-by-default reviewer section — the first screen's plain headline leads instead. See `specs/verdict-audit.md` §5.1/§5.7 and `test-cases/test-cases-020.md` (TC-R16-D1-01, -13) for the replacement behaviour and its tests. |
 | TC-UC-3-01 | Superseded by R18-GI-10 (R18-A): extracting a graph from the description and showing it before the questions is unreachable; the form builds the graph from the person's answers. No replacement — behaviour retired. |
 

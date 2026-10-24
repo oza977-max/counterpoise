@@ -199,6 +199,7 @@ country name; `PolicyEditor` and `RegisterView` pin the reworded text (TC-CR6-29
 
 | ID | Reason |
 |---|---|
+| TC-CR6-05a | Superseded by R18-GI-10 (R18-G): a model-guessed `replaces_prior_model` becoming a question about that node belonged to `questionsForGuessedFields`, which listed the fields a model had guessed and was removed as callerless (nothing reads a graph out of a description any more). The form asks that question itself. No replacement — behaviour retired. |
 | TC-CR6-14 | Superseded by R18-GI-10 (R18-A): a stale extraction error could only leak from a model extraction, which no longer happens. No replacement — behaviour retired. |
 | TC-CR6-17b | Superseded by R18-GI-10 (R18-A): the card review's own Continue is unreachable. The same invalid-policy message on the form's Continue is TC-CR6-17a in IntakeFlow.cr6-fx2.test.tsx. |
 | TC-CR6-05b | Superseded by R18-GI-10 (R18-A): a model-guessed replaces_prior_model answered Not sure on the description path is unreachable; the form asks that question itself. No replacement — behaviour retired. |

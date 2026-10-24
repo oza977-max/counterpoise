@@ -40,6 +40,7 @@ structurally in graph-extractor.test.ts).
 
 | ID | Reason |
 |---|---|
+| TC-R6-QN-1-01 | Superseded by R18-GI-10 (R18-G): a guessed field yielding its targeted question belonged to `questionsForGuessedFields`, removed as callerless with the model reading of a description. The write-back of an answer is still TC-R6-QN-1-02 and -03. No replacement for the guessed-field question — behaviour retired. |
 | TC-R6-PV-1-01 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
 | TC-R6-PV-2-01 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
 | TC-R6-PV-2-02 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |

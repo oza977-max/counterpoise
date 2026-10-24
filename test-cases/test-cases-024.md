@@ -178,6 +178,10 @@ Test files: `src/llm/graph-extractor.test.ts`,
 
 | ID | Reason |
 |---|---|
+| TC-R16-E-51 | Superseded by R18-GI-10 (R18-G): the "description reader isn't set up" sentence belonged to `extractionErrorMessage`, which only the model reading of a description called; that reading is gone and the function was removed as callerless. No replacement — behaviour retired. |
+| TC-R16-E-52 | Superseded by R18-GI-10 (R18-G): the "couldn't reach the description reader" sentence belonged to `extractionErrorMessage`, removed as callerless with the model reading of a description. A model that cannot be reached on the new route is the failure sentences of `intake-flow.md` §27.5 (TC-R18-MS-7-*). |
+| TC-R16-E-53 | Superseded by R18-GI-10 (R18-G): the "couldn't read your description reliably" sentence belonged to `extractionErrorMessage`, removed as callerless with the model reading of a description. An answer a model gives that cannot be used is the `unusable` sentence of `intake-flow.md` §27.5. |
+| TC-R16-E-54 | Superseded by R18-GI-10 (R18-G): the shared "try again / answer the questions yourself" line belonged to the extraction error screen, which is unreachable, and the constant was removed as callerless. No replacement — behaviour retired. |
 | TC-R16-E-64 | Superseded by R18-GI-10 (R18-A): the extraction failure and retry messages belong to the model reading the description, which no longer happens. No replacement — behaviour retired. |
 | TC-R16-E-66 | Superseded by R18-GI-10 (R18-A): the card review's heading on a fresh entry is unreachable. No replacement — behaviour retired. |
 | TC-R16-E-66b | Superseded by R18-GI-10 (R18-A): the card review's heading on a correction re-entry is unreachable (a correction reopens the form). No replacement — behaviour retired. |

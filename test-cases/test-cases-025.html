@@ -244,6 +244,7 @@
                 <li><a href="#7a-evaluation-the-clock-review-sources-policy-re">&sect;7a &mdash; Evaluation: the clock, review sources, policy references (B-15, C-5, A-5)</a></li>
                 <li><a href="#8-what-renders-required-questions-contrast-wordi">&sect;8 &mdash; What renders: required questions, contrast, wording, fallbacks (FX-4)</a></li>
                 <li><a href="#amended-existing-cases">Amended existing cases</a></li>
+                <li><a href="#superseded">Superseded</a></li>
 </ul></nav>
 <main class="main-content">
 <header>
@@ -407,7 +408,7 @@
 <tr><td>TC-CR6-13b</td><td>Two packs sharing a rule id with different review text: each review's plain wording comes from the pack rule whose review text matches &mdash; <code>verdict-view-model.test.ts</code></td></tr>
 <tr><td>TC-CR6-16</td><td>Every action type at every autonomy level reads as a full line; at level 2 and above it names the action &mdash; <code>plain-copy.cr6-fx4.test.ts</code></td></tr>
 <tr><td>TC-CR6-18</td><td>With an empty core reason, no sentence starts with ". " or ", " and none carries a doubled stop &mdash; <code>verdict-view-model.test.ts</code></td></tr>
-<tr><td>TC-CR6-19</td><td>The model button label and the Recorded line use <code>plain_name</code>, falling back to <code>model_id</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code>. Amended (gvm-test 007, 2026-10-04): the fallback is now a neutral &quot;Model n&quot;, never the raw id (CR7-35b, see test-cases-028); the test title says so</td></tr>
+<tr><td>TC-CR6-19</td><td>The model button label and the Recorded line use <code>plain_name</code>, falling back to <code>model_id</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code>. Amended (gvm-test 007, 2026-10-04): the fallback is now a neutral "Model n", never the raw id (CR7-35b, see test-cases-028); the test title says so</td></tr>
 <tr><td>TC-CR6-19b</td><td>The policy schema accepts and keeps an approved model's <code>plain_name</code> &mdash; <code>QuestionnaireStep.cr6-fx4.test.tsx</code></td></tr>
 <tr><td>TC-CR6-20</td><td>The evidence-scope caveat (<code>--scope</code>) has its own contrast-safe rule that differs from plain evidence text &mdash; <code>app-css.cr6-fx4.test.ts</code></td></tr>
 <tr><td>TC-CR6-21</td><td>The questions' tick-all list resets the fieldset and styles each option like the form's &mdash; <code>app-css.cr6-fx4.test.ts</code></td></tr>
@@ -443,6 +444,30 @@
 </tbody>
 </table>
 <p>Further tests changed for the same reasons without a case id of their own: the <code>WalkingSkeleton</code> and <code>GraphReview.r5/r6/r9</code> model-reply mocks carry realistic verbatim quotes; every caller of <code>buildGraphFromForm</code> passes a timestamp (B-15); the "replaces something you already use?" form-path test now pins the exact assumption reference; <code>UnderstoodSummary</code>'s jurisdiction line pins the policy's country name; <code>PolicyEditor</code> and <code>RegisterView</code> pin the reworded text (TC-CR6-29).</p>
+</section>
+
+<section id="superseded">
+<h2>Superseded</h2>
+<table>
+<thead><tr><th>ID</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>TC-CR6-05a</td><td>Superseded by R18-GI-10 (R18-G): a model-guessed <code>replaces_prior_model</code> becoming a question about that node belonged to <code>questionsForGuessedFields</code>, which listed the fields a model had guessed and was removed as callerless (nothing reads a graph out of a description any more). The form asks that question itself. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-14</td><td>Superseded by R18-GI-10 (R18-A): a stale extraction error could only leak from a model extraction, which no longer happens. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-17b</td><td>Superseded by R18-GI-10 (R18-A): the card review's own Continue is unreachable. The same invalid-policy message on the form's Continue is TC-CR6-17a in IntakeFlow.cr6-fx2.test.tsx.</td></tr>
+<tr><td>TC-CR6-05b</td><td>Superseded by R18-GI-10 (R18-A): a model-guessed replaces_prior_model answered Not sure on the description path is unreachable; the form asks that question itself. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-02j</td><td>Superseded by R18-GI-10 (R18-A): the late-finishing model extraction whose lock release it guarded no longer exists, since Mine is different now opens the form directly. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-04b</td><td>Superseded by R18-NF-5 and R18-GI-10 (R18-A): a draft from an earlier build no longer restores as a questionnaire, so there is no unsafe undo snapshot to drop; such a draft opens the form with the description kept and no answers (TC-R18-NF-5-01).</td></tr>
+<tr><td>TC-CR6-03a</td><td>Superseded by R18-GI-10 (R18-E): carrying guessedFields, provenance and the gate values onto the questions and restoring them on Back belonged to the reducer's card-review step and its actions, which are deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-03b</td><td>Superseded by R18-GI-10 (R18-E): the review screen after Back keeping its quotes and checked state belonged to the reducer's card-review step and its actions, which are deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-03c</td><td>Superseded by R18-GI-10 (R18-E): a guessed field dropping out once answered, and Back restoring the asked list belonged to the reducer's card-review step and its actions, which are deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-03d</td><td>Superseded by R18-GI-10 (R18-E): a gate-free review keeping 'no gate' through Back belonged to the reducer's card-review step and its actions, which are deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-03e</td><td>Superseded by R18-GI-10 (R18-E): Back carrying ignoredJurisdictions and the first uncertainNodeIds belonged to the reducer's card-review step and its actions, which are deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-05c</td><td>Superseded by R18-GI-10 (R18-E): a reply that quotes replaces_prior_model verbatim being verified, not guessed belonged to <code>extractGraph</code> (<code>graph-extractor.ts</code>), the model route that built a graph from the description, which is deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-B8</td><td>Superseded by R18-GI-10 (R18-E): guessing every field of a node that has no basis_quotes belonged to <code>extractGraph</code> (<code>graph-extractor.ts</code>), the model route that built a graph from the description, which is deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-B9</td><td>Superseded by R18-GI-10 (R18-E): a free-typed decision label reaching the graph as decision_type_other belonged to <code>extractGraph</code> (<code>graph-extractor.ts</code>), the model route that built a graph from the description, which is deleted. No replacement &mdash; behaviour retired.</td></tr>
+<tr><td>TC-CR6-B9b</td><td>Superseded by R18-GI-10 (R18-E): the tool schema's 200-character bound on decision_type_other belonged to <code>extractGraph</code> (<code>graph-extractor.ts</code>), the model route that built a graph from the description, which is deleted. No replacement &mdash; behaviour retired.</td></tr>
+</tbody>
+</table>
 </section>
 </main>
 </div>
