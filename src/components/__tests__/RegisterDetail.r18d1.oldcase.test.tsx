@@ -29,6 +29,10 @@ async function renderOld(id: string, nullPanel: boolean) {
   switches.nullPanel = nullPanel;
   const view = render(<RegisterDetail useCaseId={id} role="2LoD" policy={POLICY} onBack={() => {}} />);
   await screen.findByRole('heading', { name: 'Client email drafting assistant' });
+  // R18-E: the "no AI model is recorded" line and the chain check's result arrive after asynchronous reads. Both
+  // renders are snapshotted only once they have, or the comparison raced them (seen failing one full run in four).
+  await screen.findByText(/no ai model is recorded for this use case/i);
+  await screen.findByText(/no break found in the \d+ events present/i);
   const html = normalised(view.container.innerHTML);
   const container = view.container;
   return { html, container };

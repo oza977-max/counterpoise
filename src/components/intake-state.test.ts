@@ -784,6 +784,43 @@ describe('intakeReducer — CORRECT_VERDICT_WITH_FORM (R16-D2 §5, D-82)', () =>
     });
   });
 
+  // Re-pointed from the retired CORRECT_VERDICT chain (BC-P4C04-03 pattern, extended to P5-C01).
+  it('originalVerdictId set by CORRECT_VERDICT_WITH_FORM survives through the questions and the confirmation', () => {
+    const original = graph({ intake_method: 'structured_form', version: 1 });
+    const afterCorrect = intakeReducer(
+      { step: 'verdict', verdictId: 'uc-1' },
+      {
+        type: 'CORRECT_VERDICT_WITH_FORM',
+        originalGraph: original,
+        useCaseId: 'uc-1',
+        originalVerdictId: 'verdict-abc',
+        description: 'The confirmed description.',
+        answerState: { '1': { value: 'Tool', source: { kind: 'typed' } } },
+        assumptions: [],
+      },
+    );
+    const afterForm = intakeReducer(afterCorrect, {
+      type: 'FORM_SUBMITTED',
+      graph: graph({ intake_method: 'structured_form', version: 2 }),
+      useCaseId: 'uc-NEW',
+      description: 'The confirmed description.',
+      answerState: { '1': { value: 'Tool', source: { kind: 'typed' } } },
+      assumptions: [],
+      questions: [{ id: 'Q1', field: 'scale', triggered_by: [], answer_type: 'text' }],
+      contradictions: [],
+      corrections: [],
+    });
+    expect(afterForm).toMatchObject({ step: 'questionnaire', originalVerdictId: 'verdict-abc', useCaseId: 'uc-1', originalGraph: original });
+    const afterConfirmation = intakeReducer(afterForm, { type: 'PROCEED_TO_CONFIRMATION' });
+    expect(afterConfirmation).toMatchObject({
+      step: 'confirmation',
+      description: 'The confirmed description.',
+      originalVerdictId: 'verdict-abc',
+      useCaseId: 'uc-1',
+      originalGraph: original,
+    });
+  });
+
   it('TC-R16-D2-56: is refused from any step other than verdict', () => {
     const state: IntakeState = { step: 'description_entry', description: 'd' };
     const next = intakeReducer(state, {
