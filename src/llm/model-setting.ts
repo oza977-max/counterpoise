@@ -370,8 +370,8 @@ const isComplete = (r: ModelTestResult) => !r.stopped && r.casesRun === CORPUS_C
 
 /**
  * The result a screen shows as the main one for a saved setting, and a newer unfinished run to mention beside it.
- * The label and Settings both read this, so they cannot disagree. Main is the newest complete run in which the model
- * gave at least one usable answer; failing that the newest complete run; failing that the newest run of any kind.
+ * The label and Settings both read this, so they cannot disagree. Main is the newest complete run — even one in which
+ * the model gave no usable answer, so an older success never hides a newer failure; failing that the newest run of any kind.
  * "Later" is a stopped run newer than main, shown as a separate line and never in place of it.
  */
 export function selectResults(
