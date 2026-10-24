@@ -13,7 +13,7 @@ import casesRaw from '../../../backtest/cases.json?raw';
 // that case's own known correct answer, quoting the first words of the case (so the test never
 // invents corpus data: the answers come from backtest/cases.json itself). When the run ends the
 // screen says how often the fills reached the right verdict; the result is saved; and the
-// description screen's model label reads "tested" with the same count and the assumption suffix.
+// description screen's model label reads "tested" with the answers-filled-in-correctly counts (the verdict figure is not in the label).
 
 interface Case {
   id: string;

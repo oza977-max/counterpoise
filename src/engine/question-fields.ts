@@ -141,6 +141,11 @@ export interface CaseScore {
   /** Every select question, in the form's order. */
   questions: Record<string, QuestionScore>;
   verdict: VerdictScore;
+  /**
+   * False when the gold graph, evaluated under the policy and packs in force now, no longer gives the status and
+   * tier recorded in engine-verdicts.json (the firm's rules were edited since). The verdict is then not compared.
+   */
+  compared: boolean;
 }
 
 export interface ExpectedVerdict {
@@ -180,11 +185,16 @@ export function scoreCase(args: {
     }
     questions[q.id] = keysReproduce(q.id, filled.values.map((v) => v.option), goldFields, policy) ? 'right' : 'wrong';
   }
-  if (prefill === null) return { questions, verdict: 'no answer' };
+  // The recorded verdicts were made under the shipped rules. If the live rules give the gold graph another
+  // verdict, comparing a fill against the recording would punish a perfect model, so the verdict is not compared.
+  const goldVerdict = evaluate(gold, policy, packs);
+  const compared = goldVerdict.ok && goldVerdict.value.status === expected.status && goldVerdict.value.tier === expected.tier;
+  if (prefill === null) return { questions, verdict: 'no answer', compared };
+  if (!compared) return { questions, verdict: 'did not match', compared };
   const overlaid = applyPrefillToGraph(gold, prefill, policy, scored);
   const verdict = evaluate(overlaid, policy, packs);
   const matched = verdict.ok && verdict.value.status === expected.status && verdict.value.tier === expected.tier;
-  return { questions, verdict: matched ? 'matched' : 'did not match' };
+  return { questions, verdict: matched ? 'matched' : 'did not match', compared };
 }
 
 // ---- the run's table ----
@@ -200,6 +210,8 @@ export interface RunTally {
   perQuestion: Record<string, QuestionTally>;
   /** Cases whose verdict matched the recorded one. */
   verdictMatches: number;
+  /** Cases whose verdict could be compared with the recorded one (the live rules still give the recorded verdict for the gold graph). */
+  verdictCompared: number;
   /** Cases with no usable answer (a timeout, a refusal, an unreadable or empty reply). */
   noAnswer: number;
 }
@@ -209,6 +221,7 @@ export function tallyScores(scores: readonly CaseScore[]): RunTally {
   const perQuestion: Record<string, QuestionTally> = {};
   let verdictMatches = 0;
   let noAnswer = 0;
+  let verdictCompared = 0;
   for (const q of QUESTION_STRUCTURE) {
     if (q.kind === 'free') continue;
     for (const s of scores) {
@@ -219,8 +232,9 @@ export function tallyScores(scores: readonly CaseScore[]): RunTally {
     }
   }
   for (const s of scores) {
+    if (s.compared) verdictCompared += 1;
     if (s.verdict === 'matched') verdictMatches += 1;
     else if (s.verdict === 'no answer') noAnswer += 1;
   }
-  return { perQuestion, verdictMatches, noAnswer };
+  return { perQuestion, verdictMatches, verdictCompared, noAnswer };
 }

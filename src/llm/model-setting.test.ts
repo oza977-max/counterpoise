@@ -13,6 +13,7 @@ import {
   forgetModelSetting,
   listModels,
   modelLabel,
+  selectResults,
   CORPUS_CASE_COUNT,
   readTestResults,
 } from './model-setting';
@@ -597,6 +598,80 @@ describe('modelLabel (TC-R18-GI-12-*)', () => {
 
   it('a setting with no valid address has no host and so no result', () => {
     expect(modelLabel({ ...sett, url: 'not a url' }, [result({})])).toEqual({ kind: 'untested' });
+  });
+});
+
+describe('review pass 1: label and main result agree (fixes 2 and 3)', () => {
+  it('a complete run where the model gave no usable answer in any case is untested, never tested', () => {
+    expect(modelLabel(sett, [result({ noAnswer: 31 })])).toEqual({ kind: 'no-answer' });
+  });
+
+  it('a complete run with some usable answers is still tested (the no-answer line is Settings\' job)', () => {
+    expect(modelLabel(sett, [result({ noAnswer: 30 })])).toMatchObject({ kind: 'tested' });
+    expect(modelLabel(sett, [result({ noAnswer: 0 })])).toMatchObject({ kind: 'tested' });
+  });
+
+  it('an older complete run with usable answers wins over a newer all-no-answer one', () => {
+    const rs = [result({ noAnswer: 31, date: '2026-10-09' }), result({ noAnswer: 2, date: '2026-10-08' })];
+    expect(modelLabel(sett, rs)).toMatchObject({ kind: 'tested', date: '2026-10-08' });
+    expect(selectResults(sett, rs).main).toBe(rs[1]);
+  });
+
+  it('selectResults: the newest complete run is main; a newer stopped run is "later"; an older one is not', () => {
+    const stoppedNew = result({ stopped: true, casesRun: 4 });
+    const done = result({ date: '2026-10-06' });
+    const stoppedOld = result({ stopped: true, casesRun: 9, date: '2026-10-01' });
+    expect(selectResults(sett, [stoppedNew, done, stoppedOld])).toEqual({ main: done, later: stoppedNew });
+    expect(selectResults(sett, [done, stoppedOld])).toEqual({ main: done, later: undefined });
+  });
+
+  it('selectResults: with no complete run the newest incomplete one is main and nothing is "later"', () => {
+    const a = result({ stopped: true, casesRun: 4 });
+    expect(selectResults(sett, [a])).toEqual({ main: a, later: undefined });
+    expect(selectResults(sett, [])).toEqual({ main: undefined, later: undefined });
+    expect(selectResults({ ...sett, model: 'other' }, [a])).toEqual({ main: undefined, later: undefined });
+  });
+});
+
+describe('review pass 1: stored results are bounded (fix 6)', () => {
+  const put = (results: unknown[]) => localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results }));
+  const q = { right: 1, blank: 0, wrong: 0 };
+
+  it.each([
+    ['a huge count in perQuestion', { perQuestion: { '7': { right: 1e12, blank: 0, wrong: 0 } } }],
+    ['a negative count in perQuestion', { perQuestion: { '7': { right: -1, blank: 0, wrong: 0 } } }],
+    ['a fractional count in perQuestion', { perQuestion: { '7': { right: 1.5, blank: 0, wrong: 0 } } }],
+    ['a huge discarded count', { discarded: { x: 1e12 } }],
+    ['a negative discarded count', { discarded: { x: -3 } }],
+    ['hundreds of perQuestion keys', { perQuestion: Object.fromEntries(Array.from({ length: 500 }, (_, i) => [`k${i}`, q])) }],
+    ['hundreds of discarded keys', { discarded: Object.fromEntries(Array.from({ length: 500 }, (_, i) => [`k${i}`, 1])) }],
+  ])('%s reads as no results and does not throw', (_n, over) => {
+    put([{ ...result({}), ...over }]);
+    expect(() => readTestResults()).not.toThrow();
+    expect(readTestResults()).toEqual([]);
+  });
+
+  it('counts at the limits are kept', () => {
+    put([result({ discarded: { x: 1000 }, perQuestion: { '7': { right: 1000, blank: 0, wrong: 0 } } })]);
+    expect(readTestResults()).toHaveLength(1);
+  });
+
+  it('rows past the cap are never parsed: unreadable rows after the twentieth do not spoil the first twenty', () => {
+    const good = Array.from({ length: 20 }, (_, i) => result({ date: `2026-10-${String(i + 1).padStart(2, '0')}` }));
+    put([...good, { nonsense: true }, 'x', null]);
+    expect(readTestResults()).toHaveLength(20);
+  });
+
+  it('a very long list of rows reads without failing', () => {
+    put(Array.from({ length: 5000 }, () => result({})));
+    expect(readTestResults()).toHaveLength(20);
+  });
+
+  it('a verdictCompared count is bounded like the others', () => {
+    put([result({ verdictCompared: 5000 })]);
+    expect(readTestResults()).toEqual([]);
+    put([result({ verdictCompared: 12 })]);
+    expect(readTestResults()[0]!.verdictCompared).toBe(12);
   });
 });
 

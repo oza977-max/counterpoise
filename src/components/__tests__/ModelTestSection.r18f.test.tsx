@@ -6,7 +6,14 @@ import ModelStatus from '../ModelStatus';
 import { createFakeModel } from '../../llm/test-utils';
 import type { FakeBehaviour, RecordedRequest } from '../../llm/test-utils';
 import { updateModelSetting, appendTestResult } from '../../llm/model-setting';
-import { loadCorpus } from '../../llm/model-test';
+import { loadCorpus, runModelTest } from '../../llm/model-test';
+import { setCurrentPolicyYaml } from '../../store/policy-source';
+import appetiteYaml from '../../../policy/appetite.yaml?raw';
+
+vi.mock('../../llm/model-test', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../llm/model-test')>();
+  return { ...actual, runModelTest: vi.fn(actual.runModelTest) };
+});
 
 // R18-F: the Settings "Test it" control as a person sees it (TC-R18-MS-4-02, -04, -05, -07, -08, -09,
 // GI-12-03, NF-1-04/-05, and the false state of every new sentence, TC-R18-GI-13-01 rows for F).
@@ -198,7 +205,9 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     await finish(user, () => ({ kind: 'content', content: 'not json at all' }));
     expect(section().textContent).toContain('Cases with no usable answer from the model: 31.');
     expect(section().textContent).toContain('Right verdict in 0 of 31 cases');
-    expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: 0 of \d+ answers filled in correctly/);
+    // review pass 1, fix 2: no usable answer in any case tested nothing, so the label must not say "tested"
+    expect(statusLine()).toContain('alpha:7b: untested (the model gave no usable answer in any case)');
+    expect(statusLine()).not.toMatch(/tested on|(^|[^n])tested /);
   }, 40000);
 
   // Owner decision 2026-10-24. A model that fills nothing must not show a good headline. A fake model that
@@ -219,7 +228,9 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     expect(tot.w).toBe(0);
     expect(tot.b).toBeGreaterThan(0);
     const label = `0 of ${tot.b} answers filled in correctly, ${tot.b} left blank, 0 wrong`;
-    expect(statusLine()).toContain(label);
+    // review pass 1, fix 2: an empty reply is no usable answer in any case, so the label says untested
+    // (the second owner-decision test below covers the tested label's figures)
+    expect(statusLine()).toContain('untested (the model gave no usable answer in any case)');
     expect(section().textContent).toContain(label);
     expect(unqualified(section().textContent!)).not.toMatch(/\d+ of 31 cases/);
     expect(statusLine()).not.toMatch(/of 31|\/31/);
@@ -286,4 +297,208 @@ describe('the saved results are bounded and newest first (R18-B note for F)', ()
     expect(stored.results[0].verdictMatches).toBe(23);
     expect(stored.results[19].verdictMatches).toBe(4);
   });
+});
+
+
+// ---- review pass 1 ----
+
+const stored = (over: Partial<ModelTestResultLike> = {}): ModelTestResultLike => ({
+  model: 'alpha:7b', place: 'this-computer', host: LOCAL, date: '2026-10-20', casesRun: 31, stopped: false,
+  verdictMatches: 31, noAnswer: 0, verdictCompared: 31, discarded: {},
+  perQuestion: { '12': { right: 10, blank: 5, wrong: 1 } }, ...over,
+});
+type ModelTestResultLike = Parameters<typeof appendTestResult>[0];
+
+describe('review pass 1, fix 1: a firm that edited its rules (the recorded verdicts no longer apply)', () => {
+  async function runPerfect(user: ReturnType<typeof userEvent.setup>) {
+    vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle: (r) => knows(r) }).fetch);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    await within(section()).findByText(/Right verdict in \d+ of/, {}, { timeout: 20000 });
+  }
+
+  it('does not penalise a perfect fill: the verdict is reported against the cases compared and the skipped count is stated', async () => {
+    save();
+    setCurrentPolicyYaml(appetiteYaml.replace('value: { in: ["Client PII", "MNPI"] }', 'value: { in: ["MNPI"] }'));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await runPerfect(user);
+    const saved = JSON.parse(localStorage.getItem('aigate:model-test-results')!).results[0];
+    expect(saved.verdictCompared).toBeLessThan(31);
+    expect(saved.verdictCompared).toBeGreaterThan(0);
+    expect(saved.verdictMatches).toBe(saved.verdictCompared); // every compared case is right
+    const k = saved.verdictCompared;
+    const text = section().textContent!;
+    expect(text).toContain(`Right verdict in ${k} of the ${k} cases compared if you check every filled answer and answer the rest yourself.`);
+    expect(text).toContain(
+      `Your firm's rules differ from the ones these examples were recorded under, so the verdict is not compared for ${31 - k} of 31 cases.`,
+    );
+    expect(text).not.toMatch(/of 31 cases if you check/);
+  }, 60000);
+
+  it('false state: under the shipped rules nothing is skipped, the sentence is absent and the figure is out of 31', async () => {
+    save();
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await runPerfect(user);
+    expect(section().textContent).not.toContain('not compared');
+    expect(section().textContent).not.toContain('cases compared');
+    expect(section().textContent).toContain('Right verdict in 31 of 31 cases if you check');
+  }, 60000);
+
+  it('false state: a result saved before the count existed reads as all compared', async () => {
+    save();
+    const { verdictCompared: _omit, ...legacy } = stored({ verdictMatches: 20 });
+    appendTestResult(legacy);
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(section().textContent).toContain('Right verdict in 20 of 31 cases if you check');
+    expect(section().textContent).not.toContain('not compared');
+  });
+
+  it('a run where no verdict could be compared says so, with no count', async () => {
+    save();
+    appendTestResult(stored({ verdictCompared: 0, verdictMatches: 0 }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(section().textContent).toContain('No verdict could be compared in this run.');
+    expect(section().textContent).toContain('not compared for 31 of 31 cases');
+    expect(section().textContent).not.toMatch(/Right verdict in/);
+  });
+});
+
+describe('review pass 1, fix 2: no usable answer', () => {
+  it('in every case: the label says untested and the Settings result says so too', async () => {
+    save();
+    appendTestResult(stored({ noAnswer: 31, verdictMatches: 0, perQuestion: {} }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(statusLine()).toContain('alpha:7b: untested (the model gave no usable answer in any case)');
+    expect(statusLine()).not.toMatch(/tested on/);
+    expect(section().textContent).toContain('Cases with no usable answer from the model: 31.');
+  });
+
+  it('in some cases only: still tested, and Settings keeps the no-answer line', async () => {
+    save();
+    appendTestResult(stored({ noAnswer: 4 }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(statusLine()).toContain('alpha:7b: tested on 2026-10-20');
+    expect(section().textContent).toContain('Cases with no usable answer from the model: 4.');
+  });
+
+  it('in none: no no-answer line and no untested label', async () => {
+    save();
+    appendTestResult(stored({ noAnswer: 0 }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(statusLine()).not.toContain('untested');
+    expect(section().textContent).not.toContain('no usable answer');
+  });
+});
+
+describe('review pass 1, fix 3: a stop before any case finishes, and an earlier complete run', () => {
+  it('a stop before the first case finishes saves nothing and says so', async () => {
+    save();
+    vi.stubGlobal('fetch', createFakeModel({ kind: 'never' }).fetch);
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    await within(section()).findByText('Case 1 of 31');
+    await user.click(within(section()).getByRole('button', { name: 'Stop' }));
+    expect(await within(section()).findByText('The test was stopped before any case finished, so nothing was saved.')).toBeInTheDocument();
+    expect(localStorage.getItem('aigate:model-test-results')).toBeNull();
+    expect(statusLine()).toContain('alpha:7b: untested');
+    expect(statusLine()).not.toContain('partial');
+    expect(section().textContent).not.toContain('Latest test of this model');
+  });
+
+  it('false state: a stop after some cases finished saves a result and does not say "nothing was saved"', async () => {
+    save();
+    vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle: (r, i) => (i >= 2 ? { kind: 'never' } : knows(r)) }).fetch);
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    await within(section()).findByText('Case 3 of 31');
+    await user.click(within(section()).getByRole('button', { name: 'Stop' }));
+    await within(section()).findByText('Stopped after 2 of 31 cases.');
+    expect(section().textContent).not.toContain('nothing was saved');
+    expect(localStorage.getItem('aigate:model-test-results')).not.toBeNull();
+  });
+
+  it('a newer stopped run does not hide the earlier complete one: the complete run is the result, the stopped one is a separate line, and the label agrees', async () => {
+    save();
+    appendTestResult(stored({ date: '2026-10-20' }));
+    appendTestResult(stored({ date: '2026-10-22', casesRun: 7, stopped: true, verdictMatches: 5, verdictCompared: 7 }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    const text = section().textContent!;
+    expect(text).toContain('Right verdict in 31 of 31 cases');
+    expect(text).toContain('A later test was stopped after 7 of 31 cases.');
+    expect(text).not.toContain('Stopped after 7 of 31 cases.');
+    expect(text).not.toMatch(/Right verdict in \d+ of the 7 cases that ran/);
+    expect(statusLine()).toContain('tested on 2026-10-20');
+    expect(statusLine()).not.toContain('2026-10-22');
+  });
+
+  it('false state: with no complete run the stopped run is the result and there is no "later" line; an older stopped run is not called later', async () => {
+    save();
+    appendTestResult(stored({ date: '2026-10-22', casesRun: 7, stopped: true }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(section().textContent).toContain('Stopped after 7 of 31 cases.');
+    expect(section().textContent).not.toContain('A later test');
+    expect(statusLine()).toContain('untested (a partial test stopped after 7 of 31 cases)');
+  });
+
+  it('false state: a stopped run older than the complete one is not mentioned', async () => {
+    save();
+    appendTestResult(stored({ date: '2026-10-01', casesRun: 7, stopped: true }));
+    appendTestResult(stored({ date: '2026-10-20' }));
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    expect(section().textContent).not.toContain('A later test');
+    expect(section().textContent).not.toContain('stopped after');
+  });
+});
+
+describe('review pass 1, fixes 4 and 5: the run fails in the middle, or the result cannot be saved', () => {
+  it('a throw mid-run says the test stopped unexpectedly and was not saved, not that it could not start', async () => {
+    save();
+    vi.mocked(runModelTest).mockImplementationOnce(async () => {
+      throw new Error('boom');
+    });
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    expect(await within(section()).findByText('The test stopped unexpectedly and was not saved.')).toBeInTheDocument();
+    expect(section().textContent).not.toContain('could not start');
+    expect(localStorage.getItem('aigate:model-test-results')).toBeNull();
+    expect(within(section()).getByRole('button', { name: 'Test it' })).toBeEnabled();
+  });
+
+  it('false state: a run that finishes shows neither failure sentence', async () => {
+    save();
+    vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle: (r) => knows(r) }).fetch);
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    await within(section()).findByText(/Right verdict in \d+ of/, {}, { timeout: 20000 });
+    expect(section().textContent).not.toMatch(/stopped unexpectedly|could not start|could not be saved/);
+  }, 40000);
+
+  it('storage refusing the write says the result could not be saved in this browser', async () => {
+    save();
+    vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle: (r) => knows(r) }).fetch);
+    const realSet = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+      if (k === 'aigate:model-test-results') throw new Error('quota');
+      return realSet.call(this, k, v);
+    });
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await user.click(within(section()).getByRole('button', { name: 'Test it' }));
+    expect(await within(section()).findByText('The result could not be saved in this browser.', {}, { timeout: 20000 })).toBeInTheDocument();
+    expect(statusLine()).toContain('alpha:7b: untested');
+    vi.restoreAllMocks();
+  }, 40000);
 });

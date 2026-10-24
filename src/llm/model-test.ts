@@ -144,6 +144,7 @@ export async function runModelTest(args: RunModelTestArgs): Promise<ModelTestRes
     casesRun: scores.length,
     stopped,
     verdictMatches: tally.verdictMatches,
+    verdictCompared: tally.verdictCompared,
     noAnswer: tally.noAnswer,
     discarded: Object.fromEntries(Object.entries(discarded).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
     perQuestion: tally.perQuestion,

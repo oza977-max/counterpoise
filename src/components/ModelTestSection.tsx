@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { loadPolicy } from '../store/policy';
 import { getCurrentPolicyYaml } from '../store/policy-source';
 import { getPackSources, loadPackSet } from '../store/pack-source';
-import { appendTestResult, MODEL_SETTING_CHANGED_EVENT, MODEL_SETTING_KEY } from '../llm/model-setting';
+import { appendTestResult, MODEL_SETTING_CHANGED_EVENT, MODEL_SETTING_KEY, selectResults } from '../llm/model-setting';
 import { loadCorpus, runModelTest, CORPUS_CASE_COUNT } from '../llm/model-test';
 import { buildCatalogue, QUESTION_STRUCTURE, structureFor } from '../engine/question-structure';
 import type { ModelTestResult } from '../engine/prefill-types';
@@ -18,6 +18,8 @@ import {
   testResultWords,
   testAnswersWords,
   testStoppedWords,
+  testVerdictSkippedWords,
+  testLaterStoppedWords,
 } from './plain-copy';
 import { useModelSetting } from './useModelSetting';
 import { originOf } from '../llm/model-setting';
@@ -36,7 +38,9 @@ export default function ModelTestSection() {
   const snapshot = useModelSetting();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
-  const [failedToStart, setFailedToStart] = useState(false);
+  // What the last press ended in, when it saved nothing: it could not start, it threw, it was stopped before any
+  // case finished, or storage refused the result. Each is a different true sentence.
+  const [notice, setNotice] = useState<'cannot-start' | 'crashed' | 'stopped-empty' | 'not-saved' | null>(null);
   const inFlight = useRef(false);
   const stopController = useRef<AbortController | null>(null);
   const mounted = useRef(true);
@@ -51,10 +55,9 @@ export default function ModelTestSection() {
 
   const saved = snapshot.state.kind === 'valid' ? snapshot.state.setting : null;
   const savedHost = saved ? originOf(saved.url) : null;
-  const latest: ModelTestResult | undefined =
-    saved && savedHost !== null
-      ? snapshot.results.find((r) => r.model === saved.model && r.place === saved.place && r.host === savedHost)
-      : undefined;
+  // The same selection the description screen's label reads, so the two cannot disagree.
+  const { main: latest, later }: { main: ModelTestResult | undefined; later: ModelTestResult | undefined } =
+    saved && savedHost !== null ? selectResults(saved, snapshot.results) : { main: undefined, later: undefined };
 
   async function handleTest() {
     if (inFlight.current) return; // a second press while a run is going starts nothing
@@ -64,11 +67,11 @@ export default function ModelTestSection() {
     const corpus = loadCorpus();
     const packSet = loadPackSet(getPackSources());
     if (!policyResult.valid || !corpus || corpus.cases.length !== CORPUS_CASE_COUNT || packSet.messages.length > 0) {
-      setFailedToStart(true);
+      setNotice('cannot-start');
       inFlight.current = false;
       return;
     }
-    setFailedToStart(false);
+    setNotice(null);
     const policy = policyResult.policy;
     const stop = new AbortController();
     stopController.current = stop;
@@ -98,9 +101,12 @@ export default function ModelTestSection() {
       // Our own save announces a change; stop listening first so it cannot read as the setting changing.
       window.removeEventListener(MODEL_SETTING_CHANGED_EVENT, onChanged);
       window.removeEventListener('storage', onStorage);
-      if (mounted.current) appendTestResult(result);
+      if (mounted.current) {
+        if (result.casesRun === 0) setNotice('stopped-empty'); // nothing finished: there is nothing to save
+        else if (!appendTestResult(result)) setNotice('not-saved');
+      }
     } catch {
-      if (mounted.current) setFailedToStart(true);
+      if (mounted.current) setNotice('crashed');
     } finally {
       window.removeEventListener(MODEL_SETTING_CHANGED_EVENT, onChanged);
       window.removeEventListener('storage', onStorage);
@@ -120,6 +126,7 @@ export default function ModelTestSection() {
   const discardedTotal = latest ? Object.values(latest.discarded).reduce((a, b) => a + b, 0) : 0;
   const discardedWords = latest ? testDiscardedWords(discardedTotal) : null;
   const noAnswerWords = latest ? testNoAnswerWords(latest.noAnswer ?? 0) : null;
+  const skippedWords = latest ? testVerdictSkippedWords(latest) : null;
 
   return (
     <section aria-label={R18_COPY.TEST_BUTTON} className="model-test">
@@ -143,7 +150,10 @@ export default function ModelTestSection() {
       )}
       <div role="status">
         {running && progress !== null && <p>{testProgressWords(progress)}</p>}
-        {failedToStart && <p>{R18_COPY.TEST_CANNOT_START}</p>}
+        {notice === 'cannot-start' && <p>{R18_COPY.TEST_CANNOT_START}</p>}
+        {notice === 'crashed' && <p>{R18_COPY.TEST_CRASHED}</p>}
+        {notice === 'stopped-empty' && <p>{R18_COPY.TEST_STOPPED_NONE}</p>}
+        {notice === 'not-saved' && <p>{R18_COPY.TEST_NOT_SAVED}</p>}
       </div>
       {latest && !running && (
         <div className="model-test__result">
@@ -151,7 +161,9 @@ export default function ModelTestSection() {
           {latest.stopped && <p>{testStoppedWords(latest.casesRun)}</p>}
           <p>{testAnswersWords(latest)}</p>
           <p>{testResultWords(latest)}</p>
+          {skippedWords && <p>{skippedWords}</p>}
           {noAnswerWords && <p>{noAnswerWords}</p>}
+          {later && <p>{testLaterStoppedWords(later.casesRun)}</p>}
           {discardedWords && <p>{discardedWords}</p>}
           <h5>{R18_COPY.TEST_PER_QUESTION_HEADING}</h5>
           <ul aria-label={R18_COPY.TEST_PER_QUESTION_HEADING}>

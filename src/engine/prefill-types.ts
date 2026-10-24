@@ -165,6 +165,8 @@ export interface ModelTestResult {
   verdictMatches: number;
   /** Cases with no usable answer (timeout, refusal, unreadable or empty reply). Absent in a result saved before it was counted. */
   noAnswer?: number;
+  /** Cases whose verdict could be compared with the recorded one (the live rules still give the recorded verdict for the gold graph). Absent in a result saved before it was counted: all cases were compared. */
+  verdictCompared?: number;
   discarded: Record<string, number>;
   perQuestion: Record<string, { right: number; blank: number; wrong: number }>;
 }

@@ -1578,6 +1578,8 @@ export const R18_COPY = {
   // Owner decision 2026-10-24: the label leads with the answers. The verdict figure is not in it.
   LABEL_TESTED:
     'tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong',
+  // Review pass 1: a complete run in which the model gave no usable answer in any case tested nothing.
+  LABEL_NO_ANSWER: 'untested (the model gave no usable answer in any case)',
   LABEL_TESTED_NONE: 'tested on {date}: no answers could be scored',
 
   // The in-app test (R18-F, §27.11). Every sentence is true only in the state that shows it; each has a false-state test.
@@ -1604,6 +1606,16 @@ export const R18_COPY = {
     'Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself.',
   TEST_RESULT_STOPPED:
     'Right verdict in {matches} of the {n} cases that ran if you check every filled answer and answer the rest yourself.',
+  // Review pass 1. The recorded verdicts were made under the shipped rules; after an edit the figure would mislead.
+  TEST_VERDICT_SKIPPED:
+    "Your firm's rules differ from the ones these examples were recorded under, so the verdict is not compared for {n} of {total} cases.",
+  TEST_RESULT_COMPARED:
+    'Right verdict in {matches} of the {k} cases compared if you check every filled answer and answer the rest yourself.',
+  TEST_RESULT_NONE_COMPARED: 'No verdict could be compared in this run.',
+  TEST_LATER_STOPPED: 'A later test was stopped after {n} of 31 cases.',
+  TEST_STOPPED_NONE: 'The test was stopped before any case finished, so nothing was saved.',
+  TEST_CRASHED: 'The test stopped unexpectedly and was not saved.',
+  TEST_NOT_SAVED: 'The result could not be saved in this browser.',
   TEST_NO_ANSWER: 'Cases with no usable answer from the model: {n}. Each counts as blank, with no right verdict.',
   TEST_PER_QUESTION_HEADING: 'How each question was filled in',
   TEST_QUESTION_LINE: '{question}: {right} right, {blank} left blank, {wrong} wrong (cases scored: {n})',
@@ -1767,6 +1779,8 @@ export function modelLabelWords(label: ModelLabel): string {
   switch (label.kind) {
     case 'untested':
       return R18_COPY.LABEL_UNTESTED;
+    case 'no-answer':
+      return R18_COPY.LABEL_NO_ANSWER;
     case 'partial':
       return (label.stopped ? R18_COPY.LABEL_PARTIAL : R18_COPY.LABEL_PARTIAL_RAN).replace('{n}', String(label.casesRun));
     case 'tested': {
@@ -1798,12 +1812,34 @@ export function testDiscardedWords(total: number): string | null {
   return total === 1 ? R18_COPY.TEST_DISCARDED_ONE : R18_COPY.TEST_DISCARDED.replace('{n}', String(total));
 }
 
-/** The result line. A stopped run never reads as a count out of 31. */
-export function testResultWords(result: { stopped: boolean; casesRun: number; verdictMatches: number }): string {
+/** The result line. A stopped run never reads as a count out of 31; cases not compared are left out of the count. */
+export function testResultWords(result: {
+  stopped: boolean;
+  casesRun: number;
+  verdictMatches: number;
+  verdictCompared?: number;
+}): string {
+  const compared = result.verdictCompared ?? result.casesRun;
+  if (compared < result.casesRun) {
+    if (compared === 0) return R18_COPY.TEST_RESULT_NONE_COMPARED;
+    return R18_COPY.TEST_RESULT_COMPARED.replace('{matches}', String(result.verdictMatches)).replace('{k}', String(compared));
+  }
   const template = result.stopped ? R18_COPY.TEST_RESULT_STOPPED : R18_COPY.TEST_RESULT_DONE;
   return template
     .replace('{matches}', String(result.verdictMatches))
     .replace('{n}', String(result.casesRun));
+}
+
+/** The note that some verdicts were not compared; nothing when every case was. */
+export function testVerdictSkippedWords(result: { casesRun: number; verdictCompared?: number }): string | null {
+  const skipped = result.casesRun - (result.verdictCompared ?? result.casesRun);
+  if (skipped <= 0) return null;
+  return R18_COPY.TEST_VERDICT_SKIPPED.replace('{n}', String(skipped)).replace('{total}', String(result.casesRun));
+}
+
+/** The line for a stopped run that is newer than the shown result. */
+export function testLaterStoppedWords(n: number): string {
+  return R18_COPY.TEST_LATER_STOPPED.replace('{n}', String(n));
 }
 
 /** The answers line that leads the Settings result: right of scored, blank, wrong, from the saved per-question counts. */

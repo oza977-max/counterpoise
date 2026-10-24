@@ -254,6 +254,45 @@ describe('scoring one case (TC-R18-GI-12-08, TC-R18-MS-8-03)', () => {
   });
 });
 
+// ---- R18-F review pass 1, fix 1: a policy edited after the verdicts were recorded ----
+
+describe('verdict comparison under an edited policy (R18-F review pass 1, fix 1)', () => {
+  const editedPolicy = (): PolicyFile => {
+    const yaml = readFileSync(resolve(__dirname, '../../policy/appetite.yaml'), 'utf-8');
+    const edited = yaml.replace('value: { in: ["Client PII", "MNPI"] }', 'value: { in: ["MNPI"] }');
+    expect(edited).not.toBe(yaml);
+    const r = loadPolicy(edited);
+    if (!r.valid) throw new Error('edited policy invalid');
+    return r.policy;
+  };
+
+  it('under the shipped policy every corpus case is compared (the unedited policy behaves as before)', () => {
+    for (const c of CASES) expect(score(c.id, fill({})).compared, c.id).toBe(true);
+  });
+
+  it('under an edited policy, a perfect fill is not scored on a case whose recorded verdict no longer holds, and is not counted as a miss', () => {
+    const edited = editedPolicy();
+    const changed = CASES.filter((c) => {
+      const s = scoreCase({ gold: gold(c.id), prefill: fill({}), expected: EXPECTED[c.id]!, policy: edited, packs });
+      return !s.compared;
+    });
+    expect(changed.length, 'the edit must change at least one recorded verdict for this test to mean anything').toBeGreaterThan(0);
+    const scores = CASES.map((c) => scoreCase({ gold: gold(c.id), prefill: fill({}), expected: EXPECTED[c.id]!, policy: edited, packs }));
+    for (const s of scores) expect(s.verdict === 'did not match' && s.compared).toBe(false);
+    const tally = tallyScores(scores);
+    expect(tally.verdictCompared).toBe(CASES.length - changed.length);
+    expect(tally.verdictMatches).toBe(tally.verdictCompared);
+  });
+
+  it('a case with no usable answer under an edited policy still counts as no answer, and is not compared', () => {
+    const edited = editedPolicy();
+    const id = CASES.find((c) => !scoreCase({ gold: gold(c.id), prefill: null, expected: EXPECTED[c.id]!, policy: edited, packs }).compared)!.id;
+    const s = scoreCase({ gold: gold(id), prefill: null, expected: EXPECTED[id]!, policy: edited, packs });
+    expect(s.verdict).toBe('no answer');
+    expect(tallyScores([s])).toMatchObject({ noAnswer: 1, verdictCompared: 0, verdictMatches: 0 });
+  });
+});
+
 // ---- drift: the overlay agrees with the form's own mapping ----
 
 const workedFile = JSON.parse(readFileSync(resolve(__dirname, '../../backtest/worked-case-answers.json'), 'utf-8')) as {
@@ -431,7 +470,7 @@ describe('TC-R18-GI-12-05: the scoring table (properties)', () => {
   it('the counterexample strategies hold: all replies blank, all wrong, one reply, a duplicated reply, a run of 0 and of 30 cases', () => {
     const ids = CASES.map((c) => c.id);
     const empty = tallyScores([]);
-    expect(empty).toEqual({ perQuestion: {}, verdictMatches: 0, noAnswer: 0 });
+    expect(empty).toEqual({ perQuestion: {}, verdictMatches: 0, verdictCompared: 0, noAnswer: 0 });
     const allBlank = tallyScores(ids.map((id) => score(id, null)));
     expect(allBlank.verdictMatches).toBe(0);
     expect(allBlank.noAnswer).toBe(31);

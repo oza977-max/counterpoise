@@ -270,6 +270,11 @@ export function forgetModelSetting(): void {
 
 // ---- test results ----------------------------------------------------------
 
+const MAX_COUNT = 1000;
+const MAX_RECORD_KEYS = 64;
+const count = z.number().int().min(0).max(MAX_COUNT);
+const capKeys = (o: Record<string, unknown>) => Object.keys(o).length <= MAX_RECORD_KEYS;
+
 const resultSchema = z.object({
   model: z.string().max(400),
   place: z.enum(['this-computer', 'firm-server', 'ollama-cloud']),
@@ -278,12 +283,12 @@ const resultSchema = z.object({
   casesRun: z.number().int().min(0).max(1000),
   stopped: z.boolean(),
   verdictMatches: z.number().int().min(0).max(1000),
-  noAnswer: z.number().int().min(0).max(1000).optional(),
-  discarded: z.record(z.string(), z.number()),
-  perQuestion: z.record(
-    z.string(),
-    z.object({ right: z.number(), blank: z.number(), wrong: z.number() }),
-  ),
+  noAnswer: count.optional(),
+  verdictCompared: count.optional(),
+  discarded: z.record(z.string().max(80), count).refine(capKeys),
+  perQuestion: z
+    .record(z.string().max(80), z.object({ right: count, blank: count, wrong: count }))
+    .refine(capKeys),
 });
 const resultsSchema = z.object({ version: z.literal(1), results: z.array(resultSchema) });
 
@@ -292,8 +297,14 @@ export function readTestResults(): ModelTestResult[] {
   const raw = getItem(MODEL_TEST_RESULTS_KEY);
   if (raw === null) return [];
   try {
-    const parsed = resultsSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? (parsed.data.results.slice(0, MAX_TEST_RESULTS) as ModelTestResult[]) : [];
+    const json: unknown = JSON.parse(raw);
+    // Cap the list before parsing it: rows past the cap are never looked at.
+    const capped =
+      json !== null && typeof json === 'object' && Array.isArray((json as { results?: unknown }).results)
+        ? { ...(json as object), results: (json as { results: unknown[] }).results.slice(0, MAX_TEST_RESULTS) }
+        : json;
+    const parsed = resultsSchema.safeParse(capped);
+    return parsed.success ? (parsed.data.results as ModelTestResult[]) : [];
   } catch {
     return [];
   }
@@ -317,6 +328,8 @@ export function appendTestResult(result: ModelTestResult): boolean {
 
 export type ModelLabel =
   | { kind: 'untested' }
+  /** A complete run in which the model gave no usable answer in any case. Never "tested". */
+  | { kind: 'no-answer' }
   | { kind: 'partial'; casesRun: number; stopped: boolean }
   | { kind: 'tested'; right: number; blank: number; wrong: number; date: string };
 
@@ -343,17 +356,36 @@ export function modelLabel(
   setting: { model: string; place: ModelPlace; url: string },
   results: readonly ModelTestResult[],
 ): ModelLabel {
-  const host = originOf(setting.url);
-  if (host === null) return { kind: 'untested' };
-  const mine = results.filter((r) => r.model === setting.model && r.place === setting.place && r.host === host);
-  const done = mine.find((r) => !r.stopped && r.casesRun === CORPUS_CASE_COUNT);
-  if (done) {
-    const { right, blank, wrong } = answerTotals(done.perQuestion);
-    return { kind: 'tested', right, blank, wrong, date: done.date };
+  const { main } = selectResults(setting, results);
+  if (!main) return { kind: 'untested' };
+  if (isComplete(main)) {
+    if (main.noAnswer !== undefined && main.noAnswer === main.casesRun) return { kind: 'no-answer' };
+    const { right, blank, wrong } = answerTotals(main.perQuestion);
+    return { kind: 'tested', right, blank, wrong, date: main.date };
   }
-  const partial = mine[0];
-  if (partial) return { kind: 'partial', casesRun: partial.casesRun, stopped: partial.stopped };
-  return { kind: 'untested' };
+  return { kind: 'partial', casesRun: main.casesRun, stopped: main.stopped };
+}
+
+const isComplete = (r: ModelTestResult) => !r.stopped && r.casesRun === CORPUS_CASE_COUNT;
+
+/**
+ * The result a screen shows as the main one for a saved setting, and a newer unfinished run to mention beside it.
+ * The label and Settings both read this, so they cannot disagree. Main is the newest complete run in which the model
+ * gave at least one usable answer; failing that the newest complete run; failing that the newest run of any kind.
+ * "Later" is a stopped run newer than main, shown as a separate line and never in place of it.
+ */
+export function selectResults(
+  setting: { model: string; place: ModelPlace; url: string },
+  results: readonly ModelTestResult[],
+): { main: ModelTestResult | undefined; later: ModelTestResult | undefined } {
+  const host = originOf(setting.url);
+  if (host === null) return { main: undefined, later: undefined };
+  const mine = results.filter((r) => r.model === setting.model && r.place === setting.place && r.host === host);
+  const complete = mine.filter(isComplete);
+  const main = complete.find((r) => r.noAnswer === undefined || r.noAnswer < r.casesRun) ?? complete[0] ?? mine[0];
+  if (!main || !isComplete(main)) return { main, later: undefined };
+  const newer = mine.slice(0, mine.indexOf(main)).find((r) => r.stopped);
+  return { main, later: newer };
 }
 
 // ---- the explicit "Find models" call --------------------------------------
