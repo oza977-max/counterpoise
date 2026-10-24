@@ -405,3 +405,10 @@ next experiment), before building any panel UI on this model.
 - `graphValueResolver`'s no-original-graph branch and `GraphCorrection.correction_source: 'review'`: only old records carry the latter.
 - No caller left outside tests: `extractionErrorMessage` and `EXTRACTION_ERROR_HELP` (`plain-copy.ts`), `ratingWarningFor` (`plain-copy.ts`) and `questionsForGuessedFields` (`question-generator.ts`, a kept file).
 - `src/App.css`: the `.graph-view`, `.graph-node*` and review-card rules have no element left to style.
+
+## 2026-10-24 — R18-E items deferred to R18-G (owner speed call)
+- Older questionnaire-route "Not sure" assumptions (question id `field:…`) are dropped on an older-case correction without being named in the note.
+- `QuestionnaireStep` multi-select guards now asserted only downstream: Q13 "Nothing beyond" exclusivity both ways, clicking an option's words ticks it, unticking the last option.
+- Dead code: exports `extractionErrorMessage`, `EXTRACTION_ERROR_HELP`, `ratingWarningFor`, `questionsForGuessedFields`; `.graph-view` / `.graph-node*` CSS; the "check each card below" branch in `plain-copy.ts` (~1333/1344); make the retirement CSS grep case-insensitive; a test for the `RegisterDetail` onCorrect row.
+- R18-E handover's deleted-test audit table has 156 rows against the stated 157 — reconcile.
+- Docs made false by E (listed in `build/handovers/R18-E.md`): GT7 paragraph in README / user guide / tester guide; user guide model and card passages; try-these; tester guide; regulator brief. The user guide also still promises targeted follow-up questions, which the form route never asks (contradiction review still runs).
