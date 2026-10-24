@@ -153,6 +153,8 @@ export interface SeedOptions {
    *  purpose: tests also write hostile and unknown shapes, which the store does not validate on write. */
   sources?: unknown;
   description?: string;
+  /** use_case_created's intake_method; an older case saved by the model route says 'llm'. */
+  intakeMethod?: 'structured_form' | 'llm';
   /** The case's name on the register. */
   label?: string;
   /** The graph_confirmed payload's "Not sure" assumptions (what a build before Round 18 recorded). */
@@ -178,7 +180,7 @@ export async function seedCase(useCaseId: string, opts: SeedOptions = {}): Promi
     event_id: `${useCaseId}-created`,
     event_type: 'use_case_created',
     occurred_at: at(),
-    payload: { type: 'use_case_created', description: opts.description ?? DESCRIPTION, intake_method: 'structured_form' },
+    payload: { type: 'use_case_created', description: opts.description ?? DESCRIPTION, intake_method: opts.intakeMethod ?? 'structured_form' },
   } as never);
   await append({
     ...base,
