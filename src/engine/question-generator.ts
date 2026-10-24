@@ -47,7 +47,7 @@ const EXTRA_QUESTION_OPTIONS: Record<string, readonly string[]> = {
   multi_instance_coordination: ['no', 'yes', 'unknown'],
 };
 
-export function questionForField(
+function questionForField(
   field: string,
   nodeId: string | undefined,
   triggeredBy: string[],
