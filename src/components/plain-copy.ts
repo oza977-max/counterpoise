@@ -454,9 +454,8 @@ export const ACCESS_SCOPE_REFUSAL_TEXT =
 // ---------------------------------------------------------------------------
 // R16-E §2 (D-101, DR7-26/28/29/31). ONE source for the targeted
 // questionnaire's (chunk E, QuestionnaireStep) questions and option labels
-// AND the review screen's (§4, GraphView's graph_review cards) field labels
-// and value words — so the words a person edits are the words they'd have
-// answered. Keyed by the GRAPH field (src/engine/types.ts's own names),
+// AND the confirmation summary's field labels and value words — so the words
+// a person reads are the words they'd have answered. Keyed by the GRAPH field (src/engine/types.ts's own names),
 // unlike PLAIN_QUESTIONS above, which is keyed by the guided FORM's own
 // question id. The description path never shows the form's situational
 // Q1-14; this table is its field-level vocabulary instead.
@@ -469,7 +468,7 @@ export interface QuestionnaireFieldCopy {
   shortLabel: string;
   /** value -> label, keyed by the ENGINE value (e.g. 'Client PII', '2',
    *  'true') — both the targeted questionnaire's `IntakeQuestion.options`
-   *  and GraphView's node fields carry engine values directly, never the
+   *  and the summary's node fields carry engine values directly, never the
    *  form's own internal option keys ('people', 'score', …). */
   options: Record<string, string>;
   /** The stricter value "Not sure" sets, and the sentence completing "we
@@ -808,7 +807,7 @@ export function countryNameList(
  *  emit has an explicit entry above, proved by a guard test — this exists
  *  only so a field nobody anticipated still renders a safe, honest
  *  question instead of a crash or the bare field id. `label` is the
- *  caller's own best name for the field (its GraphView row label, or an
+ *  caller's own best name for the field (its summary row label, or an
  *  R16-W SUMMARY_LABELS heading) when it has one. */
 export function questionnaireCopyForField(field: string, label?: string): QuestionnaireFieldCopy {
   const known = QUESTIONNAIRE_COPY[field];
@@ -821,10 +820,9 @@ export function questionnaireCopyForField(field: string, label?: string): Questi
   };
 }
 
-// R16-E §4 (DR7-26). The description-path review screen's three card
-// titles — shared with `plausibilityMessageForDescription` below and with
-// GraphView.tsx's own column headings, so neither can drift from the
-// other.
+// R16-E §4 (DR7-26). The three card titles the double-check wording names -
+// shared with `plausibilityMessageForDescription` below and with the
+// summary, so neither can drift from the other.
 export const GRAPH_REVIEW_CARD_TITLES = {
   input: 'What it uses',
   processing: 'The AI',
@@ -1676,6 +1674,13 @@ export const R18_COPY = {
   // Owner-requested (review pass 1, 2026-10-22): shown on a form reopened from a record when a recorded answer
   // could not be put back because the form no longer offers it. Only when something was left blank.
   RESTORE_DROPPED_PREFIX: "Some recorded answers no longer match the form's choices and were left blank:",
+
+  // ── Round 18-E: the About page's paragraph on the optional model (replaces the one that named a model) ──
+  // Names no model. States the three places a description can go (the same three as PLACE_SENTENCES and the
+  // Settings choice) and that the person confirms every answer a model fills in. Makes no promise about where text
+  // does or does not go: that depends on the setting, and the sentence under the Settings choice says which.
+  ABOUT_MODEL_PARAGRAPH:
+    "Full transparency: connecting a model is optional, and it is done in Settings. When one is connected, your description can go to one of three places: a model on this computer, a model on your firm's own server, or Ollama's cloud. The sentence under your choice in Settings says which, before anything is sent. The model fills in some of the form's answers from what you wrote and shows the words it relied on. It can misread, so you have to check and tick every answer it fills in before you can continue. With no model connected, you answer the questions yourself.",
 
   // ── Round 18-E: correcting a check saved before answers were recorded (§27.10 "An older case") ──
   // Shown beside the action instead of CORRECT_THIS_CHECK_NOTE when the case carries no record of its answers. Each
