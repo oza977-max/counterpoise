@@ -25,10 +25,10 @@ function plain(text: string): string {
 const read = (f: string) => readFileSync(resolve(ROOT, f), 'utf8');
 const has = (doc: string, sentence: string) => plain(doc).includes(plain(sentence));
 
-const PLACES = [R18_COPY.PLACE_SENTENCES['this-computer'], R18_COPY.PLACE_SENTENCES['firm-server'], R18_COPY.PLACE_SENTENCES['ollama-cloud']];
+const PLACES = [R18_COPY.PLACE_SENTENCES['this-computer'], R18_COPY.PLACE_SENTENCES['firm-server'], R18_COPY.PLACE_SENTENCES['ollama-cloud'], R18_COPY.PLACE_SENTENCES['this-computer-with-key']];
 
-describe('TC-R18-MS-2-05: the three where-it-goes sentences are the same words in the app and all four copies', () => {
-  it.each(DOCS)('%s holds all three sentences exactly as the app words them', (f) => {
+describe('TC-R18-MS-2-05: the four where-it-goes sentences are the same words in the app and all four copies', () => {
+  it.each(DOCS)('%s holds all four sentences exactly as the app words them', (f) => {
     const doc = read(f);
     for (const s of PLACES) expect(has(doc, s), `${f}: ${s}`).toBe(true);
   });
@@ -122,6 +122,16 @@ describe('TC-R18-NF-3-09: the optional saved Anthropic key is stated in the same
   });
 });
 
+describe('TC-R18-NF-3-09: the regulator brief states the optional saved Anthropic key in the same words, and does not say no model is involved while one can be saved', () => {
+  it.each(['docs/regulator-brief.md', 'docs/regulator-brief.html'])('%s', (f) => {
+    const t = plain(read(f));
+    expect(t).toContain('With no model configured and no Anthropic key saved, none is involved.');
+    expect(t).not.toContain('none is involved anywhere');
+    expect(t).toContain(plain(R18_COPY.ABOUT_KEY_SENTENCE));
+    expect(t).toContain('The key is optional and no screen in the app sets it');
+  });
+});
+
 describe('TC-R18-PS-3-04: the guide says its outcomes are pinned through its own answers', () => {
   const guide = read('docs/try-these.md');
   it('says so, and promises nothing about what a model fills in', () => {
@@ -153,7 +163,7 @@ describe('docs made false by Round 18-E say nothing retired (R18-G)', () => {
     for (const f of ['docs/user-guide.md', 'docs/user-guide.html']) {
       const t = plain(read(f));
       expect(t, f).not.toMatch(/Follow-up questions|you may be asked a few more/i);
-      expect(t, f).toContain('If an answer contradicts what your description says, you are told here, not later, and can change either.');
+      expect(t, f).toContain('If an answer contradicts what your description says, you are told here, not later, and asked which is right, and why.');
     }
   });
 

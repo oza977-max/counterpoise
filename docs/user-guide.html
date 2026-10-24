@@ -341,18 +341,19 @@
       <li><strong>Describe.</strong> Type what AI tool you want to use and what it will do for you. Two or three sentences is enough. Click <strong>Next &rarr;</strong>. Nothing is final yet &mdash; you can check and change everything before anything is decided.</li>
       <li><strong>Similar checks.</strong> Counterpoise looks through the register for a similar tool your firm has already checked and tells you how many earlier checks it looked through. If nothing similar turns up, press <strong>Continue &rarr;</strong>. If something does, you can <strong>Use the earlier result</strong> (this skips the questions) or press <strong>Mine is different &mdash; continue &rarr;</strong>.</li>
       <li><strong>The questions.</strong> You go to a guided form of plain-English questions on one page &mdash; this is the normal path and the better one for a first run. Every question is in business words &mdash; <em>"Information about people &mdash; clients, applicants, staff or anyone else&hellip;"</em>, not <code>data_class: Client PII</code>. Required questions are marked, and <strong>Continue</strong> stays disabled until they are all answered; the line beside it says which are still missing. "Not sure" is always fine &mdash; you are shown the careful assumption it was given. Connecting a model is optional, and is done under <strong>Settings</strong> (see <em>Where your description goes</em>, below). If one is connected, it reads your description after the similar-checks screen and fills in some answers, each marked with the words it relied on. You have to tick every answer it fills in before <strong>Continue</strong> is enabled, and you can change any of them. With no model, nothing is filled in and the form is blank. The form is the same either way, and the same answers give the same verdict.</li>
-      <li><strong>Contradictions.</strong> If an answer contradicts what your description says, you are told here, not later, and can change either. Often there is nothing to flag.</li>
+      <li><strong>Contradictions.</strong> If an answer contradicts what your description says, you are told here, not later, and asked which is right, and why. Often there is nothing to flag.</li>
       <li><strong>Confirm and evaluate.</strong> You see a summary of what was understood, with a <strong>Change an answer</strong> link, and can leave an optional note for your AI risk team (it never changes the result). <strong>Confirm and evaluate</strong> is your attestation: it is recorded with the date and time and cannot be undone.</li>
       <li><strong>Result.</strong> Read the verdict.</li>
     </ol>
     <p><strong>Shortcut for a demo:</strong> in the sidebar, <strong>Demo data → Load sample use cases</strong> seeds six worked examples spanning Low to Critical, in and out of appetite, all scored by the real engine.</p>
 
     <h2 id="where-your-description-goes">Where your description goes</h2>
-    <p>The app says it before you type, in one of three sentences, and says only what it can show:</p>
+    <p>Before anything is sent, the app says where your description will go, in one of these sentences, and says only what it can show:</p>
     <ul>
       <li><em>"Your description will be read on this computer by {model}. It never leaves your computer."</em></li>
       <li><em>"Your description will be sent to your firm's server at {address} and read by {model}."</em></li>
       <li><em>"Your description will be sent to Ollama's cloud and read by {model}."</em></li>
+      <li><em>"Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."</em></li>
     </ul>
     <p>"Never leaves your computer" is said only for the first. The model is any one you choose &mdash; the app ships none and recommends none &mdash; and it is never in the decision path: it only suggests answers you then check.</p>
     <p>Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic. The key is optional and no screen in the app sets it; while one is saved, the first sentence above is not shown.</p>

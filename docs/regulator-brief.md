@@ -25,8 +25,8 @@ byte-identical verdicts, asserted by automated test on every change. A large
 language model is used optionally and only at the boundary — to suggest
 answers to the form's questions from a plain-language description. Each
 suggestion is displayed to the submitter with the words it came from and is
-not used until a person ticks it. With no model configured, none is involved
-anywhere. (Disclosed for completeness: the optional path sends the description
+not used until a person ticks it. With no model configured and no Anthropic key saved, none is involved.
+Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic. The key is optional and no screen in the app sets it. (Disclosed for completeness: the optional path sends the description
 to a model the user chooses — on their own computer, on their firm's server or
 in Ollama's cloud — and the app says which, before anything is sent. All
 verified behaviour in this brief refers to the deterministic form path; a

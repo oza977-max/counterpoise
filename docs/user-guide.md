@@ -58,7 +58,7 @@ You need nothing installed and no API key.
    change any of them. With no model, nothing is filled in and the form is
    blank. The form is the same either way, and the same answers give the same verdict.
 5. **Contradictions.** If an answer contradicts what your description says,
-   you are told here, not later, and can change either. Often there is nothing
+   you are told here, not later, and asked which is right, and why. Often there is nothing
    to flag.
 6. **Confirm and evaluate.** You see a summary of what was understood, with a
    **Change an answer** link, and can leave an optional note for your AI risk
@@ -74,12 +74,12 @@ scored by the real engine.
 
 ## Where your description goes
 
-The app says it before you type, in one of three sentences, and says only what
-it can show:
+Before anything is sent, the app says where your description will go, in one of these sentences, and says only what it can show:
 
 - *"Your description will be read on this computer by {model}. It never leaves your computer."*
 - *"Your description will be sent to your firm's server at {address} and read by {model}."*
 - *"Your description will be sent to Ollama's cloud and read by {model}."*
+- *"Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."*
 
 "Never leaves your computer" is said only for the first. The model is any one
 you choose — the app ships none and recommends none — and it is never in the

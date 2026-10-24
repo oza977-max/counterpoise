@@ -1,4 +1,4 @@
-# Eleven things to try
+# Ten cases to try, and ways to break them
 
 Cases chosen to make the engine do something different each time — a clean
 approval, four different hard-line rejections, platform inheritance both

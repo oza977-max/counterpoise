@@ -16,7 +16,7 @@ import { PLAIN_QUESTIONS } from '../components/plain-copy';
 
 // Pins every outcome printed in `docs/try-these.md`.
 //
-// That page tells a reader what to expect from eleven specific cases. Without
+// That page tells a reader what to expect from ten specific cases (and a section on ways to break the tool). Without
 // this, a policy edit would silently make the page wrong — and a document that
 // confidently describes behaviour the product no longer has is exactly the
 // drift that let `track_floor` survive four review rounds (FN-007).

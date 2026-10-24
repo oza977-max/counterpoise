@@ -177,12 +177,12 @@ import it and see exactly what you saw.
 
 ## Where your description goes
 
-The app says it before you type, in one of three sentences, and says only what
-it can show:
+Before anything is sent, the app says where your description will go, in one of these sentences, and says only what it can show:
 
 - *"Your description will be read on this computer by {model}. It never leaves your computer."*
 - *"Your description will be sent to your firm's server at {address} and read by {model}."*
 - *"Your description will be sent to Ollama's cloud and read by {model}."*
+- *"Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."*
 
 "Never leaves your computer" is said only for the first. The model is any one
 you choose — the app ships none and recommends none — and it is never in the
@@ -291,7 +291,7 @@ Worth deliberately exercising, newest first:
   could act on it.
 - **"Anything your AI risk team should know? (optional)"** at the confirmation
   step — write a note, then find it as 2LoD on the sign-off page.
-- **About** in the sidebar, and eleven worked cases with pinned expected
+- **About** in the sidebar, and ten worked cases (plus a section on ways to break it) with pinned expected
   outcomes in [`try-these.md`](try-these.md) — case 5 (two hard lines) and
   cases 6+7 (inheritance pair) are the most instructive.
 

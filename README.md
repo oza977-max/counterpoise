@@ -101,11 +101,12 @@ flowchart LR
 
 ## Where your description goes
 
-The app says it before you type, in one of three sentences, and says only what it can show:
+Before anything is sent, the app says where your description will go, in one of these sentences, and says only what it can show:
 
 - *"Your description will be read on this computer by {model}. It never leaves your computer."*
 - *"Your description will be sent to your firm's server at {address} and read by {model}."*
 - *"Your description will be sent to Ollama's cloud and read by {model}."*
+- *"Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."*
 
 "Never leaves your computer" is said only for the first. The model is any one you choose — the app ships none and recommends none — and it is never in the decision path: it only suggests answers you then check.
 
@@ -133,7 +134,7 @@ To connect a model, the app's **Make it smarter** panel shows two commands: `oll
 
 ## Try it
 
-**Live:** <https://oza977-max.github.io/counterpoise/> → **Demo data → Load sample use cases** → open any verdict. Then try [`docs/try-these.md`](docs/try-these.md): eleven cases that each make the engine do something different — every printed outcome pinned by a test.
+**Live:** <https://oza977-max.github.io/counterpoise/> → **Demo data → Load sample use cases** → open any verdict. Then try [`docs/try-these.md`](docs/try-these.md): ten worked cases (plus a section on ways to break it) that each make the engine do something different — every printed outcome pinned by a test.
 
 **Back-test your own committee** — the fastest honest test of whether appetite-as-code works for your firm: run cases your committee *already decided* through the gate. Where the tool disagrees, that disagreement is the finding. [`backtest/use-cases.md`](backtest/use-cases.md) shows the method.
 
