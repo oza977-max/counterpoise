@@ -25,7 +25,9 @@ describe('About - the model paragraph (R18-E)', () => {
   });
 
   it('GI-13-01: it names no model (Ollama is the program that runs one, not a model) - none of the models the app has ever named or defaulted to, and no size in billions', () => {
-    expect(P).not.toMatch(/qwen|gemma|\bllama|mistral|gpt|claude|anthropic|phi\b|\b\d+\s?b\b|billion/i);
+    // "Anthropic" appears only in the saved-key sentence (a provider key, not a model); no model is named.
+    expect(P).not.toMatch(/qwen|gemma|\bllama|mistral|gpt|claude|phi\b|\b\d+\s?b\b|billion/i);
+    expect(P.replace(R18_COPY.ABOUT_KEY_SENTENCE, '')).not.toMatch(/anthropic/i);
   });
 
   it('GI-13-01: it names the three places a description can go - the same three the Settings choice and the where-it-goes sentences have - and promises none of them as private', () => {
@@ -50,5 +52,31 @@ describe('About - the model paragraph (R18-E)', () => {
 
   it('GI-13-01: it uses neither reserved verdict word', () => {
     expect(P).not.toMatch(/approved|rejected/i);
+  });
+});
+
+describe('About - what stays in the browser (review pass 1)', () => {
+  it('GI-13-01: the page no longer claims nothing leaves the machine, which a connected model or a saved key makes false', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByText('? About'));
+    expect(document.body.textContent).not.toMatch(/nothing you enter leaves|leaves this machine|entirely in your browser/i);
+    expect(screen.getAllByText(new RegExp(R18_COPY.ABOUT_BROWSER_LINE.slice(0, 60).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).length).toBe(1);
+  });
+
+  it('GI-13-01: the line names both exceptions (a connected model, a saved Anthropic key) and makes no unconditional promise', () => {
+    const L = R18_COPY.ABOUT_BROWSER_LINE;
+    expect(L).toMatch(/connect a model in Settings/);
+    expect(L).toMatch(/save an Anthropic key/);
+    expect(L).toMatch(/only if/);
+    expect(L).not.toMatch(/nothing|never|entirely|approved|rejected/i);
+  });
+
+  it('GI-13-01: the model paragraph says a saved Anthropic key sends text for the similar-case check and the explanation - as PLACE_SENTENCES does', () => {
+    expect(P).toContain(R18_COPY.ABOUT_KEY_SENTENCE);
+    expect(R18_COPY.ABOUT_KEY_SENTENCE).toMatch(/similar-case check/);
+    expect(R18_COPY.ABOUT_KEY_SENTENCE).toMatch(/explanation/);
+    expect(R18_COPY.PLACE_SENTENCES['this-computer-with-key']).toMatch(/similar-case check and the explanation send text to Anthropic/);
+    expect(R18_COPY.ABOUT_KEY_SENTENCE).not.toMatch(/approved|rejected/i);
   });
 });

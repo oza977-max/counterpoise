@@ -1679,8 +1679,14 @@ export const R18_COPY = {
   // Names no model. States the three places a description can go (the same three as PLACE_SENTENCES and the
   // Settings choice) and that the person confirms every answer a model fills in. Makes no promise about where text
   // does or does not go: that depends on the setting, and the sentence under the Settings choice says which.
+  // Review pass 1: the saved Anthropic key is a fourth way text can leave (PLACE_SENTENCES 'this-computer-with-key').
+  ABOUT_KEY_SENTENCE:
+    'Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.',
+  // Review pass 1: true in every state; replaces the About page's "nothing you enter leaves this machine".
+  ABOUT_BROWSER_LINE:
+    'Your rules, answers and audit trail are kept in this browser. What you wrote about a use case leaves it only if you connect a model in Settings, or save an Anthropic key, as described above.',
   ABOUT_MODEL_PARAGRAPH:
-    "Full transparency: connecting a model is optional, and it is done in Settings. When one is connected, your description can go to one of three places: a model on this computer, a model on your firm's own server, or Ollama's cloud. The sentence under your choice in Settings says which, before anything is sent. The model fills in some of the form's answers from what you wrote and shows the words it relied on. It can misread, so you have to check and tick every answer it fills in before you can continue. With no model connected, you answer the questions yourself.",
+    "Full transparency: connecting a model is optional, and it is done in Settings. When one is connected, your description can go to one of three places: a model on this computer, a model on your firm's own server, or Ollama's cloud. The sentence under your choice in Settings says which, before anything is sent. The model fills in some of the form's answers from what you wrote and shows the words it relied on. It can misread, so you have to check and tick every answer it fills in before you can continue. With no model connected, you answer the questions yourself. Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.",
 
   // ── Round 18-E: correcting a check saved before answers were recorded (§27.10 "An older case") ──
   // Shown beside the action instead of CORRECT_THIS_CHECK_NOTE when the case carries no record of its answers. Each

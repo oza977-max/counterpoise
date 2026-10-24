@@ -170,7 +170,7 @@ export default function AboutPanel({ onNavigate }: AboutPanelProps) {
           steps when a use case requires them.
         </li>
         <li>
-          This version runs entirely in your browser: nothing you enter leaves this machine. The audit
+          {R18_COPY.ABOUT_BROWSER_LINE} The audit
           trail is hash-chained — an edited event, or a deleted event with later events after it,
           breaks the chain, and every sign-off page runs a live check for that. Removing the newest
           events can&apos;t be detected from inside this browser, and a full, consistent rewrite by
