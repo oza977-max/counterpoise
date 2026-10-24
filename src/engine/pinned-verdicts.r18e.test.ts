@@ -68,6 +68,17 @@ describe('R18-E corpus pins through the form route', () => {
     expect([one.status, one.tier, one.track, one.controls.length, one.provisional_reasons.length]).toEqual(['approved', 'Low', 'I', 0, 0]);
   });
 
+  it('TC-R18-PS-3-03: each of the ten examples, answered with the guide\'s own form answers (all typed, none pre-filled), reaches the outcome the guide states, and example 1 is in appetite at Low, Track I', () => {
+    for (const c of WORKED_EXAMPLES) {
+      const answerState = typedAnswersFromPlain({ ...c.answers, '2': c.description }, policy);
+      // no answer on the route is a model's: every source is the person's own typing
+      for (const [id, a] of Object.entries(answerState)) expect(a!.source.kind, `${c.id} question ${id}`).toBe('typed');
+      assertExpected(viaTheForm(c.answers, c.description), c.expected);
+    }
+    const one = viaTheForm(WORKED_EXAMPLES[0]!.answers, WORKED_EXAMPLES[0]!.description);
+    expect([one.status, one.tier, one.track]).toEqual(['approved', 'Low', 'I']);
+  });
+
   it('the pin tests are all still there and none lost a case: 9 blind-answer cases in the parity test, 22 graph-level cases in the corpus', () => {
     const dir = __dirname;
     const blind = JSON.parse(readFileSync(resolve(dir, '../../backtest/worked-case-answers.json'), 'utf-8')) as { cases: Record<string, unknown> };

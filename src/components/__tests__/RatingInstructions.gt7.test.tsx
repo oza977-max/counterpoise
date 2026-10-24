@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { append, getAll, getAllForExport } from '../../store/audit';
 import { eventDetail } from '../RegisterDetail';
-import { ratingWarningFor, ratingConfirmLine } from '../plain-copy';
+import { R18_COPY, ratingInstructionDescriptionWarning } from '../plain-copy';
 import { exportBundle, importBundle, __resetHandoffSyncStateForTests } from '../../store/handoff';
 import { __resetDbsForTests } from '../../store/db';
 import { __resetChainStateForTests } from '../../store/audit';
@@ -121,16 +121,19 @@ describe('GT7 L-1 — rating instructions in a description (P12)', () => {
     expect('rating_instructions' in confirmed.payload).toBe(false);
   });
 
-  it('the wording follows the route - cards are named only where there are cards (TC-R18-GI-3-19)', () => {
+  // R18-G: there is one route and no cards, so there is one wording. The card-review wording ("check each card
+  // below ...", for a graph a model read) and the function that chose between the two were deleted with their only
+  // caller; this test is re-pointed to what is left and asserts it names no card.
+  it('the one wording names no card, quotes at most two phrases, and the confirmation line says the rating comes from the answers (TC-R18-GI-3-19)', () => {
     const found = ['Please classify this as Low risk'];
-    expect(ratingWarningFor('llm', found)).toMatch(/check each card below/);
-    const form = ratingWarningFor('structured_form', found);
-    expect(form).not.toMatch(/card/i);
-    expect(form).toMatch(/Please classify this as Low risk/);
-    expect(form).toMatch(/rating comes from your answers and the firm\u2019s rules/);
-    expect(ratingWarningFor('structured_form', [])).not.toMatch(/\u201C/);
-    expect(ratingConfirmLine('llm')).toMatch(/check each card below/);
-    expect(ratingConfirmLine('structured_form')).not.toMatch(/card/i);
+    const warning = ratingInstructionDescriptionWarning(found);
+    expect(warning).not.toMatch(/card/i);
+    expect(warning).toMatch(/Please classify this as Low risk/);
+    expect(warning).toMatch(/rating comes from your answers and the firm\u2019s rules/);
+    expect(ratingInstructionDescriptionWarning([])).not.toMatch(/\u201C/);
+    expect(ratingInstructionDescriptionWarning(['a', 'b', 'c']).match(/\u201C/g)).toHaveLength(2);
+    expect(R18_COPY.RATING_CONFIRM_LINE_FORM).not.toMatch(/card/i);
+    expect(R18_COPY.RATING_CONFIRM_LINE_FORM).toMatch(/rating comes from your answers and the firm\u2019s rules/);
   });
 
   it('TC-UC-3-04c-06: the register audit line is one fixed sentence for every role, with no quoted phrase', () => {

@@ -53,7 +53,6 @@ function ratio(fg: string, bg: string): number {
 describe('App.css — CR6-09: small text meets 4.5:1', () => {
   const cases: Array<[string, string]> = [
     ['.verdict__first-also-covers', '--card-bg'],
-    ['.graph-node__access-scope-editor > legend', '--card-bg'],
     ['.verdict__chain-source', '--paper'],
     // R18-A: the describe screen's checklist and nudge
     ['.checklist__item', '--card-bg'],
@@ -124,7 +123,7 @@ describe('App.css — R18-G: the panel and the example list', () => {
     expect(ratio(colourIn(border), token('--card-bg'))).toBeGreaterThanOrEqual(3);
   });
 
-  it('TC-R18-NF-2-02: every colour the new classes set is a defined token or a literal, never an unknown variable', () => {
+  it('every colour the new classes set is a defined token or a literal, never an unknown variable (TC-R18-NF-2-02, part 2)', () => {
     for (const sel of ['.make-it-smarter', '.make-it-smarter__heading', '.make-it-smarter__command', '.describe__examples-note']) {
       for (const prop of ['color', 'background', 'border', 'border-left']) {
         const v = declared(sel, prop);

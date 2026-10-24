@@ -873,25 +873,6 @@ export function plausibilityMessageForDescription(signal: PlausibilitySignal, ca
   return `${PLAUSIBILITY_DESCRIPTION_REASON[signal]} Check “${row}” on the card “${card}”.`;
 }
 
-// R16-E §5 (D-104, DR7-30/AB-1). The extraction error has TWO call sites
-// (IntakeFlow.tsx's handleConfirmNewUseCase and handleRetryExtraction) —
-// both read this one function, so the two can never drift apart (a v2.1
-// fix-verification finding: an earlier plan would have let them). Typed as
-// the literal union rather than importing `LlmError` from `src/llm/*` — a
-// components file reads its own words, not the SDK layer's error type.
-export function extractionErrorMessage(kind: 'no-api-key' | 'network-error' | 'parse-error'): string {
-  switch (kind) {
-    case 'no-api-key':
-      return 'The description reader isn’t set up on this computer.';
-    case 'network-error':
-      return 'We couldn’t reach the description reader just now.';
-    case 'parse-error':
-      return 'We couldn’t read your description reliably.';
-  }
-}
-
-export const EXTRACTION_ERROR_HELP = 'You can try again, or answer the questions yourself instead.';
-
 // CR7-37. What a person is told when the firm's own rules file cannot be used.
 // Plain, and it says whose problem it is and who can fix it — the field paths
 // and reason strings (`invariants[3].condition: …`) are for whoever edits the
@@ -904,8 +885,7 @@ export const POLICY_PROBLEM_MESSAGE =
 // wrapped in "...Review your answers and try again." — every one of these
 // kinds is the firm's own rules, policy file or pack authoring, never
 // something a different answer from the person would have avoided. One
-// plain sentence per kind, same posture as extractionErrorMessage above —
-// and, like it, typed as the literal union rather than importing
+// plain sentence per kind, typed as the literal union rather than importing
 // EngineError from src/engine/types: a components file reads its own
 // words, not the engine layer's error type.
 export function engineErrorMessage(
@@ -1310,12 +1290,7 @@ export function approvedModelLabelFor(
 // GT7 L-1 (P12). A description that tells the tool how to rate the case is
 // flagged, never obeyed. Wording lives here (presentation), the detection in
 // engine/rating-instructions.ts. No quoted phrase ever reaches the record line.
-export function ratingInstructionWarning(phrases: readonly string[]): string {
-  const quoted = quoteRatingPhrases(phrases);
-  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
-}
-
-/** Quoted-phrase builder shared by both wordings. GB pass-1 D: the review screen is asserted with a
+/** Quoted-phrase builder. GB pass-1 D: the review screen is asserted with a
  *  single-match /approved|rejected/i query, so those words never appear in a quote. */
 function quoteRatingPhrases(phrases: readonly string[]): string {
   return phrases
@@ -1327,21 +1302,6 @@ function quoteRatingPhrases(phrases: readonly string[]): string {
 /** R18-GI-3-19: the description-screen wording. No claim about cards or about what was read. */
 export function ratingInstructionDescriptionWarning(phrases: readonly string[]): string {
   return R18_COPY.RATING_DESCRIPTION_LEAD + quoteRatingPhrases(phrases) + R18_COPY.RATING_DESCRIPTION_TAIL;
-}
-
-/** The confirmation step's line (the card-review wording, kept for the retired model-path graph). */
-export const RATING_INSTRUCTION_CONFIRM_LINE =
-  'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.';
-
-/** R18-C2 (spec §27.4): the wording follows the route. Only a graph a model read out of the description
- *  (`intake_method: 'llm'`) has cards to check; a form-built case has none, and nothing was read, so its
- *  lines say only what is true: the description tried to set a rating and the rating comes from the answers. */
-export function ratingWarningFor(intakeMethod: string, phrases: readonly string[]): string {
-  return intakeMethod === 'llm' ? ratingInstructionWarning(phrases) : ratingInstructionDescriptionWarning(phrases);
-}
-
-export function ratingConfirmLine(intakeMethod: string): string {
-  return intakeMethod === 'llm' ? RATING_INSTRUCTION_CONFIRM_LINE : R18_COPY.RATING_CONFIRM_LINE_FORM;
 }
 
 // ── Round 18 (specs/intake-flow.md §27) ────────────────────────────────────

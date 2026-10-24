@@ -127,3 +127,38 @@ describe('olderCaseAnswers - the case name (review pass 1)', () => {
     }
   });
 });
+
+// R18-G (forward note 2026-10-24): a "Not sure" an older QUESTIONNAIRE-route case recorded names a graph field
+// ("field:vendor"), not a form question. It cannot be put back, and it used to vanish without a word. It is now
+// named, by the words the record itself carries, so the note on the form is true.
+describe('olderCaseAnswers: questionnaire-route Not sure answers that cannot be put back are named', () => {
+  const fieldRow = (id: string, question: unknown = 'Which supplier made it?') => ({ questionId: id, question, shortLabel: 's', assumption: 'a', fields: ['vendor'] });
+
+  it('names a field: id by the question the record carries, and leaves the form questions\' own dropped list as it was', () => {
+    const r = olderCaseAnswers([fieldRow('field:vendor'), row('4')], policy);
+    expect(r.otherDropped).toEqual(['Which supplier made it?']);
+    expect(r.dropped).toEqual([]);
+    expect(r.answerState['4']?.source.kind).toBe('record');
+  });
+
+  it('falls back to the id when the row carries no usable words, and names one question once however often it is recorded', () => {
+    expect(olderCaseAnswers([fieldRow('field:vendor', 7)], policy).otherDropped).toEqual(['field:vendor']);
+    expect(olderCaseAnswers([fieldRow('field:vendor'), fieldRow('field:vendor')], policy).otherDropped).toEqual(['Which supplier made it?']);
+    expect(olderCaseAnswers([fieldRow('field:vendor', '   ')], policy).otherDropped).toEqual(['field:vendor']);
+  });
+
+  it('keeps record order, bounds the words, and reads only the first 40 rows', () => {
+    const r = olderCaseAnswers([fieldRow('field:b', 'Second?'), fieldRow('field:a', 'First?')], policy);
+    expect(r.otherDropped).toEqual(['Second?', 'First?']);
+    expect(olderCaseAnswers([fieldRow('field:x', 'q'.repeat(300))], policy).otherDropped).toEqual(['field:x']);
+    const late = [...Array.from({ length: 40 }, () => row('nope')), fieldRow('field:vendor')];
+    expect(olderCaseAnswers(late, policy).otherDropped).toEqual([]);
+  });
+
+  it('false state: nothing is named when nothing was lost; other unknown ids, prototype keys and non-strings are still ignored, not named', () => {
+    expect(olderCaseAnswers([row('4'), row('9')], policy).otherDropped).toEqual([]);
+    const hostile = [row('2'), row('__proto__'), row('constructor'), row(7), row(null), null, 'x', [], { questionId: 'field:' + 'x'.repeat(60) }];
+    expect(olderCaseAnswers(hostile, policy).otherDropped).toEqual([]);
+    expect(olderCaseAnswers(undefined, policy).otherDropped).toEqual([]);
+  });
+});

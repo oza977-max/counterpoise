@@ -73,7 +73,11 @@ function restoredFromRecord(
     const older = olderCaseAnswers(assumptions, policy, name);
     return {
       answerState: older.answerState,
-      droppedNote: older.dropped.length > 0 ? olderDroppedSentence(older.dropped.map(wordsFor)) : null,
+      // The form's own questions first (in the form's order), then the questionnaire-route ones the form never asks.
+      droppedNote:
+        older.dropped.length + older.otherDropped.length > 0
+          ? olderDroppedSentence([...older.dropped.map(wordsFor), ...older.otherDropped.map(visibleText)])
+          : null,
     };
   }
   const { answerState, dropped } = restoreFromRecord(sources, policy);

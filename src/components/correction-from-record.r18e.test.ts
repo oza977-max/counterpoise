@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadPolicy } from '../store/policy';
 import { correctionOpening, isRebuiltFromEarlierRecord, restorableAnswers, EARLIER_RECORD_GRAPH_PREFIX } from './correction-from-record';
-import { describeAssumptions } from './plain-copy';
+import { describeAssumptions, olderDroppedSentence, R18_COPY } from './plain-copy';
 import type { PolicyFile } from '../engine/types';
 
 // R18-E: the older-case branch of correctionOpening / restorableAnswers (a record with no `answer_sources`).
@@ -73,5 +73,35 @@ describe('correctionOpening for an older case', () => {
   it('an unusable graph version reads as 1, as for a case with sources', () => {
     expect(correctionOpening(args({ graphVersion: undefined }))!.originalGraph.version).toBe(1);
     expect(correctionOpening(args({ graphVersion: 0 }))!.originalGraph.version).toBe(1);
+  });
+});
+
+// R18-G (forward note 2026-10-24): a questionnaire-route "Not sure" ("field:vendor") that cannot be put back is
+// named in the form's note, in the record's own words, after the form questions that could not be put back.
+describe('correctionOpening names questionnaire-route Not sure answers it could not restore', () => {
+  const vendorRow = { questionId: 'field:vendor', question: 'Which supplier made it?', shortLabel: 'the supplier', assumption: 'a', fields: ['vendor'] };
+
+  it('names it alone, and keeps the answers it could restore', () => {
+    const o = correctionOpening(args({ assumptions: [...assumptions(), vendorRow] }))!;
+    expect(o.droppedNote).toBe(olderDroppedSentence(['Which supplier made it?']));
+    expect(o.answerState['4']!.source.kind).toBe('record');
+  });
+
+  it('puts the form questions first, then the questionnaire ones, in one sentence', () => {
+    const three = describeAssumptions([{ questionId: '3a', optionKey: 'not-sure', fields: ['f'] }]);
+    const o = correctionOpening(args({ assumptions: [...three, vendorRow] }))!;
+    expect(o.droppedNote!.startsWith(R18_COPY.OLDER_DROPPED_PREFIX)).toBe(true);
+    expect(o.droppedNote!.endsWith('Which supplier made it?.')).toBe(true);
+    expect((o.droppedNote!.match(/; /g) ?? []).length).toBe(1);
+  });
+
+  it('words with a hidden direction-change character are shown as an escape, never obeyed', () => {
+    const o = correctionOpening(args({ assumptions: [{ ...vendorRow, question: 'Which\u202Esupplier?' }] }))!;
+    expect(o.droppedNote).not.toContain('\u202E');
+    expect(o.droppedNote).toContain('U+202E');
+  });
+
+  it('false state: no note when nothing was lost (and none for a case that has answer_sources)', () => {
+    expect(correctionOpening(args())!.droppedNote).toBeNull();
   });
 });

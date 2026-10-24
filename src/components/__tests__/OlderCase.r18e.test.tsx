@@ -121,6 +121,19 @@ describe('R18-E sentences are claimed only where true (TC-R18-GI-13-01)', () => 
   });
 });
 
+describe('a questionnaire-route Not sure is named on the form (R18-G)', () => {
+  it('GI-13-01 (R18-G): an older case whose record holds a field: Not sure says so in the note, in the record\'s words, beside the restored ones', async () => {
+    const vendor = { questionId: 'field:vendor', question: 'Which supplier made it?', shortLabel: 'the supplier', assumption: 'a', fields: ['vendor'] };
+    await seedCase('uc-r18g-field', { label: 'Older field G', description: own('field'), assumptions: [...NOT_SURE_4_AND_9(), vendor] });
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await openOlderCase(user, 'Older field G');
+    expect(screen.getByText(olderDroppedSentence(['Which supplier made it?']))).toBeInTheDocument();
+    // the two it could restore are still restored
+    expect(screen.getAllByText(MARK_RECORD)).toHaveLength(3);
+  });
+});
+
 // Assumptions as an earlier build recorded them, for the given questions.
 function describeAssumptionsFor(ids: ('3a' | '4')[]) {
   return ids.map((id) => makeAssumption(id, 'not-sure', ['f'])!).filter(Boolean);

@@ -52,6 +52,26 @@ describe('R18-D2 "Correct this check" on the register detail', () => {
     expect(screen.queryByText(R18_COPY.CORRECT_THIS_CHECK_NOTE)).not.toBeInTheDocument();
   });
 
+  // R18-G (forward note 2026-10-24, "a test for the RegisterDetail onCorrect row"): the verdict shown inside the
+  // register detail is not given the intake's own `onCorrect`, so it carries no second correction button. The one
+  // way to correct a check from the register is the submitter's "Correct this check" action, whose opening is built
+  // from the record; the verdict's own button (which reopens the in-memory case) would be a second, different one.
+  it('GI-10-08 (the onCorrect row): the verdict inside the register detail has no correction button of its own, for either role; the register action is the only one', async () => {
+    const id = crypto.randomUUID();
+    await seedCase(id, { sources: sources() });
+    const own = /think we got something wrong|if we.ve misunderstood how you.d use it/i;
+    const submitter = render(<RegisterDetail useCaseId={id} role="1LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
+    await screen.findByRole('button', { name: LABEL });
+    expect(document.querySelector('.verdict__first-correct')).toBeNull();
+    expect(screen.queryByText(own)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /correct/i }).filter((b) => LABEL.test(b.textContent ?? ''))).toHaveLength(1);
+    submitter.unmount();
+    render(<RegisterDetail useCaseId={id} role="2LoD" policy={policy} onBack={() => {}} onCorrectFromRecord={() => {}} />);
+    await screen.findByRole('region', { name: /where each answer came from/i });
+    expect(document.querySelector('.verdict__first-correct')).toBeNull();
+    expect(screen.queryByText(own)).not.toBeInTheDocument();
+  });
+
   // R18-E: the older-case path exists now, so these two D2 tests (which asserted the action was ABSENT for a record
   // with no answer_sources) are re-pointed: it is offered, with its own note, and the new-case note is the one absent.
   it('GI-13-01: for a case with no answer_sources (an older case) it is offered with the older-case note, and the new-case note is absent', async () => {

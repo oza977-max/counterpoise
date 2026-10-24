@@ -47,7 +47,7 @@ const EXTRA_QUESTION_OPTIONS: Record<string, readonly string[]> = {
   multi_instance_coordination: ['no', 'yes', 'unknown'],
 };
 
-function questionForField(
+export function questionForField(
   field: string,
   nodeId: string | undefined,
   triggeredBy: string[],
@@ -115,29 +115,6 @@ export function coerceAnswerValue(
   // Open-text fields (vendor, label): any non-empty string.
   const text = String(value).trim();
   return text ? { ok: true, value: text } : { ok: false, reason: `${field.replace(/_/g, ' ')} cannot be empty` };
-}
-
-// R6-QN-1 (intake-flow.md §16.4). Questions for fields the extractor
-// GUESSED — no verified basis quote. Pure, deterministic ordering: nodes in
-// graph array order, fields in the caller-provided per-node order. Reuses
-// the same per-field question text and canonical options as budget-driven
-// questions, so a guessed-field question is indistinguishable in form.
-export function questionsForGuessedFields(
-  guessed: Record<string, string[]>,
-  graph: DataFlowGraph,
-): IntakeQuestion[] {
-  const questions: IntakeQuestion[] = [];
-  const nodeIds = [
-    ...graph.input_nodes.map((n) => n.id),
-    ...graph.processing_nodes.map((n) => n.id),
-    ...graph.output_nodes.map((n) => n.id),
-  ];
-  for (const nodeId of nodeIds) {
-    for (const field of guessed[nodeId] ?? []) {
-      questions.push(questionForField(field, nodeId, ['R6-PV-2:guessed']));
-    }
-  }
-  return questions;
 }
 
 function findUncertainNode(graph: DataFlowGraph, field: string): { id: string } | undefined {

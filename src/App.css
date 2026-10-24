@@ -1313,91 +1313,6 @@ details input {
   padding: 0.5rem 0.7rem;
 }
 
-/* ── Graph view (V1.1-C01) ── */
-.graph-view {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  margin: 1rem 0;
-}
-
-.graph-view__col {
-  flex: 1;
-  min-width: 0;
-}
-
-.graph-view__col-title {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: 0.5rem;
-}
-
-.graph-view__arrow {
-  align-self: center;
-  color: var(--ink-faint);
-  font-size: 1.3rem;
-  padding: 0 0.1rem;
-  flex-shrink: 0;
-}
-
-.graph-view__empty {
-  color: var(--ink-faint);
-  font-size: 0.82rem;
-  font-style: italic;
-  margin: 0;
-}
-
-.graph-node {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  padding: 0.6rem 0.7rem;
-  margin-bottom: 0.6rem;
-  font-size: 0.86rem;
-}
-
-.graph-node[data-uncertain='true'] {
-  border-color: var(--warn-border);
-}
-
-.graph-node__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.graph-node__label {
-  font-weight: 600;
-}
-
-.graph-node__edit {
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--card-border);
-  background: var(--paper);
-  border-radius: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.graph-node__uncertain {
-  display: block;
-  color: var(--warn-text);
-  font-size: 0.8rem;
-  margin-top: 0.2rem;
-}
-
-.graph-node__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.45rem;
-}
-
 .graph-node__chip {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.7rem;
@@ -1406,86 +1321,6 @@ details input {
   border: 1px solid var(--card-border);
   border-radius: 3px;
   color: var(--ink-soft);
-}
-
-.graph-node__editor {
-  margin-top: 0.5rem;
-  border-top: 1px solid var(--rule);
-  padding-top: 0.5rem;
-}
-
-.graph-node__field {
-  display: block;
-  margin: 0.4rem 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.graph-node__field > span:first-child {
-  display: block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-faint);
-  margin-bottom: 0.15rem;
-}
-
-.graph-node__field select,
-.graph-node__field input[type='text'] {
-  width: 100%;
-  font-size: 0.82rem;
-  padding: 0.3rem 0.4rem;
-  margin: 0;
-}
-
-/* R16-F §4 (DR7-11): the system-access tick-all editor — a fieldset (so
-   each option can be its own label) styled like the other field rows; the
-   legend matches `.graph-node__field > span:first-child` above. */
-.graph-node__access-scope-editor {
-  border: none;
-  padding: 0;
-  min-width: 0;
-}
-
-.graph-node__access-scope-editor > legend {
-  padding: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  /* CR6-09: --ink-faint is 3.85:1 on the card; --ink-soft clears 4.5:1. */
-  color: var(--ink-soft);
-  margin-bottom: 0.15rem;
-}
-
-/* Each option row — a checkbox beside its (plain, Q13-sourced) text,
-   stacked. */
-.graph-node__access-scope-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  font-weight: 400;
-  font-size: 0.82rem;
-  color: var(--ink);
-  margin: 0.3rem 0;
-}
-
-.graph-node__access-scope-option input[type='checkbox'] {
-  margin-top: 0.2rem;
-  flex-shrink: 0;
-}
-
-.graph-node__label-edit {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.graph-node__label-edit button {
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  flex-shrink: 0;
 }
 
 /* ── Field help (V1.1-C01) ── */
@@ -2344,24 +2179,6 @@ details input {
   }
 }
 
-/* R16-E §4 (v2.1, WCAG 2.1 AA 1.4.10 reflow). REPLACES the rule this block
-   used to hold: below this width the three review cards shrink until
-   words break one letter per line (seen in the R16-F walkthrough at about
-   640px). The columns stack in one column and the arrows between them
-   turn downwards, so nothing needs sideways scrolling even at 320px wide
-   — these cards reflow fine; the older, opposite claim this block made is
-   retired along with its own rule. */
-@media (max-width: 480px) {
-  .graph-view {
-    flex-direction: column;
-  }
-
-  .graph-view__arrow {
-    align-self: center;
-    transform: rotate(90deg);
-  }
-}
-
 /* ── "What you need to do" (user report 2026-08-15) ──
    The verdict explained itself thoroughly and never assembled an action list.
    Sits directly under the headline, before the reasoning, because that is the
@@ -2681,92 +2498,6 @@ details input {
   color: var(--ink-faint);
 }
 
-/* R5 — explainable graph review. */
-.graph-view__gate-note {
-  font-size: 0.9rem;
-  border-left: 3px solid var(--warn-border);
-  padding-left: 0.8rem;
-}
-
-.graph-view__ignored {
-  font-size: 0.85rem;
-  color: var(--ink-faint);
-}
-
-.graph-view__hint {
-  font-size: 0.85rem;
-  color: var(--ink-faint);
-  border-top: 1px dashed var(--rule);
-  padding-top: 0.5rem;
-}
-
-.graph-node[data-unconfirmed='true'] {
-  border-style: dashed;
-}
-
-.graph-node__uncertain {
-  border: 1px solid var(--warn-border);
-  background: var(--warn-bg);
-  color: var(--warn-text);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.85rem;
-  margin: 0.4rem 0;
-}
-
-.graph-node__meanings {
-  margin: 0.4rem 0 0;
-}
-
-.graph-node__meaning-row {
-  margin-bottom: 0.45rem;
-}
-
-.graph-node__meaning-row dt {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.graph-node__meaning-row dd {
-  margin: 0;
-}
-
-.graph-node__meaning {
-  display: block;
-  font-size: 0.88rem;
-}
-
-.graph-node__consequence {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--ink-faint);
-}
-
-.graph-node__warning {
-  display: block;
-  font-size: 0.82rem;
-  color: var(--warn-text);
-  background: var(--warn-bg);
-  border-radius: 4px;
-  padding: 0.2rem 0.45rem;
-  margin-top: 0.2rem;
-}
-
-.graph-node__confirm {
-  margin-top: 0.4rem;
-  background: var(--low);
-  border-color: var(--low);
-}
-
-.graph-node__confirmed-note {
-  margin: 0.4rem 0 0;
-  font-size: 0.8rem;
-  color: var(--low);
-}
-
 .intake-flow__gate-error,
 .intake-flow__rating-warning,
 .confirmation__rating-warning {
@@ -2783,24 +2514,6 @@ details input {
   font-size: 0.85rem;
   color: var(--ink-faint);
   margin: 0.2rem 0 1rem;
-}
-
-/* R6 — provenance on the review cards. */
-.graph-node__basis {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--low);
-  font-style: italic;
-}
-
-.graph-node__guessed {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--warn-text);
-  background: var(--warn-bg);
-  border-radius: 4px;
-  padding: 0.2rem 0.45rem;
-  margin-top: 0.15rem;
 }
 
 .questionnaire__context {
@@ -2955,88 +2668,6 @@ details input {
   color: var(--low);
   font-weight: 600;
   font-size: 0.9rem;
-}
-
-/* R15-C5 (proposal §3.6): quiet code beside the plain field label — the
-   engine field name is demoted, not deleted. Inherits the dt's uppercase
-   mono treatment naturally since it sits inside the same <dt>. */
-.graph-node__field-code {
-  margin-left: 0.35rem;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
-  color: var(--ink-faint);
-}
-
-/* R15-C5: shared badge family for "look again" provenance states —
-   "guessed" and "not found in your text — worth a second look" read as one
-   visual family so a reviewer's eye groups them, while each keeps its own
-   modifier class and its own text (dissent #6, IxD ID-6 overruled — the
-   two states and their gating are NOT merged). "not stated" shares the
-   shape but a quieter, non-alarm color: it flags an unanswered field, not
-   an unverified one. */
-.graph-node__badge {
-  display: inline-block;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  padding: 0.05rem 0.4rem;
-  margin-top: 0.15rem;
-}
-
-.graph-node__guessed-badge {
-  color: var(--ink-faint);
-  border: 1px dashed var(--warn-border);
-}
-
-.graph-node__badge--no-basis,
-.graph-node__badge--unrecorded {
-  color: var(--ink-faint);
-  border: 1px dashed var(--warn-border);
-}
-
-.graph-node__badge--not-stated {
-  color: var(--ink-faint);
-  border: 1px dashed var(--ink-faint);
-}
-
-/* R15-C5: the truncate-with-expand control for a long provenance quote —
-   the field VALUE above it never truncates; only this supporting quote may. */
-.graph-node__quote-expand {
-  display: inline-block;
-  background: none;
-  border: none;
-  color: var(--ink-faint);
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 0.72rem;
-  padding: 0;
-  margin-left: 0.3rem;
-}
-
-.graph-node__advisory {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--ink);
-  border-left: 3px solid #7a8ca8;
-  background: #eef1f6;
-  padding: 0.2rem 0.45rem;
-  margin-top: 0.2rem;
-}
-
-.graph-node__why {
-  background: none;
-  border: none;
-  color: var(--ink-faint);
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 0.78rem;
-  padding: 0.2rem 0;
-}
-
-.graph-node__fix-guessed {
-  margin-top: 0.4rem;
-  border-color: var(--warn-border);
-  background: var(--warn-bg);
-  color: var(--warn-text);
 }
 
 /* R11-KL — risk-knowledge lens. Deliberately distinct from .similar-cases

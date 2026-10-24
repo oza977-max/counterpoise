@@ -6,19 +6,19 @@ import * as questionGeneratorModule from '../../engine/question-generator';
 import { getAllForExport } from '../../store/audit';
 import { fillText } from './fillText';
 import { answerExampleOne, describeToForm } from './r18aFlow';
-import { questionsForGuessedFields } from '../../engine/question-generator';
 import { intakeReducer } from '../intake-state';
 import type { IntakeState } from '../intake-state';
 import type { DataFlowGraph } from '../../engine/types';
 
 // Round 6 — answers write back (requirements-006, intake-flow.md §16, ADR-IF-R6-3).
 // R18-E: the quote-verification and card-review halves of this file went with the retired
-// description-reading route; what stays is the question generator's guessed-field questions,
-// the reducer's write-back of an answer, and the form-route end-to-end test.
+// description-reading route; what stays is the reducer's write-back of an answer and the form-route
+// end-to-end test. R18-G: TC-R6-QN-1-01 (a guessed field yields its question) went too, with the function
+// that listed guessed fields, which nothing called any more.
 
 const DESCRIPTION = 'Trains an open source model on internal credit risk data for risk analysts, replacing no prior model.';
 
-describe('R6-QN-1 — guessed fields become questions, and answers write back', () => {
+describe('R6-QN-1 — answers write back', () => {
   function makeGraph(): DataFlowGraph {
     return {
       id: 'g1',
@@ -32,15 +32,6 @@ describe('R6-QN-1 — guessed fields become questions, and answers write back', 
       jurisdictions: [],
     };
   }
-
-  it('TC-R6-QN-1-01: a guessed data_zone produces a data_zone question with canonical options; quoted fields produce none', () => {
-    const qs = questionsForGuessedFields({ i1: ['data_zone'] }, makeGraph());
-    expect(qs).toHaveLength(1);
-    expect(qs[0]!.field).toBe('data_zone');
-    expect(qs[0]!.node_id).toBe('i1');
-    expect(qs[0]!.options).toContain('Zone C');
-    expect(qs[0]!.triggered_by).toContain('R6-PV-2:guessed');
-  });
 
   it('TC-R6-QN-1-02 (ADR-IF-R6-3): an answer differing from the graph applies as a correction on the questionnaire state', () => {
     const graph = makeGraph();

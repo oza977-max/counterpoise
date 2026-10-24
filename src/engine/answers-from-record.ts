@@ -20,6 +20,9 @@ import type { PolicyFile } from './types';
 
 const MAX_ROWS = 40;
 const MAX_ID = 40;
+const MAX_WORDS = 200;
+/** What a build before Round 18 put in front of a graph field it asked about in the questionnaire. Not a form question. */
+const FIELD_PREFIX = 'field:';
 
 /** The option key that is a question's own "Not sure" (or "I don't know"). A closed table: a question that is not
  *  listed has no such answer, and a recorded assumption naming it cannot be put back. */
@@ -53,15 +56,34 @@ function namedQuestions(assumptions: unknown): Set<string> {
   return ids;
 }
 
+/** R18-G. The "Not sure" answers an older QUESTIONNAIRE-route case recorded (the id names a graph field, `field:vendor`),
+ *  which the form cannot put back because it asks no such question. Each is named by the words the record itself
+ *  carries (its `question`, when a sane string), else by its id, once, in record order, so the note on the form can
+ *  say what was left out instead of losing it silently. Only the first MAX_ROWS rows are read. */
+function questionnaireNotSure(assumptions: unknown): string[] {
+  const out = new Map<string, string>();
+  if (!Array.isArray(assumptions)) return [];
+  for (const row of assumptions.slice(0, MAX_ROWS)) {
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) continue;
+    const { questionId, question } = row as { questionId?: unknown; question?: unknown };
+    if (typeof questionId !== 'string' || questionId.length > MAX_ID || !questionId.startsWith(FIELD_PREFIX) || out.has(questionId)) continue;
+    const words = typeof question === 'string' ? question.trim() : '';
+    out.set(questionId, words !== '' && words.length <= MAX_WORDS ? words : questionId);
+  }
+  return [...out.values()];
+}
+
 /** The form's answers for an older case (see the file header). `name` is the case name the register keeps. The description is not an input: it is the form's
  *  Question 2 and the caller keeps it as it is. `dropped` names, in the form's order, the
  *  questions the record said "Not sure" about which could not be put back (the form does not show that question
- *  for the answers restored, or offers no such answer), so the person can be told. Pure and deterministic. */
+ *  for the answers restored, or offers no such answer), so the person can be told, and `otherDropped` the
+ *  words of the questionnaire-route "Not sure" answers that name no form question at all (questionnaireNotSure).
+ *  Pure and deterministic. */
 export function olderCaseAnswers(
   assumptions: unknown,
   policy: PolicyFile,
   name?: unknown,
-): { answerState: FormAnswerState; dropped: string[] } {
+): { answerState: FormAnswerState; dropped: string[]; otherDropped: string[] } {
   const named = namedQuestions(assumptions);
   const out: FormAnswerState = {};
   const dropped: string[] = [];
@@ -95,5 +117,5 @@ export function olderCaseAnswers(
     if (recorded) dropped.push(id);
     out[id] = { value: q.kind === 'multi' ? [] : '', source: { kind: 'not-carried' } };
   }
-  return { answerState: out, dropped };
+  return { answerState: out, dropped, otherDropped: questionnaireNotSure(assumptions) };
 }

@@ -88,6 +88,29 @@ describe('R18-E retirement table (specs/intake-flow.md §27.10), one grep test p
     expect(text('llm/egress.test.ts')).not.toMatch(/local-provider|graph-extractor/);
   });
 
+  // R18-G (forward notes 2026-10-08 and 2026-10-24): what the retirements left behind, proven callerless and removed.
+  // These scans ignore case, so a spelling in a comment or a stylesheet cannot slip past a case-sensitive pattern.
+  it('left behind (a): the dead exports and the card-review wording are gone from every source, test and stylesheet', () => {
+    expect(naming(/extractionErrorMessage|EXTRACTION_ERROR_HELP|ratingWarningFor|questionsForGuessedFields|ratingInstructionWarning\b|ratingConfirmLine|RATING_INSTRUCTION_CONFIRM_LINE/i)).toEqual([]);
+    expect(naming(/check each card below/i)).toEqual([]);
+  });
+
+  it('left behind (b): the stylesheet holds no rule for the card review (.graph-view, .graph-node other than the register\'s chip, .review-card)', () => {
+    const css = text('App.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(css).not.toMatch(/\.graph-view/i);
+    expect(css).not.toMatch(/\.review-card/i);
+    const nodes = [...css.matchAll(/\.graph-node[A-Za-z0-9_-]*/gi)].map((m) => m[0]);
+    expect(new Set(nodes)).toEqual(new Set(['.graph-node__chip']));
+    // and the one that stays has an element: the register's detail page still renders it
+    expect(text('components/RegisterDetail.tsx')).toContain('graph-node__chip');
+  });
+
+  it('left behind (c): the scan is not vacuous - it finds a mixed-case spelling in a stylesheet text', () => {
+    const sample = '.Graph-View { color: red }';
+    expect(/\.graph-view/i.test(sample)).toBe(true);
+    expect(/\.graph-view/.test(sample)).toBe(false);
+  });
+
   it('row 11: the files the table keeps are still there', () => {
     for (const f of [
       'engine/plausibility.ts',
