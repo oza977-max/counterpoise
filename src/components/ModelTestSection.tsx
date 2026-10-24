@@ -16,6 +16,7 @@ import {
   testProgressWords,
   testQuestionWords,
   testResultWords,
+  testAnswersWords,
   testStoppedWords,
 } from './plain-copy';
 import { useModelSetting } from './useModelSetting';
@@ -148,6 +149,7 @@ export default function ModelTestSection() {
         <div className="model-test__result">
           <h4>{R18_COPY.TEST_RESULT_HEADING}</h4>
           {latest.stopped && <p>{testStoppedWords(latest.casesRun)}</p>}
+          <p>{testAnswersWords(latest)}</p>
           <p>{testResultWords(latest)}</p>
           {noAnswerWords && <p>{noAnswerWords}</p>}
           {discardedWords && <p>{discardedWords}</p>}

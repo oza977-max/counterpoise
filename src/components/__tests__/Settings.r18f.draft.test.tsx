@@ -43,7 +43,7 @@ describe('R18-F: the test never sends what is being typed', () => {
       await user.click(screen.getByText(/the model that reads your description/i));
       const region = screen.getByRole('region', { name: 'Test it' });
       await user.click(within(region).getByRole('button', { name: 'Test it' }));
-      await within(region).findByText(/Reached the right verdict in \d+ of 31 cases/, {}, { timeout: 20000 });
+      await within(region).findByText(/Right verdict in \d+ of 31 cases/, {}, { timeout: 20000 });
 
       expect(fake.requests).toHaveLength(31);
       for (const r of fake.requests) {

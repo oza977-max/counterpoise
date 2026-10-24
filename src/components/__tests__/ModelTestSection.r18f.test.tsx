@@ -60,7 +60,7 @@ describe('Test it with no saved model setting (false state of the control)', () 
     expect(within(section()).getByText('Save a model setting first. The test runs on the saved setting.')).toBeInTheDocument();
     expect(within(section()).queryByRole('button', { name: 'Test it' })).not.toBeInTheDocument();
     expect(section().textContent).not.toContain('Each case gets 60 seconds.');
-    expect(section().textContent).not.toMatch(/Reached the right verdict|public examples|Case \d+ of 31/);
+    expect(section().textContent).not.toMatch(/Right verdict in|answers filled in correctly|public examples|Case \d+ of 31/);
   });
 
   it('TC-R18-MS-4-05: a model saved without a test is labelled untested, with no count and no date, and shows no result', async () => {
@@ -69,7 +69,7 @@ describe('Test it with no saved model setting (false state of the control)', () 
     await open(user);
     expect(statusLine()).toContain('delta:2b: untested');
     expect(statusLine()).not.toMatch(/\d+\/31|\d{4}-\d{2}-\d{2}/);
-    expect(section().textContent).not.toContain('Reached the right verdict');
+    expect(section().textContent).not.toContain('Right verdict in');
     expect(section().textContent).not.toContain('public examples');
     // the control and its limit are there
     expect(within(section()).getByRole('button', { name: 'Test it' })).toBeEnabled();
@@ -95,13 +95,13 @@ describe('progress, Stop and one run at a time (TC-R18-MS-4-02, -08, NF-1-05)', 
     await user.click(within(section()).getByRole('button', { name: 'Stop' }));
     expect(await within(section()).findByText('Stopped after 11 of 31 cases.')).toBeInTheDocument();
     expect(fake.requests).toHaveLength(12); // nothing sent after Stop
-    expect(section().textContent).toContain('Reached the right verdict in 11 of the 11 cases that ran');
-    expect(section().textContent).not.toMatch(/of 31 cases \(measured/); // a stopped run never reads as a finished count
+    expect(section().textContent).toContain('Right verdict in 11 of the 11 cases that ran');
+    expect(section().textContent).not.toMatch(/of 31 cases if you check/); // a stopped run never reads as a finished count
     expect(within(section()).queryByText(/Case \d+ of 31/)).not.toBeInTheDocument(); // progress is gone
     expect(within(section()).queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument();
   });
 
-  it('TC-R18-MS-4-09: a stopped run leaves the model untested ("partial"), never "tested 11/31"', async () => {
+  it('TC-R18-MS-4-09: a stopped run leaves the model untested ("partial"), never "tested"', async () => {
     save();
     vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle: (r, i) => (i >= 11 ? { kind: 'never' } : knows(r)) }).fetch);
     const user = userEvent.setup({ delay: null });
@@ -111,7 +111,7 @@ describe('progress, Stop and one run at a time (TC-R18-MS-4-02, -08, NF-1-05)', 
     await user.click(within(section()).getByRole('button', { name: 'Stop' }));
     await within(section()).findByText('Stopped after 11 of 31 cases.');
     expect(statusLine()).toContain('untested (a partial test stopped after 11 of 31 cases)');
-    expect(statusLine()).not.toContain('tested 11/31');
+    expect(statusLine()).not.toContain('answers filled in correctly');
     expect(document.body.textContent).not.toMatch(/(^|[^n])tested \d+\/31/);
   });
 
@@ -148,7 +148,7 @@ describe('progress, Stop and one run at a time (TC-R18-MS-4-02, -08, NF-1-05)', 
     });
     // the new model is untested: the result is not carried across (TC-R18-GI-12-03)
     expect(statusLine()).toContain('beta:3b: untested');
-    expect(section().textContent).not.toContain('Reached the right verdict');
+    expect(section().textContent).not.toContain('Right verdict in');
   });
 });
 
@@ -156,7 +156,7 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
   async function finish(user: ReturnType<typeof userEvent.setup>, handle: (r: RecordedRequest, i: number) => FakeBehaviour) {
     vi.stubGlobal('fetch', createFakeModel({ kind: 'custom', handle }).fetch);
     await user.click(within(section()).getByRole('button', { name: 'Test it' }));
-    await within(section()).findByText(/Reached the right verdict in \d+ of 31 cases/, {}, { timeout: 20000 });
+    await within(section()).findByText(/Right verdict in \d+ of 31 cases/, {}, { timeout: 20000 });
   }
 
   it(
@@ -169,13 +169,13 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
       await finish(user, (r, i) => knows(r, i < 7 ? { question: '9', values: [{ option: 'not-an-option', quote: 'x y' }] } : undefined));
       const s = section().textContent!;
       expect(s).toContain('7 filled-in answers were dropped because they failed the checks.');
-      expect(s).toContain('Reached the right verdict in 31 of 31 cases (measured as if you check every filled answer).');
+      expect(s).toContain('Right verdict in 31 of 31 cases if you check every filled answer and answer the rest yourself.');
       expect(s).toMatch(/Does it replace something that already exists\?|replace/i);
       expect(s).toContain('right,');
       expect(s).toContain('These 31 cases are public examples; they are not a guarantee about your own descriptions.');
       expect(s).toContain('cannot be compared with the 2026-10-04 comparison');
       expect(s).not.toMatch(/\b(safe|reliable|recommended)\b/i);
-      expect(statusLine()).toMatch(/alpha:7b: tested 31\/31 on \d{4}-\d{2}-\d{2} \(measured as if you check every filled answer\)/);
+      expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/);
       expect(statusLine()).not.toContain('untested');
     },
     40000,
@@ -197,9 +197,59 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     await open(user);
     await finish(user, () => ({ kind: 'content', content: 'not json at all' }));
     expect(section().textContent).toContain('Cases with no usable answer from the model: 31.');
-    expect(section().textContent).toContain('Reached the right verdict in 0 of 31 cases');
-    expect(statusLine()).toMatch(/alpha:7b: tested 0\/31 on/);
+    expect(section().textContent).toContain('Right verdict in 0 of 31 cases');
+    expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: 0 of \d+ answers filled in correctly/);
   }, 40000);
+
+  // Owner decision 2026-10-24. A model that fills nothing must not show a good headline. A fake model that
+  // returns no answers runs over the real corpus; every scored answer is then blank.
+  const noAnswers = (): FakeBehaviour => ({ kind: 'honours-format', reply: JSON.stringify({ answers: [] }) });
+  const totalsOf = (r: { perQuestion: Record<string, { right: number; blank: number; wrong: number }> }) =>
+    Object.values(r.perQuestion).reduce((a, q) => ({ r: a.r + q.right, b: a.b + q.blank, w: a.w + q.wrong }), { r: 0, b: 0, w: 0 });
+  const unqualified = (text: string) =>
+    text.replace(/Right verdict in \d+ of 31 cases if you check every filled answer and answer the rest yourself\./g, '');
+
+  it('owner decision 2026-10-24 (false state): a model that returns no answers shows 0 filled in correctly and all scored left blank', async () => {
+    save();
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await finish(user, noAnswers);
+    const tot = totalsOf(JSON.parse(localStorage.getItem('aigate:model-test-results')!).results[0]);
+    expect(tot.r).toBe(0);
+    expect(tot.w).toBe(0);
+    expect(tot.b).toBeGreaterThan(0);
+    const label = `0 of ${tot.b} answers filled in correctly, ${tot.b} left blank, 0 wrong`;
+    expect(statusLine()).toContain(label);
+    expect(section().textContent).toContain(label);
+    expect(unqualified(section().textContent!)).not.toMatch(/\d+ of 31 cases/);
+    expect(statusLine()).not.toMatch(/of 31|\/31/);
+    const text = section().textContent!;
+    expect(text.indexOf('answers filled in correctly')).toBeLessThan(text.indexOf('Right verdict in'));
+  }, 40000);
+
+  it('owner decision 2026-10-24 (false state): even when the verdict measure reads 31 of 31 for an all-blank run, that figure shows only inside the qualified sentence', async () => {
+    save();
+    const user = userEvent.setup({ delay: null });
+    await open(user);
+    await finish(user, noAnswers);
+    // The verdict measure keeps the right answer for every blank, so a model that fills nothing it is scored on
+    // can read 31 of 31 there (a model that fills only a question no case scores does). Saved as such:
+    const stored = JSON.parse(localStorage.getItem('aigate:model-test-results')!);
+    stored.results[0].verdictMatches = 31;
+    stored.results[0].noAnswer = 0;
+    localStorage.setItem('aigate:model-test-results', JSON.stringify(stored));
+    document.body.innerHTML = '';
+    await open(userEvent.setup({ delay: null }));
+    const tot = totalsOf(stored.results[0]);
+    const text = section().textContent!;
+    expect(text.match(/31 of 31/g)).toHaveLength(1);
+    expect(text).toContain('Right verdict in 31 of 31 cases if you check every filled answer and answer the rest yourself.');
+    expect(text).toContain(`0 of ${tot.b} answers filled in correctly, ${tot.b} left blank, 0 wrong.`);
+    expect(unqualified(text)).not.toMatch(/31 of 31/);
+    expect(statusLine()).toContain(`tested on`);
+    expect(statusLine()).toContain(`0 of ${tot.b} answers filled in correctly`);
+    expect(statusLine()).not.toMatch(/31 of 31|31\/31/);
+  }, 60000);
 
   it('TC-R18-MS-4-04 / TC-R18-GI-12-03: the result is still there after the page is rebuilt, and belongs to its own model only', async () => {
     save();
@@ -210,15 +260,15 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     document.body.innerHTML = '';
     const again = userEvent.setup({ delay: null });
     await open(again);
-    expect(statusLine()).toMatch(/alpha:7b: tested 31\/31 on \d{4}-\d{2}-\d{2}/);
-    expect(section().textContent).toContain('Reached the right verdict in 31 of 31 cases');
+    expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: /);
+    expect(section().textContent).toContain('Right verdict in 31 of 31 cases');
     // another model on the same place: untested, no result block
     act(() => {
       updateModelSetting({ model: 'delta:2b' });
     });
     await vi.waitFor(() => expect(statusLine()).toContain('delta:2b: untested'));
-    expect(statusLine()).not.toContain('tested 31/31');
-    expect(section().textContent).not.toContain('Reached the right verdict');
+    expect(statusLine()).not.toContain('answers filled in correctly');
+    expect(section().textContent).not.toContain('Right verdict in');
     expect(section().textContent).not.toContain('public examples');
   }, 60000);
 });

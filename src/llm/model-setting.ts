@@ -318,7 +318,25 @@ export function appendTestResult(result: ModelTestResult): boolean {
 export type ModelLabel =
   | { kind: 'untested' }
   | { kind: 'partial'; casesRun: number; stopped: boolean }
-  | { kind: 'tested'; matches: number; date: string };
+  | { kind: 'tested'; right: number; blank: number; wrong: number; date: string };
+
+/** Totals over every scored question-case pair in a saved result. scored = right + blank + wrong. */
+export function answerTotals(perQuestion: Record<string, { right: number; blank: number; wrong: number }>): {
+  right: number;
+  blank: number;
+  wrong: number;
+  scored: number;
+} {
+  let right = 0;
+  let blank = 0;
+  let wrong = 0;
+  for (const q of Object.values(perQuestion)) {
+    right += q.right;
+    blank += q.blank;
+    wrong += q.wrong;
+  }
+  return { right, blank, wrong, scored: right + blank + wrong };
+}
 
 /** The test label as DATA. A result belongs to one (model, place, host); only a completed run makes a model tested. */
 export function modelLabel(
@@ -329,7 +347,10 @@ export function modelLabel(
   if (host === null) return { kind: 'untested' };
   const mine = results.filter((r) => r.model === setting.model && r.place === setting.place && r.host === host);
   const done = mine.find((r) => !r.stopped && r.casesRun === CORPUS_CASE_COUNT);
-  if (done) return { kind: 'tested', matches: done.verdictMatches, date: done.date };
+  if (done) {
+    const { right, blank, wrong } = answerTotals(done.perQuestion);
+    return { kind: 'tested', right, blank, wrong, date: done.date };
+  }
   const partial = mine[0];
   if (partial) return { kind: 'partial', casesRun: partial.casesRun, stopped: partial.stopped };
   return { kind: 'untested' };

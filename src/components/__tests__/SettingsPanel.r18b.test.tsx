@@ -639,7 +639,7 @@ describe('copy and controls (TC-R18-MS-3-02, PS-5-02)', () => {
 describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
   const result = (over: Partial<ModelTestResult> = {}): ModelTestResult => ({
     model: 'gemma4:cloud', place: 'ollama-cloud', host: LOCAL, date: '2026-10-07', casesRun: 31, stopped: false,
-    verdictMatches: 21, discarded: {}, perQuestion: {}, ...over,
+    verdictMatches: 21, discarded: {}, perQuestion: { '7': { right: 6, blank: 1, wrong: 1 }, '9': { right: 5, blank: 2, wrong: 0 } }, ...over,
   });
   const seedResult = (r: ModelTestResult) =>
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results: [r] }));
@@ -650,17 +650,17 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     render(<SettingsPanel />);
     const section = await open(user);
     expect(section.textContent).toContain('qwen3:4b: untested');
-    expect(section.textContent).not.toMatch(/tested \d+\/31/);
-    expect(section.textContent).not.toContain(R18_COPY.TEST_ASSUMPTION_SUFFIX);
+    expect(section.textContent).not.toContain('tested on');
+    expect(section.textContent).not.toContain('answers filled in correctly');
   });
 
-  it('TC-R18-GI-12-02 and -06: a completed result reads tested 21/31 on the date, with the caveat', async () => {
+  it('TC-R18-GI-12-02 and -06: a completed result reads tested on the date, with the answer counts', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seedResult(result());
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
-    expect(section.textContent).toContain('gemma4:cloud: tested 21/31 on 2026-10-07 (measured as if you check every filled answer)');
+    expect(section.textContent).toContain('gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong');
     expect(section.textContent).not.toContain('untested');
   });
 
@@ -672,7 +672,7 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     render(<SettingsPanel />);
     const section = await open(user);
     expect(section.textContent).toContain('qwen3:4b: untested');
-    expect(section.textContent).not.toContain('tested 21/31');
+    expect(section.textContent).not.toContain('answers filled in correctly');
   });
 
   it('a stopped run is untested with the partial note', async () => {
@@ -682,7 +682,7 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     render(<SettingsPanel />);
     const section = await open(user);
     expect(section.textContent).toContain('untested (a partial test stopped after 12 of 31 cases)');
-    expect(section.textContent).not.toContain('tested 21/31');
+    expect(section.textContent).not.toContain('tested on 2026-10-07');
   });
 });
 

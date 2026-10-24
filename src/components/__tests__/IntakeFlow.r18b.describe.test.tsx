@@ -274,7 +274,7 @@ describe('the demonstration notice (TC-R18-PS-4-01..03, -05)', () => {
 describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
   const run = (over: Partial<ModelTestResult> = {}): ModelTestResult => ({
     model: 'gemma4:cloud', place: 'ollama-cloud', host: LOCAL, date: '2026-10-07', casesRun: 31, stopped: false,
-    verdictMatches: 21, discarded: {}, perQuestion: {}, ...over,
+    verdictMatches: 21, discarded: {}, perQuestion: { '7': { right: 6, blank: 1, wrong: 1 }, '9': { right: 5, blank: 2, wrong: 0 } }, ...over,
   });
   const seed = (r: ModelTestResult) =>
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results: [r] }));
@@ -284,14 +284,14 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
     render(<App />);
     expect(statusLine().textContent).toContain('qwen3:4b: untested');
     expect(statusLine().textContent).not.toMatch(/tested \d/);
-    expect(statusLine().textContent).not.toContain(R18_COPY.TEST_ASSUMPTION_SUFFIX);
+    expect(statusLine().textContent).not.toContain('answers filled in correctly');
   });
 
-  it('TC-R18-GI-12-02 / -06: a completed run reads tested 21/31 on the date with the caveat, and not untested', () => {
+  it('TC-R18-GI-12-02 / -06: a completed run reads tested on the date with the answer counts, and not untested', () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seed(run());
     render(<App />);
-    expect(statusLine().textContent).toContain('gemma4:cloud: tested 21/31 on 2026-10-07 (measured as if you check every filled answer)');
+    expect(statusLine().textContent).toContain('gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong');
     expect(statusLine().textContent).not.toContain('untested');
   });
 
@@ -301,7 +301,7 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
     updateModelSetting({ place: 'this-computer', model: 'qwen3:4b' });
     render(<App />);
     expect(statusLine().textContent).toContain('qwen3:4b: untested');
-    expect(statusLine().textContent).not.toContain('tested 21/31');
+    expect(statusLine().textContent).not.toContain('answers filled in correctly');
   });
 
   it('a stopped run reads as untested with the partial note (never tested)', () => {
@@ -309,7 +309,7 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
     seed(run({ stopped: true, casesRun: 7 }));
     render(<App />);
     expect(statusLine().textContent).toContain('untested (a partial test stopped after 7 of 31 cases)');
-    expect(statusLine().textContent).not.toContain('tested 21/31');
+    expect(statusLine().textContent).not.toContain('answers filled in correctly');
   });
 
   it('a result for the same model name at another address does not label this one', () => {

@@ -553,7 +553,7 @@ const result = (over: Partial<ModelTestResult>): ModelTestResult => ({
   stopped: false,
   verdictMatches: 21,
   discarded: {},
-  perQuestion: {},
+  perQuestion: { '7': { right: 6, blank: 1, wrong: 1 }, '9': { right: 5, blank: 2, wrong: 0 } },
   ...over,
 });
 const sett = { model: 'gemma4:cloud', place: 'ollama-cloud' as const, url: 'http://localhost:11434' };
@@ -563,8 +563,8 @@ describe('modelLabel (TC-R18-GI-12-*)', () => {
     expect(modelLabel(sett, [])).toEqual({ kind: 'untested' });
   });
 
-  it('TC-R18-GI-12-02: a completed run is tested with its matches and date', () => {
-    expect(modelLabel(sett, [result({})])).toEqual({ kind: 'tested', matches: 21, date: '2026-10-07' });
+  it('TC-R18-GI-12-02: a completed run is tested with its answer counts and date', () => {
+    expect(modelLabel(sett, [result({})])).toEqual({ kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-07' });
   });
 
   it('TC-R18-GI-12-03 (rule 3): a result belongs to one model, one place and one host', () => {
@@ -592,7 +592,7 @@ describe('modelLabel (TC-R18-GI-12-*)', () => {
       result({ date: '2026-10-06', verdictMatches: 25 }),
       result({ date: '2026-10-01', verdictMatches: 5 }),
     ];
-    expect(modelLabel(sett, rs)).toEqual({ kind: 'tested', matches: 25, date: '2026-10-06' });
+    expect(modelLabel(sett, rs)).toEqual({ kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-06' });
   });
 
   it('a setting with no valid address has no host and so no result', () => {

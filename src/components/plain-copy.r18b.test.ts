@@ -68,7 +68,6 @@ describe('the fixed lines', () => {
     );
     expect(R18_COPY.SHARED_ORIGIN_NOTE).toBe('On this public demo, other pages on the same site address can read data stored in this browser.');
     expect(R18_COPY.FIRM_SMALL_PRINT).toMatch(/^We can't check that this is your firm's server/);
-    expect(R18_COPY.TEST_ASSUMPTION_SUFFIX).toBe('(measured as if you check every filled answer)');
     expect(R18_COPY.CLEAR_KEEPS_SETTING).toBe("Your model setting (including its address) is kept. Use 'Forget the model setting' to remove it.");
     expect(R18_COPY.FORGET_SETTING_LABEL).toBe('Forget the model setting');
     expect(R18_COPY.FALLBACK_RESEND_NOTE).toBe(
@@ -132,7 +131,7 @@ describe('TC-R18-GI-13-02: the new strings and the functions that fill them neve
       placeSentence({ place: 'ollama-cloud', model: 'm:cloud', url: 'http://localhost:11434' }, false),
       modelLabelWords({ kind: 'untested' }),
       modelLabelWords({ kind: 'partial', casesRun: 5, stopped: true }),
-      modelLabelWords({ kind: 'tested', matches: 21, date: '2026-10-07' }),
+      modelLabelWords({ kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-07' }),
       placeRecordWords('this-computer', 'http://localhost:11434'),
       placeRecordWords('firm-server', 'https://f.test'),
       placeRecordWords('ollama-cloud', 'http://localhost:11434'),
@@ -144,17 +143,17 @@ describe('TC-R18-GI-13-02: the new strings and the functions that fill them neve
 describe('TC-R18-GI-12-01 / -02 / -06: the label words and their caveat', () => {
   it('untested has no suffix and no count', () => {
     expect(modelLabelWords({ kind: 'untested' })).toBe('untested');
-    expect(modelLabelWords({ kind: 'untested' })).not.toMatch(/\d+\/31|measured/);
+    expect(modelLabelWords({ kind: 'untested' })).not.toMatch(/\d+\/31|\d+ of \d+ answers|measured/);
   });
-  it('tested reads "tested N/31 on DATE" followed by the suffix', () => {
-    expect(modelLabelWords({ kind: 'tested', matches: 21, date: '2026-10-07' })).toBe(
-      'tested 21/31 on 2026-10-07 (measured as if you check every filled answer)',
+  it('tested leads with the answers: right of scored, blank, wrong', () => {
+    expect(modelLabelWords({ kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-07' })).toBe(
+      'tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong',
     );
   });
-  it('a stopped run reads as untested with the partial note, and carries no suffix', () => {
+  it('a stopped run reads as untested with the partial note, and carries no counts', () => {
     const w = modelLabelWords({ kind: 'partial', casesRun: 12, stopped: true });
     expect(w).toBe('untested (a partial test stopped after 12 of 31 cases)');
-    expect(w).not.toMatch(/measured/);
+    expect(w).not.toMatch(/answers filled in correctly/);
   });
 });
 

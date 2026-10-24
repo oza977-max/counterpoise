@@ -1353,6 +1353,7 @@ export function ratingConfirmLine(intakeMethod: string): string {
 import type { ChecklistItemId, ModelPlace, PrefillFailure } from '../engine/prefill-types';
 import type { ValidationReason } from '../llm/model-setting';
 import type { ModelLabel } from '../llm/model-setting';
+import { answerTotals } from '../llm/model-setting';
 import { visibleText } from '../engine/visible-text';
 import type { AnswerView, ReadView } from '../engine/answer-sources';
 
@@ -1574,8 +1575,10 @@ export const R18_COPY = {
   LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
   // A partial result that was not stopped can only be inconsistent stored data; it never says "stopped" (R18-B carried minor).
   LABEL_PARTIAL_RAN: 'untested (a partial test ran {n} of 31 cases)',
-  LABEL_TESTED: 'tested {matches}/31 on {date}',
-  TEST_ASSUMPTION_SUFFIX: '(measured as if you check every filled answer)',
+  // Owner decision 2026-10-24: the label leads with the answers. The verdict figure is not in it.
+  LABEL_TESTED:
+    'tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong',
+  LABEL_TESTED_NONE: 'tested on {date}: no answers could be scored',
 
   // The in-app test (R18-F, §27.11). Every sentence is true only in the state that shows it; each has a false-state test.
   TEST_BUTTON: 'Test it',
@@ -1592,8 +1595,15 @@ export const R18_COPY = {
   TEST_NOT_COMPARABLE:
     'These numbers cannot be compared with the 2026-10-04 comparison. That one took the countries from the case; this test asks the model to find them in the description.',
   TEST_RESULT_HEADING: 'Latest test of this model',
-  TEST_RESULT_DONE: 'Reached the right verdict in {matches} of 31 cases {suffix}.',
-  TEST_RESULT_STOPPED: 'Reached the right verdict in {matches} of the {n} cases that ran {suffix}.',
+  // The answers line leads; the verdict line is secondary and says what it assumes (a blank keeps the right answer in the verdict measure).
+  TEST_ANSWERS_DONE: '{right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong.',
+  TEST_ANSWERS_STOPPED:
+    'In the {n} cases that ran: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong.',
+  TEST_ANSWERS_NONE: 'No answers could be scored in this run.',
+  TEST_RESULT_DONE:
+    'Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself.',
+  TEST_RESULT_STOPPED:
+    'Right verdict in {matches} of the {n} cases that ran if you check every filled answer and answer the rest yourself.',
   TEST_NO_ANSWER: 'Cases with no usable answer from the model: {n}. Each counts as blank, with no right verdict.',
   TEST_PER_QUESTION_HEADING: 'How each question was filled in',
   TEST_QUESTION_LINE: '{question}: {right} right, {blank} left blank, {wrong} wrong (cases scored: {n})',
@@ -1759,8 +1769,16 @@ export function modelLabelWords(label: ModelLabel): string {
       return R18_COPY.LABEL_UNTESTED;
     case 'partial':
       return (label.stopped ? R18_COPY.LABEL_PARTIAL : R18_COPY.LABEL_PARTIAL_RAN).replace('{n}', String(label.casesRun));
-    case 'tested':
-      return `${R18_COPY.LABEL_TESTED.replace('{matches}', String(label.matches)).replace('{date}', visibleText(label.date))} ${R18_COPY.TEST_ASSUMPTION_SUFFIX}`;
+    case 'tested': {
+      const scored = label.right + label.blank + label.wrong;
+      const template = scored === 0 ? R18_COPY.LABEL_TESTED_NONE : R18_COPY.LABEL_TESTED;
+      return template
+        .replace('{date}', () => visibleText(label.date))
+        .replace('{right}', String(label.right))
+        .replace('{scored}', String(scored))
+        .replace('{blank}', String(label.blank))
+        .replace('{wrong}', String(label.wrong));
+    }
   }
 }
 
@@ -1785,8 +1803,23 @@ export function testResultWords(result: { stopped: boolean; casesRun: number; ve
   const template = result.stopped ? R18_COPY.TEST_RESULT_STOPPED : R18_COPY.TEST_RESULT_DONE;
   return template
     .replace('{matches}', String(result.verdictMatches))
+    .replace('{n}', String(result.casesRun));
+}
+
+/** The answers line that leads the Settings result: right of scored, blank, wrong, from the saved per-question counts. */
+export function testAnswersWords(result: {
+  stopped: boolean;
+  casesRun: number;
+  perQuestion: Record<string, { right: number; blank: number; wrong: number }>;
+}): string {
+  const t = answerTotals(result.perQuestion);
+  if (t.scored === 0) return R18_COPY.TEST_ANSWERS_NONE;
+  return (result.stopped ? R18_COPY.TEST_ANSWERS_STOPPED : R18_COPY.TEST_ANSWERS_DONE)
     .replace('{n}', String(result.casesRun))
-    .replace('{suffix}', R18_COPY.TEST_ASSUMPTION_SUFFIX);
+    .replace('{right}', String(t.right))
+    .replace('{scored}', String(t.scored))
+    .replace('{blank}', String(t.blank))
+    .replace('{wrong}', String(t.wrong));
 }
 
 /** One question's counts, in the question's own words. */

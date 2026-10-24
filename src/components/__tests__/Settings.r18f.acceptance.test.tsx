@@ -70,7 +70,7 @@ describe('R18-F acceptance: test the model before trusting it', () => {
       expect(screen.getByText('Each case gets 60 seconds.')).toBeInTheDocument();
 
       // The end: the result line, then the plain caveat.
-      expect(await screen.findByText(/Reached the right verdict in 31 of 31 cases/, {}, { timeout: 20000 })).toBeInTheDocument();
+      expect(await screen.findByText(/Right verdict in 31 of 31 cases/, {}, { timeout: 20000 })).toBeInTheDocument();
       expect(
         screen.getByText('These 31 cases are public examples; they are not a guarantee about your own descriptions.'),
       ).toBeInTheDocument();
@@ -91,10 +91,10 @@ describe('R18-F acceptance: test the model before trusting it', () => {
         verdictMatches: 31,
       });
 
-      // The description screen's model label now reads tested, with the count, the date and the assumption.
+      // The description screen's model label now reads tested, with the date and the answer counts.
       const statuses = screen.getAllByRole('status').map((el) => el.textContent ?? '');
       expect(
-        statuses.some((t) => /alpha:7b: tested 31\/31 on \d{4}-\d{2}-\d{2} \(measured as if you check every filled answer\)/.test(t)),
+        statuses.some((t) => /alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/.test(t)),
         'a status line with the tested label',
       ).toBe(true);
       expect(within(document.body).queryByText('alpha:7b: untested')).not.toBeInTheDocument();

@@ -955,11 +955,11 @@ And each MUST NOT contain "tested" followed by a count
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-02: After a test the label reads tested N/31 on the date [EXAMPLE]
-Input: a completed test of `gemma4:cloud` scoring 21 fully right verdicts on 2026-10-07
+### TC-R18-GI-12-02: After a test the label leads with the answers filled in correctly [EXAMPLE]
+Input: a completed test of `gemma4:cloud` with 11 of 15 scored answers right, 3 left blank and 1 wrong, on 2026-10-07
 Given the saved result
 When Settings and the description screen render
-Then each MUST contain "tested 21/31 on 2026-10-07" (date shown in the app's usual date format)
+Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong" (date shown in the app's usual date format)
 And each MUST NOT contain "untested" for that model
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -969,7 +969,7 @@ Input: a saved result for `gemma4:cloud`; the person switches the model setting 
 Given a result for one model
 When the other model is selected
 Then the label beside `qwen3:4b` MUST contain "untested"
-And it MUST NOT contain "tested 21/31"
+And it MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -989,12 +989,14 @@ Counterexample strategy: all replies blank, all wrong, a reply for only one case
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-06: The test label never drops its caveat [EXAMPLE]
-Input: a saved result "21/31 on 2026-10-07" for `gemma4:cloud`; render Settings, the description screen and the "Make it smarter" panel
+### TC-R18-GI-12-06: The test label states its counts, and a verdict figure states its assumption [EXAMPLE]
+Input: a saved result (11 right, 3 left blank, 1 wrong, 21 right verdicts) on 2026-10-07 for `gemma4:cloud`; render Settings, the description screen and the "Make it smarter" panel
 Given a tested model
 When each screen renders
-Then each MUST contain "tested 21/31 on 2026-10-07" followed by "(measured as if you check every filled answer)"
-And an untested model MUST NOT contain that suffix
+Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong"
+And no label MUST contain a verdict figure such as "21/31" or "of 31 cases"
+And where Settings shows the verdict figure it MUST read "Right verdict in 21 of 31 cases if you check every filled answer and answer the rest yourself." and come after the answers line
+And an untested model MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1393,7 +1395,7 @@ And case 2 MUST NOT contain a scored answer
 Input: a finished test; reload the page
 Given a saved result
 When Settings opens after the reload
-Then the model's label MUST contain "tested" with its count and date
+Then the model's label MUST contain "tested on" with its date and its answer counts
 And the label MUST NOT contain "untested"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1440,8 +1442,8 @@ Input: a run stopped after 12 cases, then a completed run in which the verifier 
 Given a saved stopped result for `gemma4:cloud`
 When Settings renders after each
 Then after the stopped run the label MUST contain "untested (a partial test stopped after 12 of 31 cases)"
-And after the completed run the label MUST contain "tested" with its count and date, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
-And the stopped run's label MUST NOT contain "tested 12/31"
+And after the completed run the label MUST contain "tested on" with its date and its answer counts, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
+And the stopped run's label MUST NOT contain "answers filled in correctly"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -2139,6 +2141,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-24 | owner decision 2026-10-24: the test result leads with answers filled in correctly; the verdict figure is secondary and states its assumption (a blank keeps the right answer in the verdict measure). TC-R18-GI-12-02, -03, -06 and TC-R18-MS-4-04, -09 quote the new label: "tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong" (scored = right + blank + wrong over the scored question-case pairs); the old suffix "(measured as if you check every filled answer)" is retired; the Settings verdict line reads "Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself." |
 | 2026-10-24 | R18-E review pass 1: TC-R18-GI-10-04 — the case name is restored from the register's label as a `record` answer needing its tick (it is not blank), and a case with no recorded assumptions has only its name restored. |
 | 2026-10-22 | owner decision 2026-10-22: answers restored from a stored record need a fresh tick (a self-asserted record must not let the record claim ticks the person never made). TC-R18-GI-10-06 now states it: confirmed and changed pre-fills come back with their quotes and recorded values but unconfirmed. |
 | 2026-10-15 | owner-approved: pre-fill mark names the model; tick reads 'I've checked this answer' (newcomer check, R18-C2): TC-R18-GI-3-20, GI-4-02, GI-8-04, GI-9-05 and NF-1-02 quote the new wording. |
