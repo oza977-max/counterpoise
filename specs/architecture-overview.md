@@ -51,7 +51,7 @@ Counterpoise is a browser-only single-page application. There is no server, no d
 - **2LoD (Priya)** — Risk manager. Sees full register. Approves Medium/High/Critical tier verdicts. Edits policy file and runs impact diffs.
 
 **External dependencies:**
-- **Anthropic API** — called only at two points: graph extraction (`src/llm/graph-extractor.ts`) and reasoning trace generation (`src/llm/reasoning-trace.ts`). The evaluation engine never calls the LLM. Both calls require an API key configured by the user; the system degrades gracefully (structured form fallback, template reasoning trace) when no key is present.
+- **Anthropic API** — called only at two points: the semantic duplicate check (`src/llm/duplicate-check.ts`) and reasoning trace generation (`src/llm/reasoning-trace.ts`). The evaluation engine never calls the LLM. Both calls require an API key configured by the user; the system degrades gracefully (a plain similar-cases search, a template reasoning trace) when no key is present. Reading a description into pre-filled form answers uses a model the user connects in Settings (`src/llm/prefill.ts`), not this API; since Round 18 there is one route through a pre-check, the guided form, and a model only suggests answers on it.
 - **Bank's policy YAML** — the source of truth for all risk appetite rules. Not served by Counterpoise; the bank loads it as a file upload or paste. Version-stamped in every verdict record.
 
 ---
@@ -81,7 +81,8 @@ Browser (localhost / served from dist/)
 │               / register_edges
 │
 ├── LLM Bridge (Anthropic SDK, dangerouslyAllowBrowser)
-│   ├── src/llm/graph-extractor.ts       — UC-3 graph extraction
+│   ├── src/llm/prefill.ts               — optional description read (R18)
+│   ├── src/llm/duplicate-check.ts       — optional semantic duplicate check
 │   └── src/llm/reasoning-trace.ts       — VD-8 plain-English trace
 │
 └── Policy Loader (js-yaml + Zod)
@@ -154,7 +155,7 @@ Brooks' criterion: "I will contend that conceptual integrity is the most importa
 
 1. **The `DataFlowGraph` type flows cleanly through all specs.** Defined in `intake-flow.md`, consumed by `evaluation-engine.md`, referenced by `verdict-audit.md`, stored by `register-lifecycle.md`. One type, four consumers, no divergence.
 
-2. **The LLM boundary is consistent.** The engine never calls the LLM (NF-1). The two LLM call sites (`graph-extractor.ts`, `reasoning-trace.ts`) are in `src/llm/` and are explicitly bounded. No other spec introduces an LLM call. The fallback pattern (no API key → graceful degradation) is the same in both sites.
+2. **The LLM boundary is consistent.** The engine never calls the LLM (NF-1). The LLM call sites (`prefill.ts`, `duplicate-check.ts`, `reasoning-trace.ts`) are in `src/llm/` and are explicitly bounded. No other spec introduces an LLM call. The fallback pattern (no key or model → graceful degradation) is the same at every site.
 
 3. **The audit trail is the single source of truth for everything that happened.** Every domain spec that generates events writes to `audit.ts` using the `AuditEvent` discriminated union. There is no secondary state store that could diverge from the audit trail. The register derives its `UseCaseSummary` view from audit events — it does not maintain independent state.
 

@@ -115,7 +115,7 @@ pre code { background: none; padding: 0; font-size: 0.85rem; line-height: 1.5; }
 
     <h3>External dependencies</h3>
     <ul>
-      <li><strong>Anthropic API</strong> — called only at two points: graph extraction (<code>src/llm/graph-extractor.ts</code>) and reasoning trace generation (<code>src/llm/reasoning-trace.ts</code>). The evaluation engine never calls the LLM. Both calls require an API key configured by the user; the system degrades gracefully (structured form fallback, template reasoning trace) when no key is present.</li>
+      <li><strong>Anthropic API</strong> — called only at two points: the semantic duplicate check (<code>src/llm/duplicate-check.ts</code>) and reasoning trace generation (<code>src/llm/reasoning-trace.ts</code>). The evaluation engine never calls the LLM. Both calls require an API key configured by the user; the system degrades gracefully (a plain similar-cases search, a template reasoning trace) when no key is present. Reading a description into pre-filled form answers uses a model the user connects in Settings (<code>src/llm/prefill.ts</code>), not this API; since Round 18 there is one route through a pre-check, the guided form, and a model only suggests answers on it.</li>
       <li><strong>Bank's policy YAML</strong> — the source of truth for all risk appetite rules. Not served by Counterpoise; the bank loads it as a file upload or paste. Version-stamped in every verdict record.</li>
     </ul>
 
@@ -142,7 +142,8 @@ pre code { background: none; padding: 0; font-size: 0.85rem; line-height: 1.5; }
 │               / register_edges
 │
 ├── LLM Bridge (Anthropic SDK, dangerouslyAllowBrowser)
-│   ├── src/llm/graph-extractor.ts       — UC-3 graph extraction
+│   ├── src/llm/prefill.ts               — optional description read (R18)
+│   ├── src/llm/duplicate-check.ts       — optional semantic duplicate check
 │   └── src/llm/reasoning-trace.ts       — VD-8 plain-English trace
 │
 └── Policy Loader (js-yaml + Zod)
@@ -343,7 +344,7 @@ pre code { background: none; padding: 0; font-size: 0.85rem; line-height: 1.5; }
     <h3>Coherence assessment across specs</h3>
     <ol>
       <li><strong>The <code>DataFlowGraph</code> type flows cleanly through all specs.</strong> Defined in <code>intake-flow.md</code>, consumed by <code>evaluation-engine.md</code>, referenced by <code>verdict-audit.md</code>, stored by <code>register-lifecycle.md</code>. One type, four consumers, no divergence.</li>
-      <li><strong>The LLM boundary is consistent.</strong> The engine never calls the LLM (NF-1). The two LLM call sites (<code>graph-extractor.ts</code>, <code>reasoning-trace.ts</code>) are in <code>src/llm/</code> and are explicitly bounded. No other spec introduces an LLM call. The fallback pattern (no API key → graceful degradation) is the same in both sites.</li>
+      <li><strong>The LLM boundary is consistent.</strong> The engine never calls the LLM (NF-1). The LLM call sites (<code>prefill.ts</code>, <code>duplicate-check.ts</code>, <code>reasoning-trace.ts</code>) are in <code>src/llm/</code> and are explicitly bounded. No other spec introduces an LLM call. The fallback pattern (no key or model → graceful degradation) is the same at every site.</li>
       <li><strong>The audit trail is the single source of truth for everything that happened.</strong> Every domain spec that generates events writes to <code>audit.ts</code> using the <code>AuditEvent</code> discriminated union. There is no secondary state store that could diverge from the audit trail. The register derives its <code>UseCaseSummary</code> view from audit events — it does not maintain independent state.</li>
       <li><strong>Provisional limitations are consistently documented.</strong> NF-2 (immutable audit trail) is V1 proof-of-concept grade and documented as such in both <code>verdict-audit.md</code> and <code>register-lifecycle.md</code>. The role access control (ADR-009) is consistently labelled provisional. These are honest V1 constraints, not deferred decisions.</li>
       <li><strong>One design inconsistency identified and resolved:</strong> The <code>lifecycle_stage_changed</code> event is written by <code>register.ts</code> and also audited in <code>audit.ts</code>. The spec resolves this by having <code>register.updateLifecycleStage()</code> call <code>audit.append()</code> internally — there is one write path, not two. Callers never call audit directly for lifecycle events.</li>

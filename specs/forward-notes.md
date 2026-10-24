@@ -95,9 +95,9 @@ and unbothered: a dissent channel tolerates a weak judge (its dissents are
 advisory noise at worst); the engine never did and never will read one.
 
 **Status update (2026-08-16, v0.5.0):** the key is no longer the blocker. A
-local open model now runs on the user's machine (qwen3:4b via Ollama,
-`src/llm/local-provider.ts`) and had its first live run on the extraction
-edge. The judge experiment above can therefore run today, locally and free —
+local open model now runs on the user's machine (qwen3:4b via Ollama) and
+had its first live run on the extraction edge (that route was retired in
+Round 18). The judge experiment above can therefore run today, locally and free —
 j1-micro-style tiny judges were the design's deployment claim anyway. Still
 undone, deliberately: run the concordance experiment before building any
 panel UI. One operational lesson for that experiment: reasoning models under
@@ -392,7 +392,16 @@ next experiment), before building any panel UI on this model.
 - **C2 (DONE in R18-C2):** tighten `loadDraftInfo`'s `graph_extraction` branch (element shape of `assumptions`; `afterFailedEvaluation` boolean; `originalVerdictId` string); give the review/confirmation rating lines description-style wording for form-route cases (`ratingInstructionWarning`, `RATING_INSTRUCTION_CONFIRM_LINE` still say "check each card below"); assert or soften the Track I / no-tier comment in `V1Closeout-0b.test.tsx`.
   - **Done (R18-C2, 2026-10-14):** (1) `loadDraftInfo`'s `graph_extraction` branch (and the later steps) now checks each `assumptions` element (three text fields, `shortLabel`/`fields` typed when present, no `__proto__`), `afterFailedEvaluation` (boolean) and `originalVerdictId` (bounded string) — `intake-draft.r18c2.test.ts`. (2) The rating lines for form-route cases name no cards (`ratingWarningFor`, `ratingConfirmLine`, `R18_COPY.RATING_CONFIRM_LINE_FORM`) and the graph guard is gone (spec §27.4); the register's audit line was made cardless too (`R18_COPY.RATING_AUDIT_LINE`). (3) The Track I / no-tier comment in `V1Closeout-0b.test.tsx` is now an assertion.
 - **D2/E:** `handleCorrectVerdict` still falls back to the retired card review when `lastConfirmed` is gone (reload on the verdict screen) — closed by the register correction (D2) and the retirement table (E).
-  - **Wired for cases with `answer_sources`; not reachable from the UI today (`lastConfirmed` always carries answers); the older-case path is R18-E (R18-D2, 2026-10-22; reworded after review pass 1):** `handleCorrectVerdict` reopens the form from the case's record (`correctionOpening` / `answersFromRecord`) when `lastConfirmed` has no answers, but `lastConfirmed` always carries `answerState` for a form case, so no screen reaches this branch yet; it is covered by the reducer test and the shared helper. A case with no `answer_sources` (an older case) still takes the retired card review, with a comment at the call; that path is R18-E's. Status: open for E.
+  - **Done (R18-D2 + R18-E, 2026-10-24):** `handleCorrectVerdict` reopens the form from the case's record (`correctionOpening`): from its `answer_sources` when it has them (D2), otherwise from its recorded “Not sure” assumptions with every other answer blank and marked (the older-case path, R18-E); there is no card review to fall back to. Still not reachable from the UI today (`lastConfirmed` always carries `answerState` for a form case); covered by the reducer test and the shared helper.
 - **G (NF-2 sweep):** render the nudge and rating-notice status regions empty from the start and fill them, so every screen reader announces them.
 - **Owner wording question:** the earlier-version notice says "please check your answers" while the landing carries none.
 - **Owner question (surfaced):** form-built graphs never mark a node uncertain, so the questionnaire step is unreachable through the live form route (pre-existing).
+
+## 2026-10-24 — R18-E: what the retirements left behind (binds the owner / a later cleanup)
+
+**Raised by:** R18-E build. Everything in the `intake-flow.md` §27.10 table is deleted, and so is what only those rows called. These were NOT in the table, still have a reader, and nothing on the one remaining route sets them any more; they are left in place (the table says what to delete) and listed so a later round can decide.
+- `uncertainNodeIds` on the questionnaire, contradiction review, confirmation and pending states, read by the confirmation summary and `lastConfirmed`: always empty now.
+- `afterFailedEvaluation` on the confirmation state: always `false` now (the form's retry carries the case id and refuses Back on its own).
+- `graphValueResolver`'s no-original-graph branch and `GraphCorrection.correction_source: 'review'`: only old records carry the latter.
+- No caller left outside tests: `extractionErrorMessage` and `EXTRACTION_ERROR_HELP` (`plain-copy.ts`), `ratingWarningFor` (`plain-copy.ts`) and `questionsForGuessedFields` (`question-generator.ts`, a kept file).
+- `src/App.css`: the `.graph-view`, `.graph-node*` and review-card rules have no element left to style.

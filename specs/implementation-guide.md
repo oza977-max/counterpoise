@@ -93,7 +93,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 
 | Entry point | Consumed modules | Wiring chunk | Demanded by |
 |---|---|---|---|
-| `IntakeFlow.tsx` (UC-3 path) | `src/llm/graph-extractor.ts`, `src/engine/question-generator.ts`, `src/engine/contradiction.ts`, `src/store/audit.ts` | P4-C01 | P4-C04 (intake acceptance test: confirmed graph → verdict) |
+| `IntakeFlow.tsx` (UC-3 path) | `llm/graph-extractor.ts` (retired in R18-E), `src/engine/question-generator.ts`, `src/engine/contradiction.ts`, `src/store/audit.ts` | P4-C01 | P4-C04 (intake acceptance test: confirmed graph → verdict) |
 | `IntakeFlow.tsx` (UC-3a path) | `src/components/StructuredForm.tsx`, `buildGraphFromForm()`, `src/engine/question-generator.ts` | P4-C02 | P4-C04 (intake acceptance test: form path → verdict) |
 | `evaluate.ts` (engine entry) | `evaluateHardLines()`, `assignJurisdiction()`, `assignTier()`, `assignTrack()`, `solvControls()`, `assembleVerdict()` | P3-C01 | P4-C04 (verdict acceptance test: evaluate(graph, policy) → Verdict) |
 | `solvControls()` | `greedy-solver.ts` | P3-C02 | P3-C01 (engine pipeline test: approved-with-controls verdict requires solver) |
@@ -144,7 +144,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 - Directory structure: `src/engine/`, `src/llm/`, `src/store/`, `src/components/`, `src/types/`, `src/seeds/`
 - Boundaries wired REAL (no stubs — walking-skeleton rule):
   - `src/store/audit.ts` — real `idb` call: open `aigate-audit`, write one row, read it back. Minimal schema, but a real persisted row with an observable outcome.
-  - `src/llm/graph-extractor.ts` — real Anthropic `messages.create` with a `tool_use` call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised. Test gated on API key presence; skips cleanly without one.
+  - `llm/graph-extractor.ts` (retired in R18-E) — real Anthropic `messages.create` with a `tool_use` call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised. Test gated on API key presence; skips cleanly without one.
 - Business logic still stubbed (deepened in later phases):
   - `src/engine/evaluate.ts` — accepts graph + policy, returns a hardcoded `Verdict` stub
   - `src/store/register.ts` — in-memory stub
@@ -309,7 +309,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 
 **Deliverables:**
 - `src/components/IntakeFlow.tsx` — real 9-state machine with `useReducer`; `IntakeState` discriminated union
-- `src/llm/graph-extractor.ts` — Anthropic SDK call; tool_choice forced; Zod parse of response
+- `llm/graph-extractor.ts` (retired in R18-E) — Anthropic SDK call; tool_choice forced; Zod parse of response
 - `DataFlowGraph` type with all node types from `intake-flow.md §4.2`
 - `graph_review` state — renders graph nodes; `uncertain: true` nodes highlighted; Edit button per node
 - Duplicate detection: semantic comparison (LLM) when API key present; keyword match fallback
@@ -920,7 +920,6 @@ Each chunk's context is this section, `intake-flow.md` §27 and its slice of `te
 
 These paths are named by this round's specs before they exist. `scripts/spec-parity-check.py` (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.
 
-- `src/engine/answers-from-record.ts` (R18-E)
 - `src/llm/model-test.ts` (R18-F)
 - `src/engine/question-fields.ts` (R18-F)
 

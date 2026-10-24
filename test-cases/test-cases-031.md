@@ -77,3 +77,9 @@ These cases keep their ids. Their assertions or fixtures changed because they pi
 | TC-CR8-01g | A question-3 assumption plus a supplier edit now drops the whole assumption instead of keeping the data-zone field (CR9, OB-1) — `intake-state.test.ts` |
 | TC-CR8-01j | A different assumption that lists the countries field is now dropped by a countries edit, not narrowed; question 11 stays (CR9, OB-1) — `intake-state.test.ts` |
 | (unnamed test, no TC id: "says plainly when there is nothing to do at all") | With no controls and no reviews and no stage, the box now opens "Nothing to put in place" (the sign-off is unknown) instead of "Nothing." (CR9-02) — `VerdictDisplay.test.tsx` |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-CR9-OB1 | Superseded by R18-GI-10 (R18-E): a four-field assumption being dropped whole by one edit belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |

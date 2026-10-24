@@ -35,3 +35,14 @@ confirm flow (intake-flow.md §16.3).
 R6-NF-1 is held by TC-PE-1-01 unchanged; R6-NF-3's provider parity is held
 by both provider paths exiting through the same `parseExtraction` (asserted
 structurally in graph-extractor.test.ts).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R6-PV-1-01 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-R6-PV-2-01 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-R6-PV-2-02 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-R6-PV-2-03 | Superseded by R18-GI-10 (R18-E): verifying the model's quotes and demoting unquoted fields to guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-R6-PV-3-01 | Superseded by R18-GI-10 (R18-E): a card showing a quote or a guess belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R6-PV-4-01 | Superseded by R18-GI-10 (R18-E): a guessed card having no plain confirm belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

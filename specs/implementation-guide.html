@@ -272,7 +272,7 @@ REGISTER TRACK
       <tbody>
         <tr>
           <td><code>IntakeFlow.tsx</code> (UC-3 path)</td>
-          <td><code>src/llm/graph-extractor.ts</code>, <code>src/engine/question-generator.ts</code>, <code>src/engine/contradiction.ts</code>, <code>src/store/audit.ts</code></td>
+          <td><code>llm/graph-extractor.ts</code> (retired in R18-E), <code>src/engine/question-generator.ts</code>, <code>src/engine/contradiction.ts</code>, <code>src/store/audit.ts</code></td>
           <td>P4-C01</td>
           <td>P4-C04 (intake acceptance test: confirmed graph → verdict)</td>
         </tr>
@@ -402,7 +402,7 @@ REGISTER TRACK
         <li>Boundaries wired REAL (no stubs — walking-skeleton rule):
           <ul>
             <li><code>src/store/audit.ts</code> — real <code>idb</code> call: open <code>aigate-audit</code>, write one row, read it back. Minimal schema, but a real persisted row with an observable outcome.</li>
-            <li><code>src/llm/graph-extractor.ts</code> — real Anthropic <code>messages.create</code> with a <code>tool_use</code> call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised.</li>
+            <li><code>llm/graph-extractor.ts</code> (retired in R18-E) — real Anthropic <code>messages.create</code> with a <code>tool_use</code> call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised.</li>
           </ul>
         </li>
         <li>Business logic still stubbed (deepened in later phases):
@@ -592,7 +592,7 @@ REGISTER TRACK
       <h4>Deliverables</h4>
       <ul>
         <li><code>src/components/IntakeFlow.tsx</code> — real 9-state machine with <code>useReducer</code>; <code>IntakeState</code> discriminated union</li>
-        <li><code>src/llm/graph-extractor.ts</code> — Anthropic SDK call; tool_choice forced; Zod parse of response</li>
+        <li><code>llm/graph-extractor.ts</code> (retired in R18-E) — Anthropic SDK call; tool_choice forced; Zod parse of response</li>
         <li><code>DataFlowGraph</code> type with all node types from <code>intake-flow.md</code> §4.2</li>
         <li><code>graph_review</code> state — renders graph nodes; <code>uncertain: true</code> nodes highlighted; Edit button per node</li>
         <li>Duplicate detection: semantic comparison (LLM) when API key present; keyword match fallback</li>
@@ -1119,7 +1119,6 @@ R18-E: answers-from-record.ts --------------&gt;  R18-E: retire card review, cor
     <h3 id="r18-12-12-7a-planned-modules-not-yet-built">12.7a Planned modules (not yet built)</h3>
     <p>These paths are named by this round's specs before they exist. <code>scripts/spec-parity-check.py</code> (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.</p>
     <ul>
-      <li><code>src/engine/answers-from-record.ts</code> (R18-E)</li>
       <li><code>src/llm/model-test.ts</code> (R18-F)</li>
       <li><code>src/engine/question-fields.ts</code> (R18-F)</li>
     </ul>

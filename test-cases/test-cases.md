@@ -200,7 +200,7 @@ When the LLM extracts the graph
 Then the system labels uncertain nodes as "unclassified — please confirm" rather than guessing
 And these nodes are highlighted for submitter review
 [Requirement: UC-3] [Priority: MUST]
-[Trace: src/llm/graph-extractor.test.ts]
+[Trace: src/retirement.r18e.test.ts]
 ```
 
 Amended (gvm-test 007, 2026-10-04): the label "unclassified — please confirm" does not exist. The model's schema forces a legal value for every field, so it flags what it is unsure of with `uncertain: true` while still naming a best guess (`src/llm/graph-extractor.ts`), and the review screen highlights each flagged node. Current Then: the extractor keeps `uncertain: true` on nodes the model flagged (`src/llm/graph-extractor.test.ts`, "TC-UC-3-02"), and the review screen shows a not-confident alert on that node's card with its own "I've checked this — it's right" confirm (`src/components/__tests__/GraphReview.r5.test.tsx`, "TC-R5-GR-3-01 ... [TC-UC-3-02]").
@@ -211,7 +211,7 @@ Property: For any given description, the extracted graph must contain the same s
 Counterexample strategy: run extraction on the same description five times with a low-temperature model; verify node types and edge directions are consistent across runs.
 Manual evidence (gvm-test 007): the automated test proves the app side only: five extractions of one description through the real extractor (model SDK mocked to one fixed reply) give identical node-type counts, edge directions and request, the model is forced to the single structured tool, and a malformed shape is refused. It cannot prove the REAL model gives the same graph structure across five live runs. By hand: with a real key, run the same description five times and compare node types and edge directions on the review screen. Note: the extractor does not set a temperature, so the model default applies; the "low-temperature model" in the strategy is not something the app configures.
 [Requirement: UC-3] [Priority: MUST]
-[Trace: src/llm/v1-closeout-3.test.ts]
+[Trace: src/retirement.r18e.test.ts]
 ```
 
 ---
@@ -305,7 +305,7 @@ Then the questions presented for A and B are different
 And B's questions include at least one question about client data handling or market-sensitive output
 And A's questions do NOT include market-sensitive output questions if no such signal was detected
 [Requirement: UC-4] [Priority: MUST]
-[Trace: src/llm/v1-closeout-0.test.ts]
+[Trace: src/engine/question-generator.test.ts]
 ```
 
 > Amended (gvm-test 007, 2026-10-04): the question list is no longer a fixed list plus a risk filter. Since R6 (R6-QN-1, R6-PV-2) a field is asked about when the description gives no word-for-word basis for it, and the number of questions is capped by the provisional tier (5 / 10 / 15, UC-4). Two descriptions that state different things therefore get different questions. Current Then: for (A) an internal summariser whose description states every checked field, no question is asked; for (B) a client-facing trading assistant described in one sentence, the questions are about what data it uses and where it goes (data class, data zone) and what it helps decide (decision type); (B)'s stated fields (client-facing, suggests trades) are not asked about, and (A) is asked about none of the market-sensitive fields.
@@ -1837,6 +1837,9 @@ Counterexample strategy: fast-check — generate a tripped invariant set T and c
 | ID | Reason |
 |---|---|
 | TC-UC-3a-04 | "Structured form field values constrained to policy-defined permitted values" — asserted that the form's `<select>` option values equal the canonical-vocabulary arrays (`DATA_CLASSES`, `MODEL_TYPES`, ...) verbatim. R16 chunk B (2026-10-02) retires the field-by-field form this depended on: the replacement form (`build/prompts/R16.md` §2.2) shows plain-language situational options, never a literal canonical value, by design (principle 1 — no engine vocabulary on the form). Constraint to the permitted set is now enforced inside `plainAnswersToFormValues` (`src/engine/plain-intake.ts`), tested directly there, not via dropdown option equality. |
+| TC-UC-3-02 | Superseded by R18-GI-10 (R18-E): flagging low-confidence nodes on the review screen belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-UC-3-03 | Superseded by R18-GI-10 (R18-E): the five-extractions-same-structure property belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-UC-7-03 | Superseded by R18-GI-10 (R18-E): recording a correction with a bumped graph version, as the card review's CORRECTION_APPLIED action did, belonged to the reducer's card-review step, which is deleted. A correction made through the form is recorded by the form's own diff (TC-R16-D2-52). |
 
 ---
 
