@@ -109,6 +109,12 @@ The app says it before you type, in one of three sentences, and says only what i
 
 "Never leaves your computer" is said only for the first. The model is any one you choose — the app ships none and recommends none — and it is never in the decision path: it only suggests answers you then check.
 
+Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic. The key is optional and no screen in the app sets it; while one is saved, the first sentence above is not shown.
+
+Whenever the model is anywhere other than this computer, the app also says: *"This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network."*
+
+To connect a model, the app's **Make it smarter** panel shows two commands: `ollama signin` (to use Ollama's cloud) and `OLLAMA_ORIGINS=https://oza977-max.github.io` (to let this page reach Ollama on your computer). Ollama's own documentation covers everything else: <https://docs.ollama.com/faq>. Link last checked 2026-10-24.
+
 ## Honest limits, stated in the app itself
 
 - **Verdicts are provisional** until your firm's CRO adopts the framework and signs the pack rules.
@@ -116,7 +122,7 @@ The app says it before you type, in one of three sentences, and says only what i
 - **Names are typed, not authenticated.** There is no sign-in; every name on the record says "not verified", and nothing yet stops a submitter signing off their own case.
 - **A hand-off file is self-asserted.** On import the app re-checks every entry and refuses accidental damage or a simple edit — but it can't prove who made the file. Exchange bundles only with people you trust.
 - **A suggestion is only as good as its quote.** A verified quote proves the words are in your description, not that the answer is right — which is why every suggested answer needs your own tick.
-- **A description can mislead the free local demo model.** The description reader that runs on your own computer is a small free model. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into drawing the wrong cards. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates what is on the cards, never the description’s own words. So check every card on the review screen against what the tool really does, and correct any that are wrong. The stronger defence is not built yet.
+- **A description can mislead a model that fills in your answers.** If you connect a model, it reads your description and fills in some answers on the form. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into filling in the wrong answers. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates the answers on the form once you have ticked or entered them, never the description’s own words. You have to tick every answer a model fills in before you can continue, so check each one against what the tool really does, and change any that are wrong. The stronger defence is not built yet.
 
 ## What it is not
 

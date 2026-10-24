@@ -22,16 +22,17 @@ citation and the responsible sign-off behind each step of the reasoning.
 **Is an AI system making the risk decision?**
 No. The evaluation is a deterministic rules engine: identical inputs produce
 byte-identical verdicts, asserted by automated test on every change. A large
-language model is used optionally and only at the boundary — to read a
-plain-language description into the structured form. Its output is displayed
-to the submitter for correction and is not used until a person confirms it.
-With no model configured, none is involved anywhere. (Disclosed for
-completeness: the optional path runs against a small open model on the
-user's own machine — no data leaves the device; exercised live since
-2026-08-16, including a 15-case domain sweep. All verified behaviour in
-this brief refers to the deterministic form path; model output is a draft
-the submitter corrects field by field — with the model's verbatim basis
-quoted and mechanically checked — never an input the engine trusts.)
+language model is used optionally and only at the boundary — to suggest
+answers to the form's questions from a plain-language description. Each
+suggestion is displayed to the submitter with the words it came from and is
+not used until a person ticks it. With no model configured, none is involved
+anywhere. (Disclosed for completeness: the optional path sends the description
+to a model the user chooses — on their own computer, on their firm's server or
+in Ollama's cloud — and the app says which, before anything is sent. All
+verified behaviour in this brief refers to the deterministic form path; a
+suggestion is a draft the submitter checks answer by answer — with the model's
+verbatim basis quoted and mechanically checked — never an input the engine
+trusts.)
 
 **Who is accountable for each determination?**
 A named human at every layer, and the tool records where accountability is
@@ -90,8 +91,8 @@ research, e.g. constitutional classifiers, arXiv:2501.18837). The
 architecture bounds this by construction: no language model sits in the
 decision path, so there is no model to jailbreak into a verdict. On the
 optional edge paths, model output is forced through a fixed schema, values
-outside the canonical vocabulary are rejected, the human confirms the
-extracted structure before it is used, and the AI-written prose retelling
+outside the canonical vocabulary are rejected, the human ticks every
+suggested answer before it is used, and the AI-written prose retelling
 labels itself as commentary that the deterministic reasoning overrides. The
 worst a successful injection achieves is a wrong *proposal*, which the
 submitter then attests — and attestation, not extraction, is what carries
