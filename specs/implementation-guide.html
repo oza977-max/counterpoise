@@ -1119,8 +1119,7 @@ R18-E: answers-from-record.ts --------------&gt;  R18-E: retire card review, cor
     <h3 id="r18-12-12-7a-planned-modules-not-yet-built">12.7a Planned modules (not yet built)</h3>
     <p>These paths are named by this round's specs before they exist. <code>scripts/spec-parity-check.py</code> (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.</p>
     <ul>
-      <li><code>src/llm/model-test.ts</code> (R18-F)</li>
-      <li><code>src/engine/question-fields.ts</code> (R18-F)</li>
+      <li>none: every module this round planned has been built (R18-F built the last two).</li>
     </ul>
     <h3 id="r18-12-12-8-integration-closure">12.8 Integration closure</h3>
     <p>R18-G is the closing slice: it wires the panel, the examples and the docs to the sentences and sources made earlier, removes the pending marker, runs the dist scan in CI, starts the built app from <code>dist/</code> (served over http with <code>vite preview</code>; the app does not run from <code>file://</code>) to run the no-model route and, where a local Ollama is available, one pre-fill, and then merges <code>round-18</code> to <code>main</code>. Every module in 12.4 has a wiring chunk and a demanding chunk; the two exemptions carry their rationale in the cell. Required next step: the strict second design-review pass on these fixes, then <code>/gvm-build</code> R18-A.</p>

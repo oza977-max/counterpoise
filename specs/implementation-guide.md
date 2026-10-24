@@ -920,8 +920,7 @@ Each chunk's context is this section, `intake-flow.md` §27 and its slice of `te
 
 These paths are named by this round's specs before they exist. `scripts/spec-parity-check.py` (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.
 
-- `src/llm/model-test.ts` (R18-F)
-- `src/engine/question-fields.ts` (R18-F)
+- none: every module this round planned has been built (R18-F built the last two).
 
 ### 12.8 Integration closure
 
