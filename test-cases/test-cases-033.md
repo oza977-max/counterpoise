@@ -883,8 +883,9 @@ Given the older case on the register in the submitter view
 When the form opens
 Then the form MUST contain the description kept as it was
 And each recorded "Not sure" MUST contain that answer marked “from the earlier record” and needing a tick
+And the case name MUST contain the register's label for the case, marked “from the earlier record” and needing a tick
 And every other answer MUST contain a blank question marked “not carried over from the earlier version”
-And the form MUST NOT contain the retired card review, and a case with no recorded assumptions MUST NOT contain any pre-filled answer
+And the form MUST NOT contain the retired card review, and a case with no recorded assumptions MUST NOT contain any pre-filled answer other than its name
 [Requirement: R18-GI-10] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -2138,6 +2139,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-24 | R18-E review pass 1: TC-R18-GI-10-04 — the case name is restored from the register's label as a `record` answer needing its tick (it is not blank), and a case with no recorded assumptions has only its name restored. |
 | 2026-10-22 | owner decision 2026-10-22: answers restored from a stored record need a fresh tick (a self-asserted record must not let the record claim ticks the person never made). TC-R18-GI-10-06 now states it: confirmed and changed pre-fills come back with their quotes and recorded values but unconfirmed. |
 | 2026-10-15 | owner-approved: pre-fill mark names the model; tick reads 'I've checked this answer' (newcomer check, R18-C2): TC-R18-GI-3-20, GI-4-02, GI-8-04, GI-9-05 and NF-1-02 quote the new wording. |
 | 2026-10-08 | R18-A: TC-R18-NF-5-04 states the exemption for valid earlier drafts at the description and similar-checks steps (restored as they were, no sentence). |

@@ -111,7 +111,7 @@ Test files: `src/llm/graph-extractor.test.ts`,
 | TC-R16-E-50 | `App.css` stacks the cards in one column below 480px and no longer lets the graph scroll sideways — `GraphView.r16e.test.tsx` (it now checks exactly the 480px block, up to its own closing brace — review pass 3) |
 | TC-R16-E-55 | `plausibilityMessageForForm` keeps the form path's own question wording, unchanged from R16-F, for all four signals — `plain-copy.test.ts` |
 | TC-R16-E-56 | The description path's wording gives the reason in its own terms ("we read"), then the review screen's card and row — never a form question (it first gave only the pointer) — `plain-copy.test.ts` |
-| TC-R16-E-57 | The three card titles (`GRAPH_REVIEW_CARD_TITLES`) are shared between this wording and `GraphView`'s own column headings — `plain-copy.test.ts` |
+| TC-R16-E-57 | The three card titles (`GRAPH_REVIEW_CARD_TITLES`) are shared between this wording and `UnderstoodSummary`'s headings (`GraphView`, which also used them, is deleted in R18-E); `plain-copy.test.ts` still pins the three titles |
 | TC-R16-E-66 | The `graph_review` screen's heading reads identically on a fresh entry — `IntakeFlow.r16e.test.tsx` |
 | TC-R16-E-66b | …on a correction re-entry (`originalVerdictId` set) — `IntakeFlow.r16e.test.tsx` |
 | TC-R16-E-66c | …on an evaluation-failure re-entry (`afterFailedEvaluation` set) — `IntakeFlow.r16e.test.tsx` |

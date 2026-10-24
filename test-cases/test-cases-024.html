@@ -358,7 +358,7 @@
 <tr><td>TC-R16-E-50</td><td><code>App.css</code> stacks the cards in one column below 480px and no longer lets the graph scroll sideways &mdash; <code>GraphView.r16e.test.tsx</code> (it now checks exactly the 480px block, up to its own closing brace &mdash; review pass 3)</td></tr>
 <tr><td>TC-R16-E-55</td><td><code>plausibilityMessageForForm</code> keeps the form path's own question wording, unchanged from R16-F, for all four signals &mdash; <code>plain-copy.test.ts</code></td></tr>
 <tr><td>TC-R16-E-56</td><td>The description path's wording gives the reason in its own terms ("we read"), then the review screen's card and row &mdash; never a form question (it first gave only the pointer) &mdash; <code>plain-copy.test.ts</code></td></tr>
-<tr><td>TC-R16-E-57</td><td>The three card titles (<code>GRAPH_REVIEW_CARD_TITLES</code>) are shared between this wording and <code>GraphView</code>'s own column headings &mdash; <code>plain-copy.test.ts</code></td></tr>
+<tr><td>TC-R16-E-57</td><td>The three card titles (<code>GRAPH_REVIEW_CARD_TITLES</code>) are shared between this wording and <code>UnderstoodSummary</code>'s headings (<code>GraphView</code>, which also used them, is deleted in R18-E); <code>plain-copy.test.ts</code> still pins the three titles</td></tr>
 <tr><td>TC-R16-E-66</td><td>The <code>graph_review</code> screen's heading reads identically on a fresh entry &mdash; <code>IntakeFlow.r16e.test.tsx</code></td></tr>
 <tr><td>TC-R16-E-66b</td><td>&hellip;on a correction re-entry (<code>originalVerdictId</code> set) &mdash; <code>IntakeFlow.r16e.test.tsx</code></td></tr>
 <tr><td>TC-R16-E-66c</td><td>&hellip;on an evaluation-failure re-entry (<code>afterFailedEvaluation</code> set) &mdash; <code>IntakeFlow.r16e.test.tsx</code></td></tr>
