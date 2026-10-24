@@ -39,6 +39,10 @@ jobs:
       - run: npm test
       - run: npx tsc --noEmit
       - run: npm run build
+      # The built site and the repository's other public files must hold no credential-shaped
+      # string and no script from another origin (specs/intake-flow.md §27.9). After the build,
+      # before anything is published.
+      - run: npm run scan:dist
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
