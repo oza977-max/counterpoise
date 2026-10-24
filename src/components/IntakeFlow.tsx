@@ -74,6 +74,7 @@ import QuestionnaireStep from './QuestionnaireStep';
 import ContradictionReview from './ContradictionReview';
 import ConfirmationStep from './ConfirmationStep';
 import VerdictDisplay from './VerdictDisplay';
+import StatusAfterMount from './StatusAfterMount';
 // Rule 4 (cross-cutting.md §7): presentation-only. No business logic inline
 // — calls engine/store/llm functions. Real 9-state machine (intake-flow.md
 // §3) as of P4-C04 — every state through confirmation/attestation is real.
@@ -2309,9 +2310,7 @@ export default function IntakeFlow({
             the work. */}
         {state.step === 'prefill_reading' && (
           <section aria-label="Reading your description" className="prefill-reading">
-            <p role="status" className="prefill-reading__heading">
-              {R18_COPY.READING_HEADING}
-            </p>
+            <StatusAfterMount className="prefill-reading__heading">{R18_COPY.READING_HEADING}</StatusAfterMount>
             {modelSnapshot.ready && modelSnapshot.state.kind === 'valid' && (
               <p className="field-help">{placeSentence(modelSnapshot.state.setting, modelSnapshot.keyStored)}</p>
             )}
@@ -2347,9 +2346,7 @@ export default function IntakeFlow({
             {/* R18-D2 review pass 1: a correction reopened from a record, when a recorded answer could not be put
                 back because the form no longer offers it. Only then; the questions are named. */}
             {state.originalVerdictId !== undefined && restoreDropped !== null && (
-              <p role="status" className="plain-form__read-note">
-                {restoreDropped}
-              </p>
+              <StatusAfterMount className="plain-form__read-note">{restoreDropped}</StatusAfterMount>
             )}
             {reviewGateError && (
               <p role="alert" className="intake-flow__gate-error">
@@ -2374,9 +2371,7 @@ export default function IntakeFlow({
                 settingKind: modelSnapshot.ready ? modelSnapshot.state.kind : 'unknown',
               });
               return (
-                <p role="status" className="plain-form__read-note">
-                  {sentence}
-                </p>
+                <StatusAfterMount className="plain-form__read-note">{sentence}</StatusAfterMount>
               );
             })()}
             {/* "Read my description again" - a fresh case with a usable model only. */}

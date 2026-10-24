@@ -10,6 +10,8 @@ import { R18_COPY, modelLabelWords } from '../plain-copy';
 import { updateModelSetting } from '../../llm/model-setting';
 import type { AnswerSource, ReadRecord } from '../../engine/prefill-types';
 import { fillText } from './fillText';
+import StatusAfterMount from '../StatusAfterMount';
+import { renderToString } from 'react-dom/server';
 
 // R18-G accessibility sweep (specs/intake-flow.md §27.9, R18-NF-2). jsdom paints nothing, so these tests read
 // the DOM: names, roles, live regions and states that differ in words. Contrast and focus rules are read from
@@ -169,6 +171,40 @@ describe('TC-R18-NF-2-03: the status regions are in the page empty first, and fi
     expect(document.querySelector('.model-status__line')).toBe(status);
     expect(status.textContent).toContain('qwen3:4b');
     expect(document.activeElement).toBe(box);
+  });
+});
+
+describe('TC-R18-NF-2-03: the arrival notes (reading heading, form note, rating warning on the confirmation) are mounted empty, then filled', () => {
+  it('the component renders an empty status region first, and fills the same element straight after', () => {
+    expect(renderToString(<StatusAfterMount className="x">Words</StatusAfterMount>)).toBe('<p role="status" class="x"></p>');
+    render(<StatusAfterMount className="x">Words</StatusAfterMount>);
+    expect(screen.getByRole('status')).toHaveTextContent('Words');
+  });
+
+  it('on the form, the no-model note is added to the page as an empty status region and filled afterwards', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'It summarises tickets.');
+    await user.click(screen.getByRole('button', { name: /^next/i }));
+    // The records come in order: the note's element is added to the page, and only then is text added INSIDE it.
+    // An element inserted already filled would produce no second record with the note as its target.
+    const order: string[] = [];
+    const watch = new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach((n) => {
+          if (n instanceof HTMLElement && n.matches('.plain-form__read-note')) order.push('added');
+        });
+        if (r.target instanceof HTMLElement && r.target.matches('.plain-form__read-note') && r.addedNodes.length > 0) order.push('filled');
+      }
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await user.click(await screen.findByRole('button', { name: /continue →/i }, { timeout: 5000 }));
+    const note = await screen.findByText(/no model is connected/i);
+    await Promise.resolve();
+    watch.disconnect();
+    expect(note.closest('.plain-form__read-note')).toHaveAttribute('role', 'status');
+    expect(order).toEqual(['added', 'filled']);
   });
 });
 

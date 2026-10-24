@@ -7,6 +7,7 @@ import { R18_COPY, modelFilledLine } from './plain-copy';
 import { answerSourceCounts } from '../engine/answer-sources';
 import type { FormAnswerState } from '../engine/prefill-types';
 import type { EnrichedPrecedent } from './SimilarCases';
+import StatusAfterMount from './StatusAfterMount';
 
 // UC-6 (intake-flow.md §9). Rule 4 (cross-cutting.md §7): presentation-only.
 // This click is the attestation point — writing the graph_confirmed audit
@@ -108,9 +109,9 @@ export default function ConfirmationStep({
       </p>
 
       {ratingInstructionsFound && (
-        <p role="status" className="confirmation__rating-warning">
+        <StatusAfterMount className="confirmation__rating-warning">
           <strong>Warning:</strong> {R18_COPY.RATING_CONFIRM_LINE_FORM}
-        </p>
+        </StatusAfterMount>
       )}
 
       {modelLine && <p className="confirmation__model-line">{modelLine}</p>}

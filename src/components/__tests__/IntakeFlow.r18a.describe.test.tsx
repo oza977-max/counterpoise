@@ -62,7 +62,8 @@ describe('the first screen (TC-R18-GI-1-08, TC-R18-PS-1-02)', () => {
     // R18-G: the optional "Make it smarter" panel (PS-2) explains how to connect a model and so says "sign in";
     // it is an explanation, not a step: it holds no field or button and nothing waits on it. Everything else is scanned.
     const panel = main.querySelector('.make-it-smarter');
-    if (panel) expect(panel.querySelector('input, textarea, select, button')).toBeNull();
+    expect(panel).not.toBeNull();
+    expect(panel!.querySelector('input, textarea, select, button')).toBeNull();
     const rest = main.cloneNode(true) as HTMLElement;
     rest.querySelectorAll('.make-it-smarter').forEach((n) => n.remove());
     expect(rest.textContent ?? '').not.toMatch(/sign in|sign-in|api key|connect a model first|set up a model|set-up/i);
