@@ -132,11 +132,19 @@ To connect a model, the app's **Make it smarter** panel shows two commands: `oll
 - Not a replacement for InfoSec, vendor risk or legal review — it triggers them as named steps.
 - Not a monitor of deployed systems — yet. See [What's next](#whats-next).
 
+## Start wherever you are
+
+You don't need a finished AI risk appetite to begin. The full guide is in [docs/adopting.md](docs/adopting.md).
+
+- **You have a formal AI risk appetite.** Translate it into the policy file. The engine then applies your own rules the same way every time, and every result points back to your policy.
+- **You have some AI governance, but it's scattered** (a model risk policy here, an ethics statement there). Start from the starter rules, which are built from public regulation, and change them to fit your actual thresholds and committees.
+- **You have no AI-specific governance yet.** The starter rules become your first draft. They are grounded in SR 26-2, SS1/23, the EU AI Act and DORA, but they are not yours until someone senior has reviewed and adopted them. Until then every result says "provisional".
+
 ## Try it
 
 **Live:** <https://oza977-max.github.io/counterpoise/> → **Demo data → Load sample use cases** → open any verdict. Then try [`docs/try-these.md`](docs/try-these.md): ten worked cases (plus a section on ways to break it) that each make the engine do something different — every printed outcome pinned by a test.
 
-**Back-test your own committee** — the fastest honest test of whether appetite-as-code works for your firm: run cases your committee *already decided* through the gate. Where the tool disagrees, that disagreement is the finding. [`backtest/use-cases.md`](backtest/use-cases.md) shows the method.
+**Back-test on your own copy.** Once a firm runs its own copy of the app, the fastest honest test of whether appetite-as-code works for it is to run cases it has *already decided* and look at where the tool disagrees: that disagreement is the finding. [`backtest/use-cases.md`](backtest/use-cases.md) shows the method with worked examples. On the public demo, use the samples or made-up cases; never put real company information into it.
 
 **Run it locally** (Node 22+): no backend, no database; the whole app is a static build.
 
@@ -169,7 +177,7 @@ npm test             # full suite
 
 **V1 complete, verified Demo-ready** ([`test/test-007.html`](test/test-007.html)). Over 3,000 automated tests, and every requirement-level test case named by the test that proves it, checked mechanically by [`scripts/trace-check.py`](scripts/trace-check.py). *Demo-ready* rather than *ship-ready* because the stronger defence against a self-rating description is not built yet — stated above, not hidden.
 
-Built by a risk practitioner, on personal time with public sources, to find out whether the idea survives contact with realistic use cases — with the [Grounded Vibe Methodology](https://github.com/gerquinn1978/gvm).
+A personal side project, not affiliated with or used by any employer: built by a risk practitioner on personal time from public sources and made-up examples, to find out whether the idea survives contact with realistic use cases — with the [Grounded Vibe Methodology](https://github.com/gerquinn1978/gvm).
 
 *Formerly called AIGate; renamed on 2 October 2026.*
 

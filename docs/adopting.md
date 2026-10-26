@@ -59,7 +59,8 @@ This means:
 ## Getting started, in order
 
 1. **Try the live site** — load the samples, open two or three verdicts.
-2. **Back-test your own committee's past decisions** — before touching any
+2. **Back-test your own committee's past decisions, on your own copy of the app** (never on the public demo,
+   which must not receive real company information) — before touching any
    configuration, run cases your firm has *already decided* through the
    gate and compare its verdicts with what your committee actually ruled.
    [`backtest/use-cases.md`](backtest/use-cases.md) has eight worked
