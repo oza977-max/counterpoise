@@ -1,13 +1,84 @@
 # Changelog
 
-All notable user-visible changes to AIGate. Written from the point of view of
+All notable user-visible changes to Counterpoise. Written from the point of view of
 someone using the tool, not someone building it — internal refactors, test
 scaffolding and build mechanics are left out.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions refer to the **application**; the starter risk-appetite policy carries
-its own version (currently `1.6`), shown in the app header and recorded on
+its own version (currently `1.9`), shown in the app header and recorded on
 every verdict.
+
+---
+
+## [0.18.0] — 2026-10-26 — the proof-of-concept release
+
+The version the project is parked at as a working proof of concept. It covers
+three rounds of work since 0.17.0 (R16, the rename, R18) and four rounds of
+review fixes.
+
+### Changed — the product is now called Counterpoise (2026-10-02)
+
+- New name, logo and tab icon; the code and the live demo moved to
+  `oza977-max/counterpoise`. Cases saved and hand-off files exported by
+  earlier versions still open — the stored identifiers did not change.
+
+### Added — R16, plain language from end to end
+
+- The questions are a guided form in plain words, written from the policy's
+  own approved plain-language text (policy 1.7).
+- "What we understood": the case summarised in the form's own words before
+  you confirm.
+- A new first screen for the result: the decision, the reason and the next
+  steps up front. A "No" gets its own screen naming the hard line crossed.
+- "Not sure" answers are saved with the case as stated assumptions, and a
+  form answer can be corrected later.
+- Plain names for the two models the policy allows (policy 1.9, wording only).
+- A warning when a description tries to dictate its own rating ("classify
+  this as low risk…"). The rules still decide; the warning makes the attempt
+  visible.
+
+### Added — R18, describe first, with an optional AI helper
+
+- Every case starts with a description in your own words. A checklist shows
+  which topics your words touch, and a short nudge lists the ones they don't.
+- **Optional AI helper.** Connect a model in Settings — on this computer, on a
+  firm server, or Ollama's cloud — and it suggests answers from your
+  description, quoting the words it relied on. A suggestion counts only after
+  you tick "I've checked this answer" or change it. Without a model you
+  answer the questions yourself, and nothing else changes.
+- Each case records where every answer came from (typed, or suggested and
+  checked), and the register shows it.
+- **Correct a check from the register.** An older case opens on the form;
+  its "Not sure" answers come back for a fresh tick, and anything not carried
+  over is marked.
+- One route: every case goes through the same form.
+- **Test it.** Settings can run the connected model over the 31 public worked
+  cases and label it with what it filled in right, left blank and got wrong.
+- On the public demo: an "Optional: connect an AI helper" panel with the two
+  setup steps, and "Try an example" with ten worked cases.
+- Settings, the describe screen and About say where your description goes
+  when a model is connected. With no model and no Anthropic key saved,
+  nothing about a case leaves the browser.
+
+### Fixed
+
+- Fixes from code reviews 006–009 and end-to-end test 007, among them: one
+  confirmation per case across browser tabs, a hand-off import that is
+  honest about what it holds, and WCAG 2.1 AA on every changed screen.
+
+### Known limits at this version
+
+- **First-time users.** Six simulated newcomers, three rounds: none reached
+  a less strict decision or risk tier than the right one, and the one
+  deliberately wrong suggestion was caught every round. Two things still confused most of them — the
+  AI helper's technical model name, and the topic checklist's narrow word
+  matching. Both are written up for a next round in `specs/forward-notes.md`.
+- **The AI helper has not been run against a real model's replies yet.** Its
+  test replies are marked provisional, and the app labels a model "not yet
+  tested" until it has been tested in Settings.
+- The demo's rules are not signed off by a firm, so every result says
+  "provisional". That is deliberate.
 
 ---
 

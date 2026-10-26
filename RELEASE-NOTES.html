@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIGate — Release Notes v0.1.0</title>
+  <title>Counterpoise v0.18.0 — release notes</title>
   <style>
     /* ── Reset & Base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -209,74 +209,54 @@
   </nav>
 
   <main>
-    <p class="date">8 August 2026</p>
-    <h1>AIGate v0.1.0</h1>
-    <p class="subtitle">The first complete release of AIGate, a pre-check gate that returns a deterministic verdict on whether an AI use case sits inside your firm's risk appetite.</p>
+    <p class="date">26 October 2026</p>
+    <h1>Counterpoise v0.18.0</h1>
+    <p class="subtitle">The proof-of-concept release. The live demo runs this version.</p>
 
-    <h2 id="what-this-is">What this is</h2>
-    <p>AIGate turns a bank's Risk Appetite Framework into executable rules. You describe an AI use case in plain language or through a structured form. The engine maps it to a data-flow graph, evaluates it against your firm's machine-readable appetite and relevant regulatory packs (SS1/23, EU AI Act, SR 26-2, DORA), and returns a verdict: <strong>approved</strong>, <strong>approved with these controls</strong>, or <strong>rejected</strong>.</p>
-    <p>The same inputs produce the same verdict, every time. No AI model sits in the decision path. An optional LLM only reads descriptions in and retells verdicts out; the verdict itself is deterministic and reasoned from your rules, not inferred from data.</p>
-
-    <h2 id="submit-use-case">Submit a use case</h2>
-    <p>Two intake paths:</p>
+    <h2 id="name">The product is now called Counterpoise</h2>
     <ul>
-      <li><strong>Guided form.</strong> Business questions — "what kind of information does it use?", "how much can it do without a person?" — that map to the data-flow model your firm uses. No API key needed.</li>
-      <li><strong>Plain-language description.</strong> If you provide an Anthropic API key, you can describe the use case in prose and the system extracts the same graph. No key: the form is your path in.</li>
-    </ul>
-    <p>Either way, the resulting graph is shown back to you for review and correction before evaluation starts. A duplicate check runs against existing use cases in the register — you can adopt the existing classification or record that yours is genuinely new. Your confirmation is timestamped and recorded in the audit trail.</p>
-
-    <h2 id="read-verdict">Read a verdict</h2>
-    <p>A verdict tells you:</p>
-    <ul>
-      <li><strong>The outcome:</strong> approved, approved with controls, or rejected; the tier and track that produced it; the single binding constraint that set it.</li>
-      <li><strong>The regulatory reasoning.</strong> Every rule that fired names the regulation behind it — verbatim source text, the rule derived from it, the basis (whether the rule restates the text, infers from it, or rests on judgment), and the sign-off line for the person accountable for it.
-            In this release those sign-off lines are unfilled placeholders, so the verdict
-            says so and marks itself provisional until your firm adopts the rules.</li>
-      <li><strong>The control set.</strong> If controls are required, the engine solves for the smallest set that brings the use case inside appetite. Each control names the invariants it patches and whether the evidence is verified or unverified.</li>
-      <li><strong>Standing conditions.</strong> The operating bounds the approval assumes. The verdict holds while the system stays inside them; drift outside voids it.</li>
-      <li><strong>Governance margin.</strong> How much headroom the control set leaves, and which invariants rest on a single control (the most at-risk ones if that control fails).</li>
-      <li><strong>A forward path for rejected cases.</strong> Not a list of what you did wrong, but what would need to change for approval.</li>
+      <li>New name, logo and tab icon. The code and the live demo now live under the new name on GitHub.</li>
+      <li>Cases saved and hand-off files exported by earlier versions still open, because the stored identifiers did not change.</li>
     </ul>
 
-    <h2 id="approve-or-correct">Approve or send it back</h2>
-    <p>A reviewer sees the same verdict the submitter saw. For Low-tier use cases, approval is self-service. For Medium, High and Critical, a 2LoD reviewer must sign off.</p>
-    <p>A sign-off records the typed name of the approver, their role, and the timestamp. The system labels it "name not verified" — there is no authentication behind it, and the audit trail says so. The record discloses the reviewer's identity and holds them accountable; it does not prevent a submitter from approving their own case, but the record shows it happened. A reviewer can also request corrections and return the case to the submitter.</p>
-
-    <h2 id="configure-appetite">Configure the firm's appetite</h2>
-    <p>The firm's risk appetite is a YAML file you can read and edit in the application. Validation runs on save. When you change the policy, the engine automatically queues re-evaluation for all affected use cases — so you can track the impact of an appetite change across the entire register.</p>
-    <p>Regulatory packs (SS1/23, SR 26-2, EU AI Act, DORA) update independently of the main policy file. A policy file missing a required field cannot be used. A pack rule without a regulatory citation is rejected on load.</p>
-    <p>Every verdict records the policy version and the version of every pack active at the time it was issued. A verdict from last month is not silently rewritten by a policy change today.</p>
-
-    <h2 id="honest-limits">Known limits at v0.1.0</h2>
-    <p>Each of these is a boundary, not a defect. They are stated in the product as well.</p>
-    <table>
-      <caption>Table 1 — Honest limits at V0.1.0</caption>
-      <thead>
-        <tr><th>Limit</th><th>What it means</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>No authentication</td><td>The 2LoD role is a dropdown. A sign-off records a typed name and says it is unverified.</td></tr>
-        <tr><td>No segregation of duties</td><td>Nothing stops a submitter approving their own use case. The record discloses it; it does not prevent it.</td></tr>
-        <tr><td>Client-side storage</td><td>The audit trail is append-only by construction but held in your browser — not tamper-evident.</td></tr>
-        <tr><td>Pack rules unadopted</td><td>Every shipped deck carries <code>[FIRM]</code> sign-off placeholders, so verdicts relying on them are provisional until your CRO adopts them.</td></tr>
-        <tr><td>Four decks only</td><td>SS1/23, SR 26-2, EU AI Act, DORA. Canada, Singapore and Japan are declared with no pack.</td></tr>
-        <tr><td>No post-deployment monitoring</td><td>Standing conditions are recorded and checked at re-review, not watched live. That is V2.</td></tr>
-        <tr><td>No shadow-AI discovery</td><td>AIGate cannot see use cases that never come through intake. That is V2.</td></tr>
-        <tr><td>Condition language cannot scope to a node type</td><td>A rule that should apply only to where processing happens cannot yet be written correctly.</td></tr>
-        <tr><td>No property-based tests</td><td>Four acceptance criteria specify generative tests that were never written. The behaviour they describe is covered by example tests.</td></tr>
-      </tbody>
-    </table>
-
-    <h2 id="what-it-will-not-do">What it will not do</h2>
+    <h2 id="plain-language">Plain language from end to end</h2>
     <ul>
-      <li>It does not write your risk appetite for you. It enforces the one you give it.</li>
-      <li>It does not replace InfoSec review, vendor risk assessment, cloud security approval, or FinOps sign-off. It triggers those as mandatory downstream steps when a use case requires them.</li>
-      <li>It does not monitor AI systems after deployment. That is V2.</li>
-      <li>It does not find AI systems that bypass intake. Shadow-AI discovery is V2.</li>
+      <li>The questions are a guided form in plain words, written from the policy's plain-language text (policy 1.7).</li>
+      <li>"What we understood": the case is summarised in the form's own words before you confirm.</li>
+      <li>A new first screen for the result shows the decision, the reason and the next steps up front. A "No" gets its own screen that names the hard line it crossed.</li>
+      <li>"Not sure" answers are saved with the case as stated assumptions, and any form answer can be corrected later.</li>
+      <li>Plain names for the two models the policy allows (policy 1.9, wording change only).</li>
+      <li>A warning when a description tries to set its own rating, such as "classify this as low risk". The rules still decide; the warning makes the attempt visible.</li>
     </ul>
 
-    <h2 id="next-steps">Next steps</h2>
-    <p>For a task-oriented guide to using the product, see the <a href="docs/user-guide.html">user guide</a>.</p>
+    <h2 id="describe-first">Describe first, with an optional AI helper</h2>
+    <ul>
+      <li>Every case starts with a description in your own words. A checklist shows which topics your words touch, and a short nudge lists the ones they don't.</li>
+      <li><strong>Optional AI helper.</strong> Connect a model in Settings, either on this computer, on a firm server, or Ollama's cloud. It suggests answers from your description and quotes the words it relied on. A suggestion counts only after you tick "I've checked this answer" or change it. Without a model you answer the questions yourself, and nothing else changes.</li>
+      <li>Each case records where every answer came from (typed, or suggested and checked), and the register shows it.</li>
+      <li><strong>Correct a check from the register.</strong> An older case opens on the form. Its "Not sure" answers come back for a fresh tick, and anything not carried over is marked.</li>
+      <li>One route: every case goes through the same form.</li>
+      <li><strong>Test it.</strong> Settings can run the connected model over the 31 public worked cases, and label it with what it filled in right, left blank and got wrong.</li>
+      <li>On the public demo: an "Optional: connect an AI helper" panel with the two setup steps, and "Try an example" with ten worked cases.</li>
+      <li>Settings, the describe screen and About say where your description goes when a model is connected. With no model and no Anthropic key saved, nothing about a case leaves the browser.</li>
+    </ul>
+
+    <h2 id="fixes">Fixes</h2>
+    <p>Fixes found in review and testing, among them:</p>
+    <ul>
+      <li>One confirmation per case, across browser tabs.</li>
+      <li>A hand-off import that is honest about what it holds.</li>
+      <li>WCAG 2.1 AA on every changed screen.</li>
+    </ul>
+
+    <h2 id="known-limits">Known limits</h2>
+    <ul>
+      <li><strong>First-time users.</strong> Six simulated newcomers went through three rounds. None reached a less strict decision or risk tier than the right one. The one deliberately wrong suggestion was caught every round. Two things still confused most of them: the AI helper's technical model name, and the topic checklist's narrow word matching. Both are written up for a next round.</li>
+      <li><strong>The AI helper has not been run against a real model's replies yet.</strong> Its test replies are marked provisional, and the app labels a model "not yet tested" until it has been tested in Settings.</li>
+      <li><strong>The demo's rules are not signed off by a firm,</strong> so every result says "provisional". That is deliberate.</li>
+    </ul>
+
+    <p>Live demo: <a href="https://oza977-max.github.io/counterpoise/">https://oza977-max.github.io/counterpoise/</a>. Full history: <a href="https://github.com/oza977-max/counterpoise/blob/main/CHANGELOG.md">CHANGELOG.md on GitHub</a>.</p>
 
     <p class="gvm-attribution">Developed using the Grounded Vibe Methodology</p>
   </main>
