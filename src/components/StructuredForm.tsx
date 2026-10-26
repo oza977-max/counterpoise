@@ -572,6 +572,9 @@ export default function StructuredForm({
         No AI reads your answers or makes the decision, so the same answers always get the same
         result.
       </p>
+      {/* Newcomer test round 1: what the tick means, once, and only while an unticked suggestion is what stops
+          Continue (so the sentence is never false). */}
+      {toCheckIds.length > 0 && <p className="plain-form__tick-help">{R18_COPY.TICK_EXPLAINED}</p>}
       {/* R18-NF-5: a draft saved by an earlier version landed here with the
           description kept and no answers; say so, once (computed at load, never
           stored). When an earlier form-draft key was also found, the one sentence

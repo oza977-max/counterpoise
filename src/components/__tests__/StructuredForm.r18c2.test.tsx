@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import StructuredForm from '../StructuredForm';
 import { loadPolicy } from '../../store/policy';
 import { WORKED_EXAMPLES } from '../../engine/worked-examples';
+import { R18_COPY } from '../plain-copy';
 import { loadFormDraft } from '../intake-draft';
 import type { PolicyFile } from '../../engine/types';
 import type { AnswerSource, FormAnswerState, ReadRecord } from '../../engine/prefill-types';
@@ -477,5 +478,37 @@ describe('the draft keeps the sources (TC-R18-GI-9-02)', () => {
     render(<Harness />);
     expect(screen.getByText(/confirmed by you/i)).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /united kingdom/i })).toBeChecked();
+  });
+});
+
+// Newcomer test round 1 (2026-10-26, owner-approved): one line, once per form, says what the tick means.
+describe('TC-R18-GI-4-02t: the line that explains the tick', () => {
+  const LINE = "Tick each suggestion you have checked. Until you tick or change it, it doesn't count and you can't continue.";
+
+  it('is one line, once for the whole form (not once per mark), and Continue is in fact blocked while it shows', () => {
+    render(<Harness initial={fullState({ '5': PEOPLE, '11': UK })} />);
+    expect(R18_COPY.TICK_EXPLAINED).toBe(LINE);
+    expect(screen.getAllByText(LINE)).toHaveLength(1);
+    expect(document.querySelectorAll('.answer-mark')).toHaveLength(2);
+    expect(continueButton()).toBeDisabled();
+  });
+
+  it('(false state) no suggestion on the form -> no line', () => {
+    render(<Harness initial={fullState({})} />);
+    expect(screen.queryByText(LINE)).not.toBeInTheDocument();
+  });
+
+  it('(false state) once every suggestion is ticked it no longer claims you cannot continue, and Continue is enabled', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initial={fullState({ '5': PEOPLE, '11': UK })} />);
+    await user.click(screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })[0]!);
+    expect(screen.getByText(LINE)).toBeInTheDocument();
+    await user.click(screen.getAllByRole('checkbox', { name: /^i've checked this answer/i })[1]!);
+    expect(screen.queryByText(LINE)).not.toBeInTheDocument();
+    expect(continueButton()).toBeEnabled();
+  });
+
+  it('never uses the verdict words', () => {
+    expect(R18_COPY.TICK_EXPLAINED).not.toMatch(/approved|rejected/i);
   });
 });

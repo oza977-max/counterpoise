@@ -1653,6 +1653,8 @@ export const R18_COPY = {
   MARK_NOT_CARRIED: 'not carried over from the earlier version',
   // One tick per answer. The accessible name is this plus the question.
   CONFIRM_LABEL: "I've checked this answer",
+  // Newcomer test round 1 (2026-10-26): said once above the form, only while an unticked suggestion blocks Continue.
+  TICK_EXPLAINED: "Tick each suggestion you have checked. Until you tick or change it, it doesn't count and you can't continue.",
   STILL_TO_CHECK: 'Still to check:',
   // The confirmation line (§27.6): shown only when at least one answer was filled in by a model and
   // confirmed, or changed. {n} confirmed model-filled answers, {m} answers with a value, {k} changed.
