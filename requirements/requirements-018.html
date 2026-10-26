@@ -445,7 +445,7 @@
             </section>
             <section id="user-journey">
                 <h2>User Journey</h2>
-                <ol><li>The submitter describes the tool in one box. Beside it, a short checklist of the form's questions ticks itself as the description <em>mentions</em> each one — it claims "mentioned", never "understood".</li><li>On Next, anything not mentioned is listed with a one-click example sentence to add. The person may add or just continue.</li><li>If a model is connected, it reads the description and pre-fills the form's answers — only where it can quote the description's own words, which the app checks really appear there. Everything else stays blank.</li><li>The form opens. Pre-filled answers are visibly marked with their quote and "is this right?"; each needs its own tick or a change. Blank answers are answered as today. The contradiction check still runs.</li><li>Confirm and evaluate, as today. The record says, per answer, whether the person typed it, confirmed a pre-fill, or changed one — with the quote.</li><li>The reviewer sees the description and the per-answer source on the register. Correcting a result returns to the same form, pre-filled with the confirmed answers.</li></ol>
+                <ol><li>The submitter describes the tool in one box. Beside it, a short checklist of the form's questions ticks itself as the description <em>mentions</em> each one — it claims "words found", never "understood".</li><li>On Next, anything not mentioned is listed with a one-click example sentence to add. The person may add or just continue.</li><li>If a model is connected, it reads the description and pre-fills the form's answers — only where it can quote the description's own words, which the app checks really appear there. Everything else stays blank.</li><li>The form opens. Pre-filled answers are visibly marked with their quote and "is this right?"; each needs its own tick or a change. Blank answers are answered as today. The contradiction check still runs.</li><li>Confirm and evaluate, as today. The record says, per answer, whether the person typed it, confirmed a pre-fill, or changed one — with the quote.</li><li>The reviewer sees the description and the per-answer source on the register. Correcting a result returns to the same form, pre-filled with the confirmed answers.</li></ol>
             </section>
             <section id="1-guided-intake-gi">
                 <h2>1. Guided intake (GI)</h2>
@@ -455,7 +455,7 @@
                             <span class="req-id">R18-GI-1</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Every pre-check starts with the description screen: one text box and, beside it, a checklist of the form's questions in the form's own short plain words. Each item ticks itself live as the description mentions it, and reads "mentioned", not "answered".</p>
+                        <p class="requirement-text">Every pre-check starts with the description screen: one text box and, beside it, a checklist of the form's questions in the form's own short plain words. Each item ticks itself live as the description mentions it, and reads "words found", not "answered".</p>
                         <div class="fit-criterion">the tick is computed from the text alone by a fixed, deterministic rule (no model, no clock) and is identical for identical text; one test per checklist item shows it ticking on a sentence that mentions it and staying unticked on one that does not; no item's label uses engine vocabulary (NF-11); the checklist is announced to assistive technology as a status region and does not rely on colour alone.</div>
                     </div>
                     <div class="requirement">
@@ -463,7 +463,7 @@
                             <span class="req-id">R18-GI-2</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">When the person presses Next with items unmentioned, the app lists them ("Your description doesn't mention: …") with a one-click example sentence for each, and lets the person continue regardless. Nothing is required at this step; the form asks every question anyway.</p>
+                        <p class="requirement-text">When the person presses Next with items unmentioned, the app lists them ("We found no words about: …") with a one-click example sentence for each, and lets the person continue regardless. Nothing is required at this step; the form asks every question anyway.</p>
                         <div class="fit-criterion">with every item mentioned no note shows; with two unmentioned the note names exactly those two; clicking an example appends its sentence to the description (and the item ticks); Next is never disabled by this rule.</div>
                     </div>
                     <div class="requirement">
@@ -559,7 +559,7 @@
                             <span class="req-id">R18-GI-13</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Wrong is worse than blank. The checklist, the nudge, the pre-fill marks and the record never claim more than the code can show: "mentioned" not "understood"; "from your description" only with a verified quote; "confirmed by you" only after the person's own tick or change.</p>
+                        <p class="requirement-text">Wrong is worse than blank. The checklist, the nudge, the pre-fill marks and the record never claim more than the code can show: "words found" not "understood"; "from your description" only with a verified quote; "confirmed by you" only after the person's own tick or change.</p>
                         <div class="fit-criterion">every rendered sentence introduced by this round is covered by a test that renders the state in which it would be false and asserts it is absent (BC-005).</div>
                     </div>
             </section>
@@ -752,7 +752,7 @@
                 <table>
                     <thead><tr><th>ID</th><th>Domain</th><th>Summary</th><th>Priority</th></tr></thead>
                     <tbody>
-                        <tr><td>R18-GI-1</td><td>Guided intake</td><td>Describe-first screen with a live "mentioned" checklist of the form's questions</td><td>Must</td></tr>
+                        <tr><td>R18-GI-1</td><td>Guided intake</td><td>Describe-first screen with a live "words found" checklist of the form's questions</td><td>Must</td></tr>
                         <tr><td>R18-GI-2</td><td>Guided intake</td><td>Gentle nudge for unmentioned items, with one-click example sentences; never blocks</td><td>Must</td></tr>
                         <tr><td>R18-GI-3</td><td>Guided intake</td><td>Model pre-fills only with a verified quote and a valid option; the quote is evidence, confirmation is the control</td><td>Must</td></tr>
                         <tr><td>R18-GI-4</td><td>Guided intake</td><td>Every pre-filled answer marked with its quote and confirmed one by one; no accept-all</td><td>Must</td></tr>
@@ -764,7 +764,7 @@
                         <tr><td>R18-GI-10</td><td>Guided intake</td><td>One route: the card review is retired; old cases stay readable and are corrected through the pre-filled form</td><td>Must</td></tr>
                         <tr><td>R18-GI-11</td><td>Guided intake</td><td>Newcomer comprehension gate (NF-12) covers the new screens</td><td>Must</td></tr>
                         <tr><td>R18-GI-12</td><td>Guided intake</td><td>Pre-fill accuracy measured by the in-app test; untested models labelled as such</td><td>Must</td></tr>
-                        <tr><td>R18-GI-13</td><td>Guided intake</td><td>Never claim more than can be shown ("mentioned", "from your description", "confirmed by you")</td><td>Must</td></tr>
+                        <tr><td>R18-GI-13</td><td>Guided intake</td><td>Never claim more than can be shown ("words found", "from your description", "confirmed by you")</td><td>Must</td></tr>
                         <tr><td>R18-GI-14</td><td>Guided intake</td><td>Description length: blank cannot continue; over 8,000 characters the model is skipped, the text kept</td><td>Must</td></tr>
                         <tr><td>R18-MS-1</td><td>Model setting</td><td>Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app</td><td>Must</td></tr>
                         <tr><td>R18-MS-2</td><td>Model setting</td><td>Say every time where the description goes; the record names the model and place</td><td>Must</td></tr>

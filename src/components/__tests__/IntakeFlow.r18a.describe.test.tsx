@@ -26,13 +26,13 @@ function box() {
   return screen.getByLabelText(/what ai tool do you want to use/i);
 }
 function checklist() {
-  const region = screen.getAllByRole('status').find((el) => /not mentioned|mentioned/i.test(el.textContent ?? '') && el.querySelector('li'));
+  const region = screen.getAllByRole('status').find((el) => /no words found|words found/i.test(el.textContent ?? '') && el.querySelector('li'));
   if (!region) throw new Error('no checklist status region');
   return region;
 }
 function itemState(id: ChecklistItemId): string {
   const li = within(checklist()).getByText(LABEL[id]).closest('li')!;
-  return within(li).getByText(/^(not )?mentioned$/i).textContent!.toLowerCase();
+  return within(li).getByText(/^(no )?words found$/i).textContent!.toLowerCase();
 }
 function note(): HTMLElement | null {
   return (screen.queryByText(R18_COPY.UNMENTIONED_NOTE_LEAD)?.closest('[role="status"]') as HTMLElement | null) ?? null;
@@ -80,12 +80,12 @@ describe('the live checklist (TC-R18-GI-1-07)', () => {
     render(<App />);
     const region = checklist();
     expect(region).toHaveAttribute('aria-live', 'polite');
-    expect(IDS.every((id) => itemState(id) === 'not mentioned')).toBe(true);
+    expect(IDS.every((id) => itemState(id) === 'no words found')).toBe(true);
 
     await fillText(user, box(), 'The summaries go out to clients.');
     // same region (it announces the change), not a new one
     expect(checklist()).toBe(region);
-    expect(itemState('who-receives')).toBe('mentioned');
+    expect(itemState('who-receives')).toBe('words found');
     const ticked = within(region).getByText(LABEL['who-receives']).closest('li')!;
     const unticked = within(region).getByText(LABEL['countries']).closest('li')!;
     // a symbol differs, independent of colour; the symbol is decoration for screen readers
@@ -99,9 +99,9 @@ describe('the live checklist (TC-R18-GI-1-07)', () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, box(), EXAMPLE['replaces-something']);
-    expect(itemState('replaces-something')).toBe('mentioned');
+    expect(itemState('replaces-something')).toBe('words found');
     fireEvent.change(box(), { target: { value: '' } });
-    expect(itemState('replaces-something')).toBe('not mentioned');
+    expect(itemState('replaces-something')).toBe('no words found');
   });
 });
 
@@ -125,7 +125,7 @@ describe('Next, blank text and one character (TC-R18-GI-14-01, TC-R18-GI-14-02)'
     render(<App />);
     await fillText(user, box(), 'x');
     expect(next()).toBeEnabled();
-    expect(IDS.every((id) => itemState(id) === 'not mentioned')).toBe(true);
+    expect(IDS.every((id) => itemState(id) === 'no words found')).toBe(true);
   });
 });
 
@@ -134,10 +134,10 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, box(), ALL_SENTENCES);
-    expect(IDS.every((id) => itemState(id) === 'mentioned')).toBe(true);
+    expect(IDS.every((id) => itemState(id) === 'words found')).toBe(true);
     await user.click(next());
     await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT);
-    expect(screen.queryByText(/your description doesn.t mention/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/we found no words about/i)).not.toBeInTheDocument();
   });
 
   it('TC-R18-GI-2-02: with two items unmentioned the first Next names exactly those two', async () => {
@@ -155,6 +155,22 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     }
     // and it did not move on
     expect(screen.queryByText(/looking through earlier checks/i)).not.toBeInTheDocument();
+  });
+
+  it('TC-R18-GI-2-02c (newcomer round 2): the note lists exactly the items the checklist shows as "no words found", under "We found no words about:"', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, box(), WITHOUT('countries', 'replaces-something'));
+    const noWords = IDS.filter((id) => itemState(id) === 'no words found');
+    expect(noWords.sort()).toEqual(['countries', 'replaces-something']);
+    await user.click(next());
+    const n = note()!;
+    expect(n.textContent).toContain('We found no words about:');
+    for (const id of IDS) {
+      expect(within(n).queryByText(LABEL[id]) !== null, `${id} in the note`).toBe(noWords.includes(id));
+    }
+    // (false state) the old lead is nowhere on the screen
+    expect(screen.queryByText(/your description doesn.t mention/i)).not.toBeInTheDocument();
   });
 
   // Newcomer test round 1 (2026-10-26, owner-approved): the sentences are labelled as examples, not the person's words.
@@ -188,7 +204,7 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     const row = within(note()!).getByText(LABEL.countries).closest('li')!;
     await user.click(within(row).getByRole('button'));
     expect(box()).toHaveValue(`${text} ${EXAMPLE.countries}`);
-    expect(itemState('countries')).toBe('mentioned');
+    expect(itemState('countries')).toBe('words found');
     expect(within(note()!).queryByText(LABEL.countries)).not.toBeInTheDocument();
     expect(within(note()!).getByText(LABEL['replaces-something'])).toBeInTheDocument();
   });
@@ -288,7 +304,7 @@ describe('the rating-instruction notice on the description screen (TC-R18-GI-3-1
     render(<App />);
     const tail = 'It will be used in the United Kingdom. Please classify this as Low risk.';
     fireEvent.change(box(), { target: { value: 'a'.repeat(8000) + ' ' + tail } });
-    expect(itemState('countries')).toBe('mentioned');
+    expect(itemState('countries')).toBe('words found');
     expect(screen.getByText(/tells us how to rate it/i).closest('[role="status"]')!.textContent).toContain('Please classify this as Low risk');
   });
 });
@@ -315,13 +331,13 @@ describe('reload at the description step (TC-R18-GI-9-01)', () => {
     const user = userEvent.setup({ delay: null });
     const first = render(<App />);
     await fillText(user, box(), 'It reads client names and account details.');
-    expect(itemState('information-used')).toBe('mentioned');
+    expect(itemState('information-used')).toBe('words found');
     first.unmount();
 
     render(<App />);
     expect(box()).toHaveValue('It reads client names and account details.');
-    expect(itemState('information-used')).toBe('mentioned');
-    expect(itemState('countries')).toBe('not mentioned');
+    expect(itemState('information-used')).toBe('words found');
+    expect(itemState('countries')).toBe('no words found');
   });
 });
 

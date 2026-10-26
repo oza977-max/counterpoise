@@ -1350,13 +1350,18 @@ export const R18_COPY = {
     'agentic-reach': 'What it can get into by itself',
   } as Record<ChecklistItemId, string>,
   // The two state words, and a symbol beside each so colour is never the only cue (NF-2).
-  STATE_MENTIONED: 'mentioned',
-  STATE_NOT_MENTIONED: 'not mentioned',
+  // Newcomer test round 2 (2026-10-26, owner-approved): the checker is a fixed lookup of words, so the states say
+  // whether it found words, not whether the description "mentions" a topic (a model could then quote words the
+  // lookup did not know, and "not mentioned" read as a contradiction). The heading keeps "mentions".
+  STATE_MENTIONED: 'words found',
+  STATE_NOT_MENTIONED: 'no words found',
   SYMBOL_MENTIONED: '✓',
   SYMBOL_NOT_MENTIONED: '○',
 
   // The nudge (R18-GI-2). The straight apostrophe is the one the test cases quote.
-  UNMENTIONED_NOTE_LEAD: "Your description doesn't mention:",
+  // Newcomer test round 2 (2026-10-26, owner-approved): said in the checklist's own terms, so it reads true beside
+  // "no words found" ("Your description doesn't mention:" claimed more than the lookup knows).
+  UNMENTIONED_NOTE_LEAD: 'We found no words about:',
   UNMENTIONED_NOTE_HELP:
     'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
   ADD_EXAMPLE_LABEL: 'Add this example',

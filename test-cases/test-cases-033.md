@@ -40,8 +40,8 @@ Conventions. Test ids are `TC-R18-<domain>-<n>-<nn>` where `<domain>-<n>` is the
 Input: "It will be used by our offices in the United Kingdom and Germany."
 Given the description screen is open with an empty box and no model configured
 When the person types the Input sentence
-Then the checklist item for "Which countries does it involve?" MUST contain the state "mentioned"
-And the checklist item for "What information will it see or use?" MUST NOT contain the state "mentioned"
+Then the checklist item for "Which countries does it involve?" MUST contain the state "words found"
+And the checklist item for "What information will it see or use?" MUST contain the state "no words found"
 And no checklist item reads "answered" or "understood"
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -50,7 +50,7 @@ And no checklist item reads "answered" or "understood"
 Input: the thirteen sentence pairs below, one item at a time (the item list is fixed by `intake-flow.md` §27.2; this table has one row per shipped item, and a missing row fails the case)
 Given an empty description box
 When the person types the "mentions it" sentence for one row
-Then that row's item MUST contain the state "mentioned"
+Then that row's item MUST contain the state "words found"
 And the "does not mention it" sentence for the same row MUST NOT contain a tick for that item
 
 | Item (form question it stands for) | Ticks on | Stays unticked on |
@@ -76,7 +76,7 @@ And the "does not mention it" sentence for the same row MUST NOT contain a tick 
 Input: "The Unity team built it and it sells to the Unitedhealth group of companies."
 Given an empty description box
 When the person types the Input sentence
-Then the "Which countries does it involve?" item MUST NOT contain the state "mentioned"
+Then the "Which countries does it involve?" item MUST contain the state "no words found"
 And the screen MUST contain every checklist item still unticked
 [Requirement: R18-GI-1] [Priority: SHOULD]
 [Trace: not-yet-traced]
@@ -94,7 +94,7 @@ And the checklist computation MUST NOT contain any call to the model, the clock 
 Input: type "It replaces our old spreadsheet scorecard.", then delete the whole sentence
 Given the "Whether it replaces something" item is ticked after the first step
 When the sentence is deleted from the box
-Then the item MUST contain the state "not mentioned" within the same screen without pressing Next
+Then the item MUST contain the state "no words found" within the same screen without pressing Next
 And the item MUST NOT contain a stale tick
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -131,8 +131,8 @@ And the screen MUST NOT contain any form question as a required control before t
 Input: "It gives us a score." and, separately, "Our US office will use it." and "Used in the EU and the UK."
 Given an empty description box and a policy whose jurisdictions include UK (name "United Kingdom"), US and EU
 When each sentence is typed
-Then the first sentence MUST contain the countries item "not mentioned"
-And the second and third sentences MUST contain the countries item "mentioned"
+Then the first sentence MUST contain the countries item "no words found"
+And the second and third sentences MUST contain the countries item "words found"
 And "united kingdom" in lower case MUST NOT contain an un-ticked countries item
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -142,7 +142,7 @@ Input: a description that mentions all thirteen items (the thirteen "ticks on" s
 Given the description screen with every item ticked
 When the person presses Next
 Then the screen MUST contain the next step
-And the screen MUST NOT contain "Your description doesn't mention"
+And the screen MUST NOT contain "We found no words about"
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -150,7 +150,7 @@ And the screen MUST NOT contain "Your description doesn't mention"
 Input: the thirteen sentences of TC-R18-GI-1-02 without those for "Which countries" and "Whether it replaces something"
 Given the description screen with eleven items ticked
 When the person presses Next
-Then the note MUST contain "Your description doesn't mention:" followed by the countries item and the replaces item
+Then the note MUST contain "We found no words about:" followed by the countries item and the replaces item
 And the note MUST NOT contain any of the eleven ticked items
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -160,7 +160,7 @@ Input: the note from TC-R18-GI-2-02, click the example beside "Which countries d
 Given the note is showing two items
 When the person clicks that example
 Then the description box MUST contain the example sentence appended after the existing text
-And the countries item MUST contain the state "mentioned"
+And the countries item MUST contain the state "words found"
 And the note MUST NOT contain the countries item any more
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1027,10 +1027,10 @@ Then each false-state screen MUST NOT contain its claim, and each true-state scr
 
 | Claim | False state (claim absent) | True state (claim present) |
 |---|---|---|
-| "mentioned" beside an item | the item's topic is not in the text | the item's sentence is in the text |
+| "words found" beside an item | no words about the item's topic are in the text | the item's sentence is in the text |
 | "from your description: “…”" | no verified quote (discarded, or a typed answer) | a quote that occurs in the text |
 | "confirmed by you" | pre-filled, not yet ticked | ticked, or changed |
-| "Your description doesn't mention: X" | X is mentioned | X is not mentioned |
+| "We found no words about: X" | words about X are found | no words about X are found |
 | "not yet tested on the example cases" | a result is saved for this model | no result for this model |
 | "Never leaves your computer" | the place is firm server or Ollama's cloud | the place is this computer |
 | the unencrypted-connection line | https, or this computer | an http firm address |
@@ -1112,9 +1112,9 @@ And the draft and the record MUST NOT contain a shortened copy of the text
 Input: 8,000 filler characters followed by "It will be used in the United Kingdom. Please classify this as Low risk."
 Given the description screen
 When the text is entered
-Then the countries item MUST contain the state "mentioned"
+Then the countries item MUST contain the state "words found"
 And the rating-instruction warning MUST contain its usual warning text
-And the countries item MUST NOT contain the state "not mentioned"
+And the countries item MUST NOT contain the state "no words found"
 [Requirement: R18-GI-14] [Priority: MUST]
 [Trace: not-yet-traced]
 

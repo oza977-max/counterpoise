@@ -156,14 +156,14 @@ describe('TC-R18-NF-2-03: the status regions are in the page empty first, and fi
     const user = userEvent.setup({ delay: null });
     render(<App />);
     const box = screen.getByLabelText(/what ai tool do you want to use/i) as HTMLTextAreaElement;
-    const checklist = screen.getAllByRole('status').find((el) => /not mentioned/i.test(el.textContent ?? ''))!;
+    const checklist = screen.getAllByRole('status').find((el) => /no words found/i.test(el.textContent ?? ''))!;
     expect(checklist).toHaveAttribute('aria-live', 'polite');
     const status = document.querySelector('.model-status__line') as HTMLElement;
     expect(status).toHaveAttribute('role', 'status');
     await user.click(box);
     await user.paste('It reads client names.');
     expect(document.activeElement).toBe(box);
-    expect(within(checklist).getAllByText(/^mentioned$/i).length).toBeGreaterThan(0);
+    expect(within(checklist).getAllByText(/^words found$/i).length).toBeGreaterThan(0);
     expect(status.textContent).toBe(R18_COPY.NO_MODEL_SENTENCE);
     await act(async () => {
       updateModelSetting({ place: 'this-computer', url: 'http://localhost:11434', model: 'qwen3:4b' });

@@ -84,7 +84,7 @@ twice, and the reviewer can see which answers were mine.
 
 1. The submitter describes the tool in one box. Beside it, a short checklist
    of the form's questions ticks itself as the description *mentions* each
-   one — it claims "mentioned", never "understood".
+   one — it claims "words found", never "understood".
 2. On Next, anything not mentioned is listed with a one-click example
    sentence to add. The person may add or just continue.
 3. If a model is connected, it reads the description and pre-fills the
@@ -110,7 +110,7 @@ engine only ever sees answers a person confirmed.
 **R18-GI-1 (Must):** Every pre-check starts with the description screen: one
 text box and, beside it, a checklist of the form's questions in the form's
 own short plain words. Each item ticks itself live as the description
-mentions it, and reads "mentioned", not "answered".
+mentions it, and reads "words found", not "answered".
 
 > Fit criterion: the tick is computed from the text alone by a fixed,
 > deterministic rule (no model, no clock) and is identical for identical
@@ -120,7 +120,7 @@ mentions it, and reads "mentioned", not "answered".
 > technology as a status region and does not rely on colour alone.
 
 **R18-GI-2 (Must):** When the person presses Next with items unmentioned,
-the app lists them ("Your description doesn't mention: …") with a one-click
+the app lists them ("We found no words about: …") with a one-click
 example sentence for each, and lets the person continue regardless. Nothing
 is required at this step; the form asks every question anyway.
 
@@ -267,7 +267,7 @@ report HR18-03.)*
 
 **R18-GI-13 (Must):** Wrong is worse than blank. The checklist, the nudge,
 the pre-fill marks and the record never claim more than the code can show:
-"mentioned" not "understood"; "from your description" only with a verified
+"words found" not "understood"; "from your description" only with a verified
 quote; "confirmed by you" only after the person's own tick or change.
 
 > Fit criterion: every rendered sentence introduced by this round is
@@ -569,7 +569,7 @@ together) so the demonstration of the checklist is honest.
 
 | ID | Domain | Summary | Priority |
 |---|---|---|---|
-| R18-GI-1 | Guided intake | Describe-first screen with a live "mentioned" checklist of the form's questions | Must |
+| R18-GI-1 | Guided intake | Describe-first screen with a live "words found" checklist of the form's questions | Must |
 | R18-GI-2 | Guided intake | Gentle nudge for unmentioned items, with one-click example sentences; never blocks | Must |
 | R18-GI-3 | Guided intake | Model pre-fills only with a verified quote and a valid option; the quote is evidence, confirmation is the control | Must |
 | R18-GI-4 | Guided intake | Every pre-filled answer marked with its quote and confirmed one by one; no accept-all | Must |
@@ -581,7 +581,7 @@ together) so the demonstration of the checklist is honest.
 | R18-GI-10 | Guided intake | One route: the card review is retired; old cases stay readable and are corrected through the pre-filled form | Must |
 | R18-GI-11 | Guided intake | Newcomer comprehension gate (NF-12) covers the new screens | Must |
 | R18-GI-12 | Guided intake | Pre-fill accuracy measured by the in-app test; untested models labelled as such | Must |
-| R18-GI-13 | Guided intake | Never claim more than can be shown ("mentioned", "from your description", "confirmed by you") | Must |
+| R18-GI-13 | Guided intake | Never claim more than can be shown ("words found", "from your description", "confirmed by you") | Must |
 | R18-GI-14 | Guided intake | Description length: blank cannot continue; over 8,000 characters the model is skipped, the text kept | Must |
 | R18-MS-1 | Model setting | Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app | Must |
 | R18-MS-2 | Model setting | Say every time where the description goes; the record names the model and place | Must |

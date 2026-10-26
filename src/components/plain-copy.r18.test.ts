@@ -60,13 +60,29 @@ describe('TC-R18-GI-1-06: no checklist label uses engine vocabulary', () => {
 });
 
 describe('the state words and the nudge (R18-GI-1, R18-GI-2)', () => {
-  it('the state words are exactly "mentioned" and "not mentioned", with different symbols', () => {
-    expect(R18_COPY.STATE_MENTIONED).toBe('mentioned');
-    expect(R18_COPY.STATE_NOT_MENTIONED).toBe('not mentioned');
+  // Newcomer test round 2 (2026-10-26, owner-approved): the checklist said "not mentioned" while the model then quoted
+  // words from the same description for that topic. The fixed rule only knows whether it found words, so it says that.
+  it('the state words are exactly "words found" and "no words found", with different symbols', () => {
+    expect(R18_COPY.STATE_MENTIONED).toBe('words found');
+    expect(R18_COPY.STATE_NOT_MENTIONED).toBe('no words found');
     expect(R18_COPY.SYMBOL_MENTIONED).not.toBe(R18_COPY.SYMBOL_NOT_MENTIONED);
   });
-  it('the note leads with the sentence the test cases quote', () => {
-    expect(R18_COPY.UNMENTIONED_NOTE_LEAD).toBe("Your description doesn't mention:");
+  it('(false state) neither state word claims more than a lookup of words can show', () => {
+    for (const w of [R18_COPY.STATE_MENTIONED, R18_COPY.STATE_NOT_MENTIONED]) {
+      expect(w).not.toMatch(/mention|understood|answered|covered|approved|rejected/i);
+    }
+    // the two words are different as whole strings (one ends with the other, so a test must compare them whole)
+    expect(R18_COPY.STATE_NOT_MENTIONED.endsWith(R18_COPY.STATE_MENTIONED)).toBe(true);
+    expect(R18_COPY.STATE_NOT_MENTIONED).not.toBe(R18_COPY.STATE_MENTIONED);
+  });
+  it('the heading over the list is unchanged', () => {
+    expect(R18_COPY.CHECKLIST_HEADING).toBe('What your description mentions');
+  });
+  it('the note leads with the sentence the test cases quote, which reads true beside "no words found"', () => {
+    expect(R18_COPY.UNMENTIONED_NOTE_LEAD).toBe('We found no words about:');
+    // it says what the lookup found, as the item state does - not what the description does or does not say
+    expect(R18_COPY.UNMENTIONED_NOTE_LEAD).toContain('no words');
+    expect(R18_COPY.UNMENTIONED_NOTE_LEAD).not.toMatch(/mention|doesn't|does not/i);
   });
   for (const id of CHECKLIST_ITEM_IDS) {
     it(`TC-R18-GI-2-03 support: the example for [${id}] ticks that item when added alone`, () => {

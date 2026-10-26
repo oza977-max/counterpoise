@@ -19,8 +19,8 @@ const openList = async (user: ReturnType<typeof userEvent.setup>) => {
   return screen.getByRole('list', { name: R18_COPY.EXAMPLES_LIST_LABEL });
 };
 const ticks = () => {
-  const region = screen.getAllByRole('status').find((el) => /not mentioned/i.test(el.textContent ?? ''))!;
-  return within(region).queryAllByText(/^mentioned$/i).length;
+  const region = screen.getAllByRole('status').find((el) => /no words found/i.test(el.textContent ?? ''))!;
+  return within(region).queryAllByText(/^words found$/i).length;
 };
 
 describe('TC-R18-PS-3-01: ten examples; a click fills the box and ticks the checklist', () => {
@@ -100,7 +100,7 @@ describe('TC-R18-PS-3-04 / -05: what the list says, and does not say', () => {
       const list = await openList(user);
       await user.click(within(list).getAllByRole('button')[i]!);
       if (i > 0) await user.click(screen.getByRole('button', { name: R18_COPY.EXAMPLE_REPLACE }));
-      const unticked = screen.getAllByText(/^not mentioned$/i).length;
+      const unticked = screen.getAllByText(/^no words found$/i).length;
       expect(unticked, `example ${i + 1} leaves items out`).toBeGreaterThan(0);
       expect(document.body.textContent).not.toMatch(/every (checklist )?item|all (13|thirteen|items)|everything is (ticked|covered)/i);
     }
