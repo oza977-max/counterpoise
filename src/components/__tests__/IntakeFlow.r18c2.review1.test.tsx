@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { MODEL_SETTING_KEY, MODEL_SETTING_CHANGED_EVENT } from '../../llm/model-setting';
@@ -52,7 +52,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     await reloadDuringReading(user);
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(failureSentence('not-read', 'this-computer', ''));
+    await waitFor(() => expect(note()!.textContent).toBe(failureSentence('not-read', 'this-computer', '')));
     expect(note()!.textContent).toMatch(/read my description again/i);
     expect(readAgainButton()).toBeInTheDocument();
   }, SLOW_FLOW_MS);
@@ -64,7 +64,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     // R18-G: the "Optional: connect an AI helper" panel exists, so the no-model note is the spec's sentence, which names it.
-    expect(note()!.textContent).toBe(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama);
+    await waitFor(() => expect(note()!.textContent).toBe(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama));
     expect(note()!.textContent).not.toMatch(/read my description again/i);
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
@@ -75,7 +75,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     localStorage.setItem(MODEL_SETTING_KEY, '{not json');
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(failureSentence('invalid-setting', 'this-computer', ''));
+    await waitFor(() => expect(note()!.textContent).toBe(failureSentence('invalid-setting', 'this-computer', '')));
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
@@ -88,6 +88,9 @@ describe('I1: the note never names a button that is not on screen', () => {
     localStorage.removeItem(MODEL_SETTING_KEY);
     window.dispatchEvent(new CustomEvent(MODEL_SETTING_CHANGED_EVENT));
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
+    // The note mounts empty, then fills (screen-reader announcement); wait for its real text, so the negative
+    // check below cannot pass on an empty note.
+    await waitFor(() => expect(note()!.textContent).toBe(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama));
     expect(note()!.textContent).not.toMatch(/read my description again/i);
     expect(readAgainButton()).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
@@ -111,7 +114,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     await earlierAnswersThenSecondRead(user, { kind: 'never' });
     await user.click(await screen.findByRole('button', { name: /skip/i }));
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(R18_COPY.KEPT_EARLIER_NOTE);
+    await waitFor(() => expect(note()!.textContent).toBe(R18_COPY.KEPT_EARLIER_NOTE));
     expect(note()!.textContent).not.toMatch(/nothing was filled in for you\. answer/i);
     expect(screen.getAllByText(/confirmed by you — suggested by the AI model .+ from your description/i).length).toBeGreaterThanOrEqual(1);
   }, SLOW_FLOW_MS);
@@ -120,7 +123,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     const user = userEvent.setup({ delay: null });
     await earlierAnswersThenSecondRead(user, { kind: 'content', content: 'nope' });
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(R18_COPY.KEPT_EARLIER_NOTE);
+    await waitFor(() => expect(note()!.textContent).toBe(R18_COPY.KEPT_EARLIER_NOTE));
     expect(screen.getAllByText(/confirmed by you/i).length).toBeGreaterThanOrEqual(1);
   }, SLOW_FLOW_MS);
 
@@ -131,7 +134,7 @@ describe('I2: earlier model-filled answers that stay on the form are not denied 
     await describeAndContinue(user, DESC);
     await user.click(await screen.findByRole('button', { name: /skip/i }));
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(note()!.textContent).toBe(failureSentence('skipped', 'this-computer', ''));
+    await waitFor(() => expect(note()!.textContent).toBe(failureSentence('skipped', 'this-computer', '')));
     expect(note()!.textContent).not.toMatch(/earlier answers/i);
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
