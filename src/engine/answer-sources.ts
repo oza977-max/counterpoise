@@ -120,6 +120,12 @@ export function answerSourceCounts(
   return { confirmedFilled, changed, answered };
 }
 
+/** True when a model filled in any answer on the form: one with a `prefilled` or a `changed` source (a changed
+ *  answer is a model's suggestion the person then changed). Typed, earlier-record and not-carried answers are not. */
+export function hasModelFilledAnswer(answerState: FormAnswerState): boolean {
+  return Object.values(answerState).some((a) => a !== undefined && (a.source.kind === 'prefilled' || a.source.kind === 'changed'));
+}
+
 /** The shown questions whose pre-filled or earlier-record answer still waits for a tick, in the form's order. */
 export function unconfirmedIds(answerState: FormAnswerState, description: string, policy: PolicyFile): QuestionId[] {
   const shown = shownQuestionIds(toPlainAnswers(answerState, description), policy);

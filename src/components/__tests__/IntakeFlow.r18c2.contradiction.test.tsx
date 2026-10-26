@@ -61,7 +61,8 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
     render(<App />);
     await waitForSeeding();
     await describeToReadForm(user, DESC);
-    expect(screen.getByText(/from your description/i)).toBeInTheDocument();
+    // the mark's own claim (the form intro may also say "from your description")
+    expect(screen.getByText(/from your description: “/i)).toBeInTheDocument();
     await fillRest(user);
     // the change away from the pre-fill is itself the confirmation
     await user.click(screen.getByRole('checkbox', { name: /everyday work information/i }));
@@ -109,7 +110,7 @@ describe('the contradiction check on the form route (R18-GI-6)', () => {
     } else {
       installModel({ kind: 'honours-format', reply: reply([{ question: '5', values: [{ option, quote: 'internal ticket volumes' }] }]) });
       await describeToReadForm(user, DESC);
-      expect(screen.getByText(/from your description/i)).toBeInTheDocument();
+      expect(screen.getByText(/from your description: “/i)).toBeInTheDocument();
     }
     await fillRest(user);
     const box = () => screen.getByRole('checkbox', { name: option === 'people' ? /information about people/i : /everyday work information/i });

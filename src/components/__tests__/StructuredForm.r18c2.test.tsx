@@ -70,6 +70,9 @@ function Harness({
 }
 
 const continueButton = () => screen.getByRole('button', { name: /^continue$/i });
+// The text of the answer marks only. The form intro may itself say "from your description" (newcomer round 2: "The AI
+// helper only suggested answers from your description."), so a check that no MARK claims it reads the marks, not the page.
+const markText = () => Array.from(document.querySelectorAll('.answer-mark')).map((m) => m.textContent ?? '').join(' | ');
 const tickFor = (question: RegExp) => screen.getByRole('checkbox', { name: new RegExp(`^i've checked this answer.*${question.source}`, 'i') });
 
 describe('marks: the quote in its sentence, only where a quote exists', () => {
@@ -323,7 +326,7 @@ describe('the quote has left the description', () => {
     expect(
       screen.getByText('the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description — is this right?'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
+    expect(markText()).not.toMatch(/from your description/i);
     expect(continueButton()).toBeDisabled();
     await user.click(tickFor(/which countries/));
     expect(continueButton()).toBeEnabled();
@@ -340,7 +343,7 @@ describe('the quote has left the description', () => {
     expect(
       screen.getByText('confirmed by you — the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
+    expect(markText()).not.toMatch(/from your description/i);
     expect(screen.getByRole('checkbox', { name: /united kingdom/i })).toBeChecked();
     expect(continueButton()).toBeEnabled();
   });
@@ -356,13 +359,13 @@ describe('the quote has left the description', () => {
     );
     render(<Harness description="Edited elsewhere: nothing about teams." />);
     expect(screen.getByText(/confirmed by you — the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description/)).toBeInTheDocument();
-    expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
+    expect(markText()).not.toMatch(/from your description/i);
   });
 
   it('TC-R18-GI-8-09: editing Question 2 changes the description the marks read, and the form draft holds no entry for Question 2', async () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initial={fullState({ '11': prefilled(['UK'], [{ option: 'UK', quote: 'Our UK team' }], true) })} />);
-    expect(screen.getByText(/from your description/i)).toBeInTheDocument();
+    expect(markText()).toMatch(/from your description/i);
     const box = screen.getByLabelText(/what will it do|describe/i, { selector: 'textarea' });
     await user.clear(box);
     await user.type(box, 'Only the London office.');
@@ -510,5 +513,71 @@ describe('TC-R18-GI-4-02t: the line that explains the tick', () => {
 
   it('never uses the verdict words', () => {
     expect(R18_COPY.TICK_EXPLAINED).not.toMatch(/approved|rejected/i);
+  });
+});
+
+// Newcomer test round 2 (2026-10-26, owner-approved). "No AI reads your answers..." sat beside "Suggested by the AI
+// model" and read as a contradiction; when a model filled in any answer the intro now says first what the AI helper
+// did. Claimed only where true: a prefilled or changed answer is on the form (TC-R18-GI-13-01).
+describe('the form intro names the AI helper only when a model filled in an answer (newcomer round 2)', () => {
+  const BASE = 'No AI reads your answers or makes the decision, so the same answers always get the same result.';
+  const LEAD = 'The AI helper only suggested answers from your description.';
+  const introParagraphs = () => Array.from(document.querySelectorAll('.plain-form__intro')).map((p) => p.textContent);
+  const CHANGED = {
+    value: ['people'],
+    source: { kind: 'changed', from: [{ option: 'people', quote: 'client names' }], read: READ } as AnswerSource,
+  };
+  const RECORD = { value: ['people'], source: { kind: 'record', confirmed: false } as AnswerSource };
+
+  it('the lead is one sentence in the copy, with no verdict word', () => {
+    expect(R18_COPY.FORM_INTRO_MODEL_LEAD).toBe(LEAD);
+    expect(R18_COPY.FORM_INTRO_MODEL_LEAD).not.toMatch(/approved|rejected/i);
+  });
+
+  it('TC-R18-GI-13-01n1 (true state): with a pre-filled answer on the form the intro begins with the lead, then the unchanged sentence', () => {
+    render(<Harness initial={fullState({ '11': UK })} />);
+    expect(introParagraphs()).toContain(`${LEAD} ${BASE}`);
+    expect(screen.getAllByText(LEAD, { exact: false })).toHaveLength(1);
+  });
+
+  it('TC-R18-GI-13-01n2 (true state): an answer the person changed is still one the AI helper suggested', () => {
+    render(<Harness initial={fullState({ '5': CHANGED })} />);
+    expect(introParagraphs()).toContain(`${LEAD} ${BASE}`);
+  });
+
+  it('TC-R18-GI-13-01n3 (true state): the lead is there from the moment a ticked, confirmed pre-fill is on the form', () => {
+    render(<Harness initial={fullState({ '11': prefilled(['UK'], [{ option: 'UK', quote: 'Our UK team' }], true) })} />);
+    expect(introParagraphs()).toContain(`${LEAD} ${BASE}`);
+  });
+
+  it('TC-R18-GI-13-01n4 (false state): a form of typed answers only says nothing about an AI helper', () => {
+    render(<Harness initial={fullState({})} />);
+    expect(introParagraphs()).toContain(BASE);
+    expect(document.body.textContent).not.toContain(LEAD);
+    expect(document.body.textContent).not.toMatch(/AI helper/);
+  });
+
+  it('TC-R18-GI-13-01n5 (false state): an empty form and an earlier-record answer alone name no AI helper either', () => {
+    const { unmount } = render(<Harness />);
+    expect(introParagraphs()).toContain(BASE);
+    expect(document.body.textContent).not.toContain(LEAD);
+    unmount();
+    sessionStorage.clear();
+    render(<Harness initial={fullState({ '5': RECORD })} />);
+    expect(introParagraphs()).toContain(BASE);
+    expect(document.body.textContent).not.toContain(LEAD);
+  });
+
+  it('TC-R18-GI-13-01n6: the lead follows the answers on the form - changing a suggestion keeps it', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initial={fullState({ '11': UK })} />);
+    expect(introParagraphs()).toContain(`${LEAD} ${BASE}`);
+    // change the suggested answer: it becomes the person's change, and the AI helper did still suggest it
+    await user.click(screen.getByRole('checkbox', { name: /germany|european union/i }));
+    await user.click(screen.getByRole('checkbox', { name: /united kingdom/i }));
+    expect(screen.getByText(/changed by you/i)).toBeInTheDocument();
+    expect(loadFormDraft()!.answerState['11']!.source.kind).toBe('changed');
+    expect(introParagraphs()).toContain(`${LEAD} ${BASE}`);
+    expect(introParagraphs().filter((t) => t?.includes(LEAD))).toHaveLength(1);
   });
 });

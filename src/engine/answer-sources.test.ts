@@ -11,6 +11,7 @@ import {
   originalPrefilled,
   answerSourceCounts,
   unconfirmedIds,
+  hasModelFilledAnswer,
 } from './answer-sources';
 
 // R18-C2 (specs/intake-flow.md §27.6): the pure helpers behind the marks, the gate and the confirmation line.
@@ -180,5 +181,22 @@ describe('unconfirmedIds: the answers still waiting for a tick', () => {
       '4': { value: 'score', source: { kind: 'typed' } },
     };
     expect(unconfirmedIds(state, 'x', policy)).toEqual(['5', '7', '11']);
+  });
+});
+
+// Newcomer test round 2 (2026-10-26, owner-approved): the form intro names the AI helper only when a model filled in
+// an answer. TC-R18-GI-13-01n10 is the rule behind the sentence: a prefilled or changed source, and nothing else.
+describe('TC-R18-GI-13-01n10: hasModelFilledAnswer - a prefilled or changed source, and nothing else', () => {
+  const quotes = [{ option: 'UK', quote: 'Our UK team' }];
+  it('is true for a pre-filled answer, confirmed or not, and for one the person changed', () => {
+    expect(hasModelFilledAnswer({ '11': { value: ['UK'], source: prefilled(quotes, false) } })).toBe(true);
+    expect(hasModelFilledAnswer({ '11': { value: ['UK'], source: prefilled(quotes, true) } })).toBe(true);
+    expect(hasModelFilledAnswer({ '11': { value: ['UK'], source: { kind: 'changed', from: quotes, read: READ } } })).toBe(true);
+  });
+  it('(false state) is false for a blank form and for typed, earlier-record and not-carried answers alone', () => {
+    expect(hasModelFilledAnswer({})).toBe(false);
+    expect(hasModelFilledAnswer({ '4': { value: 'score', source: { kind: 'typed' } } })).toBe(false);
+    expect(hasModelFilledAnswer({ '7': { value: 'me-or-team', source: { kind: 'record', confirmed: true } } })).toBe(false);
+    expect(hasModelFilledAnswer({ '7': { value: 'me-or-team', source: { kind: 'not-carried' } } })).toBe(false);
   });
 });

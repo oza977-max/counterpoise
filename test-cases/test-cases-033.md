@@ -1036,6 +1036,7 @@ Then each false-state screen MUST NOT contain its claim, and each true-state scr
 | the unencrypted-connection line | https, or this computer | an http firm address |
 | "Your model setting … is kept" and the Forget control | no setting saved, or after Forget | a setting exists |
 | the model-filled line on the confirmation step | no pre-filled answer | at least one confirmed or changed pre-fill |
+| "The AI helper only suggested answers from your description." at the start of the form intro | no pre-filled or changed answer on the form (typed, earlier-record or blank) | at least one pre-filled or changed answer |
 | "the quote … is no longer in your description" | the quote is still in the text | it has left the text |
 
 [Requirement: R18-GI-13] [Priority: MUST]

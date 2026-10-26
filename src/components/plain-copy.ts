@@ -1664,6 +1664,10 @@ export const R18_COPY = {
   MARK_NOT_CARRIED: 'not carried over from the earlier version',
   // One tick per answer. The accessible name is this plus the question.
   CONFIRM_LABEL: "I've checked this answer",
+  // Newcomer test round 2 (2026-10-26, owner-approved): said first in the form intro, only while a model-filled
+  // answer (a prefilled or changed source) is on the form, so "No AI reads your answers" never sits beside
+  // "Suggested by the AI model" unexplained.
+  FORM_INTRO_MODEL_LEAD: 'The AI helper only suggested answers from your description.',
   // Newcomer test round 1 (2026-10-26): said once above the form, only while an unticked suggestion blocks Continue.
   TICK_EXPLAINED: "Tick each suggestion you have checked. Until you tick or change it, it doesn't count and you can't continue.",
   STILL_TO_CHECK: 'Still to check:',

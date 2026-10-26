@@ -50,9 +50,10 @@ describe('the reading step on screen', () => {
     expect(within(reading).getByText(/your description will be read on this computer by alpha:7b/i)).toBeInTheDocument();
     expect(within(reading).getByRole('button', { name: /skip/i })).toBeInTheDocument();
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    // the reading step is gone and the answers are pre-filled
+    // the reading step is gone and the answers are pre-filled (the marks' own claim is "from your description: “quote”";
+    // the form intro may also say "from your description")
     expect(screen.queryByText(R18_COPY.READING_HEADING)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/from your description/i)).toHaveLength(2);
+    expect(screen.getAllByText(/from your description: “/i)).toHaveLength(2);
   }, SLOW_FLOW_MS);
 
   it('TC-R18-GI-13-01b: no reading step, no Skip and no "Reading" wording when no model is set', async () => {
@@ -77,6 +78,42 @@ describe('the reading step on screen', () => {
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     expect(screen.getByText(/we don.t follow that/i)).toBeInTheDocument();
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
+  }, SLOW_FLOW_MS);
+});
+
+// Newcomer test round 2 (2026-10-26, owner-approved): the form intro says what the AI helper did, only when it did it.
+describe('the form intro on the real route (TC-R18-GI-13-01n7 to n9, newcomer round 2)', () => {
+  const intros = () => Array.from(document.querySelectorAll('.plain-form__intro')).map((p) => p.textContent);
+  const BASE = 'No AI reads your answers or makes the decision, so the same answers always get the same result.';
+
+  it('TC-R18-GI-13-01n7 (true state): a read that filled in answers: the intro begins "The AI helper only suggested answers from your description."', async () => {
+    installModel({ kind: 'honours-format', reply: GOOD });
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await describeAndContinue(user, DESC);
+    await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
+    expect(screen.getAllByText(/^Suggested by the AI model alpha:7b from your description:/).length).toBeGreaterThan(0);
+    expect(intros()).toContain(`${R18_COPY.FORM_INTRO_MODEL_LEAD} ${BASE}`);
+  }, SLOW_FLOW_MS);
+
+  it('TC-R18-GI-13-01n8 (false state): a read that filled in nothing: the intro is the plain sentence alone, with no AI helper in it', async () => {
+    installModel({ kind: 'content', content: 'I could not find anything, sorry.' });
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await describeAndContinue(user, DESC);
+    await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('unusable', 'this-computer', '')));
+    expect(intros()).toContain(BASE);
+    expect(document.body.textContent).not.toContain(R18_COPY.FORM_INTRO_MODEL_LEAD);
+  }, SLOW_FLOW_MS);
+
+  it('TC-R18-GI-13-01n9 (false state): no model at all: the intro is the plain sentence alone', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await describeAndContinue(user, DESC);
+    await screen.findByText(FORM_HEADING);
+    expect(intros()).toContain(BASE);
+    expect(document.body.textContent).not.toContain(R18_COPY.FORM_INTRO_MODEL_LEAD);
   }, SLOW_FLOW_MS);
 });
 
@@ -211,7 +248,7 @@ describe('Skip, timeout and a changed setting', () => {
     await user.dblClick(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     expect(fake.requests).toHaveLength(1);
-    expect(screen.getAllByText(/from your description/i)).toHaveLength(2);
+    expect(screen.getAllByText(/from your description: “/i)).toHaveLength(2);
   }, SLOW_FLOW_MS);
 });
 

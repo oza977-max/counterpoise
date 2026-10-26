@@ -65,7 +65,8 @@ describe('R18-C2 acceptance: describe, read, pre-fill, confirm, verdict', () => 
 
       // 4. The form, with Question 5 and Question 11 pre-filled and their quotes visible.
       await screen.findByText(/new pre-check — tell us about the ai you want to use/i, undefined, { timeout: 5000 });
-      const marks = await screen.findAllByText(/from your description/i);
+      // the marks' own claim, "from your description: “quote”" (the form intro may also say "from your description")
+      const marks = await screen.findAllByText(/from your description: “/i);
       expect(marks).toHaveLength(2);
       expect(marks.map((m) => m.textContent).join(' ')).toMatch(/client names/);
       expect(marks.map((m) => m.textContent).join(' ')).toMatch(/our uk team/i);
