@@ -39,3 +39,20 @@ R5-NF-1 is held by the pre-existing determinism test (TC-PE-1-01, unchanged);
 R5-NF-3's reserved-words and text-not-markup constraints are held by the
 suite-wide single-match guard and the existing [SECURITY] patterns — no new
 rendered string here matches `/approved|rejected/i` (verified by suite run).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R5-GR-2-01 | Superseded by R18-GI-10 (R18-A): the card review that refused Proceed until every card was confirmed is unreachable (the model no longer reads the description); the form has no proposed values to confirm. No replacement — behaviour retired. |
+| TC-R5-GX-1-01 | Superseded by R18-GI-10 (R18-A): the model's list of countries is never read now, so there is nothing unrecognised to drop and name; the form only offers the policy's own countries. No replacement — behaviour retired. |
+| TC-R5-GR-2-02 | Superseded by R18-GI-10 (R18-A): the review screen that said values were proposed, not scored, is unreachable; the form shows the person's own answers. No replacement — behaviour retired. |
+| TC-R5-GR-1-01 | Superseded by R18-GI-10 (R18-E): meanings and consequences on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R5-GR-1-02 | Superseded by R18-GI-10 (R18-E): a changed value's changed meaning on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R5-GR-1-03 | Superseded by R18-GI-10 (R18-E): 'not stated' for absent optional fields on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R5-GR-2-03 | Superseded by R18-GI-10 (R18-E): the form path carrying no unconfirmed set after GRAPH_EXTRACTED belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R5-GR-2-04 | Superseded by R18-GI-10 (R18-E): QUESTIONS_GENERATED being refused while any node is unconfirmed belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R5-GR-2-05 | Superseded by R18-GI-10 (R18-E): NODE_CONFIRMED removing exactly that node belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R5-GR-2-06 | Superseded by R18-GI-10 (R18-E): a correction confirming the corrected node implicitly belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R5-GR-3-01 | Superseded by R18-GI-10 (R18-E): the uncertain-node warning and its confirm action belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R5-GR-5-01 | Superseded by R18-GI-10 (R18-E): the one-use-case hint for two processing nodes belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

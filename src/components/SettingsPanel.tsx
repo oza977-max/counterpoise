@@ -1,14 +1,4 @@
 import { useMemo, useState } from 'react';
-import {
-  DEFAULT_LOCAL_LLM_MODEL,
-  DEFAULT_LOCAL_LLM_URL,
-  disableLocalLlm,
-  enableLocalLlm,
-  getLocalLlmModel,
-  getLocalLlmUrl,
-  localLlmEnabled,
-  probeLocalLlm,
-} from '../llm/local-provider';
 import { getPackSources, loadPackSet } from '../store/pack-source';
 import { loadPolicy } from '../store/policy';
 import { checkPolicyReferences } from '../store/policy-references';
@@ -17,6 +7,10 @@ import { clearAllLocalData } from '../store/reset';
 import { clearDraft, clearFormDraft, probeLegacyFormDraft } from './intake-draft';
 import { sampleCount, seedSampleRegister } from '../seeds/sample-register';
 import { ibCaseCount, seedIbPortfolio } from '../seeds/ib-portfolio';
+import ModelSettingSection from './ModelSettingSection';
+import { useModelSetting } from './useModelSetting';
+import { R18_COPY } from './plain-copy';
+import { forgetModelSetting } from '../llm/model-setting';
 
 type Busy = 'none' | 'seeding' | 'seeding-ib' | 'clearing';
 
@@ -40,13 +34,7 @@ function plainStoreName(entry: string): string {
 // boundary (design-vision: models are swappable, the corpus is the moat).
 export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => void } = {}) {
   const [busy, setBusy] = useState<Busy>('none');
-  // Local open-model provider (2026-08-16). URL presence IS the enabled flag.
-  const [localUrl, setLocalUrl] = useState(getLocalLlmUrl() ?? DEFAULT_LOCAL_LLM_URL);
-  const [localModel, setLocalModel] = useState(getLocalLlmModel());
-  const [localSaved, setLocalSaved] = useState(localLlmEnabled());
-  const [localStatus, setLocalStatus] = useState<string | null>(null);
-  const [localDigest, setLocalDigest] = useState<string | null>(null);
-  const [probing, setProbing] = useState(false);
+  const modelSetting = useModelSetting();
   const [message, setMessage] = useState<string | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
 
@@ -139,7 +127,8 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
         setMessage(
           `Not everything could be deleted: ${[...new Set(result.incomplete.map(plainStoreName))].join(', ')}. ` +
             'Your unsaved intake drafts, selected role, hand-off sync record and welcome-panel dismissal were cleared; the data listed was not. ' +
-            'This usually means Counterpoise is open in another tab. Close the others and the delete may still finish on its own; if the data is still there afterwards, try again.'
+            'This usually means Counterpoise is open in another tab. Close the others and the delete may still finish on its own; if the data is still there afterwards, try again.' +
+            (modelSetting.state.kind !== 'none' ? ` ${R18_COPY.CLEAR_KEEPS_SETTING}` : '')
         );
         return;
       }
@@ -196,6 +185,22 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
                 open in another tab, the delete can be held up until you close it, and may still finish
                 afterwards.
               </p>
+              {/* R18-B (NF-3-08): said only when a setting exists, with the control that removes it. */}
+              {modelSetting.state.kind !== 'none' && (
+                <>
+                  <p>{R18_COPY.CLEAR_KEEPS_SETTING}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      forgetModelSetting();
+                      setMessage(R18_COPY.FORGOTTEN_SENTENCE);
+                    }}
+                    disabled={busy !== 'none'}
+                  >
+                    {R18_COPY.FORGET_SETTING_LABEL}
+                  </button>
+                </>
+              )}
               <button type="button" onClick={handleClearAll} disabled={busy !== 'none'}>
                 {busy === 'clearing' ? 'Clearing…' : 'Yes, delete everything'}
               </button>
@@ -209,85 +214,7 @@ export default function SettingsPanel({ onRoleReset }: { onRoleReset?: () => voi
         </div>
       </details>
 
-      <details>
-        <summary>Settings — plain-language model (demo)</summary>
-        <div>
-          <label htmlFor="local-llm-url">Model for plain-language intake (demo)</label>
-          <p>
-            One model slot, optional. Counterpoise scores use cases without it — the model only enables
-            plain-language intake; the guided questions are the deterministic path either way.
-            Point it at a model server on this machine (Ollama): your description goes to a local
-            process, never to the internet, the model proposes, and you confirm every field before
-            anything is scored. Expect a 10&ndash;20 second wait on the first request while the
-            model loads.
-          </p>
-          <p className="field-help">
-            Tested with the open-source Qwen&nbsp;3&nbsp;4B. Frontier models produce noticeably
-            better first drafts than a small open model — this demo ships the free local option so
-            nothing leaves this machine; a firm deployment would point the same slot at a stronger
-            model inside its own boundary.
-          </p>
-          <input
-            id="local-llm-url"
-            type="text"
-            value={localUrl}
-            onChange={(e) => setLocalUrl(e.target.value)}
-            placeholder={DEFAULT_LOCAL_LLM_URL}
-          />
-          <label htmlFor="local-llm-model">Model name</label>
-          <input
-            id="local-llm-model"
-            type="text"
-            value={localModel}
-            onChange={(e) => setLocalModel(e.target.value)}
-            placeholder={DEFAULT_LOCAL_LLM_MODEL}
-          />
-          <button
-            type="button"
-            disabled={probing || !localUrl.trim() || !localModel.trim()}
-            onClick={() => {
-              void (async () => {
-                setProbing(true);
-                setLocalStatus(null);
-                const probe = await probeLocalLlm(localUrl, localModel);
-                if (probe.ok) {
-                  enableLocalLlm(localUrl, localModel);
-                  setLocalSaved(true);
-                  setLocalStatus(`Saved. ${probe.detail}`);
-                  setLocalDigest(probe.digest ?? null);
-                } else {
-                  // Refuse-rather-than-record: a URL that does not answer is
-                  // not saved, so the intake path never silently degrades.
-                  setLocalStatus(probe.detail);
-                  setLocalDigest(null);
-                }
-                setProbing(false);
-              })();
-            }}
-          >
-            {probing ? 'Testing…' : 'Test & save'}
-          </button>
-          {localSaved && (
-            <button
-              type="button"
-              onClick={() => {
-                disableLocalLlm();
-                setLocalSaved(false);
-                setLocalStatus('Local model disabled — the guided form is the intake path again.');
-              }}
-            >
-              Disable local model
-            </button>
-          )}
-          {localStatus && <p role="status">{localStatus}</p>}
-          {localDigest && (
-            <p className="field-help">
-              digest: sha256:{localDigest.replace(/^sha256:/, '').slice(0, 12)}&hellip; — compare against the
-              digest of the build you benchmarked
-            </p>
-          )}
-        </div>
-      </details>
+      <ModelSettingSection />
     </>
   );
 }

@@ -58,6 +58,13 @@ deviation is recorded in requirements-012.md.
 | Date | Change |
 |---|---|
 | 2026-08-18 | Written with the R12 build. |
+| 2026-10-08 | R18-B retires the Settings "Test & save" probe; one row moved to Superseded below. |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R12-MG-2-01 | Superseded by R18-MS-1 and R18-MS-3 (R18-B): the Settings probe that contacted the local model server on save and printed the model's Ollama digest is gone. The setting is now saved by place with no network call, and the explicit "Find models" press lists names only (`GET /api/tags`); no digest is read, shown or recorded this round (specs/intake-flow.md §27.8, §27.13). No replacement — behaviour retired. |
 
 ---
 

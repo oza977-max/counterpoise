@@ -8,8 +8,6 @@ import {
   QUESTIONNAIRE_COPY,
   questionnaireCopyForField,
   vendorNotOnListValue,
-  extractionErrorMessage,
-  EXTRACTION_ERROR_HELP,
   engineErrorMessage,
   plausibilityMessageForForm,
   plausibilityMessageForDescription,
@@ -20,7 +18,7 @@ import type { AssumptionRef } from '../engine/plain-questions';
 // of hand-typing it (BC-003) — the same pattern
 // src/store/plain-language-coverage.test.ts already uses for the policy
 // side of this question.
-import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../llm/graph-extractor';
+import { QUOTE_FIELDS, AGENT_REACH_FIELDS } from '../engine/canonical-vocabulary';
 import { loadPolicy } from '../store/policy';
 import { loadPacks } from '../store/packs';
 import { getPackSources } from '../store/pack-source';
@@ -137,16 +135,16 @@ describe('summaryDestinationLine (F-9, DR7-09)', () => {
 // R16-E §2 (D-101, DR7-31). QUESTIONNAIRE_COPY is the one source for the
 // targeted questionnaire's questions/options AND the review screen's field
 // labels and value words. Every field the generator can actually emit —
-// every QUOTE_FIELDS entry (graph-extractor.ts) plus every condition-key
+// every QUOTE_FIELDS entry (engine/canonical-vocabulary.ts) plus every condition-key
 // field the real policy uses (verified against policy/appetite.yaml) —
 // must have an explicit entry; a test fails otherwise (D-20's "no bare
 // code ever reaches the first screen", extended to this screen).
 describe('QUESTIONNAIRE_COPY (R16-E §2, D-101/DR7-31)', () => {
   // CR6-25 (BC-003): derived from the real sources at test time instead of
-  // hand-typed. questionsForGuessedFields (question-generator.ts) can only
-  // ever emit a field that appears in QUOTE_FIELDS/AGENT_REACH_FIELDS
-  // (graph-extractor.ts — the only place `guessed[nodeId]` entries come
-  // from); candidatesFromRules can only ever emit a field that is a
+  // hand-typed. (Until R18-G a second source, the guessed-fields question builder, could emit any field in
+  // QUOTE_FIELDS/AGENT_REACH_FIELDS, where the retired model route's `guessed[nodeId]` entries came from; it was
+  // removed, and those sets stay in the list as a superset: an older record can still name such a field.)
+  // candidatesFromRules can only ever emit a field that is a
   // condition key on the real shipped policy's invariants/hard lines or its
   // loaded packs' rules. A hand-typed list could silently drift from
   // either source without this test noticing — exactly the defect class
@@ -250,36 +248,13 @@ describe('QUESTIONNAIRE_COPY (R16-E §2, D-101/DR7-31)', () => {
   });
 });
 
-// R16-E §5 (D-104, DR7-30/AB-1). One shared function for both extraction
-// error call sites (IntakeFlow.tsx) — never two independently-worded copies.
-describe('extractionErrorMessage (R16-E §5, D-104)', () => {
-  it('TC-R16-E-51: no-api-key reads as the description reader not being set up', () => {
-    expect(extractionErrorMessage('no-api-key')).toBe('The description reader isn’t set up on this computer.');
-  });
-
-  it('TC-R16-E-52: network-error reads as not being able to reach the description reader', () => {
-    expect(extractionErrorMessage('network-error')).toMatch(/couldn.t reach the description reader/i);
-  });
-
-  it('TC-R16-E-53: parse-error reads as not being able to read the description reliably', () => {
-    expect(extractionErrorMessage('parse-error')).toMatch(/couldn.t read your description reliably/i);
-  });
-
-  it('TC-R16-E-54: the shared help line offers both recovery paths', () => {
-    expect(EXTRACTION_ERROR_HELP).toMatch(/try again/i);
-    expect(EXTRACTION_ERROR_HELP).toMatch(/answer the questions/i);
-  });
-});
-
 // CR6-12 (Minor). evaluate()'s EngineError.kind reached the screen as the
 // raw enum string ("Evaluation failed: no-track-match") inside a sentence
 // that then told the person to "review your answers" — every one of these
 // kinds is the firm's own rules or policy file, never something a
-// different answer would have avoided. One function, like
-// extractionErrorMessage above: a plain sentence per kind that never
-// blames the person's answers. Typed as the literal union rather than
-// importing EngineError from src/engine/types — same reason
-// extractionErrorMessage does not import LlmError from src/llm/*.
+// different answer would have avoided. One function: a plain sentence per
+// kind that never blames the person's answers. Typed as the literal union
+// rather than importing EngineError from src/engine/types.
 describe('engineErrorMessage (CR6-12)', () => {
   it('TC-CR6-12: every engine error kind reads as the firm\'s rules, never the person\'s answers, and never leaks the raw kind string', () => {
     const kinds = ['policy-invalid', 'hard-line-tripped', 'no-control-set', 'jurisdiction-conflict', 'no-track-match'] as const;
@@ -319,7 +294,7 @@ describe('plausibility wording, by path (R16-E §4, v2.1)', () => {
     expect(message).not.toMatch(/where does the ai come from/i);
   });
 
-  it('TC-R16-E-57: the three card titles are shared between this wording and GraphView\'s own column headings', () => {
+  it('TC-R16-E-57: the three card titles are one shared table, used by this wording and the summary', () => {
     expect(GRAPH_REVIEW_CARD_TITLES).toEqual({ input: 'What it uses', processing: 'The AI', output: 'What comes out' });
   });
 });

@@ -468,3 +468,45 @@ These cases keep their ids. Their assertions changed because they pinned the old
 | TC-RG-9-04 | Was: the checklist read "evidence: N machine-verified, …". Now: it reads "N marked verified in your firm's policy file" (CR7-40) — `VerdictDisplay.cr005.test.tsx` |
 | (control-evidence checklist, no TC id) | Was: "0 machine-verified". Now: "0 marked verified in your firm's policy file" (CR7-40) — `RegisterDetail.controlEvidence.test.tsx` |
 | (verdict-view-model fixture `makePolicy`) | Was: `tier_workflow` values `'x'`. Now: `'self-service'`, because the sign-off derivation now reads `tier_workflow` (CR7-09) and an unknown value fails safe to "needs sign-off", which the fixture's tests did not mean — `verdict-view-model.test.ts` |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-CR7-01a-1 | Superseded by R18-GI-10 (R18-A): restarting a model extraction on a restored description draft is gone. Reload at each step is TC-R18-GI-9-01 and -02. No replacement — behaviour retired. |
+| TC-CR7-01b | Superseded by R18-GI-10 (R18-A): a restored draft whose extraction fails (the Try again panel) is gone with the extraction. No replacement — behaviour retired. |
+| TC-CR7-01c | Superseded by R18-GI-10 (R18-A): the extractor is never called from a fresh description now. No replacement — behaviour retired. |
+| TC-CR7-03b | Superseded by R18-GI-10 (R18-A): a model-guessed supplier that must not reach the result no longer exists. The questions-step Back round trip is TC-CR7-03a and TC-CR7-03d. No replacement for the guess — behaviour retired. |
+| TC-CR7-03c | Superseded by R18-GI-10 (R18-A): a model-declared model guess that must not reach the result no longer exists. The questions-step Back round trip is TC-CR7-03a and TC-CR7-03d. No replacement for the guess — behaviour retired. |
+| TC-CR7-21b | Superseded by R18-GI-10 (R18-A): the description-path correction and retry is unreachable. The same once-only trail guarantee on the form route is TC-CR7-21a in IntakeFlow.cr7-fx1.test.tsx. |
+| TC-CR7-28-5 | Superseded by R18-NF-5 (R18-A): loadDraftInfo no longer migrates an earlier draft, so its 'migrated' flag is always false; the screen's sentence comes from earlierVersionNotice (TC-R18-NF-5-01). |
+| TC-CR7-28-6 | Superseded by R18-NF-5 (R18-A): no questionnaire draft is migrated now, form path or not. An earlier-version one opens the form with the description kept (TC-R18-NF-5-01) and a version-4 one restores as it is (TC-CR6-04a in IntakeFlow.cr6-fx2.test.tsx). |
+| TC-CR7-28-8 | Superseded by R18-NF-5 (R18-A): there is no migrated card review to keep assumptions and the uncertain list on; an earlier draft carries no answers (TC-R18-NF-5-01). No replacement — behaviour retired. |
+| TC-CR7-28b-2 | Superseded by R18-NF-5 (R18-A): the rule that a version-2 form draft or one with a back snapshot is not migrated is replaced by the one rule that no earlier-version draft is migrated (TC-R18-NF-5-01, -02). |
+| TC-CR7-28-4 | Superseded by R18-NF-5 (R18-A): a bare version-1 questions draft no longer returns to the card review; it opens the form with the description kept and no answers (TC-R18-NF-5-01). |
+| TC-CR7-28b-1 | Superseded by R18-NF-5 (R18-A): the current draft version is 4, and a version-2 draft is handled like every earlier one (opens the form, description kept: TC-R18-NF-5-01, -02). |
+| TC-CR7-01a-2 | Superseded by R18-GI-10 (R18-A): there is no extractor call to count across a double mount. No replacement — behaviour retired. |
+| TC-CR7-02-1 | Superseded by R18-GI-10 (R18-E): Back from the questions re-asking the 'Not sure' answers belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02-2 | Superseded by R18-GI-10 (R18-E): a revisited review staying marked as revisited across a trip into the questions belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02-3 | Superseded by R18-GI-10 (R18-E): a first reading not being marked as revisited belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02a-2 | Superseded by R18-GI-10 (R18-E): Change an answer returning to the review screen with the assumptions and a revisit flag (the form carries its assumptions: TC-R16-W-27) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02b-2 | Superseded by R18-GI-10 (R18-E): a failed evaluation handing the assumptions back to the review screen (the form carries them: TC-R16-F-53) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02d-2 | Superseded by R18-GI-10 (R18-E): CORRECT_VERDICT carrying what the last confirmation was based on (CORRECT_VERDICT_WITH_FORM carries it: TC-R16-D2-55) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02g | Superseded by R18-GI-10 (R18-E): no 'no basis' badge on a revisited card screen belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-02g-1 | Superseded by R18-GI-10 (R18-E): the 'no basis' badge on a first reading of a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-02g-2 | Superseded by R18-GI-10 (R18-E): a guessed field keeping its badge on a revisit belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-02g-3 | Superseded by R18-GI-10 (R18-E): the restored review screen showing no 'no basis' badge after Change an answer (the real reducer now returns to the form) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02g-3b | Superseded by R18-GI-10 (R18-E): the same graph on a first review still showing the badge belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02h-3 | Superseded by R18-GI-10 (R18-E): a Back round trip restoring an earlier round's assumptions belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-02h-4 | Superseded by R18-GI-10 (R18-E): the same round trip from a correction pass belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03-1 | Superseded by R18-GI-10 (R18-E): QUESTIONS_GENERATED snapshotting the graph, corrections and guessed list belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03-2 | Superseded by R18-GI-10 (R18-E): Back restoring that snapshot so a field is asked again belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03-3 | Superseded by R18-GI-10 (R18-E): the snapshot surviving Undo and a contradiction round trip belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03-4 | Superseded by R18-GI-10 (R18-E): a pre-snapshot questionnaire stepping back to the review screen belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03f-2 | Superseded by R18-GI-10 (R18-E): a review after a failed evaluation staying so after a trip into the questions belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-03f-3 | Superseded by R18-GI-10 (R18-E): a first reading not being marked as after a failed evaluation belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR7-25 | Superseded by R18-GI-10 (R18-E): the 'replaces something you use?' row on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-25-1 | Superseded by R18-GI-10 (R18-E): correcting that row on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-31 | Superseded by R18-GI-10 (R18-E): dropping decision_type_other when decision_type is set belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-CR7-31b | Superseded by R18-GI-10 (R18-E): the tool schema's instruction to use decision_type_other only when no listed type fits belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-R12-BD-1-02 | Superseded by R18-GI-10 (R18-E): the combined marker for a field with no quote belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

@@ -1,5 +1,6 @@
 import type { GraphCorrection } from '../engine/types';
 import type { Verdict } from '../types/verdict';
+import type { AnswerSources } from '../engine/prefill-types';
 
 // R16-D2 §1 (D-95). The persisted shape of src/components/plain-copy.ts's
 // `Assumption` — declared here rather than imported, because src/store/*
@@ -106,6 +107,10 @@ export type AuditEventPayload =
       // currentVerdictAttestationFields() is the one place that decides
       // which event's assumptions a reader sees for the CURRENT verdict.
       assumptions?: AssumptionRecord[];
+      // R18-D1 (specs/intake-flow.md §27.13): where each confirmed answer came from. Optional everywhere, so a
+      // record written before Round 18 reads as before. Written by R18-D2; read by RegisterDetail through
+      // currentVerdictAttestationFields. Provenance is self-asserted; the hash chain is not authentication.
+      answer_sources?: AnswerSources;
     }
   | {
       type: 'verdict_produced';
@@ -165,6 +170,14 @@ export type AuditEventPayload =
       // changed. Optional: a pre-D2 verdict_corrected predates the field,
       // and an absent count is never read as zero (`=== 0`, not `!count`).
       corrections_count?: number;
+      // R18-D1 (§27.13): as graph_confirmed's field above, for the confirmation this correction made.
+      answer_sources?: AnswerSources;
+      // R18-D1 (§27.13 "The corrected description"): written only when a correction edited the description.
+      // use_case_created's description is never rewritten.
+      description?: string;
+      // R18-E review pass 1 (§27.10): true when the case was an older one whose record kept no answers, so this
+      // correction wrote no graph_corrected and no corrections_count. Absent otherwise; absence is not a claim.
+      corrected_from_earlier_record?: boolean;
     }
   | { type: 'lifecycle_stage_changed'; from_stage: LifecycleStage; to_stage: LifecycleStage }
   | { type: 're_evaluation_queued'; policy_version: string }

@@ -194,3 +194,23 @@ verbatim quotes; every caller of `buildGraphFromForm` passes a timestamp (B-15);
 the "replaces something you already use?" form-path test now pins the exact
 assumption reference; `UnderstoodSummary`'s jurisdiction line pins the policy's
 country name; `PolicyEditor` and `RegisterView` pin the reworded text (TC-CR6-29).
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-CR6-05a | Superseded by R18-GI-10 (R18-G): a model-guessed `replaces_prior_model` becoming a question about that node belonged to `questionsForGuessedFields`, which listed the fields a model had guessed and was removed as callerless (nothing reads a graph out of a description any more). The form asks that question itself. No replacement — behaviour retired. |
+| TC-CR6-14 | Superseded by R18-GI-10 (R18-A): a stale extraction error could only leak from a model extraction, which no longer happens. No replacement — behaviour retired. |
+| TC-CR6-17b | Superseded by R18-GI-10 (R18-A): the card review's own Continue is unreachable. The same invalid-policy message on the form's Continue is TC-CR6-17a in IntakeFlow.cr6-fx2.test.tsx. |
+| TC-CR6-05b | Superseded by R18-GI-10 (R18-A): a model-guessed replaces_prior_model answered Not sure on the description path is unreachable; the form asks that question itself. No replacement — behaviour retired. |
+| TC-CR6-02j | Superseded by R18-GI-10 (R18-A): the late-finishing model extraction whose lock release it guarded no longer exists, since Mine is different now opens the form directly. No replacement — behaviour retired. |
+| TC-CR6-04b | Superseded by R18-NF-5 and R18-GI-10 (R18-A): a draft from an earlier build no longer restores as a questionnaire, so there is no unsafe undo snapshot to drop; such a draft opens the form with the description kept and no answers (TC-R18-NF-5-01). |
+| TC-CR6-03a | Superseded by R18-GI-10 (R18-E): carrying guessedFields, provenance and the gate values onto the questions and restoring them on Back belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR6-03b | Superseded by R18-GI-10 (R18-E): the review screen after Back keeping its quotes and checked state belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR6-03c | Superseded by R18-GI-10 (R18-E): a guessed field dropping out once answered, and Back restoring the asked list belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR6-03d | Superseded by R18-GI-10 (R18-E): a gate-free review keeping 'no gate' through Back belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR6-03e | Superseded by R18-GI-10 (R18-E): Back carrying ignoredJurisdictions and the first uncertainNodeIds belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR6-05c | Superseded by R18-GI-10 (R18-E): a reply that quotes replaces_prior_model verbatim being verified, not guessed belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-CR6-B8 | Superseded by R18-GI-10 (R18-E): guessing every field of a node that has no basis_quotes belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-CR6-B9 | Superseded by R18-GI-10 (R18-E): a free-typed decision label reaching the graph as decision_type_other belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |
+| TC-CR6-B9b | Superseded by R18-GI-10 (R18-E): the tool schema's 200-character bound on decision_type_other belonged to `extractGraph` (`graph-extractor.ts`), the model route that built a graph from the description, which is deleted. No replacement — behaviour retired. |

@@ -16,7 +16,7 @@ import type {
 // P3-C01 pass-through stubs. Rule 1: pure — active packs and rules are
 // sorted by id; effects are a pure function of (graph, tier, packs).
 
-const TIER_RANK: Record<Tier, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+import { TIER_ORDER as TIER_RANK } from './tier';
 
 // NF-7: a reviewer_name OR sign_off_date still carrying a [..]
 // placeholder is UNSIGNED — an un-dated sign-off is not a sign-off

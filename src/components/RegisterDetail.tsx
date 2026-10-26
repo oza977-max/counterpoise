@@ -8,7 +8,7 @@ import { registerSaysNoModelNamed } from './verdict-view-model';
 import type { PolicyFile } from '../engine/types';
 import { getPackSources, loadPackSet } from '../store/pack-source';
 import type { Verdict } from '../types/verdict';
-import { RATING_INSTRUCTION_AUDIT_LINE } from './plain-copy';
+import { R18_COPY } from './plain-copy';
 import { TIER_MEANINGS, TRACK_MEANINGS, STAGE_LABELS, ACTION_LABEL, STATUS_LABEL } from './field-copy';
 import { findRuleDescription } from '../engine/find-rule-description';
 import { findPrecedents } from '../engine/precedent';
@@ -20,6 +20,10 @@ import type { KnowledgeMatch } from '../engine/knowledge-lens';
 import { loadKnowledgeLens } from '../store/knowledge-lens-loader';
 import { getCurrentKnowledgeLensYaml } from '../store/knowledge-lens-source';
 import KnowledgeLensPanel from './KnowledgeLensPanel';
+import AnswerSourcesPanel from './AnswerSourcesPanel';
+import type { AnswerSources } from '../engine/prefill-types';
+import { correctionOpening, effectiveDescription, restorableAnswers } from './correction-from-record';
+import type { CorrectionOpening } from './correction-from-record';
 
 // V1.2-A (design-gap-audit B3/B4/B5/B6). Rule 4 (cross-cutting.md §7):
 // presentation-only — renders the REAL audit store via getAll()
@@ -33,6 +37,9 @@ interface RegisterDetailProps {
   // absence of a policy is not evidence of absent evidence.
   policy?: PolicyFile;
   onBack: () => void;
+  // R18-D2 (§27.10). Given by the register's host (App), which can open the intake on the form. Without it the
+  // action is not offered at all.
+  onCorrectFromRecord?: (opening: CorrectionOpening) => void;
 }
 
 // Per-type detail lines derived from the real payload union — never a
@@ -65,7 +72,7 @@ export function eventDetail(event: AuditEvent, viewerRole?: string): string {
     case 'graph_confirmed':
       // GT7 L-1: a fixed sentence for every role — the phrases themselves are not quoted here.
       return `Attested. Graph v${p.graph_version}, ${p.corrections_count} correction${p.corrections_count === 1 ? '' : 's'}.${assumptionsCountClause(p.assumptions)}${
-        Array.isArray(p.rating_instructions) && p.rating_instructions.length > 0 ? ` ${RATING_INSTRUCTION_AUDIT_LINE}` : ''
+        Array.isArray(p.rating_instructions) && p.rating_instructions.length > 0 ? ` ${R18_COPY.RATING_AUDIT_LINE}` : ''
       }${
         p.contradiction_resolutions && p.contradiction_resolutions.length > 0
           ? ` ${p.contradiction_resolutions.length} contradiction${p.contradiction_resolutions.length === 1 ? '' : 's'} resolved: ${p.contradiction_resolutions.map((n) => `“${n}”`).join(' · ')}`
@@ -88,7 +95,9 @@ export function eventDetail(event: AuditEvent, viewerRole?: string): string {
       // a pre-D2 event lacking the field is honestly unknown, not zero.
       return `${p.corrections_count === 0 ? 'Re-checked — no answers changed. ' : ''}${
         STATUS_LABEL[p.new_verdict.status] ?? p.new_verdict.status
-      } · ${p.new_verdict.tier} · Track ${p.new_verdict.track}. Supersedes verdict ${p.original_verdict_id.slice(0, 8)}…${assumptionsCountClause(p.assumptions)}`;
+      } · ${p.new_verdict.tier} · Track ${p.new_verdict.track}. Supersedes verdict ${p.original_verdict_id.slice(0, 8)}…${assumptionsCountClause(p.assumptions)}${
+        p.corrected_from_earlier_record === true ? ` ${R18_COPY.CORRECTED_FROM_EARLIER_RECORD}` : ''
+      }`;
     case 'lifecycle_stage_changed':
       // design-review-003 (Panel B): this used to print the raw enum
       // ("pre_checked → approved") while the stage chip two sections above,
@@ -173,16 +182,33 @@ export function currentVerdictAttestationFields(events: AuditEvent[]): {
   // comment above already anticipated — the case's "Not sure" answers,
   // read from whichever event recorded the CURRENT verdict.
   assumptions?: AssumptionRecord[];
+  // R18-D1 (§27.13, GI-5-11): where each confirmed answer came from, read from the SAME event as the others, so a
+  // correction's own sources win and an older confirmation's never describe a corrected case. Untrusted until
+  // the reader (engine/answer-sources.ts) has checked it.
+  answer_sources?: AnswerSources;
+  // R18-D1 (§27.13 "The corrected description"): the latest description a correction edited, or absent when no
+  // correction did (then use_case_created's description stands, unrewritten).
+  description?: string;
 } {
   const reversed = [...events].reverse();
   const latestCorrection = reversed.find((e) => e.payload.type === 'verdict_corrected');
   if (latestCorrection && latestCorrection.payload.type === 'verdict_corrected') {
     const p = latestCorrection.payload;
+    // Written only when a correction edited the description, so the latest one that did is the current text.
+    let description: string | undefined;
+    for (const e of reversed) {
+      if (e.payload.type === 'verdict_corrected' && typeof e.payload.description === 'string') {
+        description = e.payload.description;
+        break;
+      }
+    }
     return {
       submitter_note: p.submitter_note,
       contradiction_resolutions: p.contradiction_resolutions,
       answer_contexts: p.answer_contexts,
       assumptions: p.assumptions,
+      ...(p.answer_sources !== undefined ? { answer_sources: p.answer_sources } : {}),
+      ...(description !== undefined ? { description } : {}),
     };
   }
   const confirmed = reversed.find((e) => e.payload.type === 'graph_confirmed');
@@ -193,12 +219,29 @@ export function currentVerdictAttestationFields(events: AuditEvent[]): {
       contradiction_resolutions: p.contradiction_resolutions,
       answer_contexts: p.answer_contexts,
       assumptions: p.assumptions,
+      ...(p.answer_sources !== undefined ? { answer_sources: p.answer_sources } : {}),
     };
   }
   return {};
 }
 
-export default function RegisterDetail({ useCaseId, role, policy, onBack }: RegisterDetailProps) {
+/** True when the latest correction carries no answer_sources but an earlier confirmation (or correction) did.
+ *  The register then shows one line so the missing rows are not mistaken for a case that never had any. */
+export function earlierSourcesDropped(events: AuditEvent[]): boolean {
+  let latest = -1;
+  events.forEach((e, i) => {
+    if (e.payload.type === 'verdict_corrected') latest = i;
+  });
+  if (latest < 0) return false;
+  const last = events[latest]!.payload;
+  if (last.type !== 'verdict_corrected' || last.answer_sources !== undefined) return false;
+  return events.slice(0, latest).some((e) => {
+    const p = e.payload;
+    return (p.type === 'graph_confirmed' || p.type === 'verdict_corrected') && typeof p.answer_sources === 'object' && p.answer_sources !== null && !Array.isArray(p.answer_sources);
+  });
+}
+
+export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorrectFromRecord }: RegisterDetailProps) {
   const [summary, setSummary] = useState<UseCaseSummary | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
   // code-review-005 round 2, N4: load() had no error path at all — a
@@ -240,6 +283,8 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
   const [dissentError, setDissentError] = useState<string | null>(null);
   const [dissentBusy, setDissentBusy] = useState(false);
   const dissentInFlight = useRef(false);
+  // R18-D2: a double press of "Correct this check" must open the case once (a synchronous guard; state lands too late).
+  const correctInFlight = useRef(false);
 
   // ADR-RL-R3-1: READ the verdict from the audit trail the page already
   // loads. Never recompute — the verdict a reviewer signs must be the one
@@ -1026,6 +1071,59 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack }: Regi
             .join('; ')}{' '}
           — see the risk-knowledge panel below. Filing a gap does not close it or change this verdict;
           someone still has to act on it.
+        </p>
+      )}
+
+      {/* R18-D2/E (§27.10): correcting a check is a submitter action, never the reviewer's. A case whose current
+          record says where its answers came from reopens from them; an older case reopens from its "Not sure"
+          answers, with its own note (R18-E). The action
+          reopens the case on the form; nothing is written until the person confirms there. */}
+      {(() => {
+        if (role !== '1LoD' || !onCorrectFromRecord || !policy || !latestVerdict) return null;
+        const f = currentVerdictAttestationFields(events);
+        const description = effectiveDescription(events);
+        // A case with answer_sources reopens from them; an older case (none) reopens from its "Not sure" assumptions.
+        const older = f.answer_sources === undefined;
+        if (restorableAnswers(f.answer_sources, description, policy, f.assumptions, summary.label) === null) return null;
+        return (
+          <div className="register-detail__correct">
+            <button
+              type="button"
+              onClick={() => {
+                if (correctInFlight.current) return;
+                const opening = correctionOpening({
+                  useCaseId: summary.use_case_id,
+                  originalVerdictId: latestVerdict.id,
+                  graphVersion: latestVerdict.graph_version,
+                  description,
+                  sources: f.answer_sources,
+                  assumptions: f.assumptions,
+                  name: summary.label,
+                  policy,
+                });
+                if (!opening) return;
+                correctInFlight.current = true;
+                onCorrectFromRecord(opening);
+              }}
+            >
+              {R18_COPY.CORRECT_THIS_CHECK_LABEL}
+            </button>
+            <p className="register-detail__correct-note">
+              {older ? R18_COPY.CORRECT_OLDER_CHECK_NOTE : R18_COPY.CORRECT_THIS_CHECK_NOTE}
+            </p>
+          </div>
+        );
+      })()}
+
+      {/* R18-D1 (§27.13): where each answer came from, read from the record through the one correction-aware
+          reader. Renders nothing for a case that carries no answer_sources, so an older case reads as before. */}
+      {(() => {
+        const f = currentVerdictAttestationFields(events);
+        return <AnswerSourcesPanel sources={f.answer_sources} correctedDescription={f.description} policy={policy} />;
+      })()}
+      {earlierSourcesDropped(events) && (
+        <p className="register-detail__sources-history" role="note">
+          {R18_COPY.SOURCES_HISTORY_NOTE}
         </p>
       )}
 

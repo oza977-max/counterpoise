@@ -14,6 +14,7 @@
 // own edited copy.
 import shippedPolicyYaml from '../../policy/appetite.yaml?raw';
 import { loadPolicy } from '../store/policy';
+import { R18_COPY } from './plain-copy';
 
 const shipped = loadPolicy(shippedPolicyYaml);
 const SHIPPED_HARD_LINES = shipped.valid ? String(shipped.policy.hard_lines.length) : 'several';
@@ -55,15 +56,7 @@ export default function AboutPanel({ onNavigate }: AboutPanelProps) {
         there is no model to jailbreak into a verdict — adversarial text can at most mis-propose,
         never decide.
       </p>
-      <p>
-        Full transparency: the plain-language path runs on a <strong>local open model</strong> — a
-        small model on your own machine (tested: Qwen&nbsp;3&nbsp;4B), free, and your description
-        never leaves it. It had its first live run on 16&nbsp;August 2026 and has since been
-        exercised across a 15-domain sweep; it drafts usable graphs and misreads some fields —
-        which the provenance quotes, guessed-field questions and review screen exist to catch.
-        Frontier models draft better; a firm deployment would point the same model slot at a
-        stronger model inside its own boundary. The guided form remains the most-verified path.
-      </p>
+      <p>{R18_COPY.ABOUT_MODEL_PARAGRAPH}</p>
 
       <h2>It comes with rules — you bring the authority</h2>
       <p>
@@ -177,7 +170,7 @@ export default function AboutPanel({ onNavigate }: AboutPanelProps) {
           steps when a use case requires them.
         </li>
         <li>
-          This version runs entirely in your browser: nothing you enter leaves this machine. The audit
+          {R18_COPY.ABOUT_BROWSER_LINE} The audit
           trail is hash-chained — an edited event, or a deleted event with later events after it,
           breaks the chain, and every sign-off page runs a live check for that. Removing the newest
           events can&apos;t be detected from inside this browser, and a full, consistent rewrite by

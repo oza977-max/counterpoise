@@ -22,3 +22,13 @@ covered by TC-R9-SC-4-02's collapse handling plus the unchanged R8
 component tests (the full panel renders inside the disclosure). R9-NF-1/2
 are held by the unchanged R5–R8 gate/guard suites, the suite-wide
 reserved-words guard, and TC-R3-NF-2-01's no-write pattern.
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R9-SC-1-01 | Superseded by R18-GI-10 (R18-A): the review screen's checklist of outstanding obligations (guessed fixes, confirms, countries) is unreachable. The description screen's mentioned or not mentioned checklist is a different thing (TC-R18-GI-1-01..09). No replacement — behaviour retired. |
+| TC-R9-SC-4-02 | Superseded by R18-GI-10 (R18-A): the review screen's order of countries and similar cases is unreachable (similar cases now come before the form). No replacement — behaviour retired. |
+| TC-R9-SC-1-02 | Superseded by R18-GI-10 (R18-A): the review screen's done state for zero outstanding obligations is unreachable. No replacement — behaviour retired. |
+| TC-R9-SC-3-01 | Superseded by R18-GI-10 (R18-E): one alarm per card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R9-SC-4-01 | Superseded by R18-GI-10 (R18-E): the 'Fix the details we couldn't tell' action belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

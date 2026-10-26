@@ -5,9 +5,9 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, round-18]
   pull_request:
-    branches: [main]
+    branches: [main, round-18]
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -23,6 +23,10 @@ jobs:
       - run: npm test
       - run: npx tsc --noEmit
       - run: npm run build
+      # The built site, docs/, README.md, backtest/cases.json and backtest/engine-verdicts.json must hold no credential-shaped
+      # string, and the built pages no script from another origin, and the built page must carry its CSP meta (R18-G, specs/intake-flow.md §27.9).
+      # After the build (it scans dist/), and not inside npm test, which runs before it.
+      - run: npm run scan:dist
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

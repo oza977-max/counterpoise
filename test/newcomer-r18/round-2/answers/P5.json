@@ -1,0 +1,100 @@
+{
+  "packet": "P5",
+  "answers": {
+    "1": "Application screening and shortlisting model",
+    "2": "It screens job applications and shortlists candidates for interview, for roles across our European entities.",
+    "3": "Not sure yet",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "4a": "No, or I don’t know",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "suggests, ranks or flags things, and a person decides what to do",
+    "6a": "It’s usually what a decision is based on — people tend to go with it",
+    "7": "Other teams in the firm",
+    "8": "Who to hire or promote — including tools that only produce notes, transcripts or summaries a person later uses to decide",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "European Union",
+      "Somewhere else, or not sure"
+    ]
+  },
+  "prefills": [
+    {
+      "question": "8",
+      "status": "ticked"
+    },
+    {
+      "question": "6",
+      "status": "ticked"
+    },
+    {
+      "question": "10",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "Make it smarter",
+      "why": "A button sitting next to 'Try an example' on the first screen with no explanation. I could not tell what it changes or whether it is safe to press."
+    },
+    {
+      "item": "Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check. / Setup steps for whoever runs Ollama",
+      "why": "I do not know what Ollama is, and I am not sure whether it is me or IT who is meant to do this."
+    },
+    {
+      "item": "No model is connected.",
+      "why": "The first screen says this, but the next screens say my description 'will be read on this computer by alpha:7b' and the form shows suggestions from alpha:7b. I could not tell whether an AI is reading my words or not."
+    },
+    {
+      "item": "alpha:7b: untested",
+      "why": "I do not know what alpha:7b is or what 'untested' means. As a compliance person I would want to know before I trust its suggestions."
+    },
+    {
+      "item": "No AI reads your answers or makes the decision, so the same answers always get the same result.",
+      "why": "It sits close to 'Suggested by the AI model alpha:7b from your description', so it reads as if an AI is involved. I worked out that the AI only suggests and the rules decide, but it took thought."
+    },
+    {
+      "item": "2 Similar checks (shown with a left arrow on the form screen)",
+      "why": "I do not know what 'Similar checks' means, why I jumped from step 1 to step 3, or what the arrow means."
+    },
+    {
+      "item": "Your description doesn't mention: ... What it can help decide / How widely it will be used / Which countries does it involve / What information it will see or use",
+      "why": "My description says it screens job applications, is used across our European entities, and is for roles. The nudge screen and the 'What your description mentions' list still show everything as 'not mentioned'. I could not tell if the tool misread me or if 'mentioned' means something narrower."
+    },
+    {
+      "item": "What kind of AI is it? If more than one fits ... pick the one nearest the bottom of this list.",
+      "why": "I do not know the technical makeup of the screening model. It ranks CVs, but it might also read text, and I could not tell which counts. I chose the ranking option because the example names 'a ranking of CVs'."
+    },
+    {
+      "item": "(Whether it acts by itself is asked separately, in question 6.)",
+      "why": "The questions are not numbered on my screen, so I could not find 'question 6'. Nothing on my form is obviously about acting by itself."
+    },
+    {
+      "item": "Who ends up seeing or receiving what it produces, in its final form? ... Clients or customers — including people applying to us",
+      "why": "The shortlist is seen by recruiters, but the applicants are the people affected by it. I was unsure whether 'receiving' includes them, and I chose 'Other teams in the firm'."
+    },
+    {
+      "item": "Which countries does it involve? ... European Union",
+      "why": "My description says 'European entities', which may include the UK or Switzerland as well as EU countries. There is no 'Europe' option, so I added 'Somewhere else, or not sure'."
+    },
+    {
+      "item": "Where does the AI come from? / Does it replace something you already use / If it gets something wrong, can the mistake be caught",
+      "why": "I understood the questions. I am in compliance, not in recruitment, so I could not answer them from what I know. I picked 'Not sure' and expect the careful assumption to be applied."
+    }
+  ],
+  "expectNext": "After I press Continue I expect to move on to step 4 'Questions', with a few more questions that depend on my answers, such as how the model works and why it gave a result. Then step 5 'Confirm' should show my answers and assumptions to check, and step 6 'Result' should say whether I can go ahead and what needs doing first, according to the firm's written rules. Where I said 'Not sure', I expect it to assume the more cautious case and show me that. I do not expect a final decision before step 6.",
+  "ticksMean": "'I've checked this answer' means I have read what the AI model suggested, I agree it fits my tool, and I take responsibility for that answer. Until I tick it, or change the answer, it does not count and I cannot continue. It is not just a click-through, and ticking is how I confirm each suggestion is mine. For the tick-all questions, a tick means that option applies to my tool.",
+  "comment": "I ticked all three suggestions because they match what I wrote. I answered 'Not sure' where a recruiter would know better than a compliance analyst. A few labels (Ollama, Make it smarter, Similar checks, 'question 6', and the all-'not mentioned' list) confused me.",
+  "normalisationNotes": [
+    "non-question key ignored (kept here, not scored): \"Describe box (typed exactly as given)\" = \"A model that screens job applications and shortlists candidates for interview. It is used for roles across our European entities.\"",
+    "non-question key ignored (kept here, not scored): \"Nudge screen\" = \"Read the list of things my description 'doesn't mention' and pressed Next again to carry on without adding a sentence.\"",
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 8 (prefix): \"Which of these does it help decide, if any? (screens job applications)\"",
+    "prefill label matched to 6 (prefix): \"What happens with what it produces? (shortlists candidates for interview)\"",
+    "prefill label matched to 10 (exact): \"How widely will it be used? (roles across our European entities)\"",
+    "didntUnderstand given as {quote, why}; quote becomes item"
+  ]
+}

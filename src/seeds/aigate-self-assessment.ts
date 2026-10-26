@@ -4,7 +4,6 @@ import { addNode, addEdge, addUseCaseModelLink } from '../store/register';
 import { withCaseLock, openRegisterDb } from '../store/db';
 import { append } from '../store/audit';
 import { checkPolicyReferences } from '../store/policy-references';
-import { localLlmEnabled, DEFAULT_LOCAL_LLM_MODEL } from '../llm/local-provider';
 import { planSeed } from './seed-recovery';
 import { knowledgeLensMatchedEntryIdsFor } from './knowledge-lens-for-seed';
 import type { DataFlowGraph, JurisdictionPack, PolicyFile } from '../engine/types';
@@ -15,6 +14,11 @@ import type { Verdict } from '../types/verdict';
 // with a real, self-produced verdict — not a fixture.
 export const AIGATE_USE_CASE_ID = 'aigate-self-assessment';
 export const AIGATE_VENDOR_NODE_ID = 'aigate-vendor-anthropic';
+
+// R18-B (specs/intake-flow.md §27.8, DR8-R2-C-N7): the self-assessment declares a constant model
+// id and reads no model setting. It used to read the old local-model keys; the constant is the
+// value every existing test already saw.
+export const AIGATE_DECLARED_MODEL_ID = 'none declared';
 
 // BC-P7C01-03: uses output_reversibility (the real OutputNode field —
 // src/engine/types.ts line 86), not §9's incorrect `reversibility` example.
@@ -45,7 +49,7 @@ export const AIGATE_USE_CASE_GRAPH: DataFlowGraph = {
       // its gatekeeper" — the self-assessment declares its own runtime model
       // through the same declared_model_id mechanism any other use case
       // would use, no special-cased write path.
-      declared_model_id: localLlmEnabled() ? DEFAULT_LOCAL_LLM_MODEL : 'none declared',
+      declared_model_id: AIGATE_DECLARED_MODEL_ID,
     },
   ],
   output_nodes: [

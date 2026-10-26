@@ -93,7 +93,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 
 | Entry point | Consumed modules | Wiring chunk | Demanded by |
 |---|---|---|---|
-| `IntakeFlow.tsx` (UC-3 path) | `src/llm/graph-extractor.ts`, `src/engine/question-generator.ts`, `src/engine/contradiction.ts`, `src/store/audit.ts` | P4-C01 | P4-C04 (intake acceptance test: confirmed graph → verdict) |
+| `IntakeFlow.tsx` (UC-3 path) | `llm/graph-extractor.ts` (retired in R18-E), `src/engine/question-generator.ts`, `src/engine/contradiction.ts`, `src/store/audit.ts` | P4-C01 | P4-C04 (intake acceptance test: confirmed graph → verdict) |
 | `IntakeFlow.tsx` (UC-3a path) | `src/components/StructuredForm.tsx`, `buildGraphFromForm()`, `src/engine/question-generator.ts` | P4-C02 | P4-C04 (intake acceptance test: form path → verdict) |
 | `evaluate.ts` (engine entry) | `evaluateHardLines()`, `assignJurisdiction()`, `assignTier()`, `assignTrack()`, `solvControls()`, `assembleVerdict()` | P3-C01 | P4-C04 (verdict acceptance test: evaluate(graph, policy) → Verdict) |
 | `solvControls()` | `greedy-solver.ts` | P3-C02 | P3-C01 (engine pipeline test: approved-with-controls verdict requires solver) |
@@ -144,7 +144,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 - Directory structure: `src/engine/`, `src/llm/`, `src/store/`, `src/components/`, `src/types/`, `src/seeds/`
 - Boundaries wired REAL (no stubs — walking-skeleton rule):
   - `src/store/audit.ts` — real `idb` call: open `aigate-audit`, write one row, read it back. Minimal schema, but a real persisted row with an observable outcome.
-  - `src/llm/graph-extractor.ts` — real Anthropic `messages.create` with a `tool_use` call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised. Test gated on API key presence; skips cleanly without one.
+  - `llm/graph-extractor.ts` (retired in R18-E) — real Anthropic `messages.create` with a `tool_use` call; parse and inspect the structured JSON response. Trivial extraction is fine; the point is the boundary is exercised. Test gated on API key presence; skips cleanly without one.
 - Business logic still stubbed (deepened in later phases):
   - `src/engine/evaluate.ts` — accepts graph + policy, returns a hardcoded `Verdict` stub
   - `src/store/register.ts` — in-memory stub
@@ -309,7 +309,7 @@ Every entry point, its consumed modules, the chunk that owns the call site, and 
 
 **Deliverables:**
 - `src/components/IntakeFlow.tsx` — real 9-state machine with `useReducer`; `IntakeState` discriminated union
-- `src/llm/graph-extractor.ts` — Anthropic SDK call; tool_choice forced; Zod parse of response
+- `llm/graph-extractor.ts` (retired in R18-E) — Anthropic SDK call; tool_choice forced; Zod parse of response
 - `DataFlowGraph` type with all node types from `intake-flow.md §4.2`
 - `graph_review` state — renders graph nodes; `uncertain: true` nodes highlighted; Edit button per node
 - Duplicate detection: semantic comparison (LLM) when API key present; keyword match fallback
@@ -610,6 +610,8 @@ Phase 7-C03 additionally verifies the product starts and the primary user flow c
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-06-04 | Initial creation. Starts at P1 — no prior build phases in `build/handovers/`. |
+| 1.4 | 2026-10-26 | newcomer test round 2 (owner-approved): panel heading and first line. Section 12.1 R18-G row names the panel by its new heading. |
+| 1.3 | 2026-10-24 | R18-F review pass 1: §12 R18-F test list — the saved result and label (no suffix; the label leads with the answers). |
 | 1.2 | 2026-10-07 | Design review 008 fixes — §12 revised: `round-18` branch and merge after R18-G; R18-C split into C0 (fixture spike), C1, C2; R18-D split into D1/D2 and sequenced before E; test-case ownership table; planned-modules list updated; R18-A forces the form route. |
 | 1.1 | 2026-10-07 | Round 18 — §12 added: chunks R18-A to R18-G (project round convention, no collision with P1–P8 or earlier round chunks), dependency matrix and network, wiring matrix with demanded-by column, the planned-modules list read by `spec-parity-check.py`, integration closure. MVP-1 met: R18-A is a runnable no-model slice. |
 
@@ -802,7 +804,7 @@ need their own routing.
 | R18-D2 | Record write side: `toAnswerSources` once per confirm attempt; `description` on `verdict_corrected`; the submitter-side "Correct this check" register action and `OPEN_CORRECTION_FROM_RECORD` for cases with `answer_sources` | D1 | E | F |
 | R18-E | One route: retirement table executed; older cases (no `answer_sources`) corrected through `answersFromRecord` (description + recorded "Not sure" answers, the rest blank and marked) | D2 | G | F |
 | R18-F | In-app test: bundled corpus, runner, derived `QUESTION_FIELDS`, scorer, results store, label, Settings Test-it UI | B, C1 | G | D1, D2, E (separate worktree; merges sequentially) |
-| R18-G | Public site: "Make it smarter" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over `vite preview`, newcomer test, accessibility sweep, merge to `main` | B, E, F | — | — |
+| R18-G | Public site: "Optional: connect an AI helper" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over `vite preview`, newcomer test, accessibility sweep, merge to `main` | B, E, F | — | — |
 
 ### 12.2 Dependency network
 
@@ -904,11 +906,11 @@ Each family is owned by the chunk named; a case that spans layers is listed by p
 
 **R18-D1 — The record, read side (GI-5 in part, MS-2-04).** Tests first: register lines per origin and per distinct read, the model-filled share, "quote no longer in description", an old bundle and old records unchanged, tampered and oversized values, an unknown origin/place word and a value of `constructor` or `__proto__` shown inert (`Map` lookups), an out-of-range `read` and an unknown question id tolerated, prototype keys refused as keys, every shown string through `visibleText`, the export and self-asserted-import statements. Build the types in `prefill-types.ts` (`ReadRecord`, `AnswerSourceRecord`), the store type and zod additions (optional, bounded), the `RegisterDetail` reader and lines, the export-screen statement. `HANDOFF_FORMAT_VERSION` stays 1.
 
-**R18-D2 — The record, write side, and correcting a case from the register (GI-5-07, -10, GI-10-05, -06, -08).** Tests first: a confirmed pre-filled case writes `answer_sources` once per confirm attempt (double-click and StrictMode cannot write twice — the existing confirm lock; a failed evaluation's retry carries the same sources); a typed-only case writes typed rows; `quote_in_final_description` after an edit; `verdict_corrected` carries a changed `description`; the register detail shows "Correct this check" in the submitter view only and not to the 2LoD reviewer; pressing it restores every answer from the recorded values (typed stays typed, confirmed pre-fills stay confirmed with their quotes, a `from_earlier_record` row returns as an unconfirmed `record` answer) with `useCaseId`/`originalVerdictId` set so Back is refused and the existing correction flow applies. Build `src/engine/answer-sources.ts` (`toAnswerSources`), the single call in `runConfirmAndEvaluate`, the register action and `OPEN_CORRECTION_FROM_RECORD`, `answersFromRecord` for cases with `answer_sources` (the older-case path is E's).
+**R18-D2 — The record, write side, and correcting a case from the register (GI-5-07, -10, GI-10-05, -06, -08).** Tests first: a confirmed pre-filled case writes `answer_sources` once per confirm attempt (double-click and StrictMode cannot write twice — the existing confirm lock; a failed evaluation's retry carries the same sources); a typed-only case writes typed rows; `quote_in_final_description` after an edit; `verdict_corrected` carries a changed `description`; the register detail shows "Correct this check" in the submitter view only and not to the 2LoD reviewer; pressing it restores every answer from the recorded values (typed stays typed, confirmed pre-fills return with their quotes but unconfirmed, owing the person's own tick (owner decision 2026-10-22), changed pre-fills and `from_earlier_record` rows return as unconfirmed `record` answers) with `useCaseId`/`originalVerdictId` set so Back is refused and the existing correction flow applies. Build `src/engine/answer-sources.ts` (`toAnswerSources`), the single call in `runConfirmAndEvaluate`, the register action and `OPEN_CORRECTION_FROM_RECORD`, `answersFromRecord` for cases with `answer_sources` (the older-case path is E's).
 
 **R18-E — One route (GI-10-01..04, -07).** Tests first: no screen renders the retired title; the ten worked examples and the 9 corpus cases with blind answers keep their pinned verdicts through the form (the other 22 keep their graph-level pins); an older case (no `answer_sources`) opens on the register and its verdict renders; "Correct this check" on it opens the form with the description kept, each recorded "Not sure" restored as “from the earlier record” and every other answer blank and marked “not carried over from the earlier version”. Build `src/engine/answers-from-record.ts` (the older-case branch) and execute the retirement table of `intake-flow.md` §27.10 row by row, each row with a grep test; delete `local-provider.ts` and `graph-extractor.ts` (and remove them from the egress grep's interim allow-list); rewrite the AboutPanel paragraph; move `QUOTE_FIELDS`/`AGENT_REACH_FIELDS` to `canonical-vocabulary.ts`. Each deleted case moves to a `## Superseded` row naming R18-GI-10 so trace-check reports it in the open.
 
-**R18-F — Test it before you trust it (MS-4, MS-8-01/-03, GI-12).** Tests first: derived `QUESTION_FIELDS` snapshot, the scorer table for canned replies, the property tests of TC-R18-GI-12-05, the 59/61-second cases (fake clock), stop-early, one run at a time, saved result and label with its suffix, only-corpus requests, byte-identical bundled corpus (eval of the `?raw` string against the file on disk), a drift test that `applyPrefillToGraph` agrees with `buildGraphFromForm` on the `QUESTION_FIELDS` of the ten examples and 9 worked cases. Build `src/engine/question-fields.ts` (derived per question base from `question-structure.ts`), `src/llm/model-test.ts` (budget and stop supplied by the component), the results store, the Settings Test-it UI with `TEST_PROGRESS`, `TEST_STOPPED`, `TEST_LIMIT`, `TEST_DISCARDED` (the verifier's dropped total from `PrefillOutcome.dropped`), `TEST_NOT_A_GUARANTEE`, a label that ignores stopped runs, and the statement that the numbers are not comparable with the 2026-10-04 comparison.
+**R18-F — Test it before you trust it (MS-4, MS-8-01/-03, GI-12).** Tests first: derived `QUESTION_FIELDS` snapshot, the scorer table for canned replies, the property tests of TC-R18-GI-12-05, the 59/61-second cases (fake clock), stop-early, one run at a time, saved result and label (answers first, no verdict figure; a complete run with no usable answer in any case reads untested), only-corpus requests, byte-identical bundled corpus (eval of the `?raw` string against the file on disk), a drift test that `applyPrefillToGraph` agrees with `buildGraphFromForm` on the `QUESTION_FIELDS` of the ten examples and 9 worked cases. Build `src/engine/question-fields.ts` (derived per question base from `question-structure.ts`), `src/llm/model-test.ts` (budget and stop supplied by the component), the results store, the Settings Test-it UI with `TEST_PROGRESS`, `TEST_STOPPED`, `TEST_LIMIT`, `TEST_DISCARDED` (the verifier's dropped total from `PrefillOutcome.dropped`), `TEST_NOT_A_GUARANTEE`, a label that ignores stopped runs, and the statement that the numbers are not comparable with the 2026-10-04 comparison.
 
 **R18-G — The public site, release gates, merge (PS-1..PS-5, GI-11, NF-2, NF-3-03/-04, MS-2-05).** Tests first: panel states, the exact two commands and dated link, the single-source examples and the byte-identical-to-guide test, the notice states, the four-copy docs tests, `scripts/scan-dist.mjs` with anchored patterns and allow-list, the pattern scan over `docs/`, `README.md` and `backtest/cases.json`, the egress harness end to end, the keyboard walk, contrast classes added to `app-css.cr6-fx4.test.ts`. Build `MakeItSmarter.tsx`, the example list (the data module `src/engine/worked-examples.ts` exists since R18-A), the user guide, tester guide, README and `docs/try-these.md` updates (including the optional-key exception), the CI step, and the CSP `<meta>` after a check over `vite preview` (dropped and recorded if it fails). Owner-visible steps: the final newcomer test record, the number of checklist items each of the ten examples ticks (OQ-4), the local confidentiality word-list scan, ratification of the deviations listed in `intake-flow.md` §27 (GI-10 narrowing, optional-key exception, PS-6 sentence). Done when every case in `test-cases-033.md` is named by a test, `Status: PENDING BUILD` is gone, and the branch merges to `main`.
 
@@ -920,20 +922,7 @@ Each chunk's context is this section, `intake-flow.md` §27 and its slice of `te
 
 These paths are named by this round's specs before they exist. `scripts/spec-parity-check.py` (rule R4) reads this list and does not fail on them; it reports them as planned and fails if a listed path already exists, so the list is emptied by the chunk that builds each module.
 
-- `src/engine/mentioned.ts` (R18-A)
-- `src/engine/prefill-types.ts` (R18-A)
-- `src/engine/form-answer-state.ts` (R18-A)
-- `src/engine/question-structure.ts` (R18-C1)
-- `src/llm/model-setting.ts` (R18-B)
-- `src/engine/form-visibility.ts` (R18-C1)
-- `src/engine/prefill-verify.ts` (R18-C1)
-- `src/llm/prefill.ts` (R18-C1)
-- `src/llm/test-utils.ts` (R18-C1)
-- `src/engine/answer-sources.ts` (R18-C2; completed in R18-D2)
-- `src/engine/answers-from-record.ts` (R18-E)
-- `src/llm/model-test.ts` (R18-F)
-- `src/engine/question-fields.ts` (R18-F)
-- `src/engine/worked-examples.ts` (R18-A)
+- none: every module this round planned has been built (R18-F built the last two).
 
 ### 12.8 Integration closure
 

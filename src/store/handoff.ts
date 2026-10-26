@@ -250,6 +250,61 @@ const evidenceScopeSchema = z
   })
   .passthrough();
 
+// R18-D1 (specs/intake-flow.md §27.13 "Import validation"). `answer_sources` rides on graph_confirmed and
+// verdict_corrected. A hand-off file is untrusted input, so every bound below is a refusal, not a clamp:
+//   question_id and option <= 40 characters, model <= 100, host <= 253, quote <= 300, value <= 500 per string,
+//   at most 40 answers, 20 quotes per answer and 10 reads; `__proto__`, `constructor` and `prototype` are refused
+//   as KEYS anywhere in the subtree (checked on the raw object, before zod rebuilds it, because JSON.parse keeps
+//   `__proto__` as an own property that a rebuilt object could silently drop).
+// Tolerated, never refused (a newer build may add them): an unknown `origin` or `place` word, an unknown
+// question id or option key, and a `read` index that is not an integer inside `reads`. The words are plain
+// strings here; the reader (engine/answer-sources.ts) looks every one of them up in a Map or Set and shows
+// "source not recognised" (or the raw id) as inert text. Choices the spec left open, recorded in §27.13: a value
+// array holds at most 100 strings, `origin` and `place` are bounded at 100 characters, and a corrected
+// description at 1,000,000 characters (the same bound intake drafts use). `.passthrough()` on every object so a
+// field a newer build adds still imports.
+const PROTOTYPE_KEYS: ReadonlySet<string> = new Set(['__proto__', 'constructor', 'prototype']);
+const MAX_SOURCES_DEPTH = 12;
+function hasPrototypeKey(v: unknown, depth = 0): boolean {
+  if (depth > MAX_SOURCES_DEPTH) return true; // nesting no honest export has: refuse rather than recurse
+  if (typeof v !== 'object' || v === null) return false;
+  if (Array.isArray(v)) return v.some((x) => hasPrototypeKey(x, depth + 1));
+  for (const k of Reflect.ownKeys(v)) {
+    if (typeof k === 'string' && PROTOTYPE_KEYS.has(k)) return true;
+    if (hasPrototypeKey((v as Record<string, unknown>)[k as string], depth + 1)) return true;
+  }
+  return false;
+}
+const quoteRefSchema = z
+  .object({ option: z.string().max(40), quote: z.string().max(300) })
+  .passthrough();
+const readRecordSchema = z
+  .object({ model: z.string().max(100), place: z.string().max(100), host: z.string().max(253) })
+  .passthrough();
+const answerSourceRecordSchema = z
+  .object({
+    question_id: z.string().max(40),
+    value: z.union([z.string().max(500), z.array(z.string().max(500)).max(100)]),
+    origin: z.string().max(100),
+    quotes: z.array(quoteRefSchema).max(20).optional(),
+    changed_from: z.array(quoteRefSchema).max(20).optional(),
+    quote_in_final_description: z.boolean().optional(),
+    read: z.number().optional(),
+  })
+  .passthrough();
+const answerSourcesShape = z
+  .object({
+    reads: z.array(readRecordSchema).max(10),
+    answers: z.array(answerSourceRecordSchema).max(40),
+  })
+  .passthrough();
+export const answerSourcesSchema = z
+  .unknown()
+  .superRefine((v, ctx) => {
+    if (hasPrototypeKey(v)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'answer_sources: a key that is not allowed' });
+  })
+  .pipe(answerSourcesShape);
+
 // Mirrors AuditEventPayload (src/store/types.ts) variant-for-variant: the
 // `type` literal plus that variant's OWN required fields, so an incomplete
 // payload is rejected at the boundary instead of rendering blank/"undefined"
@@ -294,6 +349,8 @@ const auditPayloadSchema = z.discriminatedUnion('type', [
     rating_instructions: z.array(z.string()).optional(),
     // R16-D2 §1/§4 (D-95, D-81): see assumptionSchema's own comment above.
     assumptions: z.array(assumptionSchema).optional(),
+    // R18-D1 (§27.13): optional, bounded, tolerant — a bundle from before this round has none and imports as before.
+    answer_sources: answerSourcesSchema.optional(),
   }).passthrough(),
   z.object({
     type: z.literal('verdict_produced'),
@@ -324,6 +381,11 @@ const auditPayloadSchema = z.discriminatedUnion('type', [
     assumptions: z.array(assumptionSchema).optional(),
     evidence_scope: evidenceScopeSchema.optional(),
     corrections_count: z.number().optional(),
+    // R18-D1 (§27.13): as graph_confirmed above; the description is written only when a correction edited it.
+    answer_sources: answerSourcesSchema.optional(),
+    description: z.string().max(1_000_000).optional(),
+    // R18-E review pass 1: tolerant - a value that is not a boolean reads as absent rather than refusing the file.
+    corrected_from_earlier_record: z.boolean().optional().catch(undefined),
   }).passthrough(),
   z.object({
     type: z.literal('lifecycle_stage_changed'),

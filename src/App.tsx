@@ -15,6 +15,7 @@ import { translationAttestationStatus } from './engine/attestation';
 import { getPackSources, loadPackSet } from './store/pack-source';
 import { seedAigateSelfAssessment } from './seeds/aigate-self-assessment';
 import BrandMark from './components/BrandMark';
+import type { CorrectionOpening } from './components/correction-from-record';
 import { seedIbPortfolio } from './seeds/ib-portfolio';
 import './fonts.css';
 import './App.css';
@@ -46,6 +47,9 @@ export default function App() {
   // item was clicked; IntakeFlow decides whether that means reset (only a
   // finished flow resets — an in-progress draft keeps its own Start-over).
   const [newPrecheckNonce, setNewPrecheckNonce] = useState(0);
+  // R18-D2 (§27.10): "Correct this check" on the register hands the intake a case to reopen on the form. The
+  // intake takes it once on mount and tells us it has (onCorrectionOpened), so it is never opened twice.
+  const [correctionRequest, setCorrectionRequest] = useState<CorrectionOpening | null>(null);
   // R15-C4 (proposal §3.8): the fidelity chip's explanation used to live in
   // a title= tooltip — hover-only meaning, a G3 violation. Now an
   // aria-expanded disclosure carries the same attestation.reason text,
@@ -146,6 +150,18 @@ export default function App() {
 
   // F1: RegisterView's row-click and back-link route through these — the
   // component no longer touches window.history itself.
+  // R18-D2 review pass 1: a correction the register handed over is for the intake screen only. If the person
+  // leaves before the intake takes it (the browser's Back, a sidebar click), it is dropped, so a stale request
+  // can never reopen later and replace a draft they have since started.
+  useEffect(() => {
+    if (view !== 'intake') setCorrectionRequest(null);
+  }, [view]);
+
+  function correctFromRecord(opening: CorrectionOpening) {
+    setCorrectionRequest(opening);
+    navigate('intake');
+  }
+
   function openRegisterDetail(id: string) {
     window.history.pushState({ view: 'register', registerDetailId: id }, '');
     setDetailId(id);
@@ -404,7 +420,11 @@ export default function App() {
               identical bad draft and crash again. */}
           {view === 'intake' && (
             <ErrorBoundary>
-              <IntakeFlow newPrecheckNonce={newPrecheckNonce} />
+              <IntakeFlow
+                newPrecheckNonce={newPrecheckNonce}
+                correctionRequest={correctionRequest}
+                onCorrectionOpened={() => setCorrectionRequest(null)}
+              />
             </ErrorBoundary>
           )}
           {view === 'about' && <AboutPanel onNavigate={navigate} />}
@@ -416,6 +436,7 @@ export default function App() {
               selectedId={detailId}
               onSelectRow={openRegisterDetail}
               onCloseDetail={closeRegisterDetail}
+              onCorrectFromRecord={correctFromRecord}
             />
           )}
           {view === 'policyEditor' && <PolicyEditor onSaved={() => setPolicyRevision((r) => r + 1)} />}

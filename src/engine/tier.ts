@@ -11,7 +11,7 @@ export interface TierAssignment {
   triggeringRegulatoryBasis?: string;
 }
 
-const TIER_ORDER: Record<Tier, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+export const TIER_ORDER: Record<Tier, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 };
 
 // Impact-dominant, order-independent (evaluation-engine.md §3.5): every rule
 // is evaluated, the highest tier whose trigger fires wins. Never short-circuit.

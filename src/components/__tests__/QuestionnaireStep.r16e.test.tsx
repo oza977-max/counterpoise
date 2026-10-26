@@ -82,6 +82,53 @@ describe('QuestionnaireStep — multi-select (R16-E §3, D-101)', () => {
     expect(screen.getByRole('checkbox', { name: /nothing beyond what it.s given for the task/i })).toBeChecked();
   });
 
+  // R18-G (forward note 2026-10-24): the guards of this control that were asserted only downstream, through the
+  // retired card review, are asserted here on the control itself.
+  describe('the control\'s own guards (R18-G)', () => {
+    const renderScope = () => {
+      const onAnswer = vi.fn();
+      render(<QuestionnaireStep questions={[question({ field: 'system_access_scope', answer_type: 'multi_select' })]} answeredCount={0} onAnswer={onAnswer} />);
+      return onAnswer;
+    };
+    const none = () => screen.getByRole('checkbox', { name: /nothing beyond what it.s given for the task/i });
+    const shared = () => screen.getByRole('checkbox', { name: /it runs on computers or servers shared with other automated tools/i });
+
+    it('"Nothing beyond..." is exclusive in BOTH directions: ticking another kind clears it', async () => {
+      const user = userEvent.setup();
+      renderScope();
+      await user.click(none());
+      expect(none()).toBeChecked();
+      await user.click(shared());
+      expect(shared()).toBeChecked();
+      expect(none()).not.toBeChecked();
+      // and ticking it again clears the other, so the two are never ticked together
+      await user.click(none());
+      expect(none()).toBeChecked();
+      expect(shared()).not.toBeChecked();
+      // unticking "Nothing beyond..." itself leaves nothing ticked
+      await user.click(none());
+      expect(none()).not.toBeChecked();
+    });
+
+    it('clicking an option\'s words ticks that option, and only that one', async () => {
+      const user = userEvent.setup();
+      renderScope();
+      await user.click(screen.getByText(/it has its own logins, passwords or access tokens for other systems/i));
+      expect(screen.getByRole('checkbox', { name: /it has its own logins, passwords or access tokens for other systems/i })).toBeChecked();
+      expect(screen.getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked)).toHaveLength(1);
+    });
+
+    it('unticking the last ticked option shuts Done again, so nothing empty can be submitted', async () => {
+      const user = userEvent.setup();
+      const onAnswer = renderScope();
+      await user.click(shared());
+      expect(screen.getByRole('button', { name: /^done$/i })).toBeEnabled();
+      await user.click(shared());
+      expect(screen.getByRole('button', { name: /^done$/i })).toBeDisabled();
+      expect(onAnswer).not.toHaveBeenCalled();
+    });
+  });
+
   it('TC-R16-E-28: a multi-select question also offers "Not sure", submitting the strictest array directly (no ticking required)', async () => {
     const user = userEvent.setup();
     const onAnswer = vi.fn();

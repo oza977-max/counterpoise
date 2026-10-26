@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { addNode, getUseCases } from '../../store/register';
 import { getAll } from '../../store/audit';
-import { fillText, DUP_CHECK_WAIT } from './fillText';
+import { fillText, DUP_CHECK_WAIT, pressNext } from './fillText';
+import { updateFormDraft } from '../intake-draft';
 
 /** A register entry the duplicate check will match on, seeded before render so
  *  the row is present regardless of App's fire-and-forget seeding. */
@@ -49,8 +50,8 @@ const DRAFT_KEY = 'aigate:intake-draft';
 // is probed and cleared separately, by StructuredForm itself on mount, so
 // an incompatible pre-R16 shape is reported once rather than silently
 // misread. "Start over" clearing the CURRENT form draft is still the
-// behaviour this test protects; it just targets the new key.
-const FORM_DRAFT_KEY = 'aigate:intake-form-draft:v2';
+// behaviour this test protects; it just targets the current key (R18-A: v4).
+const FORM_DRAFT_KEY = 'aigate:intake-form-draft:v4';
 
 describe('IntakeFlow — resuming a restored draft', () => {
   beforeEach(() => {
@@ -116,7 +117,8 @@ describe('IntakeFlow — resuming a restored draft', () => {
       DRAFT_KEY,
       JSON.stringify({ step: 'duplicate_check', description: 'A tool that drafts client emails' }),
     );
-    sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify({ name: 'left over from the abandoned draft' }));
+    updateFormDraft({ answerState: { '1': { value: 'left over from the abandoned draft', source: { kind: 'typed' } } } });
+    expect(sessionStorage.getItem(FORM_DRAFT_KEY)).not.toBeNull();
 
     render(<App />);
     await user.click(await screen.findByRole('button', { name: /start over instead/i }));
@@ -146,7 +148,7 @@ describe('Duplicate gate — both decisions exist and both are recorded (UC-2)',
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Dismissal probe assistant');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     // R16-W §4 (D-74): this description keyword-matches the seeded row
     // above, so the match-found screen's own button ("Mine is different —
     // continue →") renders, not the no-match screen's "Continue →".
@@ -165,7 +167,7 @@ describe('Duplicate gate — both decisions exist and both are recorded (UC-2)',
     render(<App />);
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Adoption probe assistant');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // R16-W §4 (D-74): "Adopt this classification" is now "Use the earlier
     // result".
@@ -233,6 +235,9 @@ describe('The duplicate gate cannot double-write (round 4 review, Panel E)', () 
 
     const ta = await screen.findByLabelText(/what ai tool do you want to use/i);
     fireEvent.change(ta, { target: { value: 'Double-click probe assistant' } });
+    // R18-A: the first Next lists what the description does not mention and
+    // stays; the second, with the text unchanged, goes on.
+    fireEvent.click(screen.getByRole('button', { name: /^next/i }));
     fireEvent.click(screen.getByRole('button', { name: /^next/i }));
 
     // R16-W §4 (D-74): this description keyword-matches the seeded row

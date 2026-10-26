@@ -398,8 +398,7 @@ describe('UnderstoodSummary — assumptions (form path) vs uncertain nodes (desc
 });
 
 // R16-F F-9 (DR7-09). The description-vs-answers plausibility check used to
-// run only on the field-card screen (graph_review) — a screen the form
-// path never visits. UnderstoodSummary is the one screen BOTH paths reach
+// run only on the retired field-card screen, which the form never showed. UnderstoodSummary is the one screen BOTH paths reach
 // before attestation, so this is where the check now runs, under "Please
 // double-check", computed purely at render from the description and the
 // graph already in hand.

@@ -19,3 +19,14 @@ reducer), plus the updated GRAPH_EXTRACTED expectation in
 
 R7-NF-1 is held by TC-PE-1-01 unchanged and the suite-wide reserved-words
 guard.
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R7-JC-1-01 | Superseded by R18-GI-10 (R18-A): a model-proposed, pre-ticked country no longer exists; the form's countries start unticked. The form's own country ticking is proved by TC-CR7-02c-edit and TC-CR8-08b. No replacement for the model-proposed case — behaviour retired. |
+| TC-R7-JC-3-01 | Superseded by R18-GI-10 (R18-A): unticking a model-proposed country confirmed it implicitly on the card review, which is unreachable. No replacement — behaviour retired. |
+| TC-R7-JC-2-01 | Superseded by R18-GI-10 (R18-A): the card review's refusal to proceed until the countries were confirmed is unreachable; on the form the person ticks countries themselves and is never asked to confirm a model's. No replacement — behaviour retired. |
+| TC-R7-JC-2-02 | Superseded by R18-GI-10 (R18-E): QUESTIONS_GENERATED being refused while the countries are unconfirmed belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R7-JC-2-03 | Superseded by R18-GI-10 (R18-E): the form path not being gated by the countries confirmation belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R7-JC-3-02 | Superseded by R18-GI-10 (R18-E): JURISDICTIONS_SET replacing the list and confirming belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |

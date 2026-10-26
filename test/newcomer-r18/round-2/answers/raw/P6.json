@@ -1,0 +1,38 @@
+{
+  "packet": "P6",
+  "answers": {
+    "What do you want to call it?": "Procurement order assistant",
+    "In a sentence or two, what will it do for you?": "It works through procurement tasks on its own, deciding its own steps, calling our internal systems and placing supplier orders for the firm.",
+    "Where does the AI come from?": "Something a team in your firm built for this job",
+    "What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.": "An AI agent that works through tasks on its own, using other tools or systems — e.g. sends messages, books things, updates records, changes code",
+    "What information will it see or use? Tick all that apply. (tick at least one)": ["Confidential firm information — internal data, code or documents not meant for outside the firm, whether or not they’re marked confidential"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "acts entirely by itself, with no person involved at any point",
+    "What does it do when it acts?": "Something else — sends, books, updates records, deploys changes",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Not sure",
+    "Which of these does it help decide, if any? Pick the closest.": "Something else — describe it",
+    "Which of these does it help decide, if any? (the 'describe it' text I would type)": "Which supplier to order from and what the firm commits to buy.",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Not sure",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "No",
+    "What can it get into by itself? Tick all that apply. (tick at least one)": ["It has its own logins, passwords or access tokens for other systems"],
+    "Can copies of it, or other AI agents, pass work or messages to each other?": "No — it works alone",
+    "How widely will it be used?": "My team, as part of normal work",
+    "Which countries does it involve? Tick all. (tick at least one)": ["Somewhere else, or not sure"]
+  },
+  "prefills": {
+    "What kind of AI is it? (An AI agent that works through tasks on its own, using other tools or systems — e.g. sends messages, books things, updates records, changes code)": "ticked",
+    "What happens with what it produces? (acts entirely by itself, with no person involved at any point)": "ticked"
+  },
+  "didntUnderstand": [
+    "Nudge screen, 'What your description mentions' list: 'Where does the AI come from — mentioned'. I never said where the AI comes from (I only said it calls 'internal systems'), so I don't know what in my sentence counted as a mention. The form also didn't pre-fill that question, which makes the tick look wrong.",
+    "Nudge screen: it lists 'What happens with what it produces' under 'Your description doesn't mention' (example 'A person checks each draft before it is used') and shows it as 'not mentioned'. But my sentence says 'without a checkpoint', and the form then pre-fills that exact question quoting 'without a checkpoint'. The two screens contradict each other.",
+    "Nudge screen: 'The questions that follow ask about each of these anyway.' It lists 'Whether the people who built it can show why it gave a result' and 'How much weight does what it produces carry' as unmentioned, yet I found no question on either on my form. I didn't understand whether they were skipped on purpose or are missing.",
+    "'Places or changes trades': I couldn't tell if 'trades' means financial trades only or any commitment such as a supplier order. I assumed financial and picked 'Something else — sends, books, updates records, deploys changes', but I'm not fully sure.",
+    "'Who ends up seeing or receiving what it produces': my orders go to outside suppliers, and no option covers suppliers or other outside businesses ('Clients or customers' and 'The public, the market or regulators' don't fit). I couldn't pick honestly, so I chose Not sure.",
+    "'If it gets something wrong, can the mistake be caught and put right...': I don't know the cancellation terms of every supplier, so I couldn't answer confidently. The question assumes I know whether harm is lasting.",
+    "'alpha:7b: untested': I don't know what 'untested' means for me, or whether I need to do something about it before relying on the suggestions.",
+    "Progress bar step '2 Similar checks' (shown with a back arrow): I didn't see this step or know what it is."
+  ],
+  "expectNext": "I expect Continue to take me to step 4 'Questions', with any follow-up questions the rules need, then step 5 'Confirm' where I can review everything, then step 6 'Result'. The result should say whether I can go ahead with the tool, what is wrong if not, and what needs doing first, with reasons taken from the firm's written rules. I expect it to be fixed rule-matching on my answers, not an AI judgement, so the same answers give the same result. I expect an agent with no human checkpoint to be flagged hard.",
+  "ticksMean": "'I've checked this answer' means a person (me) has read what the small local model guessed from my description and agrees it's correct. Until I tick it, or change the answer, the guess doesn't count and I can't continue. So the answer is mine, not the model's, and the model only saves me typing.",
+  "comment": "The form was mostly easy for a builder like me, but the nudge contradicted itself on two topics and I had no honest answer for who receives supplier orders."
+}

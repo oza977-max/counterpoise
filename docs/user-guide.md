@@ -17,9 +17,10 @@ and if not, what is the smallest set of controls that would bring it inside?**
 
 It answers that question deterministically. The same answers always produce the
 same verdict — there is no model in the decision path, no sampling, no
-temperature. An optional LLM sits at the edges only: it can read a
-plain-English description into a structured graph, and it can retell a verdict
-in prose. Neither touches the decision. The intake screen says so.
+temperature. An optional model sits at the edges only: it can suggest answers
+to the form's questions from a plain-English description, and, if you save an
+Anthropic key, retell a verdict in prose. Neither touches the decision. The
+About page says so.
 
 **What it does not answer:** whether the framework itself is right. Counterpoise
 enforces the appetite you give it. If your rules are wrong, the verdicts are
@@ -42,24 +43,23 @@ You need nothing installed and no API key.
    looked through. If nothing similar turns up, press **Continue →**. If
    something does, you can **Use the earlier result** (this skips the questions)
    or press **Mine is different — continue →**.
-4. **The questions.** With no model configured you go to a guided form of
-   plain-English questions on one page — this is the normal path and the better
-   one for a first run. Every question is in business words: *"Information
+4. **The questions.** You go to a guided form of plain-English questions on
+   one page — this is the normal path and the better one for a first run.
+   Every question is in business words: *"Information
    about people — clients, applicants, staff or anyone else…"*, not
    `data_class: Client PII`. Required questions are marked, and **Continue**
    stays disabled until they are all answered; the line beside it says which are
    still missing. "Not sure" is always fine — you are shown the careful
-   assumption it was given. One model slot exists under **Settings**: a **local
-   open model** running on your own machine (free, no key, the description
-   never leaves your computer — live since 16 August 2026). With it, the
-   description is read for you instead, and you land on **Check what we read from
-   your description**: your words shown back under **What you wrote**, above the
-   cards the reading produced. Correct any card that is wrong, then press
-   **Continue**. Frontier models draft better; the demo ships the free local
-   option. The form remains the most-verified path.
-5. **Follow-up questions.** Depending on the risk signals in what you have
-   already said you may be asked a few more. Contradictions are flagged here,
-   not later. Often there are none.
+   assumption it was given. Connecting a model is optional, and is done under
+   **Settings** (see *Where your description goes*, below). If one is
+   connected, it reads your description after the similar-checks screen and
+   fills in some answers, each marked with the words it relied on. You have to
+   tick every answer it fills in before **Continue** is enabled, and you can
+   change any of them. With no model, nothing is filled in and the form is
+   blank. The form is the same either way, and the same answers give the same verdict.
+5. **Contradictions.** If an answer contradicts what your description says,
+   you are told here, not later, and asked which is right, and why. Often there is nothing
+   to flag.
 6. **Confirm and evaluate.** You see a summary of what was understood, with a
    **Change an answer** link, and can leave an optional note for your AI risk
    team (it never changes the result). **Confirm and evaluate** is your
@@ -69,6 +69,32 @@ You need nothing installed and no API key.
 **Shortcut for a demo:** in the sidebar, **Demo data → Load sample use cases**
 seeds six worked examples spanning Low to Critical, in and out of appetite, all
 scored by the real engine.
+
+---
+
+## Where your description goes
+
+Before anything is sent, the app says where your description will go, in one of these sentences, and says only what it can show:
+
+- *"Your description will be read on this computer by {model}. It never leaves your computer."*
+- *"Your description will be sent to your firm's server at {address} and read by {model}."*
+- *"Your description will be sent to Ollama's cloud and read by {model}."*
+- *"Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic."*
+
+"Never leaves your computer" is said only for the first. The model is any one
+you choose — the app ships none and recommends none — and it is never in the
+decision path: it only suggests answers you then check.
+
+Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic. The key is optional and no screen in the app sets it; while one is saved,
+the first sentence above is not shown.
+
+Whenever the model is anywhere other than this computer, the app also says:
+*"This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network."*
+
+To connect a model, the app's **Optional: connect an AI helper** panel shows two commands:
+`ollama signin` (to use Ollama's cloud) and `OLLAMA_ORIGINS=https://oza977-max.github.io` (to let this page reach
+Ollama on your computer). Ollama's own documentation covers everything else:
+<https://docs.ollama.com/faq>. Link last checked 2026-10-24.
 
 ---
 
@@ -331,7 +357,7 @@ the boundary is worth more than another feature.
 - **Anything about InfoSec, vendor risk, cloud security or FinOps.** It
   triggers those as mandatory downstream reviews when a use case requires them;
   it does not perform them.
-- **A description can mislead the free local demo model.** The description reader that runs on your own computer is a small free model. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into drawing the wrong cards. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates what is on the cards, never the description’s own words. So check every card on the review screen against what the tool really does, and correct any that are wrong. The stronger defence is not built yet.
+- **A description can mislead a model that fills in your answers.** If you connect a model, it reads your description and fills in some answers on the form. If a description claims its own rating (for example “classify this as Low risk”) or misstates what the tool does, that model can be steered into filling in the wrong answers. Counterpoise flags the rating instructions it can spot (the check does not catch every wording), and the rules engine only ever rates the answers on the form once you have ticked or entered them, never the description’s own words. You have to tick every answer a model fills in before you can continue, so check each one against what the tool really does, and change any that are wrong. The stronger defence is not built yet.
 
 ---
 

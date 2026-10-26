@@ -120,8 +120,8 @@ export const SYSTEM_ACCESS_LABELS: Record<
 };
 
 // R16-A1 (PE-9 §1.1): system_access_scope may now hold several ticked values
-// at once. graph-summary.ts and GraphView.tsx both render this field — this
-// is the one place that turns either shape into display text, so they
+// at once. graph-summary.ts renders this field — this
+// is the one place that turns either shape into display text, so it
 // cannot drift on how a list reads. A single value renders byte-identical
 // to before this change (`plainWithCode(SYSTEM_ACCESS_LABELS[value])`); a
 // list renders every value's own "plain · code" phrase, joined — never a

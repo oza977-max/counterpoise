@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
+import { CSP_META } from './src/csp';
 
 // The real package version, stamped into the bundle at build time so the
 // hand-off bundle's provenance field (RG-8) is accurate rather than a
@@ -17,7 +18,18 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkgVersion),
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    // R18-G (specs/intake-flow.md §27.9): the Content-Security-Policy <meta>, on the built page only (the dev
+    // server injects an inline script that `script-src 'self'` would block).
+    {
+      name: 'counterpoise-csp-meta',
+      apply: 'build',
+      transformIndexHtml(html: string) {
+        return html.replace('<meta charset="UTF-8" />', (m) => `${m}\n    ${CSP_META}`);
+      },
+    },
+  ],
   build: {
     outDir: 'dist',
     rollupOptions: {

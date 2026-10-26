@@ -1,4 +1,4 @@
-# Eleven things to try
+# Ten cases to try, and ways to break them
 
 Cases chosen to make the engine do something different each time — a clean
 approval, four different hard-line rejections, platform inheritance both
@@ -10,22 +10,22 @@ from memory. They are pinned by `src/engine/try-these.test.ts`, so a policy
 change that alters any of them fails the suite rather than quietly making this
 page wrong.
 
-**How to run one.** Open **New pre-check** → paste the description →
+**How to run one.** Open **New pre-check** → paste the description (or choose
+its title under **Try an example**) →
 **Next →** → **Similar checks** (the duplicate check; press **Continue →**) →
 the questions open on one page → pick the answers listed for the case →
 **Continue** → **Confirm and evaluate** → the **Result**. The step tracker
 across the top reads Describe, Similar checks, Your answers, Questions,
-Confirm, Result. If the questions leave something unclear you may get a few
-follow-up questions before Confirm; none of these eleven cases needs them.
+Confirm, Result. If an answer contradicts your description you may be asked to
+look at it before Confirm; none of these ten cases does.
 
-**Why the answers matter more than the description.** With no model configured
-the description is used for the duplicate check and shown back to you, but it
-does **not** drive the verdict — your answers to the questions do. So paste the
-text, then pick the answers. (With a model configured the description is read
-into your answers instead — live since 2026-08-16 on the local open model, but
-expect to correct a field or two on the "Check what we read from your
-description" screen. These eleven cases assume the questions path, whose
-answers are exact.)
+**Why the answers matter more than the description.** The description is used
+for the duplicate check and shown back to you, but it does **not** drive the
+verdict — your answers to the questions do. So paste the text, then pick the
+answers. (If you have connected a model, it may fill in some answers from the
+description for you to tick. These ten cases assume you pick the answers
+yourself. Each outcome is pinned through the guide's own answers, never through
+anything a model fills in.)
 
 **How the cases are written.** Each case lists the answers in the form's own
 words: the question (shortened to its first sentence), then the answer to

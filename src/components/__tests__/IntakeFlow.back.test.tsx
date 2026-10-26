@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // FN-006 — user-reported after the v0.1.0 tag: "after describing, if I go to
 // the next step it doesn't go back, there is no back option."
@@ -43,7 +43,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
   it('does not offer a back control on the confirmation step — that is an attestation', async () => {
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'A model that scores retail credit applications',
         graph: {
@@ -68,7 +68,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
         corrections: [],
         answers: [],
         useCaseId: 'uc-1',
-      }),
+      } }),
     );
 
     render(<App />);
@@ -84,7 +84,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
   it('TC-CR6-D1: "Change an answer" on a structured_form case returns to the guided form, not the review screen', async () => {
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'A model that scores retail credit applications',
         graph: {
@@ -104,7 +104,7 @@ describe('IntakeFlow — going back (FN-006)', () => {
         useCaseId: 'uc-1',
         plainAnswers: { '1': 'Retail credit scorer' },
         assumptions: [],
-      }),
+      } }),
     );
 
     render(<App />);
@@ -151,7 +151,9 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     );
     const btn = screen.getByRole('button', { name: /^next/i });
     expect(btn).toBeEnabled();
-    await user.click(btn);
+    // R18-A: the first Next may list what the description does not mention
+    // and stay; pressNext goes on through it.
+    await pressNext(user);
     // Advanced to the duplicate check — the description was accepted.
     // R16-W §4 (D-74): tag renamed from "DUPLICATE CHECK".
     await screen.findAllByText(/has this been checked before/i);
@@ -164,7 +166,7 @@ describe('IntakeFlow — description boundaries (UC-1)', () => {
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste(hostile);
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await screen.findAllByText(/has this been checked before/i);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
     // The guided form's own description field is prefilled from what was
@@ -186,13 +188,13 @@ describe('IntakeFlow — contradictions are caught on the zero-questions path (U
     sessionStorage.clear();
   });
 
-  it('a description denying what the form declares blocks the skip to confirmation [TC-R16-W-57: a contradiction on the form path stops at contradiction_review, never passing through graph_review]', async () => {
+  it('a description denying what the form declares blocks the skip to confirmation [TC-R16-W-57: a contradiction on the form path stops at contradiction_review]', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste('This tool processes no client data at all. A human approves every action, no autonomy.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     // Declare the opposite of the description. R16-B: adapted to the new
@@ -218,7 +220,7 @@ describe('IntakeFlow — contradictions are caught on the zero-questions path (U
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
     // R16-W W-3 (D-69): the form path computes contradictions itself when
     // it finds no questions, and goes straight to contradiction_review —
-    // there is no graph_review/Proceed step on this path to click through.
+    // there is no Proceed step on this path to click through.
 
     // The old behaviour sailed to "Confirm and evaluate". The fix surfaces
     // the contradiction review instead — both statements, resolution required.
@@ -250,7 +252,7 @@ describe('IntakeFlow — resolving a contradiction cannot dead-end (UC-5)', () =
     const box = await screen.findByRole('textbox', { name: /what ai tool do you want to use/i });
     await user.click(box);
     await user.paste('This tool processes no client data at all.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     // R16-B: the field-by-field form this test drove is replaced by the

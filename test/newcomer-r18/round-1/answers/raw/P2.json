@@ -1,0 +1,36 @@
+{
+  "packet": "P2",
+  "answers": {
+    "What do you want to call it?": "Loan auto-decision tool",
+    "In a sentence or two, what will it do for you?": "It approves or declines personal loan applications automatically, and the decision goes straight to the customer.",
+    "Where does the AI come from?": "Not sure yet",
+    "What kind of AI is it?": "Not sure",
+    "What information will it see or use?": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces?": "acts entirely by itself, with no person involved at any point",
+    "Who ends up seeing or receiving what it produces, in its final form?": "Clients or customers — including people applying to us",
+    "Which of these does it help decide, if any?": "Whether to lend to someone, or on what terms",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm?": "Not sure",
+    "Does it replace something you already use for the same job?": "Not sure",
+    "How widely will it be used?": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "Which countries does it involve?": ["Somewhere else, or not sure"],
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know",
+    "What does it do when it acts?": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off"
+  },
+  "prefills": {
+    "Which of these does it help decide, if any?": "ticked",
+    "Who ends up seeing or receiving what it produces, in its final form?": "ticked",
+    "What happens with what it produces?": "ticked"
+  },
+  "didntUnderstand": [
+    "\"Suggested by alpha:7b from your description\" - I don't know what alpha:7b is. I assume it is some AI helper, but nobody has told me.",
+    "\"I've checked this answer\" - it is not clear what I am confirming, or what happens if I leave it unticked.",
+    "\"Similar checks\" (step 2) - I never saw this screen, so I don't know what it is for.",
+    "\"If it does several things, pick the one where it has the most freedom\" - I was not sure what \"freedom\" means for a tool like this.",
+    "\"pick the one nearest the bottom of this list\" - the logic is odd and I did not follow why.",
+    "\"Your AI risk team\" - I don't know who that is at my firm.",
+    "The nudge note under my description: it listed sample sentences like \"It starts as a small trial with my team\" that were not mine. It was unclear whether they were examples or things I was meant to add. I pressed Next anyway."
+  ],
+  "expectNext": "I think it goes to a result telling me whether I can go ahead with the loan tool, plus a list of what has to be done first. It will probably check my answers against the firm's rules before that, perhaps with a confirm step. I don't expect anything to be sent or approved yet.",
+  "ticksMean": "I think a tick means I looked at the answer the helper filled in and agree with it. Without that, I guess it would not count as my answer. I'm not sure if ticking has any other effect.",
+  "comment": "The form was mostly clear, but I couldn't tell what \"alpha:7b\" or the \"checked this answer\" tick really means, and I was in a hurry so I ticked all three."
+}

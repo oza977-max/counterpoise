@@ -3,9 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import QuestionnaireStep from '../QuestionnaireStep';
-import GraphView from '../GraphView';
 import { loadPolicy } from '../../store/policy';
-import type { DataFlowGraph, IntakeQuestion, PolicyFile } from '../../engine/types';
+import type { IntakeQuestion, PolicyFile } from '../../engine/types';
 
 // MODEL-NAMES (owner-approved 2026-10-03): the two shipped approved_models
 // entries get plain names, so no raw model id reaches a button (CR6-19
@@ -13,7 +12,7 @@ import type { DataFlowGraph, IntakeQuestion, PolicyFile } from '../../engine/typ
 
 const VENDOR_NAME = 'A licensed AI model from an outside company (example)';
 // UNSIGNED-MODEL: qwen3:4b is is_approved false, so its label (button, Recorded
-// line, review row) now carries the owner-approved suffix after the plain name.
+// line) now carries the owner-approved suffix after the plain name.
 const LOCAL_NAME = 'A small open model running on your own computer — not yet accepted by your firm, so it gets an extra check';
 
 const result = loadPolicy(readFileSync(resolve(__dirname, '../../../policy/appetite.yaml'), 'utf-8'));
@@ -63,38 +62,5 @@ describe('MODEL-NAMES — the shipped approved models have plain names', () => {
       expect(name).not.toBe('');
       expect(name).not.toMatch(/approved|rejected/i);
     }
-  });
-});
-
-describe('MODEL-NAMES review — the review screen uses the same plain name', () => {
-  // Found in the MODEL-NAMES review: a person who clicked the plain-named
-  // button saw the raw id ("qwen3:4b") one step later on the review card.
-  it('TC-MN-05: the review screen names a declared model by its plain name, never its raw id', () => {
-    const graph: DataFlowGraph = {
-      id: 'g', version: 1, intake_method: 'llm', extracted_at: '2026-01-01T00:00:00.000Z', jurisdictions: [],
-      input_nodes: [],
-      processing_nodes: [
-        { id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false, declared_model_id: 'qwen3:4b' },
-      ],
-      output_nodes: [],
-      edges: [],
-    };
-    render(<GraphView graph={graph} policy={policy} />);
-    expect(screen.getByText(LOCAL_NAME)).toBeInTheDocument();
-    expect(screen.queryByText('qwen3:4b')).not.toBeInTheDocument();
-  });
-
-  it('TC-MN-05b: a model id the policy does not list is shown as written', () => {
-    const graph: DataFlowGraph = {
-      id: 'g', version: 1, intake_method: 'llm', extracted_at: '2026-01-01T00:00:00.000Z', jurisdictions: [],
-      input_nodes: [],
-      processing_nodes: [
-        { id: 'p1', label: 'x', model_type: 'llm', autonomy_level: 1, data_zone: 'Zone C', vendor: 'internal', replaces_prior_model: false, declared_model_id: 'some-new-model-7' },
-      ],
-      output_nodes: [],
-      edges: [],
-    };
-    render(<GraphView graph={graph} policy={policy} />);
-    expect(screen.getByText('some-new-model-7')).toBeInTheDocument();
   });
 });

@@ -1,0 +1,35 @@
+{
+  "packet": "P6",
+  "answers": {
+    "What do you want to call it?": "Procurement assistant",
+    "In a sentence or two, what will it do for you?": "It works through procurement tasks, decides its own steps, calls internal systems and places supplier orders without a checkpoint.",
+    "Where does the AI come from?": "Something a team in your firm built for this job",
+    "What kind of AI is it?": "An AI agent that works through tasks on its own, using other tools or systems — e.g. sends messages, books things, updates records, changes code",
+    "What information will it see or use?": ["Confidential firm information — internal data, code or documents not meant for outside the firm, whether or not they’re marked confidential"],
+    "What happens with what it produces?": "acts entirely by itself, with no person involved at any point",
+    "Who ends up seeing or receiving what it produces, in its final form?": "Not sure",
+    "Which of these does it help decide, if any?": "None of these — it’s for day-to-day work",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm?": "Not sure",
+    "Does it replace something you already use for the same job?": "No",
+    "How widely will it be used?": "Just me, or a small trial",
+    "Which countries does it involve?": ["Somewhere else, or not sure"],
+    "What does it do when it acts?": "Something else — sends, books, updates records, deploys changes",
+    "What can it get into by itself?": ["It has its own logins, passwords or access tokens for other systems"],
+    "Can copies of it, or other AI agents, pass work or messages to each other?": "Not sure"
+  },
+  "prefills": {
+    "What kind of AI is it?": "ticked",
+    "What happens with what it produces?": "ticked"
+  },
+  "didntUnderstand": [
+    "\"Who ends up seeing or receiving what it produces\" options: my tool sends orders to outside suppliers, and no option names suppliers or other outside businesses. I couldn't tell which one fits, so I chose Not sure.",
+    "\"If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?\": it depends on whether a supplier order can be cancelled, which I don't know. I'm unsure what counts as lasting harm.",
+    "\"What does it do when it acts?\" has trades and yes-or-no decisions as the named options. My tool is neither, so \"Something else\" is a catch-all. I'm unsure why it matters which one I pick.",
+    "\"It runs on computers or servers shared with other automated tools\": I didn't tick it because I don't know my hosting setup. I also don't know why it matters.",
+    "The screens never say what the 'Similar checks' step does. The form also shows pre-fills for three other questions (information, recipients, countries) that don't match my tool, and my packet doesn't list them. I'd ignore them and answer my own way.",
+    "On the describe screen, \"Make it smarter\" and the Ollama setup text (signin, OLLAMA_ORIGINS) are unclear. I don't know what the model does, or whether I need to set it up."
+  ],
+  "expectNext": "After Continue I expect the form to check that every required question is answered and every suggested answer has been confirmed. Then I'd get a Confirm screen where I can review everything, and then a Result. The Result should say whether I can go ahead, what is broken, and what controls I need first. Because my tool acts with no person involved and has its own logins, I expect it to be flagged as out of appetite or needing heavy controls. The result should come from the firm's written rules, not from AI.",
+  "ticksMean": "\"I've checked this answer\" means I've read the model's suggestion, and the words it quoted from my description, and I agree with it. It's me confirming the guess, not the model deciding. Nothing is final until Confirm, and I can still change any answer. Unticked suggestions block Continue (\"Still to check\").",
+  "comment": "I'd call this form clear for a developer, apart from the recipients question, which has no option for outside suppliers, and the unfamiliar approval jargon."
+}

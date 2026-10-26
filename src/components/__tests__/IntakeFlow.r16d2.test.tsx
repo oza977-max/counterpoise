@@ -5,7 +5,7 @@ import App from '../../App';
 import { getUseCases } from '../../store/register';
 import { getAll } from '../../store/audit';
 import type { GraphCorrection } from '../../engine/types';
-import { fillText, DUP_CHECK_WAIT, SLOW_FLOW_MS } from './fillText';
+import { fillText, DUP_CHECK_WAIT, SLOW_FLOW_MS, pressNext } from './fillText';
 
 // R16-D2 §5 (D-82, DR7-17/DR7-22). Integration-level coverage for
 // correcting a form-built verdict THROUGH THE FORM: the correction stays
@@ -49,7 +49,7 @@ async function fillMinimalForm(user: ReturnType<typeof userEvent.setup>, name: s
 async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, description: string) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
@@ -81,7 +81,7 @@ async function clickThroughToConfirm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 // The wait for the result gets 5s, not the 1s default (the precedent is
-// GraphReview.r6's verdict wait). Confirm runs the case lock, several
+// the Questionnaire write-back flow's verdict wait). Confirm runs the case lock, several
 // hash-chained appends and the register writes; alone that is well under a
 // second, but on a machine running the whole suite in parallel it
 // occasionally ran past 1s and this test failed about 1 run in 13
@@ -121,7 +121,7 @@ describe('R16-D2 §5: correcting a form-built verdict through the form (D-82, DR
     // is the stable seam).
     await user.click(document.querySelector<HTMLButtonElement>('.verdict__first-correct')!);
 
-    // Re-opens the FORM, not graph_review — filled in, with the
+    // Re-opens the FORM, filled in, with the
     // correction-mode note.
     expect(await screen.findByText(/you.re correcting your earlier answers/i)).toBeInTheDocument();
     const nameInput = screen.getByLabelText(/what do you want to call it/i) as HTMLInputElement;

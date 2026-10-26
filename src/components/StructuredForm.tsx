@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   ACCESS_SCOPE_REFUSAL_TEXT,
   INTRO_TEXT,
@@ -6,11 +7,19 @@ import {
   findQuestion,
   neutralPlatformLabel,
   neutralSupplierLabel,
+  R18_COPY,
 } from './plain-copy';
 import type { Assumption, PlainAnswers, PlainOption, QuestionId } from './plain-copy';
-import { plainAnswersToFormValues, platformZoneOptionKeys, q3ShowsModelQuestion, resolveAccessScopeAnswer } from '../engine/plain-intake';
+import { plainAnswersToFormValues, resolveAccessScopeAnswer } from '../engine/plain-intake';
+import { canContinue, clearDependents, missingQuestionIds, requiredQuestionIds, shownQuestionIds, validOptionKeys } from '../engine/form-visibility';
+import { FREE_ANSWER_MAX_CHARS, structureFor } from '../engine/question-structure';
 import { buildGraphFromForm } from '../engine/build-graph-from-form';
-import { saveFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
+import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
+import { toPlainAnswers } from '../engine/form-answer-state';
+import type { AnswerSource, FormAnswerState } from '../engine/prefill-types';
+import { originalPrefilled, unconfirmedIds } from '../engine/answer-sources';
+import AnswerMark from './AnswerMark';
+import RatingInstructionNotice from './RatingInstructionNotice';
 import type { DataFlowGraph, PolicyFile } from '../engine/types';
 
 // R16-B (UC-8, UC-10, UC-11; build/prompts/R16.md v2.1 §2.2). Rule 4
@@ -36,19 +45,28 @@ import type { DataFlowGraph, PolicyFile } from '../engine/types';
 
 interface StructuredFormProps {
   policy: PolicyFile;
-  // W-1 (R16-W §1, D-67): the description typed on the very first screen.
-  // Question 2 starts with it (editable) unless the form's own in-progress
-  // draft or `initialAnswers` (W-4) already holds a question-2 value — see
-  // the precedence comment on the Q2 FreeText render below.
+  // R18-A (specs/intake-flow.md §27.6): Question 2 is the editor of THE
+  // description — the form receives it and reports every change, and keeps no
+  // copy of its own. The intake flow passes both; a form rendered on its own (the
+  // unit tests) may omit them and then holds the text locally, starting from
+  // `initialDescription`.
+  description?: string;
+  onDescriptionChange?: (description: string) => void;
   initialDescription?: string;
-  // W-4 (R16-W §1, D-70): "Change an answer" and the form-path Back both
-  // need the form to reopen FILLED IN, not blank. Precedence on mount: the
-  // form's own saved draft (in-progress edits) -> initialAnswers -> blank.
+  // The reducer's own copy of the answers (present after a trip away from the
+  // form, e.g. "Change an answer"). Precedence on mount: the form's own saved
+  // draft (strictly newer: what the person was doing on this exact screen) ->
+  // this -> initialAnswers -> blank.
+  initialAnswerState?: FormAnswerState;
+  // W-4 (R16-W §1, D-70): the same, as PlainAnswers. Read only when no answer
+  // state is given; every value becomes a `typed` answer, and Question 2 is
+  // ignored (it is the description).
   initialAnswers?: PlainAnswers;
-  // W-4: the raw answers travel with the graph/assumptions so the caller
-  // (IntakeFlow) can carry them on the reducer state — plainAnswersToFormValues()
-  // is already computed here; passing `answers` back avoids recomputing it.
-  onSubmit: (graph: DataFlowGraph, assumptions: Assumption[], answers: PlainAnswers) => void;
+  // R18-NF-5: this form was reached from a draft saved by an earlier version.
+  earlierVersionNotice?: boolean;
+  // The answers travel as the form's own state object; the caller derives
+  // PlainAnswers from it (toPlainAnswers) — there is one source of truth.
+  onSubmit: (graph: DataFlowGraph, assumptions: Assumption[], answerState: FormAnswerState, description: string) => void;
 }
 
 function toArray(v: string | string[] | undefined): string[] {
@@ -101,6 +119,8 @@ interface QuestionProps {
   onSingle: (id: QuestionId, key: string) => void;
   onMulti: (id: QuestionId, key: string) => void;
   onText: (id: QuestionId, text: string) => void;
+  /** R18-C2: where this answer came from, and its tick (null for a typed answer). */
+  markFor: (id: QuestionId) => ReactNode;
 }
 
 function mergeOptions(base: PlainOption[], extra: PlainOption[], atIndex?: number): PlainOption[] {
@@ -117,6 +137,7 @@ function SingleSelect({
   requiredIds,
   answers,
   onSingle,
+  markFor,
 }: QuestionProps) {
   const question = findQuestion(id);
   if (!question) return null;
@@ -152,11 +173,12 @@ function SingleSelect({
           </label>
         ))}
       </div>
+      {markFor(id)}
     </fieldset>
   );
 }
 
-function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: QuestionProps) {
+function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti, markFor }: QuestionProps) {
   const question = findQuestion(id);
   if (!question) return null;
   const options = [...extraOptions, ...question.options];
@@ -176,8 +198,36 @@ function MultiSelect({ id, extraOptions = [], requiredIds, answers, onMulti }: Q
           {o.text}
         </label>
       ))}
+      {markFor(id)}
     </fieldset>
   );
+}
+
+/** R18-B (§27.8): typed free-text answers are limited so every value fits the record's bounds (§27.13). */
+export const FREE_TEXT_MAX_CHARS = FREE_ANSWER_MAX_CHARS;
+
+/** Cuts a restored free-text answer to the limit (never in the middle of a surrogate pair). */
+function clampFreeText(text: string): string {
+  if (text.length <= FREE_TEXT_MAX_CHARS) return text;
+  let end = FREE_TEXT_MAX_CHARS;
+  const last = text.charCodeAt(end - 1);
+  if (last >= 0xd800 && last <= 0xdbff) end -= 1;
+  return text.slice(0, end);
+}
+
+const LIMITED_FREE_TEXT_IDS = ['1', '3supplierName', '3model', '8other'] as const;
+
+/** An older draft may hold a longer answer than this build allows; cut it so this build's own export always fits §27.13. */
+function clampRestored(state: FormAnswerState): FormAnswerState {
+  let out = state;
+  for (const id of LIMITED_FREE_TEXT_IDS) {
+    const entry = out[id];
+    if (entry && typeof entry.value === 'string' && entry.value.length > FREE_TEXT_MAX_CHARS) {
+      if (out === state) out = { ...state };
+      out[id] = { ...entry, value: clampFreeText(entry.value) };
+    }
+  }
+  return out;
 }
 
 function FreeText({
@@ -186,6 +236,7 @@ function FreeText({
   requiredIds,
   answers,
   onText,
+  markFor,
 }: QuestionProps & { multiline?: boolean }) {
   const question = findQuestion(id);
   if (!question) return null;
@@ -202,22 +253,117 @@ function FreeText({
       {multiline ? (
         <textarea id={inputId} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
       ) : (
-        <input id={inputId} type="text" value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
+        <>
+          <input id={inputId} type="text" maxLength={FREE_TEXT_MAX_CHARS} aria-describedby={`${inputId}-limit`} value={value} required={isRequired} aria-required={isRequired || undefined} onChange={(e) => onText(id, e.target.value)} />
+          <p className="field-help" id={`${inputId}-limit`}>{R18_COPY.FREE_TEXT_LIMIT_HINT}</p>
+        </>
       )}
+      {markFor(id)}
     </div>
   );
 }
 
-/** CR7-04. Whether the "Model name, if you know it" question is on screen
- *  for this Q3 answer. The rule lives in ONE place — the engine's
- *  `q3ShowsModelQuestion`, which also decides whether a 3model answer is read
- *  — so what renders, what a Q3 change clears and what the engine reads
- *  cannot drift (pinned by TC-CR7-04e). */
-function q3KeyShowsModelQuestion(q3: string | undefined): boolean {
-  return q3 !== undefined && q3ShowsModelQuestion({ '3': q3 });
+/** An earlier PlainAnswers (a resubmission through the old props) as the form's
+ *  state: every answer `typed`; Question 2 is the description, not an answer. */
+function typedFromPlain(plain: PlainAnswers | undefined): FormAnswerState {
+  const out: FormAnswerState = {};
+  if (!plain) return out;
+  for (const key of Object.keys(plain) as QuestionId[]) {
+    const value = plain[key];
+    if (key === '2' || value === undefined) continue;
+    out[key as Exclude<QuestionId, '2'>] = { value: Array.isArray(value) ? [...value] : value, source: { kind: 'typed' } };
+  }
+  return out;
 }
 
-export default function StructuredForm({ policy, initialDescription, initialAnswers, onSubmit }: StructuredFormProps) {
+function sameValue(a: string | string[], b: string | string[]): boolean {
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x, i) => x === b[i]);
+  }
+  return a === b;
+}
+
+/** The same set of option keys, in any order (a tick-all answer is a set). */
+function sameSet(a: string | string[], b: string[]): boolean {
+  const left = toArray(a);
+  return left.length === b.length && left.every((x) => b.includes(x)) && b.every((x) => left.includes(x));
+}
+
+/** The source of an answer after the person set it to `value` (§27.6 "Changing"). A change to a pre-filled
+ *  answer is a confirmation of its own, so it becomes `changed`; changing it back to what was read returns it to
+ *  `prefilled`, confirmed (the person looked and chose that value). A record answer and a not-carried answer
+ *  become `typed`: the person now supplied them. */
+function nextEntry(
+  before: FormAnswerState[Exclude<QuestionId, '2'>],
+  value: string | string[],
+): { value: string | string[]; source: AnswerSource } {
+  const copy = Array.isArray(value) ? [...value] : value;
+  if (!before) return { value: copy, source: { kind: 'typed' } };
+  const source = before.source;
+  switch (source.kind) {
+    case 'prefilled': {
+      if (sameValue(before.value, value) || sameSet(value, toArray(before.value))) return before;
+      return { value: copy, source: { kind: 'changed', from: source.quotes, read: source.read } };
+    }
+    case 'changed': {
+      const original = originalPrefilled(source) ?? [];
+      if (sameSet(value, original)) {
+        // Back to what was read: the original value (in its own order), confirmed.
+        return {
+          value: Array.isArray(before.value) || original.length > 1 ? [...original] : original[0]!,
+          source: { kind: 'prefilled', quotes: source.from, read: source.read, confirmed: true },
+        };
+      }
+      return { value: copy, source };
+    }
+    case 'record':
+    case 'not-carried':
+      return sameValue(before.value, value) && source.kind === 'record' ? before : { value: copy, source: { kind: 'typed' } };
+    case 'typed':
+      return sameValue(before.value, value) ? before : { value: copy, source };
+  }
+}
+
+/** Removes the answers of questions that are not shown: a hidden question holds no answer and no source. */
+function dropHidden(state: FormAnswerState, policy: PolicyFile): FormAnswerState {
+  const shown = new Set(shownQuestionIds(toPlainAnswers(state, ''), policy));
+  let out = state;
+  for (const key of Object.keys(state) as Exclude<QuestionId, '2'>[]) {
+    if (!shown.has(key)) {
+      if (out === state) out = { ...state };
+      delete out[key];
+    }
+  }
+  return out;
+}
+
+/** Turns the answers after a change back into state, giving each answer the source it now has (see nextEntry),
+ *  keeping an untouched not-carried marker, and dropping whatever the change hid. */
+function reconcile(next: PlainAnswers, prev: FormAnswerState, policy: PolicyFile): FormAnswerState {
+  const out: FormAnswerState = {};
+  for (const key of Object.keys(next) as QuestionId[]) {
+    const value = next[key];
+    if (key === '2' || value === undefined) continue;
+    const id = key as Exclude<QuestionId, '2'>;
+    out[id] = nextEntry(prev[id], value);
+  }
+  // toPlainAnswers leaves a not-carried answer out (it is blank); it stays on the screen until answered.
+  for (const key of Object.keys(prev) as Exclude<QuestionId, '2'>[]) {
+    if (prev[key]?.source.kind === 'not-carried' && out[key] === undefined) out[key] = prev[key];
+  }
+  return dropHidden(out, policy);
+}
+
+export default function StructuredForm({
+  policy,
+  description,
+  onDescriptionChange,
+  initialDescription,
+  initialAnswerState,
+  initialAnswers,
+  earlierVersionNotice = false,
+  onSubmit,
+}: StructuredFormProps) {
   const platformOptions = dynamicOptions(policy.platforms ?? [], neutralPlatformLabel);
   const supplierOptions = dynamicOptions(
     (policy.vendors ?? []).filter((v) => (v.kind ?? 'supplier') === 'supplier'),
@@ -232,104 +378,79 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
     text: j.name,
   }));
 
-  // D-41: probe the OLD draft key once, before first paint, and never
-  // again — an incompatible shape must be reported once and then be gone,
-  // not re-detected on every render.
+  // D-41, extended in R18-A: probe the OLD draft keys (both) once, before first
+  // paint, and never again — an incompatible shape must be reported once and then
+  // be gone, not re-detected on every render.
   const legacyRef = useRef<boolean | null>(null);
   if (legacyRef.current === null) legacyRef.current = probeLegacyFormDraft();
   const [legacyDraftFound] = useState(legacyRef.current);
 
-  // W-1/W-4 (R16-W §1, D-67/D-70). Precedence on mount: the form's own
-  // saved draft (in-progress edits a person is actively making) ->
-  // initialAnswers (a resubmission via "Change an answer" or Back) ->
-  // blank. The draft wins over initialAnswers because it is STRICTLY newer
-  // information about what the person was doing on this exact screen —
-  // initialAnswers is a snapshot from the moment they last left it.
-  const restoredRef = useRef<PlainAnswers | null>(null);
+  // R18-A (§27.6). The form's answers are ONE state object, `FormAnswerState`,
+  // with a source on every answer (`typed` here: a person supplied each). Question
+  // 2 is not in it. Precedence on mount (W-1/W-4): the form's own saved draft ->
+  // the reducer's copy -> initialAnswers -> blank. The baseline's stale
+  // `restoredRef.current['2']` precedence is gone with Question 2's own copy.
+  const restoredRef = useRef<FormAnswerState | null>(null);
   if (restoredRef.current === null) {
-    const draft = loadFormDraft<PlainAnswers>();
-    restoredRef.current = draft ?? initialAnswers ?? {};
+    restoredRef.current = dropHidden(
+      clampRestored(loadFormDraft()?.answerState ?? initialAnswerState ?? typedFromPlain(initialAnswers)),
+      policy,
+    );
   }
-  const [answers, setAnswers] = useState<PlainAnswers>(() => {
-    // W-1: question 2 starts with the description typed on the very first
-    // screen, UNLESS the restored value (draft or initialAnswers) already
-    // holds one — editing Q2 from then on is what carries the description
-    // forward (the form's own words, not the first screen's, once edited).
-    if (restoredRef.current!['2'] !== undefined || !initialDescription) return restoredRef.current!;
-    return { ...restoredRef.current!, '2': initialDescription };
-  });
+  const [answerState, setAnswerState] = useState<FormAnswerState>(restoredRef.current);
+  const [localDescription, setLocalDescription] = useState(description ?? initialDescription ?? '');
+  const currentDescription = onDescriptionChange ? (description ?? '') : localDescription;
+
+  // PlainAnswers is the engine-facing shape, derived here and nowhere kept.
+  const answers: PlainAnswers = toPlainAnswers(answerState, currentDescription);
 
   useEffect(() => {
-    saveFormDraft(answers);
-  }, [answers]);
+    updateFormDraft({ answerState });
+  }, [answerState]);
+
+  // Applies a change written in terms of PlainAnswers (the form's rules are
+  // unchanged) and keeps each untouched answer's source as it was.
+  function updateAnswers(change: (prev: PlainAnswers) => PlainAnswers) {
+    setAnswerState((prev) => reconcile(change(toPlainAnswers(prev, '')), prev, policy));
+  }
 
   function setSingle(id: QuestionId, key: string) {
-    setAnswers((prev) => {
-      const next: PlainAnswers = { ...prev, [id]: key };
-      // Conditional follow-ups are cleared when their trigger changes
-      // (§2.2 Details: "follow-ups are required when shown and cleared
-      // when their trigger changes").
-      if (id === '3') {
-        // CR7-04: the model name belongs to the Q3 answers that ask for it.
-        // Moving from one that shows the question to one that does not (e.g.
-        // "outside assistant" -> "something a team in your firm built") used to
-        // leave the typed name behind, hidden: it still reached the engine as
-        // a declared model for a tool that has none.
-        if (q3KeyShowsModelQuestion(typeof prev['3'] === 'string' ? prev['3'] : undefined) && !q3KeyShowsModelQuestion(key)) {
-          delete next['3model'];
-        }
-        delete next['3a'];
-        delete next['3aWhich'];
-        delete next['3supplier'];
-        delete next['3supplierName'];
-        // W-9: a platform-zone answer for one platform must never survive
-        // onto a different Q3 answer, including a different platform.
-        delete next['3platformZone'];
-      }
-      if (id === '3a') {
-        delete next['3aWhich'];
-      }
-      if (id === '3supplier' && key !== 'not-on-list') {
-        delete next['3supplierName'];
-      }
-      if (id === '4') {
-        if (key !== 'score') delete next['4a'];
-        if (key !== 'agentic' && key !== 'not-sure') {
-          delete next['13'];
-          delete next['14'];
-        }
-      }
-      if (id === '6') {
-        if (!['answers', 'drafts', 'suggests'].includes(key)) delete next['6a'];
-        if (!['acts-reviewed', 'acts-bounded', 'acts-alone'].includes(key)) delete next['6b'];
-      }
-      if (id === '8' && key !== 'other') {
-        delete next['8other'];
-      }
-      return next;
-    });
+    // Conditional follow-ups are cleared when their trigger changes (§2.2 Details:
+    // "follow-ups are required when shown and cleared when their trigger changes").
+    // The rule lives in form-visibility.ts (CR7-04's model name, W-9's platform zone
+    // and the rest); `prev` lets it tell a move between two answers that both ask for
+    // the model name from one that stops asking.
+    updateAnswers((prev) => clearDependents({ ...prev, [id]: key }, id, policy, prev));
   }
 
   function setText(id: QuestionId, text: string) {
-    setAnswers((prev) => ({ ...prev, [id]: text }));
+    // Question 2 is the editor of the description (§27.6), not a stored answer.
+    if (id === '2') {
+      if (onDescriptionChange) onDescriptionChange(text);
+      else setLocalDescription(text);
+      return;
+    }
+    updateAnswers((prev) => ({ ...prev, [id]: text }));
   }
 
   function toggleMulti(id: QuestionId, key: string) {
-    setAnswers((prev) => {
+    updateAnswers((prev) => {
       const current = toArray(prev[id]);
+      const exclusive = structureFor(id)?.exclusiveKey;
       let next: string[];
-      if (id === '13') {
-        if (key === 'none') {
-          next = current.includes('none') ? [] : ['none'];
+      if (exclusive !== undefined) {
+        // Question 13: "nothing beyond…" replaces every other tick and is replaced by any.
+        if (key === exclusive) {
+          next = current.includes(exclusive) ? [] : [exclusive];
         } else {
-          const withoutNone = current.filter((k) => k !== 'none');
-          next = withoutNone.includes(key) ? withoutNone.filter((k) => k !== key) : [...withoutNone, key];
+          const without = current.filter((k) => k !== exclusive);
+          next = without.includes(key) ? without.filter((k) => k !== key) : [...without, key];
         }
       } else {
         // CR6-06e: a stale tick can't be unticked (it isn't rendered), so
         // any toggle drops keys that are no longer current options — the
         // person re-picks from what is on screen.
-        const valid = multiSelectValidKeys(id);
+        const valid = validOptionKeys(id, prev, policy);
         const live = current.filter((k) => valid.includes(k));
         next = live.includes(key) ? live.filter((k) => k !== key) : [...live, key];
       }
@@ -337,87 +458,32 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
     });
   }
 
-  // ---- visibility ----
-  const q3 = typeof answers['3'] === 'string' ? (answers['3'] as string) : undefined;
-  const showQ3Supplier = q3 === 'supplier-feature' || q3 === 'specialist-product';
-  const showQ3Model = q3KeyShowsModelQuestion(q3);
-  const showQ3a = q3 === 'outside-assistant';
-  const show3supplierName = answers['3supplier'] === 'not-on-list';
-  const show3aWhich = answers['3a'] === 'firm-account' && companyAssistantOptions.length > 1;
-  // W-9 (D-79): the matched platform, if Q3's answer is one of the dynamic
-  // platform ids rather than a static option key. A platform allowing only
-  // one zone keeps today's mapping with no follow-up.
-  const matchedPlatform = (policy.platforms ?? []).find((p) => p.id === q3);
-  const showQ3platformZone = Boolean(matchedPlatform) && (matchedPlatform!.approved_envelope.data_zones?.length ?? 0) > 1;
-  const q3platformZoneKeys = matchedPlatform ? platformZoneOptionKeys(matchedPlatform) : [];
-  const q4 = typeof answers['4'] === 'string' ? (answers['4'] as string) : undefined;
-  const showQ4a = q4 === 'score';
-  const isAgentic = q4 === 'agentic' || q4 === 'not-sure';
-  const q6 = typeof answers['6'] === 'string' ? (answers['6'] as string) : undefined;
-  const showQ6a = q6 !== undefined && ['answers', 'drafts', 'suggests'].includes(q6);
-  const showQ6b = q6 !== undefined && ['acts-reviewed', 'acts-bounded', 'acts-alone'].includes(q6);
-  const showQ8other = answers['8'] === 'other';
+  // ---- visibility and required-ness: the rules are in form-visibility.ts ----
+  const shown = new Set(shownQuestionIds(answers, policy));
+  const showQ3Supplier = shown.has('3supplier');
+  const showQ3Model = shown.has('3model');
+  const showQ3a = shown.has('3a');
+  const show3supplierName = shown.has('3supplierName');
+  const show3aWhich = shown.has('3aWhich');
+  const showQ3platformZone = shown.has('3platformZone');
+  const q3platformZoneKeys = validOptionKeys('3platformZone', answers, policy);
+  const showQ4a = shown.has('4a');
+  const isAgentic = shown.has('13');
+  const showQ6a = shown.has('6a');
+  const showQ6b = shown.has('6b');
+  const showQ8other = shown.has('8other');
 
-  // ---- required-ness (§2.2 Details: "required = an option chosen") ----
-  // F-8 (DR7-08): Q13 is answered only when its ticks resolve through the
-  // single checker — the same function the mapping itself calls. A tick
-  // list that maps to nothing real (a stale draft, an unexpected value)
-  // must never silently count as answered here and reach the engine as
-  // "not stated" — that was the DR7-08 bug.
+  // F-8 (DR7-08): Q13 is answered only when its ticks resolve through the single
+  // checker — the same function the mapping itself calls (here, for the message).
   const q13Result = resolveAccessScopeAnswer(toArray(answers['13']));
-  // CR6-06: the current, valid key set for a single-select question — its
-  // own static options PLUS whatever policy-driven options this render
-  // actually spliced in (Q3's platforms, Q3supplier's suppliers, Q3aWhich's
-  // company assistants), or Q3platformZone's own platform-restricted subset.
-  // A value outside this set (a stale draft, a registry entry since
-  // renamed or removed, an option an older build offered) is not one of
-  // the choices on screen right now, so it must not count as answered.
-  function singleSelectValidKeys(id: QuestionId): string[] {
-    if (id === '3platformZone') return q3platformZoneKeys;
-    const staticKeys = findQuestion(id)?.options.map((o) => o.key) ?? [];
-    if (id === '3') return [...staticKeys, ...platformOptions.map((o) => o.key)];
-    if (id === '3supplier') return [...staticKeys, ...supplierOptions.map((o) => o.key)];
-    if (id === '3aWhich') return [...staticKeys, ...companyAssistantOptions.map((o) => o.key)];
-    return staticKeys;
-  }
-  // CR6-06e: a multi-select's current keys — its static options plus the
-  // policy-driven extras the render splices in (Q11's jurisdictions). Q13
-  // keeps its own checker (resolveAccessScopeAnswer).
-  function multiSelectValidKeys(id: QuestionId): string[] {
-    const staticKeys = findQuestion(id)?.options.map((o) => o.key) ?? [];
-    if (id === '11') return [...jurisdictionOptions.map((o) => o.key), ...staticKeys];
-    return staticKeys;
-  }
-  function isAnswered(id: QuestionId): boolean {
-    if (id === '13') return q13Result.ok;
-    const q = findQuestion(id);
-    if (q?.multi) {
-      const ticks = toArray(answers[id]);
-      const valid = multiSelectValidKeys(id);
-      return ticks.length > 0 && ticks.every((k) => valid.includes(k));
-    }
-    if (q?.freeText) return Boolean((answers[id] as string | undefined)?.trim());
-    const value = answers[id];
-    if (value === undefined || value === '') return false;
-    // F-8/DR7-08's sibling rule for single-select: counted only when the
-    // stored value names one of THIS render's current options — static or
-    // policy-driven — never merely "is a non-empty string".
-    return singleSelectValidKeys(id).includes(String(value));
-  }
 
-  const requiredIds: QuestionId[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  if (showQ3Supplier) requiredIds.push('3supplier');
-  if (showQ3platformZone) requiredIds.push('3platformZone');
-  if (showQ3a) requiredIds.push('3a');
-  if (show3aWhich) requiredIds.push('3aWhich');
-  if (showQ4a) requiredIds.push('4a');
-  if (showQ6a) requiredIds.push('6a');
-  if (showQ6b) requiredIds.push('6b');
-  if (showQ8other) requiredIds.push('8other');
-  if (isAgentic) requiredIds.push('13', '14');
+  const requiredIds: QuestionId[] = requiredQuestionIds(answers, policy);
 
-  const missingIds = requiredIds.filter((id) => !isAnswered(id));
-  const isComplete = missingIds.length === 0;
+  const missingIds = missingQuestionIds(answers, policy);
+  // R18-C2 (§27.6): Continue also waits for every pre-filled and every earlier-record answer to be confirmed
+  // or changed, and for a description that is not blank.
+  const isComplete = canContinue(answerState, currentDescription, policy);
+  const toCheckIds = unconfirmedIds(answerState, currentDescription, policy);
   // CR6-07: what is still missing, in the form's own words — the first few,
   // then a count — shown beside Continue and tied to it with aria-describedby.
   // CR6-07d: strip each item's own trailing stop so the line has no doubled
@@ -427,6 +493,10 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
   const missingTexts = missingIds.map((id) =>
     (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, ''),
   );
+  const toCheckTexts = toCheckIds.map((id) =>
+    (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, ''),
+  );
+  const toCheckLine = toCheckTexts.join('; ');
   const missingLine =
     missingTexts.length <= 3
       ? missingTexts.join('; ')
@@ -447,12 +517,48 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
     // territory) rather than inside src/engine/* is exactly where
     // cross-cutting.md §7 Rule 1 puts it. ENG-ID: the same goes for the ids —
     // the engine draws every graph id from the source passed here.
-    onSubmit(buildGraphFromForm(values, new Date().toISOString(), () => crypto.randomUUID()), describeAssumptions(assumptions), answers);
+    onSubmit(
+      buildGraphFromForm(values, new Date().toISOString(), () => crypto.randomUUID()),
+      describeAssumptions(assumptions),
+      answerState,
+      currentDescription,
+    );
   }
 
   // Bundles the props every question renderer needs, so each call site below
   // stays a one-liner.
-  const qp = { requiredIds, answers, onSingle: setSingle, onMulti: toggleMulti, onText: setText };
+  // R18-C2: a tick confirms ONE answer (a pre-filled or earlier-record answer); there is no other way to
+  // confirm and no control that does several at once.
+  function toggleConfirm(id: QuestionId) {
+    if (id === '2') return;
+    setAnswerState((prev) => {
+      const entry = prev[id];
+      if (!entry) return prev;
+      const source = entry.source;
+      if (source.kind !== 'prefilled' && source.kind !== 'record') return prev;
+      return { ...prev, [id]: { ...entry, source: { ...source, confirmed: !source.confirmed } } };
+    });
+  }
+  const dynamicLists = [...platformOptions, ...supplierOptions, ...companyAssistantOptions, ...jurisdictionOptions];
+  const optionTextFor = (id: QuestionId) => (key: string) =>
+    findQuestion(id)?.options.find((o) => o.key === key)?.text ?? dynamicLists.find((o) => o.key === key)?.text ?? key;
+  const markFor = (id: QuestionId): ReactNode => {
+    if (id === '2') return null;
+    const entry = answerState[id];
+    if (!entry) return null;
+    const label = (findQuestion(id)?.text ?? id).split(/(?<=[.?!])\s/)[0]!.replace(/[\s.?!;:]+$/, '');
+    return (
+      <AnswerMark
+        questionLabel={label}
+        source={entry.source}
+        description={currentDescription}
+        optionText={optionTextFor(id)}
+        multi={structureFor(id)?.kind === 'multi'}
+        onToggleConfirm={() => toggleConfirm(id)}
+      />
+    );
+  };
+  const qp = { requiredIds, answers, onSingle: setSingle, onMulti: toggleMulti, onText: setText, markFor };
 
   return (
     <section aria-label="Structured intake form">
@@ -466,17 +572,32 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
         No AI reads your answers or makes the decision, so the same answers always get the same
         result.
       </p>
-      {legacyDraftFound && (
+      {/* Newcomer test round 1: what the tick means, once, and only while an unticked suggestion is what stops
+          Continue (so the sentence is never false). */}
+      {toCheckIds.length > 0 && <p className="plain-form__tick-help">{R18_COPY.TICK_EXPLAINED}</p>}
+      {/* R18-NF-5: a draft saved by an earlier version landed here with the
+          description kept and no answers; say so, once (computed at load, never
+          stored). When an earlier form-draft key was also found, the one sentence
+          covers both. */}
+      {earlierVersionNotice ? (
         <p role="status" className="plain-form__legacy-draft">
-          Your saved draft was from an older version of this form and couldn&rsquo;t be reused — please
-          start again.
+          {R18_COPY.EARLIER_VERSION_NOTICE}
         </p>
+      ) : (
+        legacyDraftFound && (
+          <p role="status" className="plain-form__legacy-draft">
+            Your saved draft was from an older version of this form and couldn&rsquo;t be reused — please
+            start again.
+          </p>
+        )
       )}
 
       <fieldset className="structured-form__section">
         <legend>About it</legend>
         <FreeText id="1" {...qp} />
         <FreeText id="2" multiline {...qp} />
+        {/* R18-C2 (§27.4): a description that dictates its own rating is warned wherever it is shown. */}
+        <RatingInstructionNotice description={currentDescription} />
       </fieldset>
 
       <fieldset className="structured-form__section">
@@ -529,16 +650,25 @@ export default function StructuredForm({ policy, initialDescription, initialAnsw
 
       <p className="structured-form__scroll-note">One continuous scroll — no Next/Back paging.</p>
 
-      {!isComplete && (
+      {missingIds.length > 0 && (
         <p id="pf-missing" className="plain-form__missing">
           Still to answer: {missingLine}.
+        </p>
+      )}
+      {toCheckIds.length > 0 && (
+        <p id="pf-to-check" className="plain-form__missing">
+          {R18_COPY.STILL_TO_CHECK} {toCheckLine}.
         </p>
       )}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={!isComplete}
-        aria-describedby={isComplete ? undefined : 'pf-missing'}
+        aria-describedby={
+          isComplete
+            ? undefined
+            : [missingIds.length > 0 ? 'pf-missing' : null, toCheckIds.length > 0 ? 'pf-to-check' : null].filter(Boolean).join(' ') || undefined
+        }
       >
         Continue
       </button>

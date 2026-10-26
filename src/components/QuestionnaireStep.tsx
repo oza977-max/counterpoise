@@ -11,9 +11,8 @@ import { fillPlaceholders, joinWithAnd } from './verdict-view-model';
 // ("What can it get into by itself?") met a differently-worded question
 // here for the identical engine field. `plain-copy.ts`'s QUESTIONNAIRE_COPY
 // is now the one source for every question's text, help, option labels and
-// "Not sure" assumption — the same table GraphView's review cards read
-// (§4), so the words a person answers here are the words they'd see again
-// on that screen.
+// "Not sure" assumption, so the words a person answers here are the words
+// they'd see again on the summary.
 
 /** DR7-28. `vendor`/`declared_model_id`'s own registry options — merged in
  *  here (the component layer, which has the policy) beside
@@ -326,10 +325,10 @@ export default function QuestionnaireStep({
 
 // §3 (D-101): tick-all with a "Done" button, disabled until one box is
 // ticked; "Nothing beyond…" exclusive, the same rule as the form's own
-// Q13 and GraphView's AccessScopeEditor. A `<fieldset>`, not one `<label>`
+// Q13. A `<fieldset>`, not one `<label>`
 // around everything — a label's control is its FIRST input, so clicking
 // any option's words would tick only that one (the bug R16-F found and
-// fixed in AccessScopeEditor; this is the questionnaire's own instance of
+// fixed in the retired review editor; this is the questionnaire's own instance of
 // the same control).
 function MultiSelectAnswer({
   copy,

@@ -28,3 +28,10 @@ Test file: `src/components/__tests__/QuestionnaireStep.mn.test.tsx`.
 |---|---|
 | TC-R17-PV-04 | The shipped policy version is now 1.9 (was 1.8) — `evaluate.test.ts` |
 | TC-R16-A2-11 | The shipped policy version is now 1.9 (was 1.8) — `plain-language-coverage.test.ts` |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-MN-05 | Superseded by R18-GI-10 (R18-E): a declared model's plain name on the review row belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-MN-05b | Superseded by R18-GI-10 (R18-E): an unlisted model id shown as written on the review row belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

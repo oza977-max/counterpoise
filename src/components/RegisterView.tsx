@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getUseCases, hasPendingPolicyUpdate, exportAll } from '../store/register';
+import { R18_COPY } from './plain-copy';
 import { exportBundle, importBundle, replaceWithBundle, finishRegisterReplace, type ImportOutcome, type AuditTip } from '../store/handoff';
 import { AIGATE_USE_CASE_ID } from '../seeds/aigate-self-assessment';
 import RegisterDetail from './RegisterDetail';
@@ -8,6 +9,7 @@ import type { PolicyFile } from '../engine/types';
 import type { ProvisionalReason } from '../engine/provisional';
 import { classifyProvisionalReason } from './VerdictDisplay';
 import { STAGE_LABELS, STATUS_LABEL } from './field-copy';
+import type { CorrectionOpening } from './correction-from-record';
 
 // Rule 4 (cross-cutting.md §7): presentation-only, calls store functions,
 // no direct IndexedDB/audit access. register-lifecycle.md §10.
@@ -26,13 +28,15 @@ interface RegisterViewProps {
   selectedId: string | null;
   onSelectRow: (id: string) => void;
   onCloseDetail: () => void;
+  // R18-D2 (§27.10): passed to the detail's "Correct this check". App opens the intake on the form.
+  onCorrectFromRecord?: (opening: CorrectionOpening) => void;
 }
 
 // code-review-004 F15: this was a third, local copy of the exact map
 // field-copy.ts consolidated (its comment claims the consolidation was
 // complete — this file predated it and was missed). One source now.
 
-export default function RegisterView({ role, currentPolicyVersion, policy, selectedId, onSelectRow, onCloseDetail }: RegisterViewProps) {
+export default function RegisterView({ role, currentPolicyVersion, policy, selectedId, onSelectRow, onCloseDetail, onCorrectFromRecord }: RegisterViewProps) {
   const [rows, setRows] = useState<UseCaseSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [policyUpdatePending, setPolicyUpdatePending] = useState(false);
@@ -122,7 +126,7 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
       // and this content) and asks the user to confirm the rest themselves.
       setHandoffMsg({
         tone: 'ok',
-        text: `Created a hand-off file named ${result.filename} with ${result.bundle.audit_events.length} audit events and ${result.bundle.register.nodes.length} register entries. Check it's in your downloads folder, then send it to the other reviewer directly.`,
+        text: `Created a hand-off file named ${result.filename} with ${result.bundle.audit_events.length} audit events and ${result.bundle.register.nodes.length} register entries. Check it's in your downloads folder, then send it to the other reviewer directly. ${R18_COPY.HANDOFF_EXPORT_STATEMENT}`,
       });
     } else {
       setHandoffMsg({ tone: 'error', text: `Export failed: ${result.error}` });
@@ -415,6 +419,7 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
         role={role}
         policy={policy}
         onBack={onCloseDetail}
+        onCorrectFromRecord={onCorrectFromRecord}
       />
     );
   }
@@ -521,6 +526,8 @@ export default function RegisterView({ role, currentPolicyVersion, policy, selec
           merge only when one continues the other&apos;s history; otherwise you can choose to replace yours,
           after saving a backup.
         </p>
+        {/* R18-D1 (GI-5-08, §27.13): the sources in a file are self-asserted, and the chain is not authentication. */}
+        <p className="register-view__handoff-provenance">{R18_COPY.HANDOFF_IMPORT_PROVENANCE}</p>
         {handoffMsg && (
           <p
             className={`register-view__handoff-msg register-view__handoff-msg--${handoffMsg.tone}`}

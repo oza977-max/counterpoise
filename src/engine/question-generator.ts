@@ -14,9 +14,8 @@ import { normaliseAccessScope } from './access-scope';
 // UC-4 (intake-flow.md §6). Pure — no I/O, no LLM, same src/engine/* rule.
 //
 // "Worst-case" provisional tier (judgment call, build/prompts/P4-C03.md #1):
-// extractGraph() already instructs the LLM to fill uncertain fields with a
-// concrete best-guess value, not leave them empty — so the provisional tier
-// pass below uses the graph's already-extracted values directly, rather
+// The graph's uncertain fields already hold a concrete best-guess value —
+// so the provisional tier pass below uses the graph's values directly, rather
 // than building a separate per-field worst-case substitution engine.
 function budgetForTier(tier: Tier): number {
   if (tier === 'Low') return 5;
@@ -100,7 +99,7 @@ export function coerceAnswerValue(
   // generic closed-set branch below does `closed.includes(String(value))`,
   // which `String(['a','b'])` ("a,b") would never match, rejecting every
   // array. Routed through the SAME single checker every other caller uses
-  // (the form, GraphView's editor, the questionnaire's multi-select) so
+  // (the form, the questionnaire's multi-select) so
   // the four legal values, their order and the `none`-exclusivity rule
   // never drift between call sites.
   if (field === 'system_access_scope') {
@@ -116,29 +115,6 @@ export function coerceAnswerValue(
   // Open-text fields (vendor, label): any non-empty string.
   const text = String(value).trim();
   return text ? { ok: true, value: text } : { ok: false, reason: `${field.replace(/_/g, ' ')} cannot be empty` };
-}
-
-// R6-QN-1 (intake-flow.md §16.4). Questions for fields the extractor
-// GUESSED — no verified basis quote. Pure, deterministic ordering: nodes in
-// graph array order, fields in the caller-provided per-node order. Reuses
-// the same per-field question text and canonical options as budget-driven
-// questions, so a guessed-field question is indistinguishable in form.
-export function questionsForGuessedFields(
-  guessed: Record<string, string[]>,
-  graph: DataFlowGraph,
-): IntakeQuestion[] {
-  const questions: IntakeQuestion[] = [];
-  const nodeIds = [
-    ...graph.input_nodes.map((n) => n.id),
-    ...graph.processing_nodes.map((n) => n.id),
-    ...graph.output_nodes.map((n) => n.id),
-  ];
-  for (const nodeId of nodeIds) {
-    for (const field of guessed[nodeId] ?? []) {
-      questions.push(questionForField(field, nodeId, ['R6-PV-2:guessed']));
-    }
-  }
-  return questions;
 }
 
 function findUncertainNode(graph: DataFlowGraph, field: string): { id: string } | undefined {

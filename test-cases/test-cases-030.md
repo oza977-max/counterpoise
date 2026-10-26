@@ -168,3 +168,19 @@ These cases keep their ids. Their assertions or fixtures changed because they pi
 | TC-CR7-39 | Their result fixtures now carry a record of the packs used (`pack_versions`), because the overdue line counts only stale sources from those packs (CR8-17) — `verdict-view-model.cr7-fx4.test.ts` (39), `VerdictDisplay.cr7-fx4.test.tsx` (39-2), `VerdictDisplay.r12.test.tsx` (ST-1-01) |
 | TC-CR7-39-2 | Their result fixtures now carry a record of the packs used (`pack_versions`), because the overdue line counts only stale sources from those packs (CR8-17) — `verdict-view-model.cr7-fx4.test.ts` (39), `VerdictDisplay.cr7-fx4.test.tsx` (39-2), `VerdictDisplay.r12.test.tsx` (ST-1-01) |
 | TC-R12-ST-1-01 | Their result fixtures now carry a record of the packs used (`pack_versions`), because the overdue line counts only stale sources from those packs (CR8-17) — `verdict-view-model.cr7-fx4.test.ts` (39), `VerdictDisplay.cr7-fx4.test.tsx` (39-2), `VerdictDisplay.r12.test.tsx` (ST-1-01) |
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-CR8-01a | Superseded by R18-GI-10 (R18-E): a card edit removing the assumption it makes untrue, after Change an answer belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01b | Superseded by R18-GI-10 (R18-E): the same after a failed evaluation belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01c | Superseded by R18-GI-10 (R18-E): the same via CORRECT_VERDICT belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01d | Superseded by R18-GI-10 (R18-E): a countries edit keeping the 'somewhere else' assumption belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01e | Superseded by R18-GI-10 (R18-E): an edit to a different field keeping the assumption belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01f | Superseded by R18-GI-10 (R18-E): a Q6 assumption dropped whole by an autonomy edit belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01g | Superseded by R18-GI-10 (R18-E): a Q3 assumption dropped whole by a vendor edit belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01h | Superseded by R18-GI-10 (R18-E): an older draft's assumption with no fields being dropped by any edit belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-01j | Superseded by R18-GI-10 (R18-E): another assumption listing jurisdictions being dropped by a countries edit belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-03c | Superseded by R18-GI-10 (R18-E): the converse of the Back guard on the review screen (Back to the duplicate check after a first-time confirmation); a form carrying a case id has no Back at all (TC-CR8-03a re-pointed) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-CR8-08a | Superseded by R18-GI-10 (R18-E): CORRECT_VERDICT landing on a review whose countries are already checked belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |

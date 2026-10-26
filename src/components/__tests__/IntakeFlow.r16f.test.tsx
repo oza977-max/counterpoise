@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { addNode, updateUseCaseVerdictSummary } from '../../store/register';
@@ -11,12 +11,12 @@ import { loadDraft } from '../intake-draft';
 import appetiteYaml from '../../../policy/appetite.yaml?raw';
 import type { Verdict } from '../../types/verdict';
 import type { DataFlowGraph } from '../../engine/types';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // R16-F — design-review-007.html Group 1. Integration-level coverage for
 // the items that need the real App wiring to prove: F-1 (cross-tab
 // confirm/correction refusal), F-2 (a form-path evaluation failure returns
-// to the form, not graph_review), F-3 (the creation record's new timing).
+// to the form), F-3 (the creation record's new timing).
 // Unit-level coverage for the individual pieces lives in intake-state.test.ts
 // (the reducer — including EVALUATION_FAILED's intake_method branch and
 // STEP_BACK's afterFailedEvaluation refusal), db.test.ts (withCaseLock),
@@ -33,6 +33,12 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }));
 
 const DRAFT_KEY = 'aigate:intake-draft';
+
+// R18-A: a saved intake draft is a { version: 4, state } envelope; a bare
+// state is read as an earlier build's and lands on the form.
+function putDraft(stateJson: string): void {
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ version: 4, state: JSON.parse(stateJson) }));
+}
 
 // setCurrentPolicyYaml (store/policy-source.ts) persists to localStorage —
 // module-global for the life of this test FILE (unlike sessionStorage,
@@ -93,7 +99,7 @@ function makeVerdict(overrides: Partial<Verdict> = {}): Verdict {
 }
 
 describe('F-6 (DR7-13): checkPolicyGate is the one policy-gate check, on the form path too', () => {
-  it('TC-R16-F-59: a covers_reviews reference error on the FORM path\'s own Continue shows the message and never dispatches FORM_SUBMITTED (mirrors TC-R16-A1-63\'s graph_review coverage)', async () => {
+  it('TC-R16-F-59: a covers_reviews reference error on the FORM path\'s own Continue shows the message and never dispatches FORM_SUBMITTED (mirrors TC-R16-A1-63)', async () => {
     localStorage.clear();
     const { setCurrentPolicyYaml } = await import('../../store/policy-source');
     setCurrentPolicyYaml(`
@@ -140,7 +146,7 @@ safety_margin: 0.1
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Form-path gate probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     await fillText(user, await screen.findByLabelText(/what do you want to call it/i), 'Gate probe tool');
@@ -178,7 +184,7 @@ describe('§3 (DR7-10): focus moves and the step change is announced', () => {
     expect(document.querySelector('.intake-flow__step-announcement')?.textContent).toBe('');
 
     await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), 'Focus announcement probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
 
     // Now on duplicate_check — StepTracker's own numbering: Describe (1),
     // Similar checks (2 — the step just reached).
@@ -194,8 +200,7 @@ describe('§3 (DR7-10): focus moves and the step change is announced', () => {
 describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
   it('TC-R16-F-22: a confirm refused because another tab already confirmed the same case writes nothing, shows the "already decided" alert, and disables Confirm', async () => {
     const useCaseId = 'uc-r16f-already-decided';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool already confirmed elsewhere.',
@@ -267,8 +272,7 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
   it('TC-R16-F-23: a correction refused because another tab\'s correction already landed writes nothing and shows the "corrected elsewhere" alert', async () => {
     const useCaseId = 'uc-r16f-corrected-elsewhere';
     const originalVerdictId = 'v-original-this-tab-saw';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool corrected elsewhere while this tab worked.',
@@ -325,7 +329,9 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: /confirm and evaluate/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/corrected in another tab/i);
+    // R18-D2 review pass 2: the refusal states only what is known (a newer result exists), true for another tab and
+    // for a same-tab correction saved before a later step failed.
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already has a newer result than the one you were correcting/i);
     expect(screen.getByRole('button', { name: /confirm and evaluate/i })).toBeDisabled();
 
     // This tab's correction never landed.
@@ -336,7 +342,7 @@ describe('F-1 (DR7-02, DR7-03): cross-tab confirm/correction integrity', () => {
 });
 
 describe('F-2 (DR7-04): an evaluation error never orphans the case', () => {
-  it('TC-R16-F-24: a form-path evaluation failure returns to the FORM, filled in, not graph_review, and orphans nothing on the trail', async () => {
+  it('TC-R16-F-24: a form-path evaluation failure returns to the FORM, filled in, and orphans nothing on the trail', async () => {
     localStorage.clear(); // no API key — structured form path
 
     // Force a genuine evaluation failure the same way WalkingSkeleton's own
@@ -354,7 +360,7 @@ describe('F-2 (DR7-04): an evaluation error never orphans the case', () => {
 
     const input = screen.getByLabelText(/what ai tool do you want to use/i);
     await fillText(user, input, 'Evaluation failure probe');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
 
     await fillText(user, await screen.findByLabelText(/what do you want to call it/i), 'No-track-match tool');
@@ -376,9 +382,7 @@ describe('F-2 (DR7-04): an evaluation error never orphans the case', () => {
     await screen.findByText(/here.s what we understood/i);
     await user.click(screen.getByRole('button', { name: /confirm and evaluate/i }));
 
-    // F-2: back on the FORM, filled in — never graph_review, which this
-    // path has never visited on the way forward either (W-3) — and the
-    // error renders (previously only wired up on graph_review's own JSX).
+    // F-2: back on the FORM, filled in, and the error renders there.
     expect(await screen.findByRole('alert')).toHaveTextContent(/evaluation could not complete/i);
     expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('No-track-match tool');
 
@@ -404,8 +408,7 @@ describe('F-3 (DR7-05): "Start over" before Confirm strands nothing', () => {
     // A draft at `confirmation` — reached via Continue, never Confirmed —
     // the exact state a person closing the tab (or clicking "Start over
     // instead" on the resumed-draft banner) leaves behind.
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'Abandoned before confirm.',
@@ -435,55 +438,6 @@ describe('F-3 (DR7-05): "Start over" before Confirm strands nothing', () => {
     const { getUseCases } = await import('../../store/register');
     const rows = await getUseCases('all');
     expect(rows.find((r) => r.use_case_id === useCaseId)).toBeUndefined();
-  });
-});
-
-// Found verifying R16-F: test-cases-022 said the correction handler's own
-// access-scope check was "exercised indirectly" by GraphView.r16f.test.tsx,
-// but those tests pass a stand-in onCorrect — the real handler never ran.
-// This drives the real one, on the review screen, through App.
-describe('§4 (DR7-11): the tick-all editor through the real correction handler', () => {
-  it('TC-R16-F-64: on the review screen, ticking a second kind of access applies both kinds to the case', async () => {
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'graph_review',
-        description: 'An agent that files tickets using its own service account.',
-        graph: makeGraph({
-          intake_method: 'llm',
-          processing_nodes: [
-            {
-              id: 'p1',
-              label: 'Ticket agent',
-              model_type: 'agentic',
-              autonomy_level: 2,
-              data_zone: 'Zone C',
-              vendor: 'internal',
-              replaces_prior_model: false,
-              system_access_scope: ['credentialed_systems'],
-            },
-          ],
-        }),
-        graphVersion: 1,
-        corrections: [],
-        useCaseId: 'uc-r16f-access-editor',
-        jurisdictionsConfirmed: true,
-        unconfirmedNodeIds: [],
-      }),
-    );
-    const user = userEvent.setup({ delay: null });
-    render(<App />);
-
-    const card = (await screen.findByText('Ticket agent')).closest('.graph-node') as HTMLElement;
-    await user.click(within(card).getByRole('button', { name: /^edit$/i }));
-    await user.click(within(card).getByRole('checkbox', { name: /runs on computers or servers shared with other automated tools/i }));
-
-    // The real handler accepted the list and wrote it into the graph, so the
-    // editor now shows both kinds ticked (a stand-in onCorrect would leave
-    // the graph, and so the ticks, unchanged).
-    expect(within(card).getByRole('checkbox', { name: /runs on computers or servers shared/i })).toBeChecked();
-    expect(within(card).getByRole('checkbox', { name: /its own logins, passwords or access tokens/i })).toBeChecked();
-    sessionStorage.clear();
   });
 });
 
@@ -535,8 +489,7 @@ tier_workflow:
   Low: "x"
 safety_margin: 0.1
 `);
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool confirmed after the policy broke.',
@@ -570,8 +523,7 @@ safety_margin: 0.1
 describe('R16-F review pass 2: a failed record check before Confirm is shown, and Confirm stays usable', () => {
   it('TC-R16-F-68: the record check failing writes nothing, says so in plain words, and a second press goes through', async () => {
     const useCaseId = 'uc-r16f-check-failed';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check fails once.',
@@ -615,8 +567,7 @@ describe('R16-F review pass 2: a failed record check before Confirm is shown, an
 describe('R16-F review pass 3: a failed-check message does not outlive the attempt it describes', () => {
   it('TC-R16-F-69: after a failed record check, "Change an answer" and back to Confirm shows no stale message', async () => {
     const useCaseId = 'uc-r16f-stale-check-message';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check fails once.',
@@ -661,8 +612,7 @@ describe('R16-F review pass 3: a failed-check message does not outlive the attem
 describe('R16-F review pass 4: nothing can change the answers while a confirm is under way', () => {
   it('TC-R16-F-70: while the record check is pending, Confirm and "Change an answer" are disabled and "Confirming…" shows; then the result arrives', async () => {
     const useCaseId = 'uc-r16f-confirm-pending';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose record check is slow.',
@@ -708,8 +658,7 @@ describe('R16-F review pass 4: nothing can change the answers while a confirm is
 describe('R16-F review pass 5: nothing can start a new case while the result is being worked out', () => {
   it('TC-R16-F-71: while the result is being worked out, "Start over instead" stays disabled; once the result is shown a new case can be started', async () => {
     const useCaseId = 'uc-r16f-evaluating-start-over';
-    sessionStorage.setItem(
-      DRAFT_KEY,
+    putDraft(
       JSON.stringify({
         step: 'confirmation',
         description: 'A tool whose result takes a while.',

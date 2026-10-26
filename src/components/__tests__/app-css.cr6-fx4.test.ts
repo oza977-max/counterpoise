@@ -53,8 +53,16 @@ function ratio(fg: string, bg: string): number {
 describe('App.css — CR6-09: small text meets 4.5:1', () => {
   const cases: Array<[string, string]> = [
     ['.verdict__first-also-covers', '--card-bg'],
-    ['.graph-node__access-scope-editor > legend', '--card-bg'],
     ['.verdict__chain-source', '--paper'],
+    // R18-A: the describe screen's checklist and nudge
+    ['.checklist__item', '--card-bg'],
+    ['.checklist__state', '--card-bg'],
+    ['.describe__nudge-lead', '--paper'],
+    // R18-G: the "Optional: connect an AI helper" panel and the example list
+    ['.make-it-smarter', '--paper'],
+    ['.make-it-smarter__heading', '--paper'],
+    ['.make-it-smarter__command', '--card-bg'],
+    ['.describe__examples-note', '--card-bg'],
   ];
   for (const [selector, bgToken] of cases) {
     it(`TC-CR6-09: ${selector} on ${bgToken} is at least 4.5:1`, () => {
@@ -97,5 +105,53 @@ describe('App.css — CR6-21 / CR6-22: rules the markup relies on exist', () => 
     const body = rulesFor('.visually-hidden').join(' ');
     expect(body).toMatch(/position\s*:\s*absolute/);
     expect(body).toMatch(/clip/);
+  });
+});
+
+// R18-G, TC-R18-NF-2-02: the new colour pairs. Text at 4.5:1 is the cases list above; here the non-text parts
+// (the panel's rule line and the command's border) at 3:1, and the rules the markup relies on exist.
+describe('App.css — R18-G: the panel and the example list', () => {
+  const colourIn = (value: string) => {
+    const m = /var\((--[a-z-]+)\)|(#[0-9a-fA-F]{6})/.exec(value);
+    return m![2] ?? token(m![1]!);
+  };
+
+  it('TC-R18-NF-2-02: the panel\'s left rule and the command\'s border are at least 3:1 against what they sit on', () => {
+    const rule = declared('.make-it-smarter', 'border-left')!;
+    expect(ratio(colourIn(rule), token('--paper'))).toBeGreaterThanOrEqual(3);
+    const border = declared('.make-it-smarter__command', 'border')!;
+    expect(ratio(colourIn(border), token('--card-bg'))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('every colour the new classes set is a defined token or a literal, never an unknown variable (TC-R18-NF-2-02, part 2)', () => {
+    for (const sel of ['.make-it-smarter', '.make-it-smarter__heading', '.make-it-smarter__command', '.describe__examples-note']) {
+      for (const prop of ['color', 'background', 'border', 'border-left']) {
+        const v = declared(sel, prop);
+        if (v !== undefined && /var\(|#/.test(v)) expect(() => colourIn(v), `${sel} ${prop}`).not.toThrow();
+      }
+    }
+  });
+
+  it('the classes the panel, the example list and the status regions use are all styled', () => {
+    for (const sel of [
+      '.make-it-smarter',
+      '.make-it-smarter__heading',
+      '.make-it-smarter__command',
+      '.describe__examples',
+      '.describe__examples-note',
+      '.describe__examples-list',
+      '.describe__example-pick',
+    ]) {
+      expect(rulesFor(sel).length, sel).toBeGreaterThan(0);
+    }
+    // a command must wrap rather than run off a narrow screen
+    expect(declared('.make-it-smarter__command', 'overflow-wrap')).toBe('anywhere');
+  });
+
+  it('TC-R18-NF-2-04 (focus): no rule removes the focus outline, and the text controls draw their own 2px ring', () => {
+    expect(css).not.toMatch(/outline\s*:\s*(none|0)\b|outline-style\s*:\s*none/);
+    expect(declared('textarea:focus', 'outline')).toMatch(/^2px solid/);
+    expect(declared('input:focus', 'outline')).toMatch(/^2px solid/);
+    expect(declared('select:focus', 'outline')).toMatch(/^2px solid/);
   });
 });

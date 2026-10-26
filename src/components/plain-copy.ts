@@ -41,6 +41,7 @@ import type { PlausibilitySignal } from '../engine/plausibility';
 // keys only, no words) — re-exported here so every existing component
 // import of them from `./plain-copy` keeps working unchanged.
 import type { AssumptionRef, QuestionId, PlainAnswers } from '../engine/plain-questions';
+import type { QuestionWords } from '../engine/question-structure';
 export type { QuestionId, PlainAnswers };
 
 // R16-D2 §1 (D-95). `questionId` is widened to `string` (not `QuestionId`)
@@ -453,9 +454,8 @@ export const ACCESS_SCOPE_REFUSAL_TEXT =
 // ---------------------------------------------------------------------------
 // R16-E §2 (D-101, DR7-26/28/29/31). ONE source for the targeted
 // questionnaire's (chunk E, QuestionnaireStep) questions and option labels
-// AND the review screen's (§4, GraphView's graph_review cards) field labels
-// and value words — so the words a person edits are the words they'd have
-// answered. Keyed by the GRAPH field (src/engine/types.ts's own names),
+// AND the confirmation summary's field labels and value words — so the words
+// a person reads are the words they'd have answered. Keyed by the GRAPH field (src/engine/types.ts's own names),
 // unlike PLAIN_QUESTIONS above, which is keyed by the guided FORM's own
 // question id. The description path never shows the form's situational
 // Q1-14; this table is its field-level vocabulary instead.
@@ -468,7 +468,7 @@ export interface QuestionnaireFieldCopy {
   shortLabel: string;
   /** value -> label, keyed by the ENGINE value (e.g. 'Client PII', '2',
    *  'true') — both the targeted questionnaire's `IntakeQuestion.options`
-   *  and GraphView's node fields carry engine values directly, never the
+   *  and the summary's node fields carry engine values directly, never the
    *  form's own internal option keys ('people', 'score', …). */
   options: Record<string, string>;
   /** The stricter value "Not sure" sets, and the sentence completing "we
@@ -807,7 +807,7 @@ export function countryNameList(
  *  emit has an explicit entry above, proved by a guard test — this exists
  *  only so a field nobody anticipated still renders a safe, honest
  *  question instead of a crash or the bare field id. `label` is the
- *  caller's own best name for the field (its GraphView row label, or an
+ *  caller's own best name for the field (its summary row label, or an
  *  R16-W SUMMARY_LABELS heading) when it has one. */
 export function questionnaireCopyForField(field: string, label?: string): QuestionnaireFieldCopy {
   const known = QUESTIONNAIRE_COPY[field];
@@ -820,10 +820,9 @@ export function questionnaireCopyForField(field: string, label?: string): Questi
   };
 }
 
-// R16-E §4 (DR7-26). The description-path review screen's three card
-// titles — shared with `plausibilityMessageForDescription` below and with
-// GraphView.tsx's own column headings, so neither can drift from the
-// other.
+// R16-E §4 (DR7-26). The three card titles the double-check wording names -
+// shared with `plausibilityMessageForDescription` below and with the
+// summary, so neither can drift from the other.
 export const GRAPH_REVIEW_CARD_TITLES = {
   input: 'What it uses',
   processing: 'The AI',
@@ -874,25 +873,6 @@ export function plausibilityMessageForDescription(signal: PlausibilitySignal, ca
   return `${PLAUSIBILITY_DESCRIPTION_REASON[signal]} Check “${row}” on the card “${card}”.`;
 }
 
-// R16-E §5 (D-104, DR7-30/AB-1). The extraction error has TWO call sites
-// (IntakeFlow.tsx's handleConfirmNewUseCase and handleRetryExtraction) —
-// both read this one function, so the two can never drift apart (a v2.1
-// fix-verification finding: an earlier plan would have let them). Typed as
-// the literal union rather than importing `LlmError` from `src/llm/*` — a
-// components file reads its own words, not the SDK layer's error type.
-export function extractionErrorMessage(kind: 'no-api-key' | 'network-error' | 'parse-error'): string {
-  switch (kind) {
-    case 'no-api-key':
-      return 'The description reader isn’t set up on this computer.';
-    case 'network-error':
-      return 'We couldn’t reach the description reader just now.';
-    case 'parse-error':
-      return 'We couldn’t read your description reliably.';
-  }
-}
-
-export const EXTRACTION_ERROR_HELP = 'You can try again, or answer the questions yourself instead.';
-
 // CR7-37. What a person is told when the firm's own rules file cannot be used.
 // Plain, and it says whose problem it is and who can fix it — the field paths
 // and reason strings (`invariants[3].condition: …`) are for whoever edits the
@@ -905,8 +885,7 @@ export const POLICY_PROBLEM_MESSAGE =
 // wrapped in "...Review your answers and try again." — every one of these
 // kinds is the firm's own rules, policy file or pack authoring, never
 // something a different answer from the person would have avoided. One
-// plain sentence per kind, same posture as extractionErrorMessage above —
-// and, like it, typed as the literal union rather than importing
+// plain sentence per kind, typed as the literal union rather than importing
 // EngineError from src/engine/types: a components file reads its own
 // words, not the engine layer's error type.
 export function engineErrorMessage(
@@ -1038,7 +1017,7 @@ export const SUMMARY_LABELS = {
   // R16-W §2 (D-71): new section — output_reversibility was computed and
   // never shown on the submitter's own summary.
   reversibility: 'If it gets something wrong',
-  decisions: 'What it helps decide',
+  decisions: 'What it can help decide',
   scaleAndCountries: 'How widely it’s used, and where',
   agentReach: 'What it can reach by itself',
   agentCoordination: 'Whether copies of it work together',
@@ -1252,6 +1231,14 @@ export function neutralSupplierLabel(n: number): string {
   return `Supplier ${n}`;
 }
 
+/** R18-C1 (§27.1): the words the engine's catalogue builder needs, passed in as data — the engine
+ *  holds the question STRUCTURE (src/engine/question-structure.ts) and none of these words. */
+export const QUESTION_WORDS: QuestionWords = {
+  optionText: (id, key) => findOption(id, key)?.text,
+  neutralPlatformLabel,
+  neutralSupplierLabel,
+};
+
 /** UNSIGNED-MODEL (owner-approved 2026-10-03): the one label for a model the
  *  policy lists — button, "Recorded:" line and review row all read it. A
  *  listed model the firm has not accepted (is_approved false) says so. */
@@ -1303,17 +1290,671 @@ export function approvedModelLabelFor(
 // GT7 L-1 (P12). A description that tells the tool how to rate the case is
 // flagged, never obeyed. Wording lives here (presentation), the detection in
 // engine/rating-instructions.ts. No quoted phrase ever reaches the record line.
-export function ratingInstructionWarning(phrases: readonly string[]): string {
-  const quoted = phrases
+/** Quoted-phrase builder. GB pass-1 D: the review screen is asserted with a
+ *  single-match /approved|rejected/i query, so those words never appear in a quote. */
+function quoteRatingPhrases(phrases: readonly string[]): string {
+  return phrases
     .slice(0, 2)
-    // GB pass-1 D: the review screen is asserted with a single-match
-    // /approved|rejected/i query, so those words never appear in a quote.
     .map((p) => `\u201C${p.replace(/\b(approved|rejected)\b/gi, '[\u2026]')}\u201D`)
     .join(' and ');
-  return `Your description tells us how to rate it (${quoted}). We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.`;
 }
 
-export const RATING_INSTRUCTION_CONFIRM_LINE =
-  'Your description tried to set its own rating. We don\u2019t follow that, but it may have affected what we read \u2014 check each card below before confirming.';
+/** R18-GI-3-19: the description-screen wording. No claim about cards or about what was read. */
+export function ratingInstructionDescriptionWarning(phrases: readonly string[]): string {
+  return R18_COPY.RATING_DESCRIPTION_LEAD + quoteRatingPhrases(phrases) + R18_COPY.RATING_DESCRIPTION_TAIL;
+}
 
-export const RATING_INSTRUCTION_AUDIT_LINE = 'The description tried to set its own rating \u2014 check the cards.';
+// ── Round 18 (specs/intake-flow.md §27) ────────────────────────────────────
+// Every string this round introduces, in ONE object, so one test can scan them
+// all (TC-R18-GI-13-02: none may contain "approved" or "rejected" — the
+// verdict screen is asserted with a single-match /approved|rejected/i query).
+// Chunks B..G append to this object; do not scatter new Round 18 strings
+// elsewhere. Words only: no logic (the rule is src/engine/mentioned.ts).
+import type { ChecklistItemId, ModelPlace, PrefillFailure } from '../engine/prefill-types';
+import type { ValidationReason } from '../llm/model-setting';
+import type { ModelLabel } from '../llm/model-setting';
+import { answerTotals } from '../llm/model-setting';
+import { visibleText } from '../engine/visible-text';
+import type { AnswerView, ReadView } from '../engine/answer-sources';
+
+/** A failure sentence for the model places, and for a firm's own server (§27.5). */
+export interface FailureSentence {
+  /** "this computer" and "Ollama's cloud". */
+  ollama: string;
+  /** A server the firm declared. `{host}` is replaced by the caller. */
+  firm: string;
+  /** Ollama's cloud, when the Ollama wording would be false for it (a model is not "on this computer"). */
+  cloud?: string;
+}
+
+const same = (s: string): FailureSentence => ({ ollama: s, firm: s });
+
+export const R18_COPY = {
+  // The checklist (R18-GI-1). Labels are the form's own short words (NF-11).
+  CHECKLIST_HEADING: 'What your description mentions',
+  CHECKLIST_HELP:
+    'This only notes which topics your words touch. It does not judge what you wrote, and the questions come next either way.',
+  CHECKLIST_LABELS: {
+    'where-ai-comes-from': 'Where does the AI come from',
+    'kind-of-ai': 'What kind of AI it is',
+    'can-explain': 'Whether the people who built it can show why it gave a result',
+    'information-used': 'What information it will see or use',
+    'what-it-does-with-output': 'What happens with what it produces',
+    'weight-of-output': 'How much weight does what it produces carry',
+    'who-receives': 'Who ends up receiving what it produces',
+    'what-it-decides': 'What it can help decide',
+    'mistake-recoverable': 'Whether a mistake can be put right',
+    'how-widely': 'How widely it will be used',
+    countries: 'Which countries does it involve',
+    'replaces-something': 'Does it replace something you already use',
+    'agentic-reach': 'What it can get into by itself',
+  } as Record<ChecklistItemId, string>,
+  // The two state words, and a symbol beside each so colour is never the only cue (NF-2).
+  STATE_MENTIONED: 'mentioned',
+  STATE_NOT_MENTIONED: 'not mentioned',
+  SYMBOL_MENTIONED: '✓',
+  SYMBOL_NOT_MENTIONED: '○',
+
+  // The nudge (R18-GI-2). The straight apostrophe is the one the test cases quote.
+  UNMENTIONED_NOTE_LEAD: "Your description doesn't mention:",
+  UNMENTIONED_NOTE_HELP:
+    'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
+  ADD_EXAMPLE_LABEL: 'Add this example',
+  // Newcomer test round 1 (2026-10-26): said before each sentence so it reads as an example, not the person's words.
+  NUDGE_EXAMPLE_LEAD: 'For example:',
+  // One example sentence per item. Each one, typed on its own, ticks its own item
+  // (asserted in plain-copy.r18.test.ts against the real rule).
+  NUDGE_EXAMPLES: {
+    'where-ai-comes-from': 'We bought it from an outside supplier.',
+    'kind-of-ai': 'It gives each case a score.',
+    'can-explain': 'The people who built it can show which factors drove each result.',
+    'information-used': 'It reads client names and account details.',
+    'what-it-does-with-output': 'A person checks each draft before it is used.',
+    'weight-of-output': 'Staff usually go with its suggestion.',
+    'who-receives': 'The results go out to clients.',
+    'what-it-decides': 'It helps decide who gets a loan.',
+    'mistake-recoverable': 'A person can correct any mistake before it is sent.',
+    'how-widely': 'It starts as a small trial with my team.',
+    countries: 'It will be used by our offices in the United Kingdom.',
+    'replaces-something': 'It replaces our old spreadsheet.',
+    'agentic-reach': 'It has its own logins for other systems.',
+  } as Record<ChecklistItemId, string>,
+
+  // Length (R18-GI-14). Used by the model path (C1); defined here with its sentence.
+  TOO_LONG_SENTENCE:
+    'Your description was too long to read automatically, so the form is blank. It is kept in full.',
+
+  // The rating-instruction warning on the description screen (R18-GI-3-19). Nothing has
+  // been read there and there are no cards, so it says only what is true on that screen.
+  // The quoted phrases are built by ratingInstructionDescriptionWarning (approved/rejected scrubbed).
+  RATING_DESCRIPTION_LEAD: 'Your description tells us how to rate it (',
+  // The confirmation step's line for a form-built case, and the register's line for any case that recorded phrases.
+  RATING_CONFIRM_LINE_FORM:
+    "Your description tried to set its own rating. We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
+  RATING_AUDIT_LINE: 'The description tried to set its own rating, which is not followed.',
+  RATING_DESCRIPTION_TAIL:
+    "). We don\u2019t follow that: the rating comes from your answers and the firm\u2019s rules.",
+
+  // R18-C2 review pass 1 (I1, I2): the form note when the "Read my description again" button is not on
+  // screen (so the sentence must not name it), and when earlier model-filled answers are still showing
+  // (so "nothing was filled in" would be false).
+  NOT_READ_NO_BUTTON: 'Nothing was filled in for you. Answer the questions below.',
+  SETTING_CHANGED_NO_BUTTON: 'The model setting changed while it was reading, so nothing was filled in.',
+  KEPT_EARLIER_NOTE: 'This time nothing new was filled in for you. Your earlier answers are kept below.',
+
+  // Failure sentences (§27.5 table), keyed by PrefillFailure. {host} is filled in by the caller.
+  FAILURE_SENTENCES: {
+    'not-configured': same(
+      "No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under 'Optional: connect an AI helper'.",
+    ),
+    'too-long': same(
+      'Your description was too long to read automatically, so the form is blank. It is kept in full.',
+    ),
+    'timed-out': same('Nothing was filled in for you. Answer the questions below.'),
+    skipped: same('Nothing was filled in for you. Answer the questions below.'),
+    'not-read': same(
+      'Nothing was filled in for you. Answer the questions below — or press Read my description again.',
+    ),
+    'setting-changed': same(
+      'The model setting changed while it was reading, so nothing was filled in. Press Read my description again.',
+    ),
+    'invalid-setting': same(
+      "The model setting isn't valid, so nothing was sent. Open Settings and check it.",
+    ),
+    'nothing-found': same(
+      'Nothing in your description could be filled in with a quote, so the form is blank.',
+    ),
+    retired: {
+      ollama: "That model isn't available any more. Pick another one in Settings.",
+      firm: "The server says that model isn't available any more. Pick another in Settings.",
+    },
+    'model-missing': {
+      ollama: "That model isn't on this computer. Pick another in Settings, or pull it with Ollama.",
+      cloud: "That model isn't available through Ollama's cloud. Pick another in Settings.",
+      firm: "That model isn't on the server. Pick another in Settings.",
+    },
+    'not-included': {
+      ollama: "That model isn't included in the free allowance. Pick another one in Settings.",
+      firm: "The server says that model isn't included for you. Pick another in Settings.",
+    },
+    'allowance-used': {
+      ollama:
+        'The free allowance for that model is used up for now. Wait a while, or pick another model in Settings.',
+      firm: 'The server says your allowance is used up for now. Wait a while, or pick another model in Settings.',
+    },
+    'signed-out': {
+      ollama: "Ollama isn't signed in. Run `ollama signin` on this computer, then try again.",
+      firm: "The server asked for a sign-in, which this page can't give. Ask whoever runs it.",
+    },
+    'not-answering': {
+      ollama: 'Ollama answered with an error, so nothing was filled in for you. Try again in a moment, or pick another model in Settings.',
+      firm: 'The server answered with an error, so nothing was filled in for you. Try again in a moment, or ask whoever runs it.',
+    },
+    'blocked-or-unreachable': {
+      ollama:
+        "We couldn't reach Ollama on this computer. Start the Ollama app and check that its allowed-origins setting includes this page.",
+      firm: "We couldn't reach the server at {host}. Check the address in Settings, and that the server allows requests from this page.",
+    },
+    unusable: same("The model's answer couldn't be used, so nothing was filled in for you."),
+    other: same("The model's answer couldn't be used, so nothing was filled in for you."),
+  } as Record<PrefillFailure, FailureSentence>,
+
+  // ── The model setting (R18-B, specs/intake-flow.md §27.8) ─────────────────
+  // The three places, named as the test cases quote them.
+  PLACE_CHOICE_LABELS: {
+    'this-computer': 'On this computer',
+    'firm-server': "On my firm's server",
+    'ollama-cloud': "Ollama's cloud, through the Ollama app on this computer",
+  } as Record<ModelPlace, string>,
+
+  // Where the description goes. {model} and {address} are filled by placeSentence().
+  // "It never leaves your computer." exists in exactly ONE string (the first); it is a
+  // statement about a setting the app can check (a loopback address, a model without the
+  // cloud tag), not a proof, and it is withheld while an Anthropic key is stored.
+  PLACE_SENTENCES: {
+    'this-computer': 'Your description will be read on this computer by {model}. It never leaves your computer.',
+    'this-computer-with-key':
+      'Your description will be read on this computer by {model}. A saved Anthropic key is also set, so the similar-case check and the explanation send text to Anthropic.',
+    'firm-server': "Your description will be sent to your firm's server at {address} and read by {model}.",
+    'ollama-cloud': "Your description will be sent to Ollama's cloud and read by {model}.",
+  } as Record<'this-computer' | 'this-computer-with-key' | 'firm-server' | 'ollama-cloud', string>,
+
+  NO_MODEL_SENTENCE: 'No model is connected.',
+
+  // ── Round 18-G: the "Optional: connect an AI helper" panel and "Try an example" (specs/intake-flow.md §27.12) ──
+  // The panel names exactly two commands and no model, version or price; Ollama's own pages cover the rest.
+  // Newcomer test round 2 (2026-10-26, owner-approved): the heading says it is optional and what it is for; the
+  // first line says nothing here has to be done (true only while no model is set, the only time the panel shows).
+  PANEL_HEADING: 'Optional: connect an AI helper',
+  PANEL_EXPLANATION:
+    "You don't need to do anything here to continue. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.",
+  PANEL_SUMMARY: 'Setup steps for whoever runs Ollama',
+  PANEL_SIGNIN_LEAD: "To use Ollama's cloud, sign in once:",
+  PANEL_ORIGINS_LEAD:
+    "To let this page reach Ollama on your computer, set its allowed origins to this page's address:",
+  PANEL_AFTER: 'Then choose the model under Settings. Ollama\u2019s own documentation covers everything else:',
+  PANEL_LINK_TEXT: "Ollama's documentation",
+  PANEL_LINK_CHECKED: 'Link last checked {date}',
+  PANEL_COMMAND_SIGNIN: 'ollama signin',
+  PANEL_COMMAND_ORIGINS_NAME: 'OLLAMA_ORIGINS',
+  EXAMPLES_BUTTON: 'Try an example',
+  EXAMPLES_LIST_LABEL: 'Examples',
+  // Newcomer test round 1 (2026-10-26): an example never silently overwrites what the person typed.
+  EXAMPLE_REPLACE_ASK: "Replace what you've typed with this example?",
+  EXAMPLE_REPLACE: 'Replace',
+  EXAMPLE_KEEP: 'Keep mine',
+  EXAMPLES_NOTE: 'Examples are short \u2014 the checklist shows what they leave out.',
+  INVALID_SETTING_SENTENCE: "The model setting isn't valid. Open Settings and check it.",
+  UNENCRYPTED_LINE:
+    "This address isn't encrypted, so your description travels unprotected inside your firm's network.",
+  DEMO_NOTICE:
+    'This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network.',
+  SHARED_ORIGIN_NOTE:
+    'On this public demo, other pages on the same site address can read data stored in this browser.',
+  // Settings-only small print: what the sentences above cannot prove.
+  TUNNEL_SMALL_PRINT:
+    "This assumes the program at that address runs on this computer. We can't check that: a tunnel or proxy on that port would carry your description somewhere else.",
+  FIRM_SMALL_PRINT:
+    "We can't check that this is your firm's server. The address is the one you typed, and where your description goes is only as true as that.",
+  FALLBACK_RESEND_NOTE:
+    'If the server ignores the strict format, your description is sent a second time to the same address.',
+  FIND_MODELS_FAILED: "The list of models couldn't be read. You can still type a model name.",
+  FREE_TEXT_LIMIT_HINT: 'Up to 200 characters.',
+  FIND_MODELS_EMPTY: 'The server answered but listed no models. You can type a model name.',
+
+  // One plain refusal sentence per validation reason (specs §27.8). None repeats the address.
+  REFUSAL_SENTENCES: {
+    'no-place': 'Choose where the model runs before saving.',
+    'address-missing': 'Type the address of the model server.',
+    'address-invalid': "That address can't be used. It must start with http:// or https://.",
+    'address-credentials': 'Leave a user name and password out of the address. This page has no place to keep them.',
+    'address-too-long': 'That address is too long.',
+    'address-characters': "That address contains characters that can't be shown safely.",
+    'not-this-computer': 'On this computer needs an address on this computer, such as localhost.',
+    'cloud-needs-app':
+      "Ollama's cloud goes through the Ollama app on this computer, so the address must be on this computer, such as localhost.",
+    'model-missing': 'Type a model name, or pick one from the list.',
+    'model-too-long': 'That model name is too long.',
+    'model-characters': "That model name contains characters that can't be shown safely.",
+    'cloud-model-elsewhere': "A cloud-tagged model can only be saved under Ollama's cloud.",
+    'cloud-needs-tag':
+      "Ollama's cloud needs a model carrying Ollama's cloud tag, a name ending :cloud or -cloud.",
+    'storage-unavailable': "The setting couldn't be saved in this browser.",
+  } as Record<ValidationReason, string>,
+
+  // How the register words where a read happened (past tense; never the present-tense promise). §27.13.
+  PLACE_RECORD_WORDS: {
+    'this-computer': 'by the program at {host} on the computer in use',
+    'firm-server': "by the server at {host}, which the person declared as the firm's",
+    'ollama-cloud': "by Ollama's cloud, through the Ollama app on the computer in use",
+  } as Record<ModelPlace, string>,
+
+  // The test label (R18-GI-12). The suffix is fixed and never dropped from a "tested" label.
+  LABEL_UNTESTED: 'untested',
+  LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
+  // A partial result that was not stopped can only be inconsistent stored data; it never says "stopped" (R18-B carried minor).
+  LABEL_PARTIAL_RAN: 'untested (a partial test ran {n} of 31 cases)',
+  // Owner decision 2026-10-24: the label leads with the answers. The verdict figure is not in it.
+  LABEL_TESTED:
+    'tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong',
+  // Review pass 1: a complete run in which the model gave no usable answer in any case tested nothing.
+  LABEL_NO_ANSWER: 'untested (the model gave no usable answer in any case)',
+  LABEL_TESTED_NONE: 'tested on {date}: no answers could be scored',
+
+  // The in-app test (R18-F, §27.11). Every sentence is true only in the state that shows it; each has a false-state test.
+  TEST_BUTTON: 'Test it',
+  TEST_STOP: 'Stop',
+  TEST_INTRO:
+    'Test it sends the 31 public worked cases that come with Counterpoise, and nothing you have typed, to the model you saved. The model reads them the way it reads a real description. Then Counterpoise checks how often the answers it filled in would have led to the right verdict.',
+  TEST_NEEDS_SETTING: 'Save a model setting first. The test runs on the saved setting.',
+  TEST_PROGRESS: 'Case {n} of 31',
+  TEST_LIMIT: 'Each case gets 60 seconds.',
+  TEST_STOPPED: 'Stopped after {n} of 31 cases.',
+  TEST_DISCARDED: '{n} filled-in answers were dropped because they failed the checks.',
+  TEST_DISCARDED_ONE: '1 filled-in answer was dropped because it failed the checks.',
+  TEST_NOT_A_GUARANTEE: 'These 31 cases are public examples; they are not a guarantee about your own descriptions.',
+  TEST_NOT_COMPARABLE:
+    'These numbers cannot be compared with the 2026-10-04 comparison. That one took the countries from the case; this test asks the model to find them in the description.',
+  TEST_RESULT_HEADING: 'Latest test of this model',
+  // The answers line leads; the verdict line is secondary and says what it assumes (a blank keeps the right answer in the verdict measure).
+  TEST_ANSWERS_DONE: '{right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong.',
+  TEST_ANSWERS_STOPPED:
+    'In the {n} cases that ran: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong.',
+  TEST_ANSWERS_NONE: 'No answers could be scored in this run.',
+  TEST_RESULT_DONE:
+    'Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself.',
+  TEST_RESULT_STOPPED:
+    'Right verdict in {matches} of the {n} cases that ran if you check every filled answer and answer the rest yourself.',
+  // Review pass 1. The recorded verdicts were made under the shipped rules; after an edit the figure would mislead.
+  TEST_VERDICT_SKIPPED:
+    "Your firm's rules differ from the ones these examples were recorded under, so the verdict is not compared for {n} of {total} cases.",
+  TEST_RESULT_COMPARED:
+    'Right verdict in {matches} of the {k} cases compared if you check every filled answer and answer the rest yourself.',
+  TEST_RESULT_NONE_COMPARED: 'No verdict could be compared in this run.',
+  TEST_LATER_STOPPED: 'A later test was stopped after {n} of 31 cases.',
+  TEST_STOPPED_NONE: 'The test was stopped before any case finished, so nothing was saved.',
+  TEST_CRASHED: 'The test stopped unexpectedly and was not saved.',
+  TEST_NOT_SAVED: 'The result could not be saved in this browser.',
+  TEST_NO_ANSWER: 'Cases with no usable answer from the model: {n}. Each counts as blank, with no right verdict.',
+  TEST_PER_QUESTION_HEADING: 'How each question was filled in',
+  TEST_QUESTION_LINE: '{question}: {right} right, {blank} left blank, {wrong} wrong (cases scored: {n})',
+  TEST_NOT_SCORED_NOTE:
+    'A question is left out for a case when the form has no single answer that matches the known correct one, so the counts can be lower than 31.',
+  TEST_CANNOT_START: 'The test could not start: the rules or the worked cases could not be loaded.',
+
+  // Clear all data keeps the model setting and says so only when one exists.
+  CLEAR_KEEPS_SETTING: "Your model setting (including its address) is kept. Use 'Forget the model setting' to remove it.",
+  FORGET_SETTING_LABEL: 'Forget the model setting',
+  FORGOTTEN_SENTENCE: 'The model setting was removed.',
+
+  // The Settings section itself. No model is named, none is chosen for the person, nothing is
+  // "recommended" (TC-R18-MS-3-02), and there is no field for a key or token (TC-R18-PS-5-02).
+  SETTINGS: {
+    SUMMARY: 'Settings — the model that reads your description',
+    INTRO:
+      'Optional. Every result comes from your answers and the firm’s rules, with or without a model. Choose where the model runs; the sentence under the choice says where your description will go.',
+    PLACE_LEGEND: 'Where does the model run?',
+    ADDRESS_LABEL: 'Address of the model server',
+    ADDRESS_HELP:
+      'The server must speak Ollama’s own interface (/api/chat and /api/tags). On the public https site the browser blocks a plain-http address.',
+    MODEL_LABEL: 'Model name',
+    FIND_MODELS: 'Find models',
+    FIND_MODELS_HELP: 'Asks the server at that address which models it has. It sends no description.',
+    MODEL_LIST_LABEL: 'Models the server reported',
+    USE_MODEL: 'Use',
+    SAVE: 'Save the model setting',
+    SAVED: 'Saved.',
+    NOT_SAVED_YET: 'Not saved yet. Press Save to use this.',
+    LOADING_MODELS: 'Asking the server…',
+  },
+
+  // An earlier saved draft landed on the form (R18-NF-5). Shown role="status" on the form.
+  EARLIER_VERSION_NOTICE:
+    'This was saved by an earlier version of Counterpoise, so please check your answers.',
+
+  // ── Round 18-C2: the reading step and the form with pre-fills (specs/intake-flow.md §27.5-27.6) ──
+  // The reading step. The where-it-goes sentence under it is placeSentence() for the stored setting.
+  READING_HEADING: 'Reading your description…',
+  SKIP_LABEL: "Skip — don't read it; I'll answer the questions myself",
+  READ_AGAIN_LABEL: 'Read my description again',
+
+  // The marks. A quote is always shown inside curly quotation marks and through visibleText().
+  // MARK_FROM is claimed only while the quote is still in the description; MARK_CONFIRMED only after
+  // a tick (or a change); MARK_GONE only once the quote has left the text (TC-R18-GI-13-01).
+  // Owner wording (2026-10-15): the mark names the model that suggested the answer. The name is the
+  // model in the answer's ReadRecord, through visibleText; with none, MARK_MODEL_FALLBACK.
+  MARK_SUGGESTED_BY: 'suggested by',
+  // Newcomer test round 1 (2026-10-26): a named model is "the AI model {name}"; with no name, "an AI model".
+  MARK_MODEL_NAMED: 'the AI model',
+  MARK_MODEL_FALLBACK: 'an AI model',
+  MARK_FROM: 'from your description:',
+  MARK_ASK: '— is this right?',
+  MARK_QUOTE_LEFT_PREFIX: 'the quote',
+  MARK_QUOTE_LEFT_ASK: 'is no longer in your description — is this right?',
+  MARK_QUOTE_LEFT_CONFIRMED: 'is no longer in your description',
+  MARK_CONFIRMED: 'confirmed by you',
+  MARK_CHANGED: 'changed by you',
+  MARK_READ_AS: 'as',
+  MARK_RECORD: 'from the earlier record',
+  MARK_NOT_CARRIED: 'not carried over from the earlier version',
+  // One tick per answer. The accessible name is this plus the question.
+  CONFIRM_LABEL: "I've checked this answer",
+  // Newcomer test round 1 (2026-10-26): said once above the form, only while an unticked suggestion blocks Continue.
+  TICK_EXPLAINED: "Tick each suggestion you have checked. Until you tick or change it, it doesn't count and you can't continue.",
+  STILL_TO_CHECK: 'Still to check:',
+  // The confirmation line (§27.6): shown only when at least one answer was filled in by a model and
+  // confirmed, or changed. {n} confirmed model-filled answers, {m} answers with a value, {k} changed.
+  MODEL_FILLED_LINE: '{n} of {m} answers were filled in by a model and confirmed by you',
+  MODEL_CHANGED_TAIL: ', and {k} were changed by you',
+  MODEL_CHANGED_TAIL_ONE: ', and 1 was changed by you',
+
+  // R18-D1 (§27.13): the register's record of where each answer came from. Every sentence is claimed only in the
+  // state where it is true (TC-R18-GI-13-01): no model line without a read, no share line when nothing was filled
+  // in or changed, "no longer in your description" only when the record says so.
+  SOURCES_HEADING: 'Where each answer came from',
+  READ_LINE: 'read by {model} — {place}',
+  // The unrecognised-place words already start with their own preposition ("at {host}, ..."), so no dash.
+  READ_LINE_UNRECOGNISED: 'read by {model} {place}',
+  // A place word this version does not know is never shown as the word; the host is still shown, as text.
+  PLACE_UNRECOGNISED_WORDS: "at {host}, a place this version doesn't recognise",
+  // Honest about what the record is: configured, not proven; self-asserted (GI-5-06, GI-5-08).
+  READ_NOTE: 'The model and where it ran are what was set up when the answers were read. Counterpoise does not check them.',
+  ORIGIN_TYPED: 'typed by you',
+  ORIGIN_PREFILLED_CONFIRMED: 'filled from your description and confirmed by you',
+  ORIGIN_CHANGED: 'changed by you',
+  ORIGIN_CHANGED_FROM: 'from',
+  ORIGIN_RECORD: 'from the earlier record',
+  ORIGIN_UNRECOGNISED: 'source not recognised',
+  ORIGIN_SUGGESTED_BY: 'suggested by',
+  ORIGIN_QUOTE_GONE: 'the quote is no longer in your description',
+  CORRECTED_DESCRIPTION_HEADING: 'Description, as corrected',
+  // Shown only when an earlier confirmation carried answer_sources and the latest correction carries none.
+  SOURCES_HISTORY_NOTE: 'An earlier record of this case noted where its answers came from; this correction recorded none.',
+  // The hand-off file (GI-5-08): what it holds, and what its sources are worth.
+  HANDOFF_EXPORT_STATEMENT: 'This file contains the description of every case in it, and any quotes taken from them.',
+  HANDOFF_IMPORT_PROVENANCE:
+    "Where each answer came from, in a file you import, is whatever the person who made the file recorded. The checks above do not verify it, or who made the file.",
+  // ── Round 18-D2: correcting a check from the register (§27.10) ──
+  CORRECT_THIS_CHECK_LABEL: 'Correct this check',
+  // Shown beside the action and only when it is shown. Each clause is true of the build: opening restores the
+  // recorded answers but never a tick (owner decision 2026-10-22: a model-filled or earlier-record answer owes
+  // this person's own tick), opening writes nothing (the correction is written at Confirm), and opening replaces
+  // whatever unfinished check this tab holds.
+  CORRECT_THIS_CHECK_NOTE:
+    'Opens this check on the form with its recorded answers filled in. Answers a model filled in, or carried from an earlier record, need your tick again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+  // Owner-requested (review pass 1, 2026-10-22): shown on a form reopened from a record when a recorded answer
+  // could not be put back because the form no longer offers it. Only when something was left blank.
+  RESTORE_DROPPED_PREFIX: "Some recorded answers no longer match the form's choices and were left blank:",
+
+  // ── Round 18-E: the About page's paragraph on the optional model (replaces the one that named a model) ──
+  // Names no model. States the three places a description can go (the same three as PLACE_SENTENCES and the
+  // Settings choice) and that the person confirms every answer a model fills in. Makes no promise about where text
+  // does or does not go: that depends on the setting, and the sentence under the Settings choice says which.
+  // Review pass 1: the saved Anthropic key is a fourth way text can leave (PLACE_SENTENCES 'this-computer-with-key').
+  // Review pass 1: the register's line on a correction of an older case (verdict_corrected.corrected_from_earlier_record).
+  CORRECTED_FROM_EARLIER_RECORD:
+    'Corrected from an earlier record that did not keep its answers, so the changes cannot be listed.',
+  ABOUT_KEY_SENTENCE:
+    'Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.',
+  // Review pass 1: true in every state; replaces the About page's "nothing you enter leaves this machine".
+  ABOUT_BROWSER_LINE:
+    'Your rules and audit trail are kept in this browser. Text about a use case leaves it only if you connect a model in Settings (your description goes to it), or save an Anthropic key (case text goes to Anthropic for the similar-case check and the explanation), as described above.',
+  ABOUT_MODEL_PARAGRAPH:
+    "Full transparency: connecting a model is optional, and it is done in Settings. When one is connected, your description can go to one of three places: a model on this computer, a model on your firm's own server, or Ollama's cloud. The sentence under your choice in Settings says which, before anything is sent. The model fills in some of the form's answers from what you wrote and shows the words it relied on. It can misread, so you have to check and tick every answer it fills in before you can continue. With no model connected, you answer the questions yourself. Separately, if you save an Anthropic key, the similar-case check and the explanation of a verdict send text to Anthropic.",
+
+  // ── Round 18-E: correcting a check saved before answers were recorded (§27.10 "An older case") ──
+  // Shown beside the action instead of CORRECT_THIS_CHECK_NOTE when the case carries no record of its answers. Each
+  // clause is true only there: the description is kept, the answers you were not sure about come back and need a
+  // tick, every other answer is blank, nothing is recorded until Confirm, an unfinished check in this tab is replaced.
+  CORRECT_OLDER_CHECK_NOTE:
+    'This check was saved before Counterpoise recorded where answers came from. It opens on the form with your description kept and its name filled in from the register; the name needs your tick. If you marked any answers as not sure, those are filled in too and each needs your tick. Every other answer is blank, for you to answer again. Nothing is recorded until you confirm. An unfinished check in this browser tab is replaced.',
+  // Shown on the form of an older case when a "Not sure" the earlier record names could not be put back (the form
+  // does not show that question until an earlier one is answered, or offers no such answer). Only when one was.
+  OLDER_DROPPED_PREFIX: 'These “Not sure” answers from the earlier record could not be put back and were left blank:',
+} as const;
+
+/** The form note for an older case's “Not sure” answers that could not be put back: the prefix, the questions, a full stop. */
+export function olderDroppedSentence(questions: readonly string[]): string {
+  return `${R18_COPY.OLDER_DROPPED_PREFIX} ${questions.join('; ')}.`;
+}
+
+/** The one form note for answers left blank on restore: the prefix, then the questions, then a full stop. */
+export function restoreDroppedSentence(questions: readonly string[]): string {
+  return `${R18_COPY.RESTORE_DROPPED_PREFIX} ${questions.join('; ')}.`;
+}
+
+// ── Round 18-B: filling the sentences (words only; no decisions) ───────────
+
+/** The where-it-goes sentence for a setting. `keyStored` withholds the this-computer promise. */
+export function placeSentence(
+  setting: { place: ModelPlace; model: string; url: string },
+  keyStored: boolean,
+): string {
+  const key =
+    setting.place === 'this-computer' && keyStored ? 'this-computer-with-key' : setting.place;
+  return R18_COPY.PLACE_SENTENCES[key]
+    .replace('{model}', () => visibleText(setting.model))
+    .replace('{address}', () => visibleText(setting.url));
+}
+
+/** The page the "Optional: connect an AI helper" panel links for everything beyond its two commands. */
+export const OLLAMA_DOCS_URL = 'https://docs.ollama.com/faq';
+/** The day the link above was last opened and found to answer and to cover OLLAMA_ORIGINS. Update it with the link. */
+export const OLLAMA_DOCS_CHECKED = '2026-10-24';
+/** The address the public demo is served from; the docs print the allowed-origins setting for it. */
+export const PUBLIC_SITE_ORIGIN = 'https://oza977-max.github.io';
+
+/** The allowed-origins setting for a page address (`origin` is a URL origin, with no path). */
+export function originsCommand(origin: string): string {
+  return `${R18_COPY.PANEL_COMMAND_ORIGINS_NAME}=${origin}`;
+}
+
+/** The label words for a model: "untested", the partial note, or "tested N/31 on DATE (suffix)". */
+export function modelLabelWords(label: ModelLabel): string {
+  switch (label.kind) {
+    case 'untested':
+      return R18_COPY.LABEL_UNTESTED;
+    case 'no-answer':
+      return R18_COPY.LABEL_NO_ANSWER;
+    case 'partial':
+      return (label.stopped ? R18_COPY.LABEL_PARTIAL : R18_COPY.LABEL_PARTIAL_RAN).replace('{n}', String(label.casesRun));
+    case 'tested': {
+      const scored = label.right + label.blank + label.wrong;
+      const template = scored === 0 ? R18_COPY.LABEL_TESTED_NONE : R18_COPY.LABEL_TESTED;
+      return template
+        .replace('{date}', () => visibleText(label.date))
+        .replace('{right}', String(label.right))
+        .replace('{scored}', String(scored))
+        .replace('{blank}', String(label.blank))
+        .replace('{wrong}', String(label.wrong));
+    }
+  }
+}
+
+/** "Case n of 31" for the case now being read. */
+export function testProgressWords(n: number): string {
+  return R18_COPY.TEST_PROGRESS.replace('{n}', String(n));
+}
+
+/** "Stopped after n of 31 cases." */
+export function testStoppedWords(n: number): string {
+  return R18_COPY.TEST_STOPPED.replace('{n}', String(n));
+}
+
+/** The dropped-fills sentence; nothing at all when none were dropped. */
+export function testDiscardedWords(total: number): string | null {
+  if (total < 1) return null;
+  return total === 1 ? R18_COPY.TEST_DISCARDED_ONE : R18_COPY.TEST_DISCARDED.replace('{n}', String(total));
+}
+
+/** The result line. A stopped run never reads as a count out of 31; cases not compared are left out of the count. */
+export function testResultWords(result: {
+  stopped: boolean;
+  casesRun: number;
+  verdictMatches: number;
+  verdictCompared?: number;
+}): string {
+  const compared = result.verdictCompared ?? result.casesRun;
+  if (compared < result.casesRun) {
+    if (compared === 0) return R18_COPY.TEST_RESULT_NONE_COMPARED;
+    return R18_COPY.TEST_RESULT_COMPARED.replace('{matches}', String(result.verdictMatches)).replace('{k}', String(compared));
+  }
+  const template = result.stopped ? R18_COPY.TEST_RESULT_STOPPED : R18_COPY.TEST_RESULT_DONE;
+  return template
+    .replace('{matches}', String(result.verdictMatches))
+    .replace('{n}', String(result.casesRun));
+}
+
+/** The note that some verdicts were not compared; nothing when every case was. */
+export function testVerdictSkippedWords(result: { casesRun: number; verdictCompared?: number }): string | null {
+  const skipped = result.casesRun - (result.verdictCompared ?? result.casesRun);
+  if (skipped <= 0) return null;
+  return R18_COPY.TEST_VERDICT_SKIPPED.replace('{n}', String(skipped)).replace('{total}', String(result.casesRun));
+}
+
+/** The line for a stopped run that is newer than the shown result. */
+export function testLaterStoppedWords(n: number): string {
+  return R18_COPY.TEST_LATER_STOPPED.replace('{n}', String(n));
+}
+
+/** The answers line that leads the Settings result: right of scored, blank, wrong, from the saved per-question counts. */
+export function testAnswersWords(result: {
+  stopped: boolean;
+  casesRun: number;
+  perQuestion: Record<string, { right: number; blank: number; wrong: number }>;
+}): string {
+  const t = answerTotals(result.perQuestion);
+  if (t.scored === 0) return R18_COPY.TEST_ANSWERS_NONE;
+  return (result.stopped ? R18_COPY.TEST_ANSWERS_STOPPED : R18_COPY.TEST_ANSWERS_DONE)
+    .replace('{n}', String(result.casesRun))
+    .replace('{right}', String(t.right))
+    .replace('{scored}', String(t.scored))
+    .replace('{blank}', String(t.blank))
+    .replace('{wrong}', String(t.wrong));
+}
+
+/** One question's counts, in the question's own words. */
+export function testQuestionWords(questionText: string, t: { right: number; blank: number; wrong: number }): string {
+  return R18_COPY.TEST_QUESTION_LINE.replace('{question}', () => visibleText(questionText))
+    .replace('{right}', String(t.right))
+    .replace('{blank}', String(t.blank))
+    .replace('{wrong}', String(t.wrong))
+    .replace('{n}', String(t.right + t.blank + t.wrong));
+}
+
+/** The no-usable-answer sentence; nothing when every case was answered. */
+export function testNoAnswerWords(n: number): string | null {
+  return n > 0 ? R18_COPY.TEST_NO_ANSWER.replace('{n}', String(n)) : null;
+}
+
+/** How the register words the place of a read, in the past tense. */
+export function placeRecordWords(place: ModelPlace, host: string): string {
+  return R18_COPY.PLACE_RECORD_WORDS[place].replace('{host}', () => visibleText(host));
+}
+
+// ── Round 18-C1: choosing the failure sentence (words only; no decisions) ──
+
+/** The one sentence for a failed read (§27.5 table). The two Ollama places use the Ollama wording; a
+ *  firm's own server gets the neutral wording. `host` (an origin) fills {host} through visibleText. */
+export function failureSentence(reason: PrefillFailure, place: ModelPlace, host: string): string {
+  const entry = R18_COPY.FAILURE_SENTENCES[reason];
+  const text = place === 'firm-server' ? entry.firm : place === 'ollama-cloud' ? (entry.cloud ?? entry.ollama) : entry.ollama;
+  return text.replace(/\{host\}/g, () => visibleText(host));
+}
+
+/** R18-C2 review pass 1 (I1, I2): the one sentence the form shows for a read that did not fill anything in.
+ *  - earlierKept: model-filled answers from an earlier read are still on the form, so it says nothing new
+ *    was filled in and that the earlier ones are kept (the plain sentences would be false);
+ *  - readAgainShown: the "Read my description again" button is on screen. When it is not, a sentence that
+ *    tells the person to press it is replaced by the one that is true (no model, an invalid setting, or the
+ *    same words without the instruction). */
+export function formReadNote(
+  outcome: PrefillFailure,
+  place: ModelPlace,
+  host: string,
+  opts: { earlierKept: boolean; readAgainShown: boolean; settingKind: 'none' | 'invalid' | 'no-model' | 'valid' | 'unknown' },
+): string {
+  if (opts.earlierKept) return R18_COPY.KEPT_EARLIER_NOTE;
+  // R18-G: the panel exists, so the no-model case is the spec sentence (§27.5), which names it. That sentence says no
+  // model is connected, so it is shown only when that is so; a form that was not read although a model is set (an
+  // invalid policy, a draft from before reads existed) says only that nothing was filled in.
+  if (outcome === 'not-configured') {
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
+    if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
+    return R18_COPY.NOT_READ_NO_BUTTON;
+  }
+  if (!opts.readAgainShown && (outcome === 'not-read' || outcome === 'setting-changed')) {
+    if (opts.settingKind === 'none' || opts.settingKind === 'no-model') return failureSentence('not-configured', place, host);
+    if (opts.settingKind === 'invalid') return failureSentence('invalid-setting', place, host);
+    return outcome === 'not-read' ? R18_COPY.NOT_READ_NO_BUTTON : R18_COPY.SETTING_CHANGED_NO_BUTTON;
+  }
+  return failureSentence(outcome, place, host);
+}
+
+/** R18-C2: "N of M answers were filled in by a model and confirmed by you[, and K were changed by you]", or
+ *  null when no answer was filled in and confirmed, or changed (the sentence would be false). */
+export function modelFilledLine(counts: { confirmedFilled: number; answered: number; changed: number }): string | null {
+  if (counts.confirmedFilled <= 0 && counts.changed <= 0) return null;
+  const head = R18_COPY.MODEL_FILLED_LINE.replace('{n}', String(counts.confirmedFilled)).replace('{m}', String(counts.answered));
+  if (counts.changed <= 0) return head;
+  return head + (counts.changed === 1 ? R18_COPY.MODEL_CHANGED_TAIL_ONE : R18_COPY.MODEL_CHANGED_TAIL.replace('{k}', String(counts.changed)));
+}
+
+// ── Round 18-D1: the register's lines (words only; the reader in engine/answer-sources.ts decides) ──
+
+/** "read by {model} {place words}" for one read, in the past tense. An unrecognised place says so, with the host. */
+export function readLineWords(read: ReadView): string {
+  if (read.place === null) {
+    const odd = R18_COPY.PLACE_UNRECOGNISED_WORDS.replace('{host}', () => visibleText(read.host));
+    return R18_COPY.READ_LINE_UNRECOGNISED.replace('{model}', () => visibleText(read.model)).replace('{place}', () => odd);
+  }
+  // PLACE_RECORD_WORDS start with "by" (they are also used on their own); in the line the dash replaces it,
+  // so the line never reads "read by {model} by ...".
+  const place = placeRecordWords(read.place, read.host).replace(/^by /, '');
+  return R18_COPY.READ_LINE.replace('{model}', () => visibleText(read.model)).replace('{place}', () => place);
+}
+
+const quoted = (q: string) => `“${visibleText(q)}”`;
+
+/** Who supplied one answer, in words; only what the row holds. The model is named only when the row's read gives one. */
+export function originLineWords(a: AnswerView): string {
+  const by = a.read !== null && a.read.model.trim() !== '' ? `${R18_COPY.ORIGIN_SUGGESTED_BY} ${visibleText(a.read.model)}` : null;
+  const gone = a.quoteGone ? `; ${R18_COPY.ORIGIN_QUOTE_GONE}` : '';
+  switch (a.origin) {
+    case 'typed':
+      return R18_COPY.ORIGIN_TYPED;
+    case 'from_earlier_record':
+      return R18_COPY.ORIGIN_RECORD;
+    case 'prefilled_confirmed': {
+      const qs = a.quotes.map((q) => quoted(q.quote)).join(', ');
+      return `${R18_COPY.ORIGIN_PREFILLED_CONFIRMED}${qs ? ` — ${qs}` : ''}${by ? ` (${by})` : ''}${gone}`;
+    }
+    case 'prefilled_changed': {
+      const from = a.quotes.map((q) => `${visibleText(q.option)} — ${quoted(q.quote)}`).join(', ');
+      const inner = [from ? `${R18_COPY.ORIGIN_CHANGED_FROM} ${from}` : '', by ?? ''].filter((x) => x !== '').join(', ');
+      return `${R18_COPY.ORIGIN_CHANGED}${inner ? ` (${inner})` : ''}${gone}`;
+    }
+    default:
+      return R18_COPY.ORIGIN_UNRECOGNISED;
+  }
+}

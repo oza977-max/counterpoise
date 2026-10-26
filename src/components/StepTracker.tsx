@@ -1,8 +1,8 @@
 import type { IntakeState } from './intake-state';
 
 // Visual step tracker (Claude Design export "Counterpoise Demo.dc.html").
-// Maps our real states onto the design's step labels. All 6 steps are now
-// real content as of P4-C04 — Describe, Duplicates, Graph, Questions,
+// Maps our real states onto the design's step labels. All 6 steps are
+// real content — Describe, Duplicates, Your answers (the form), Questions,
 // Resolve (contradiction_review — only shown when active, not a normal
 // step in the happy path), Confirm, Verdict.
 // design-review round 4 (Panel G — Intake: Confirmation + journey spine,
@@ -16,7 +16,7 @@ import type { IntakeState } from './intake-state';
 const STEPS: Array<{ key: string; label: string; matches: (s: IntakeState['step']) => boolean }> = [
   { key: 'describe', label: 'Describe', matches: (s) => s === 'description_entry' },
   { key: 'duplicates', label: 'Similar checks', matches: (s) => s === 'duplicate_check' },
-  { key: 'graph', label: 'Your answers', matches: (s) => s === 'graph_extraction' || s === 'graph_review' },
+  { key: 'graph', label: 'Your answers', matches: (s) => s === 'prefill_reading' || s === 'graph_extraction' },
   {
     key: 'questions',
     label: 'Questions',
@@ -40,8 +40,8 @@ export function describeStep(current: IntakeState['step']): string {
 const ORDER = [
   'description_entry',
   'duplicate_check',
+  'prefill_reading',
   'graph_extraction',
-  'graph_review',
   'questionnaire',
   'contradiction_review',
   'confirmation',

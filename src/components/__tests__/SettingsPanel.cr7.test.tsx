@@ -9,7 +9,7 @@ vi.mock('../../store/reset', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../store/reset')>();
   return { ...actual, clearAllLocalData: vi.fn(actual.clearAllLocalData) };
 });
-import { saveDraft, loadDraft, saveFormDraft, loadFormDraft } from '../intake-draft';
+import { saveDraft, loadDraft, updateFormDraft, loadFormDraft } from '../intake-draft';
 import type { IntakeState } from '../intake-state';
 
 describe('SettingsPanel — Clear all data (CR7-15)', () => {
@@ -29,7 +29,7 @@ describe('SettingsPanel — Clear all data (CR7-15)', () => {
   it('TC-CR7-15-1: clears the saved intake drafts (all three keys) and the hand-off marker, then reloads', async () => {
     // the app's own writers produce the drafts (BC-003)
     saveDraft({ step: 'description_entry', description: 'a half-written description' } as IntakeState);
-    saveFormDraft({ useCaseName: 'half-typed' });
+    updateFormDraft({ answerState: { '1': { value: 'half-typed', source: { kind: 'typed' } } } });
     sessionStorage.setItem('aigate:intake-form-draft', '{"legacy":true}');
     localStorage.setItem('aigate-handoff-last-synced-tip', 'abc');
     expect(loadDraft()).not.toBeNull();
@@ -65,7 +65,7 @@ describe('SettingsPanel — Clear all data (CR7-15)', () => {
   it('TC-CR7-15-3: an incomplete reset clears the drafts too, and its message says exactly what was and was not cleared', async () => {
     vi.mocked(resetStore.clearAllLocalData).mockResolvedValueOnce({ complete: false, incomplete: ['aigate-audit (blocked)'] });
     saveDraft({ step: 'description_entry', description: 'a half-written description' } as IntakeState);
-    saveFormDraft({ useCaseName: 'half-typed' });
+    updateFormDraft({ answerState: { '1': { value: 'half-typed', source: { kind: 'typed' } } } });
     const user = userEvent.setup();
     render(<SettingsPanel />);
     await user.click(screen.getByText(/demo data/i));

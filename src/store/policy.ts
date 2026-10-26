@@ -281,7 +281,7 @@ const ALLOWED_CONDITION_OPERATORS = new Set(['gte', 'lte', 'in', 'not_in']);
 
 // Canonical vocabulary (policy-schema.md §3.0) — imported from
 // src/engine/canonical-vocabulary.ts, the single runtime source of truth
-// shared with src/llm/graph-extractor.ts. Only fields whose values are
+// used to validate condition values. Only fields whose values are
 // drawn from a closed enum are checked; unrecognised fields pass through
 // (forward compatibility — Kleppmann Ch. 4).
 

@@ -8,6 +8,7 @@ import { getAllForExport } from '../../store/audit';
 import { exportAll, addNode } from '../../store/register';
 import { setRole } from '../../store/role';
 import { POLICY_PROBLEM_MESSAGE } from '../plain-copy';
+import { seedFormRoute, workedAnswers } from './formRoute';
 
 // GT7 / GB, D-1b (TC-CF-5-02b). A pack that fails to load joins the app's
 // start-up gate: the "Policy file invalid" banner lists the loader's own
@@ -100,16 +101,19 @@ describe('GT7 D-1b — a broken pack joins the start-up gate (CF-5)', () => {
     sessionStorage.setItem(
       DRAFT_KEY,
       JSON.stringify({
-        step: 'confirmation',
-        description: 'A tool that summarises internal notes',
-        graph: GRAPH,
-        graphVersion: 1,
-        corrections: [],
-        answers: [],
-        resolutionNotes: [],
-        useCaseId: 'uc-gt7-pack',
-        plainAnswers: { '1': 'Tool' },
-        assumptions: [],
+        version: 4,
+        state: {
+          step: 'confirmation',
+          description: 'A tool that summarises internal notes',
+          graph: GRAPH,
+          graphVersion: 1,
+          corrections: [],
+          answers: [],
+          resolutionNotes: [],
+          useCaseId: 'uc-gt7-pack',
+          plainAnswers: { '1': 'Tool' },
+          assumptions: [],
+        },
       }),
     );
     const user = userEvent.setup({ delay: null });
@@ -142,21 +146,11 @@ describe('GT7 D-1b — a broken pack joins the start-up gate (CF-5)', () => {
     expect(banner.textContent).not.toContain(reason);
   });
 
-  it('TC-CF-5-02d: the first evaluation gate (Continue on the review screen) refuses with the plain message', async () => {
+  it('TC-CF-5-02d: the first evaluation gate (Continue on the guided form) refuses with the plain message', async () => {
     breakAPack();
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
-        step: 'graph_review',
-        description: 'A tool that summarises internal notes',
-        graph: GRAPH,
-        graphVersion: 1,
-        corrections: [],
-        useCaseId: 'uc-gt7-pack-2',
-        jurisdictionsConfirmed: true,
-        unconfirmedNodeIds: [],
-      }),
-    );
+    // R18-A: one route, so the first gate is the form's Continue. Reached with a
+    // saved form (version-4 draft + the scripted answers of worked example 1).
+    seedFormRoute('A tool that summarises internal notes', workedAnswers(1));
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await user.click(await screen.findByRole('button', { name: /^continue$/i }));

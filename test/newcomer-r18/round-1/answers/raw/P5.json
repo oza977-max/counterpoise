@@ -1,0 +1,35 @@
+{
+  "packet": "P5",
+  "answers": {
+    "What do you want to call it?": "Job application screening model",
+    "In a sentence or two, what will it do for you?": "It screens job applications and shortlists candidates for interview, for roles across our European entities.",
+    "Where does the AI come from?": "Not sure yet",
+    "What kind of AI is it?": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "What information will it see or use?": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces?": "suggests, ranks or flags things, and a person decides what to do",
+    "Who ends up seeing or receiving what it produces, in its final form?": "Only me or my own team",
+    "Which of these does it help decide, if any?": "Who to hire or promote — including tools that only produce notes, transcripts or summaries a person later uses to decide",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Not sure",
+    "Does it replace something you already use for the same job?": "Not sure",
+    "How widely will it be used?": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "Which countries does it involve?": ["European Union", "Somewhere else, or not sure"],
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know",
+    "How much weight does what it produces carry?": "Not sure"
+  },
+  "prefills": {
+    "Which of these does it help decide, if any?": "ticked",
+    "What happens with what it produces?": "ticked",
+    "How widely will it be used?": "ticked"
+  },
+  "didntUnderstand": [
+    {"quote": "Where does the AI come from? (all options)", "why": "I don't know how our firm sourced the model, and the options describe different kinds of supplier. I picked 'Not sure yet'."},
+    {"quote": "Whether the people who built it can show why it gave a result / Could the people who built it show you why it gave a particular result?", "why": "I don't know who built it or what they can show. The first option mentions a scorecard, but I can't tell if that applies."},
+    {"quote": "Which countries does it involve? / Somewhere else, or not sure", "why": "'European entities' doesn't tell me which countries. I can't tell whether the UK counts as European here, since it is listed separately from the European Union."},
+    {"quote": "Suggested by alpha:7b from your description", "why": "I don't know what 'alpha:7b' is. I assume it is the AI model that filled in the answers, but the screen doesn't say so plainly."},
+    {"quote": "Who ends up seeing or receiving what it produces, in its final form?", "why": "It is unclear whether applicants count as receiving the output. The shortlist goes to recruiters, but the option says 'including people applying to us'."},
+    {"quote": "Make it smarter (Ollama signin, OLLAMA_ORIGINS)", "why": "This is technical setup text that means nothing to a compliance analyst. I ignored it."}
+  ],
+  "expectNext": "Pressing Continue should take me to the 'Questions' step, where the follow-up questions appear (for example whether the builders can explain results, and how much weight the output carries). After that I expect a Confirm step and then a Result telling me whether I can go ahead and what controls are needed first. The decision comes from the firm's written rules, not from AI. I expect Continue may not let me through while required or unchecked items are still outstanding.",
+  "ticksMean": "'I've checked this answer' means I have read the answer the model filled in and agree with it, not that I just accepted it. Without the tick, the answer is still only the model's suggestion. The quoted words (for example 'screens job applications') show what in my description the suggestion came from.",
+  "comment": "I'd go ahead with this form, but several questions (supplier, explainability, countries) asked me for facts I'd have to find out first."
+}

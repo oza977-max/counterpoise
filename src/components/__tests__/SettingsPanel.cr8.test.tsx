@@ -71,7 +71,9 @@ describe('SettingsPanel — Clear all wording (CR8-16)', () => {
     const actual = await vi.importActual<typeof import('../../store/reset')>('../../store/reset');
     for (const k of CLEARED_LOCAL_STORAGE_KEYS) localStorage.setItem(k, 'x');
     localStorage.setItem('aigate:policy-yaml', 'kept');
-    localStorage.setItem('aigate:local-llm-url', 'kept');
+    // R18-B: the model setting and its saved test results are kept by Clear all data (NF-3-08, MS-5-04).
+    localStorage.setItem('aigate:model-setting', 'kept');
+    localStorage.setItem('aigate:model-test-results', 'kept');
     const before = Object.keys(localStorage).sort();
     await actual.clearAllLocalData();
     const removed = before.filter((k) => localStorage.getItem(k) === null).sort();

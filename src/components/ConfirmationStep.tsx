@@ -3,8 +3,11 @@ import type { DataFlowGraph, GraphCorrection, PolicyFile } from '../engine/types
 import type { Assumption, PlainAnswers } from './plain-copy';
 import UnderstoodSummary from './UnderstoodSummary';
 import SimilarCases from './SimilarCases';
-import { RATING_INSTRUCTION_CONFIRM_LINE } from './plain-copy';
+import { R18_COPY, modelFilledLine } from './plain-copy';
+import { answerSourceCounts } from '../engine/answer-sources';
+import type { FormAnswerState } from '../engine/prefill-types';
 import type { EnrichedPrecedent } from './SimilarCases';
+import StatusAfterMount from './StatusAfterMount';
 
 // UC-6 (intake-flow.md §9). Rule 4 (cross-cutting.md §7): presentation-only.
 // This click is the attestation point — writing the graph_confirmed audit
@@ -33,19 +36,18 @@ interface ConfirmationStepProps {
    *  path — used only to attribute the destination zone to an explicit
    *  3platformZone answer. */
   plainAnswers?: PlainAnswers;
-  /** W-3 (R16-W §1): similar decided cases, computed by the caller — on the
-   *  description path only when the graph came from the guided form (the
-   *  form path's own graph_review equivalent no longer exists, so this is
-   *  the only screen left to show them on). Rendered after the summary,
-   *  before the optional note, same collapsed panel and posture line as
-   *  graph_review's. */
+  /** R18-C2 (§27.6): the form's answers with their sources, for the model-filled line. Absent on a path
+   *  that has none; the line is then not shown. */
+  answerState?: FormAnswerState;
+  /** W-3 (R16-W §1): similar decided cases, computed by the caller. The form
+   *  has no screen of its own for them, so this is the only screen to show
+   *  them on. Rendered after the summary, before the optional note, in a
+   *  collapsed panel with a posture line. */
   precedents?: EnrichedPrecedent[];
-  /** GT7 L-1 (P12): the typed description (description path only — IntakeFlow
-   *  never sets this on the form path) tried to set its own rating. Display only. */
+  /** GT7 L-1 (P12): the typed description tried to set its own rating. Display only. */
   ratingInstructionsFound?: boolean;
-  /** "Change an answer" on the summary — navigates back to the question
-   *  (form path) or into the existing correction flow (description path,
-   *  UC-7). Not a write; the one write stays onConfirm below. */
+  /** "Change an answer" on the summary - navigates back to the form. Not a
+   *  write; the one write stays onConfirm below. */
   onChangeAnswer: () => void;
   /** Called with the submitter's optional note for the 2LoD reviewer —
    *  `undefined` when nothing was written, never an empty string. The note is
@@ -73,6 +75,7 @@ export default function ConfirmationStep({
   uncertainNodeIds,
   description,
   plainAnswers,
+  answerState,
   precedents,
   onChangeAnswer,
   onConfirm,
@@ -81,6 +84,10 @@ export default function ConfirmationStep({
   ratingInstructionsFound = false,
 }: ConfirmationStepProps) {
   const [note, setNote] = useState('');
+  // R18-C2: how many answers a model filled in and the person confirmed, so a reviewer sees bulk
+  // confirmation. Shown only when it is true that some were (never for a typed-only case).
+  const modelLine =
+    answerState && policy ? modelFilledLine(answerSourceCounts(answerState, description ?? '', policy)) : null;
 
   return (
     <section aria-label="Confirm and evaluate">
@@ -102,10 +109,12 @@ export default function ConfirmationStep({
       </p>
 
       {ratingInstructionsFound && (
-        <p role="status" className="confirmation__rating-warning">
-          <strong>Warning:</strong> {RATING_INSTRUCTION_CONFIRM_LINE}
-        </p>
+        <StatusAfterMount className="confirmation__rating-warning">
+          <strong>Warning:</strong> {R18_COPY.RATING_CONFIRM_LINE_FORM}
+        </StatusAfterMount>
       )}
+
+      {modelLine && <p className="confirmation__model-line">{modelLine}</p>}
 
       <UnderstoodSummary
         graph={graph}
@@ -118,9 +127,8 @@ export default function ConfirmationStep({
         changeAnswerDisabled={pending}
       />
 
-      {/* R16-W W-3 (§1): same collapsed panel and posture line graph_review
-          renders — the form path no longer passes through that screen, so
-          this is the only place left to show them before attestation. */}
+      {/* R16-W W-3 (§1): similar decided cases, collapsed, with a posture line -
+          the only place to show them before attestation. */}
       {precedents && precedents.length > 0 && (
         <details className="similar-cases-collapse">
           <summary>

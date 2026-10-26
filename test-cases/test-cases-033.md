@@ -355,7 +355,7 @@ And the screen MUST NOT contain the warning for "It summarises ticket volumes."
 Input: a pre-filled, unconfirmed answer quoting "Our UK team"; Question 2 edited on the form so that sentence is removed
 Given the form shows the pre-filled answer
 When the description changes
-Then the answer's mark MUST contain “the quote “Our UK team” is no longer in your description — is this right?”
+Then the answer's mark MUST contain “the quote “Our UK team” suggested by the AI model {model} is no longer in your description — is this right?”
 And Continue MUST contain a disabled state until the person ticks or changes the answer
 And the mark MUST NOT contain “from your description”
 [Requirement: R18-GI-3] [Priority: MUST]
@@ -384,7 +384,7 @@ And Continue MUST NOT contain an enabled state while any pre-filled answer is un
 Input: a pre-fill of "United Kingdom" with the quote "Our UK team"
 Given the form shows the pre-filled countries answer
 When the mark is read
-Then the mark MUST contain the text “from your description: “Our UK team” — is this right?”
+Then the mark MUST contain the text “Suggested by the AI model {model} from your description: “Our UK team” — is this right?”
 And the mark MUST NOT contain "confirmed by you" before the person ticks
 [Requirement: R18-GI-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -700,7 +700,7 @@ Input: answer A confirmed with quote "Our UK team"; the edit deletes "Our UK tea
 Given answer A is confirmed
 When the person returns after the edit
 Then answer A MUST contain its value "United Kingdom" and the state confirmed
-And the mark MUST contain “confirmed by you — the quote “Our UK team” is no longer in your description”
+And the mark MUST contain “confirmed by you — the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the screen MUST NOT contain the claim “from your description” for that answer, and the record MUST contain the original quote unchanged
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -748,7 +748,7 @@ Input: on the form, change Question 2's text so the sentence "Our UK team" is re
 Given an answer pre-filled and confirmed with the quote "Our UK team"
 When the text changes
 Then the description in the reducer, the draft and the record MUST contain the new text
-And the answer's mark MUST contain “the quote “Our UK team” is no longer in your description”
+And the answer's mark MUST contain “the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the form draft MUST NOT contain an entry for Question 2
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -842,7 +842,7 @@ And the browser storage MUST NOT contain the previous description, quotes or con
 Input: a draft saved with a confirmed pre-fill quoting "Our UK team", and a description edited elsewhere so that sentence is gone; reload
 Given the draft is in this browser
 When the page reloads
-Then the answer MUST contain “confirmed by you — the quote “Our UK team” is no longer in your description”
+Then the answer MUST contain “confirmed by you — the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the form MUST NOT contain the words “from your description” for that answer
 [Requirement: R18-GI-9] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -883,8 +883,9 @@ Given the older case on the register in the submitter view
 When the form opens
 Then the form MUST contain the description kept as it was
 And each recorded "Not sure" MUST contain that answer marked “from the earlier record” and needing a tick
+And the case name MUST contain the register's label for the case, marked “from the earlier record” and needing a tick
 And every other answer MUST contain a blank question marked “not carried over from the earlier version”
-And the form MUST NOT contain the retired card review, and a case with no recorded assumptions MUST NOT contain any pre-filled answer
+And the form MUST NOT contain the retired card review, and a case with no recorded assumptions MUST NOT contain any pre-filled answer other than its name
 [Requirement: R18-GI-10] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -901,7 +902,7 @@ And the form MUST NOT contain a blank question for an answer that was confirmed
 Input: a case with one typed answer, one confirmed pre-fill, one changed pre-fill and one `from_earlier_record` answer; reload the page; open the case on the register in the submitter view; press "Correct this check"
 Given nothing from the earlier session is in memory
 When the person presses the action
-Then the form MUST contain every answer with its recorded value, the typed answer as typed, the confirmed and changed pre-fills still confirmed with their quotes, and the earlier-record answer unconfirmed and needing its tick
+Then the form MUST contain every answer with its recorded value, the typed answer as typed; confirmed and changed pre-fills MUST come back with their quotes and recorded values but unconfirmed, each needing the person's own tick, and the earlier-record answer MUST be unconfirmed
 And the corrected case's `verdict_corrected` event MUST contain the new sources
 And the form MUST NOT contain a blank question for an answer that was recorded, and MUST NOT contain a Back control
 [Requirement: R18-GI-10] [Priority: MUST]
@@ -954,11 +955,11 @@ And each MUST NOT contain "tested" followed by a count
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-02: After a test the label reads tested N/31 on the date [EXAMPLE]
-Input: a completed test of `gemma4:cloud` scoring 21 fully right verdicts on 2026-10-07
+### TC-R18-GI-12-02: After a test the label leads with the answers filled in correctly [EXAMPLE]
+Input: a completed test of `gemma4:cloud` with 11 of 15 scored answers right, 3 left blank and 1 wrong, on 2026-10-07
 Given the saved result
 When Settings and the description screen render
-Then each MUST contain "tested 21/31 on 2026-10-07" (date shown in the app's usual date format)
+Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong" (date shown in the app's usual date format)
 And each MUST NOT contain "untested" for that model
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -968,7 +969,7 @@ Input: a saved result for `gemma4:cloud`; the person switches the model setting 
 Given a result for one model
 When the other model is selected
 Then the label beside `qwen3:4b` MUST contain "untested"
-And it MUST NOT contain "tested 21/31"
+And it MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -988,12 +989,14 @@ Counterexample strategy: all replies blank, all wrong, a reply for only one case
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-06: The test label never drops its caveat [EXAMPLE]
-Input: a saved result "21/31 on 2026-10-07" for `gemma4:cloud`; render Settings, the description screen and the "Make it smarter" panel
+### TC-R18-GI-12-06: The test label states its counts, and a verdict figure states its assumption [EXAMPLE]
+Input: a saved result (11 right, 3 left blank, 1 wrong, 21 right verdicts) on 2026-10-07 for `gemma4:cloud`; render Settings, the description screen and the "Optional: connect an AI helper" panel
 Given a tested model
 When each screen renders
-Then each MUST contain "tested 21/31 on 2026-10-07" followed by "(measured as if you check every filled answer)"
-And an untested model MUST NOT contain that suffix
+Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong"
+And no label MUST contain a verdict figure such as "21/31" or "of 31 cases"
+And where Settings shows the verdict figure it MUST read "Right verdict in 21 of 31 cases if you check every filled answer and answer the rest yourself." and come after the answers line
+And an untested model MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1392,7 +1395,7 @@ And case 2 MUST NOT contain a scored answer
 Input: a finished test; reload the page
 Given a saved result
 When Settings opens after the reload
-Then the model's label MUST contain "tested" with its count and date
+Then the model's label MUST contain "tested on" with its date and its answer counts
 And the label MUST NOT contain "untested"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1439,8 +1442,8 @@ Input: a run stopped after 12 cases, then a completed run in which the verifier 
 Given a saved stopped result for `gemma4:cloud`
 When Settings renders after each
 Then after the stopped run the label MUST contain "untested (a partial test stopped after 12 of 31 cases)"
-And after the completed run the label MUST contain "tested" with its count and date, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
-And the stopped run's label MUST NOT contain "tested 12/31"
+And after the completed run the label MUST contain "tested on" with its date and its answer counts, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
+And the stopped run's label MUST NOT contain "answers filled in correctly"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1639,11 +1642,11 @@ And the screen MUST NOT contain an error or a model prompt
 [Requirement: R18-PS-1] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-PS-2-01: The "Make it smarter" panel renders with no model and collapses to a status line with one [EXAMPLE]
+### TC-R18-PS-2-01: The "Optional: connect an AI helper" panel renders with no model and collapses to a status line with one [EXAMPLE]
 Input: no model configured, then `qwen3:4b` on this computer
 Given the description screen
 When it renders in each state
-Then the first state MUST contain the panel titled "Make it smarter" with its explanation
+Then the first state MUST contain the panel titled "Optional: connect an AI helper" with its explanation, which MUST begin "You don't need to do anything here to continue."
 And the second state MUST contain a one-line status naming the model and where it runs, and the full panel MUST NOT contain itself open
 [Requirement: R18-PS-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1829,7 +1832,7 @@ And at 29 s the screen MUST NOT contain an open blank form
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-1-02: Skip opens the blank form at once, by keyboard too [EXAMPLE]
-Input: at 5 s, Tab to "Skip — I'll answer the questions myself" and press Enter
+Input: at 5 s, Tab to "Skip — don't read it; I'll answer the questions myself" and press Enter
 Given the model is working
 When the person presses Enter on the skip control
 Then the form MUST contain every question blank immediately, without the clock advancing
@@ -1867,7 +1870,7 @@ And the run MUST NOT contain a case scored after Stop
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-2-01: Each new element has a role and a name [EXAMPLE]
-Input: the accessibility tree of the description screen, the checklist, the nudge, the "Make it smarter" panel, a pre-fill mark and Settings' model choices and test
+Input: the accessibility tree of the description screen, the checklist, the nudge, the "Optional: connect an AI helper" panel, a pre-fill mark and Settings' model choices and test
 Given each screen or panel
 When its tree is read
 Then each interactive element MUST contain a role and an accessible name
@@ -2056,7 +2059,7 @@ And the form MUST NOT contain "Gigantic" as a selected or pre-filled answer
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-5-04: Any stored draft, valid or not, opens the form without throwing [PROPERTY]
-Property: For all strings and objects stored under the draft keys (valid envelopes of every earlier version, truncated JSON, arrays, null, deeply nested objects, wrong types in every field), opening the app never throws, ends at the form, keeps the description whenever it is a string, and shows the earlier-version sentence for every shape that is not a current valid draft
+Property: For all strings and objects stored under the draft keys (valid envelopes of every earlier version, truncated JSON, arrays, null, deeply nested objects, wrong types in every field), opening the app never throws, ends at the form, keeps the description whenever it is a string, and shows the earlier-version sentence for every shape that is not a current valid draft (a valid earlier draft still at the description or similar-checks step is restored as it was, with no sentence — R18-A deviation)
 Counterexample strategy: keys with `__proto__`, a 1 MB description, a description with control characters, version numbers 0, -1, 1.5, "2", NaN
 [Requirement: R18-NF-5] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -2119,8 +2122,8 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 ### Open points (all settled by the tech spec, 2026-10-07)
 
-1. **GI-8 and GI-13** — a kept answer whose quote has left the edited description reads “confirmed by you — the quote “…” is no longer in your description”; the record keeps the original quote (`intake-flow.md` §27.6; TC-R18-GI-8-04 amended).
-2. **PS-6** — a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (§27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; recorded for the owner to ratify.
+1. **GI-8 and GI-13** — a kept answer whose quote has left the edited description reads “confirmed by you — the quote “…” suggested by {model} is no longer in your description”; the record keeps the original quote (`intake-flow.md` §27.6; TC-R18-GI-8-04 amended).
+2. **PS-6** — a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (§27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; owner-ratified 2026-10-26.
 3. **MS-1, Ollama's cloud with a non-loopback address** — refused; the cloud choice also needs a cloud-tagged model (§27.8; TC-R18-MS-1-08, -09 added).
 4. **MS-1, cloud tag case** — matched without regard to case (§27.8; `gemma4:Cloud` added to TC-R18-MS-1-02).
 5. **GI-1, the checklist items** — thirteen, one per form question a description can mention (§27.2); TC-R18-GI-1-02 gained a countries row and the "twelve" in the GI-1/GI-2 cases became "thirteen".
@@ -2138,6 +2141,13 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | newcomer test round 2 (owner-approved): panel heading and first line. The MUST lines of TC-R18-PS-2-01 (the panel is titled "Optional: connect an AI helper" and its explanation begins "You don't need to do anything here to continue."), TC-R18-GI-12-06 and TC-R18-NF-2-01 name the panel by its new heading. |
+| 2026-10-26 | newcomer test round 1: panel leads with plain words, model named as 'the AI model', nudge examples labelled, tick explained, example asks before replacing text (owner-approved): the MUST lines of TC-R18-GI-4-02, GI-8-04 and GI-13-01 (and the cases that quote the kept-answer mark) now read “suggested by the AI model {model}”. |
+| 2026-10-24 | owner decision 2026-10-24: the test result leads with answers filled in correctly; the verdict figure is secondary and states its assumption (a blank keeps the right answer in the verdict measure). TC-R18-GI-12-02, -03, -06 and TC-R18-MS-4-04, -09 quote the new label: "tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong" (scored = right + blank + wrong over the scored question-case pairs); the old suffix "(measured as if you check every filled answer)" is retired; the Settings verdict line reads "Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself." |
+| 2026-10-24 | R18-E review pass 1: TC-R18-GI-10-04 — the case name is restored from the register's label as a `record` answer needing its tick (it is not blank), and a case with no recorded assumptions has only its name restored. |
+| 2026-10-22 | owner decision 2026-10-22: answers restored from a stored record need a fresh tick (a self-asserted record must not let the record claim ticks the person never made). TC-R18-GI-10-06 now states it: confirmed and changed pre-fills come back with their quotes and recorded values but unconfirmed. |
+| 2026-10-15 | owner-approved: pre-fill mark names the model; tick reads 'I've checked this answer' (newcomer check, R18-C2): TC-R18-GI-3-20, GI-4-02, GI-8-04, GI-9-05 and NF-1-02 quote the new wording. |
+| 2026-10-08 | R18-A: TC-R18-NF-5-04 states the exemption for valid earlier drafts at the description and similar-checks steps (restored as they were, no sentence). |
 | 2026-10-07 | Design review 008, strict third pass fixes (211 cases): the rating-instruction notice on the description screen (GI-3-19) and an unconfirmed quote that left the text (GI-3-20); Back refused for corrections and retries, unchanged text skips the second duplicate check, last read survives a submit, Read again merges (GI-8-07 retyped, GI-8-10..14); same-page setting change (GI-7-11); the invalid-setting sentence and bounds, Find models under Ollama's cloud (MS-1-10 rewritten, MS-1-12, -13); MS-5-01/-02 assert the outcome; `verdict_corrected` description (GI-5-11); older cases restore only description and "Not sure" answers, "Correct this check" is a submitter action (GI-10-04..08); a question the form cannot express is not scored (GI-12-08); the docs declare the optional key (NF-3-09); the dropped-fills wording; ten examples, not eleven; no `file://`. |
 | 2026-10-07 | Design review 008, strict second pass fixes (197 cases): `UK` is the policy's code (GI-1-09); direction-changing characters in the context sentence (GI-3-18); "typed by you" (GI-5-01..04); host is an origin; tampered `constructor`/`__proto__` values and out-of-range reads (GI-5-05); export and import statements, quote-no-longer, retry keeps sources (GI-5-08..10); `{"answers": []}` removed from GI-7-03 (it is GI-7-10); Back from the form, a stale draft never beats a fresh read, Question 2 edits the description (GI-8-07..09); record answers need a tick (GI-10-07); the scorer is the only measurement route (GI-12-07); the key-stored sentence (MS-2-07); stopped runs and dropped fills (MS-4-09); the confirmation line's counting rule (GI-3-17); the fetch-site grep covers the SDK (NF-3-07); Clear-all wording and Forget (NF-3-08); the github.io sentence (PS-4-05); the examples note (PS-3-05). |
 | 2026-10-07 | Design review 008 fixes (`specs/intake-flow.md` §27 revised): +27 cases (183 total) — two-letter country codes (GI-1-09); quote length, control/bidi characters, shown in context, model-filled share (GI-3-14..17); change-back returns to confirmed (GI-4-04); record values, past-tense words, once-only writer (GI-5-01, -05 amended; GI-5-06, -07); reload during reading, double press, skip beats timeout, setting changed, nothing found (GI-7-06..10); hidden follow-up, failed read not repeated (GI-8-05, -06); restored-draft quote check (GI-9-05); GI-10-02 narrowed to the answered corpus cases, GI-10-04 uniquely-invertible rule, correction after reload (GI-10-06); label caveat (GI-12-06); tampered setting and migration (MS-1-10, -11); small print (MS-2-06); test copy (MS-4-08); fallback resend and mode reset (MS-5-07, -08); place-keyed failure sentences (MS-7-01 rewritten, MS-7-03); key-based calls, redirect, fetch-site scan (NF-3-05..07); anchored dist-scan patterns (PS-5-01). |

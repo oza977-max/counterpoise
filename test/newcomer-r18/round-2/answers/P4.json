@@ -1,0 +1,75 @@
+{
+  "packet": "P4",
+  "answers": {
+    "1": "Credit card application scoring model",
+    "2": "It gives each retail credit card application a score and automatically declines the ones below a cutoff. It is for UK and German customers.",
+    "3": "Not sure yet",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "4a": "No, or I don’t know",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "acts by itself within limits someone set, with no routine review",
+    "6b": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off",
+    "7": "Clients or customers — including people applying to us",
+    "8": "Whether to lend to someone, or on what terms",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "United Kingdom",
+      "European Union"
+    ],
+    "3platformZone": "Not sure"
+  },
+  "prefills": [
+    {
+      "question": "4",
+      "status": "ticked"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    },
+    {
+      "question": "8",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "(Whether it acts by itself is asked separately, in question 6.)",
+      "why": "The questions on the form are not numbered, so I could not tell which one is question 6. I guessed it meant the one about what happens with what it produces, but I was not sure."
+    },
+    {
+      "item": "What it can get into by itself",
+      "why": "'Get into' is not clear to me. The example 'It has its own logins for other systems' helps a little. The second screen also says the questions ask about each of these anyway, but my form never asked this one."
+    },
+    {
+      "item": "← Similar checks (shown in the step list above 'Step 3 of 6: Your answers')",
+      "why": "I never saw a 'Similar checks' step. It shows an arrow instead of a tick, so I don't know whether it was skipped, what it was for, or whether I missed something."
+    },
+    {
+      "item": "Someone who runs Ollama can connect an AI model under Settings … alpha:7b",
+      "why": "I don't know what Ollama is, and 'alpha:7b' means nothing to me. It seems to be a technical setup for another person, but the form later says answers were 'Suggested by the AI model alpha:7b', so I wasn't sure who had set it up."
+    },
+    {
+      "item": "No AI reads your answers or makes the decision, so the same answers always get the same result.",
+      "why": "Partly. The next lines show suggestions 'from your description' by an AI model, so it seems an AI does read something. I worked out that it reads only my description, and not my answers or the decision, but I had to think about it."
+    },
+    {
+      "item": "Something else — sends, books, updates records, deploys changes",
+      "why": "'Deploys changes' is IT language and I don't know what it means. I didn't need this option, so it didn't block me."
+    }
+  ],
+  "expectNext": "I think the form will go on to step 4 'Questions'. That step may ask a few more things based on what I have answered, and step 5 'Confirm' lets me look over everything. Then step 6 'Result' tells me whether my colleague can go ahead with the credit card scoring model, and what has to be done first. I guess the answer comes from the firm's written rules, not from a person. Before that, 'Continue' might refuse to move on if any required answer is missing or any suggestion is not yet ticked. I'm not sure what the 'Similar checks' step does or whether I will see it.",
+  "ticksMean": "The tool guessed some answers by reading my description, and each guess has an 'I've checked this answer' box. Ticking it means I have read the guess and agree it is right, so it now counts as my answer. Until I tick it, it doesn't count, I can't continue, and nobody can say the AI decided for me. If I disagree, I change the answer instead of ticking. I am the one responsible for the answers, not the AI model.",
+  "comment": "I could do the form, but I had to say \"Not sure\" to several questions (where the AI comes from, whether a mistake can be put right, whether it replaces something, whether data stays in-house) because my colleague didn't tell me; the \"question 6\" reference and the unexplained \"Similar checks\" step were the confusing bits.",
+  "normalisationNotes": [
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 4 (prefix): \"What kind of AI is it?\"",
+    "prefill label matched to 7 (prefix): \"Who ends up seeing or receiving what it produces, in its final form?\"",
+    "prefill label matched to 8 (prefix): \"Which of these does it help decide, if any?\"",
+    "didntUnderstand given as {quote, why}; quote becomes item"
+  ]
+}

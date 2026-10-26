@@ -5,7 +5,7 @@ import App from '../../App';
 import { addNode, getUseCases } from '../../store/register';
 import { append, getAll } from '../../store/audit';
 import type { Verdict } from '../../types/verdict';
-import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT } from './fillText';
+import { fillText, SLOW_FLOW_MS, DUP_CHECK_WAIT, pressNext } from './fillText';
 
 // R16-W (build/prompts/R16-W.md) — the owner-side walkthrough fixes,
 // integration-level coverage. Unit-level coverage for the individual pieces
@@ -93,12 +93,12 @@ async function fillMinimalForm(user: ReturnType<typeof userEvent.setup>, name: s
 async function reachFormScreen(user: ReturnType<typeof userEvent.setup>, description: string) {
   render(<App />);
   await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), description);
-  await user.click(screen.getByRole('button', { name: /^next/i }));
+  await pressNext(user);
   await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));
   await screen.findByText(/new pre-check — tell us about the ai you want to use/i);
 }
 
-describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to confirmation', () => {
+describe('R16-W W-3 (D-69): the form never shows a card review on the way to confirmation', () => {
   it('TC-R16-W-58: reaches "Here’s what we understood" directly — no "Confirm what we understood", no "worth a second look", no graph-review node cards', async () => {
     const user = userEvent.setup({ delay: null });
     await reachFormScreen(user, 'Zephyrquill morandane intake probe');
@@ -108,8 +108,8 @@ describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to
     expect(await screen.findByText(/here.s what we understood/i)).toBeInTheDocument();
     expect(screen.queryByText(/confirm what we understood/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/worth a second look/i)).not.toBeInTheDocument();
-    // graph_review renders GraphView's per-node cards (.graph-node); the
-    // form path must never produce one.
+    // The retired card review rendered per-node cards (.graph-node); the
+    // form must never produce one.
     expect(document.querySelectorAll('.graph-node')).toHaveLength(0);
     // No bare engine field code anywhere on the summary screen.
     expect(document.body.textContent).not.toMatch(/\bDATA_ZONE\b|\bMODEL_TYPE\b/);
@@ -119,11 +119,15 @@ describe('R16-W W-3 (D-69): the form path never shows graph_review on the way to
 describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form filled in', () => {
   it('TC-R16-W-59: Back from the questionnaire returns to the form with its answers intact', async () => {
     const DRAFT_KEY = 'aigate:intake-draft';
+    // R18-A: written as the version-4 draft the form's Continue leaves behind.
+    // Question 2 is the description (never a stored answer), so the description
+    // is carried in `description` and the tool name in `plainAnswers`.
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'questionnaire',
-        description: 'A tool that sorts internal mail queues.',
+        description: 'Carried description.',
+        method: 'form',
         graph: {
           id: 'g1', version: 1, intake_method: 'structured_form', extracted_at: '2026-01-01T00:00:00.000Z',
           jurisdictions: [],
@@ -137,9 +141,9 @@ describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form 
         resolutionNotes: [],
         corrections: [],
         useCaseId: 'uc-back-1',
-        plainAnswers: { '1': 'Carried tool name', '2': 'Carried description.' },
+        plainAnswers: { '1': 'Carried tool name' },
         assumptions: [],
-      }),
+      } }),
     );
 
     render(<App />);
@@ -155,7 +159,7 @@ describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form 
     const DRAFT_KEY = 'aigate:intake-draft';
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'A tool that sorts internal mail queues.',
         graph: {
@@ -173,13 +177,15 @@ describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form 
         useCaseId: 'uc-change-1',
         plainAnswers: { '1': 'Reopened tool name', '2': 'Reopened description.' },
         assumptions: [],
-      }),
+      } }),
     );
 
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: /change an answer/i }));
 
     expect(await screen.findByLabelText(/what do you want to call it/i)).toHaveValue('Reopened tool name');
+    // R18-A: question 2 is the description's editor, not a stored answer.
+    expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue('A tool that sorts internal mail queues.');
     sessionStorage.clear();
   });
 
@@ -187,7 +193,7 @@ describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form 
     const DRAFT_KEY = 'aigate:intake-draft';
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({
+      JSON.stringify({ version: 4, state: {
         step: 'confirmation',
         description: 'd',
         graph: {
@@ -205,7 +211,7 @@ describe('R16-W W-4 (D-70): changing an answer / stepping back reopens the form 
         useCaseId: 'uc-refresh-1',
         plainAnswers: { '9': 'not-sure' },
         assumptions: [{ questionId: '9', question: 'If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?', assumption: 'it can’t be undone — the strictest case. Change it if a mistake can actually be caught and fixed.' }],
-      }),
+      } }),
     );
 
     // A fresh render with no prior interaction simulates a reload exactly.
@@ -297,7 +303,7 @@ describe('Confirm guard across intakes (found by the R16-W walkthrough)', () => 
     await user.click(screen.getByText('+ New pre-check'));
     const second = 'Marrowdeep lanternfall second tool';
     await fillText(user, await screen.findByLabelText(/what ai tool do you want to use/i), 'The second case in this tab.');
-    await user.click(screen.getByRole('button', { name: /^next/i }));
+    await pressNext(user);
     // "Continue →" when nothing similar is found; "Mine is different —
     // continue →" if the first case is offered as similar — either way on.
     await user.click(await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT));

@@ -40,3 +40,15 @@ Test file: `src/components/__tests__/QuestionnaireStep.um.test.tsx` (real `polic
 | TC-CR6-19 | A listed model with no `plain_name` now shows "Model 1" rather than its raw id (CR7-35b) |
 | TC-MN-05 | Same as TC-MN-03, for the review-screen row |
 | TC-R16-E-31b | Same as TC-CR6-19: the unnamed model's button reads "Model 1" |
+
+## Superseded
+
+| ID | Why |
+|---|---|
+| TC-UM-02 | Superseded by R18-GI-10 (R18-E): the review-screen row for `qwen3:4b` belonged to the card review, which is deleted. The label itself is still asserted on the form's model button and "Recorded" line (TC-UM-01, TC-MN-03). |
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-10-24 | R18-E review pass 1: TC-UM-02 recorded as Superseded by R18-GI-10. |

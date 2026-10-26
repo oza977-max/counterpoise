@@ -1,0 +1,78 @@
+{
+  "packet": "P5",
+  "answers": {
+    "1": "Job application screening model",
+    "2": "It screens job applications and shortlists candidates for interview, for roles across our European entities.",
+    "3": "Not sure yet",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "suggests, ranks or flags things, and a person decides what to do",
+    "7": "Only me or my own team",
+    "8": "Who to hire or promote — including tools that only produce notes, transcripts or summaries a person later uses to decide",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "European Union",
+      "Somewhere else, or not sure"
+    ],
+    "4a": "No, or I don’t know",
+    "6a": "Not sure"
+  },
+  "prefills": [
+    {
+      "question": "8",
+      "status": "ticked"
+    },
+    {
+      "question": "6",
+      "status": "ticked"
+    },
+    {
+      "question": "10",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "Where does the AI come from? (all options)",
+      "why": "I don't know how our firm sourced the model, and the options describe different kinds of supplier. I picked 'Not sure yet'."
+    },
+    {
+      "item": "Whether the people who built it can show why it gave a result / Could the people who built it show you why it gave a particular result?",
+      "why": "I don't know who built it or what they can show. The first option mentions a scorecard, but I can't tell if that applies."
+    },
+    {
+      "item": "Which countries does it involve? / Somewhere else, or not sure",
+      "why": "'European entities' doesn't tell me which countries. I can't tell whether the UK counts as European here, since it is listed separately from the European Union."
+    },
+    {
+      "item": "Suggested by alpha:7b from your description",
+      "why": "I don't know what 'alpha:7b' is. I assume it is the AI model that filled in the answers, but the screen doesn't say so plainly."
+    },
+    {
+      "item": "Who ends up seeing or receiving what it produces, in its final form?",
+      "why": "It is unclear whether applicants count as receiving the output. The shortlist goes to recruiters, but the option says 'including people applying to us'."
+    },
+    {
+      "item": "Make it smarter (Ollama signin, OLLAMA_ORIGINS)",
+      "why": "This is technical setup text that means nothing to a compliance analyst. I ignored it."
+    }
+  ],
+  "expectNext": "Pressing Continue should take me to the 'Questions' step, where the follow-up questions appear (for example whether the builders can explain results, and how much weight the output carries). After that I expect a Confirm step and then a Result telling me whether I can go ahead and what controls are needed first. The decision comes from the firm's written rules, not from AI. I expect Continue may not let me through while required or unchecked items are still outstanding.",
+  "ticksMean": "'I've checked this answer' means I have read the answer the model filled in and agree with it, not that I just accepted it. Without the tick, the answer is still only the model's suggestion. The quoted words (for example 'screens job applications') show what in my description the suggestion came from.",
+  "comment": "I'd go ahead with this form, but several questions (supplier, explainability, countries) asked me for facts I'd have to find out first.",
+  "normalisationNotes": [
+    "label matched by prefix to 4: \"What kind of AI is it?\"",
+    "label matched by prefix to 5: \"What information will it see or use?\"",
+    "label matched by prefix to 6: \"What happens with what it produces?\"",
+    "label matched by prefix to 7: \"Who ends up seeing or receiving what it produces, in its final form?\"",
+    "label matched by prefix to 8: \"Which of these does it help decide, if any?\"",
+    "label matched by prefix to 12: \"Does it replace something you already use for the same job?\"",
+    "label matched by prefix to 11: \"Which countries does it involve?\"",
+    "prefill label matched by prefix to 8: \"Which of these does it help decide, if any?\"",
+    "prefill label matched by prefix to 6: \"What happens with what it produces?\""
+  ]
+}

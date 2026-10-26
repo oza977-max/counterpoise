@@ -95,9 +95,9 @@ and unbothered: a dissent channel tolerates a weak judge (its dissents are
 advisory noise at worst); the engine never did and never will read one.
 
 **Status update (2026-08-16, v0.5.0):** the key is no longer the blocker. A
-local open model now runs on the user's machine (qwen3:4b via Ollama,
-`src/llm/local-provider.ts`) and had its first live run on the extraction
-edge. The judge experiment above can therefore run today, locally and free —
+local open model now runs on the user's machine (qwen3:4b via Ollama) and
+had its first live run on the extraction edge (that route was retired in
+Round 18). The judge experiment above can therefore run today, locally and free —
 j1-micro-style tiny judges were the design's deployment claim anyway. Still
 undone, deliberately: run the concordance experiment before building any
 panel UI. One operational lesson for that experiment: reasoning models under
@@ -378,3 +378,39 @@ blocker; the runtime path never relied on the judge experiment. Next step
 if picked up again: distinguish decoder-truncation from model-behaviour on
 the no-hard-line-match cases (judge-002 §"Bottom line" has the concrete
 next experiment), before building any panel UI on this model.
+
+---
+
+## 2026-10-08 — R18-A: the no-model form note waits for the panel (binds R18-G)
+
+**Raised by:** R18-A independent review pass 1 (BC-005). The spec's `not-configured` sentence (`intake-flow.md` §27.5) ends "— or connect one under Make it smarter", but that panel is built in R18-G. Until then the form shows `R18_COPY.NO_MODEL_INTERIM_SENTENCE` ("Your description wasn't read automatically, so nothing was filled in for you. Answer the questions below."), which is true in every state of the build. **R18-G must switch the form note to `FAILURE_SENTENCES['not-configured']` in the same commit that ships the panel, and delete the interim sentence.** Status: **DONE (R18-G, 2026-10-24).** The panel and the switch landed together (`6e9cfd2`): `formReadNote` returns the spec sentence only where no model is set (`none` / `no-model`), says only that nothing was filled in where a model is set or the setting is not yet read, and the invalid-setting sentence for an invalid one; `NO_MODEL_INTERIM_SENTENCE` and the redundant ternary in `IntakeFlow.tsx` are deleted.
+
+
+## 2026-10-08 — R18-A carried minors (bind C2, D2/E, G)
+
+**Raised by:** R18-A independent review pass 2 (0 Critical / 0 Important; these are the Minor findings carried). Status: open (C2 items done 2026-10-14, below).
+- **C2 (DONE in R18-C2):** tighten `loadDraftInfo`'s `graph_extraction` branch (element shape of `assumptions`; `afterFailedEvaluation` boolean; `originalVerdictId` string); give the review/confirmation rating lines description-style wording for form-route cases (`ratingInstructionWarning`, `RATING_INSTRUCTION_CONFIRM_LINE` still say "check each card below"); assert or soften the Track I / no-tier comment in `V1Closeout-0b.test.tsx`.
+  - **Done (R18-C2, 2026-10-14):** (1) `loadDraftInfo`'s `graph_extraction` branch (and the later steps) now checks each `assumptions` element (three text fields, `shortLabel`/`fields` typed when present, no `__proto__`), `afterFailedEvaluation` (boolean) and `originalVerdictId` (bounded string) — `intake-draft.r18c2.test.ts`. (2) The rating lines for form-route cases name no cards (`ratingWarningFor`, `ratingConfirmLine`, `R18_COPY.RATING_CONFIRM_LINE_FORM`) and the graph guard is gone (spec §27.4); the register's audit line was made cardless too (`R18_COPY.RATING_AUDIT_LINE`). (3) The Track I / no-tier comment in `V1Closeout-0b.test.tsx` is now an assertion.
+- **D2/E:** `handleCorrectVerdict` still falls back to the retired card review when `lastConfirmed` is gone (reload on the verdict screen) — closed by the register correction (D2) and the retirement table (E).
+  - **Done (R18-D2 + R18-E, 2026-10-24):** `handleCorrectVerdict` reopens the form from the case's record (`correctionOpening`): from its `answer_sources` when it has them (D2), otherwise from its recorded “Not sure” assumptions with every other answer blank and marked (the older-case path, R18-E); there is no card review to fall back to. Still not reachable from the UI today (`lastConfirmed` always carries `answerState` for a form case); covered by the reducer test and the shared helper.
+- **G (NF-2 sweep):** render the nudge and rating-notice status regions empty from the start and fill them, so every screen reader announces them.
+  - **Done (R18-G, 2026-10-24):** `NudgeNote` and `RatingInstructionNotice` always render their `role="status"` container (`.describe__nudge-region`, `.intake-flow__rating-region`), empty until there is something to say; `Accessibility.r18g.test.tsx` (TC-R18-NF-2-03) checks the same element is empty first and then holds the text.
+- **Owner wording question:** the earlier-version notice says "please check your answers" while the landing carries none.
+- **Owner question (surfaced):** form-built graphs never mark a node uncertain, so the questionnaire step is unreachable through the live form route (pre-existing).
+
+## 2026-10-24 — R18-E: what the retirements left behind (binds the owner / a later cleanup)
+
+**Raised by:** R18-E build. Everything in the `intake-flow.md` §27.10 table is deleted, and so is what only those rows called. These were NOT in the table, still have a reader, and nothing on the one remaining route sets them any more; they are left in place (the table says what to delete) and listed so a later round can decide.
+- `uncertainNodeIds` on the questionnaire, contradiction review, confirmation and pending states, read by the confirmation summary and `lastConfirmed`: always empty now.
+- `afterFailedEvaluation` on the confirmation state: always `false` now (the form's retry carries the case id and refuses Back on its own).
+- `graphValueResolver`'s no-original-graph branch and `GraphCorrection.correction_source: 'review'`: only old records carry the latter.
+- `src/App.css`: the `.graph-view`, `.graph-node*` and review-card rules have no element left to style. **Done (R18-G):** removed, except `.graph-node__chip`, which the register's detail page still renders.
+- No caller left outside tests (`extractionErrorMessage`, `EXTRACTION_ERROR_HELP`, `ratingWarningFor`, `questionsForGuessedFields`): **removed (R18-G).**
+
+## 2026-10-24 — R18-E items deferred to R18-G (owner speed call)
+**All done in R18-G (2026-10-24); detail in `build/handovers/R18-G.md`.**
+- ~~Older questionnaire-route "Not sure" assumptions (question id `field:…`) are dropped on an older-case correction without being named in the note.~~ **Done:** `olderCaseAnswers` returns `otherDropped` (the record's own words for each `field:` Not-sure, else the id) and the form's note names them after the form questions that could not be put back.
+- ~~`QuestionnaireStep` multi-select guards now asserted only downstream: Q13 "Nothing beyond" exclusivity both ways, clicking an option's words ticks it, unticking the last option.~~ **Done:** three tests on the control itself in `QuestionnaireStep.r16e.test.tsx`.
+- ~~Dead code: exports `extractionErrorMessage`, `EXTRACTION_ERROR_HELP`, `ratingWarningFor`, `questionsForGuessedFields`; `.graph-view` / `.graph-node*` CSS; the "check each card below" branch in `plain-copy.ts` (~1333/1344); make the retirement CSS grep case-insensitive; a test for the `RegisterDetail` onCorrect row.~~ **Done:** each proven callerless by grep and removed (also `ratingInstructionWarning`, `RATING_INSTRUCTION_CONFIRM_LINE`, `ratingConfirmLine`, which only they called); the dead `.graph-view` / `.graph-node*` rules removed (`.graph-node__chip` stays: the register's detail page renders it); the retirement grep rows added in `src/retirement.r18e.test.ts` ignore case; the onCorrect row is tested in `RegisterDetail.r18d2.test.tsx`. The test cases that guarded only the removed code are Superseded rows (TC-R16-E-51..54, TC-CR6-05a, TC-R6-QN-1-01, TC-UC-4-04).
+- ~~R18-E handover's deleted-test audit table has 156 rows against the stated 157 — reconcile.~~ **Done:** the table has 157 rows, numbered 1 to 157 with none missing or repeated; the 156 was a miscount.
+- ~~Docs made false by E (listed in `build/handovers/R18-E.md`): GT7 paragraph in README / user guide / tester guide; user guide model and card passages; try-these; tester guide; regulator brief. The user guide also still promises targeted follow-up questions, which the form route never asks (contradiction review still runs).~~ **Done:** items 1 to 7 of the handover's list are fixed (item 8, a description of "Correct this check" for an older case, was a "G's call" and was not added); the follow-up-questions promise now reads as the contradiction check the app does.

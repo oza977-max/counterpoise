@@ -1,10 +1,8 @@
-import { useEffect, useCallback, useMemo, useReducer, useState, useRef } from 'react';
-import { extractGraph } from '../llm/graph-extractor';
+import { useEffect, useLayoutEffect, useCallback, useMemo, useReducer, useState, useRef } from 'react';
 import { confirmSemanticDuplicate } from '../llm/duplicate-check';
 import { getApiKey } from '../llm/client';
-import { localLlmEnabled } from '../llm/local-provider';
 import { evaluate } from '../engine/evaluate';
-import { normaliseAccessScope, sameAccessScopeSet } from '../engine/access-scope';
+import { sameAccessScopeSet } from '../engine/access-scope';
 import { findPossibleDuplicates, matchCorpus } from '../engine/duplicate';
 import { loadPolicy } from '../store/policy';
 import { checkPolicyReferences } from '../store/policy-references';
@@ -18,12 +16,10 @@ import { routeToWorkflow } from '../engine/workflow-router';
 import type { DataFlowGraph, GraphCorrection, IntakeQuestion, PolicyFile } from '../engine/types';
 import type { Verdict } from '../types/verdict';
 import type { AuditEvent, LifecycleStage, UseCaseSummary } from '../store/types';
-import { coerceAnswerValue, generateQuestions, questionsForGuessedFields } from '../engine/question-generator';
+import { coerceAnswerValue, generateQuestions } from '../engine/question-generator';
 import { detectContradictions } from '../engine/contradiction';
-import { plausibilityWarnings } from '../engine/plausibility';
 import { findPrecedents } from '../engine/precedent';
 import type { PrecedentCandidate } from '../engine/precedent';
-import SimilarCases from './SimilarCases';
 import type { EnrichedPrecedent } from './SimilarCases';
 import { matchKnowledgeLens } from '../engine/knowledge-lens';
 import { applyReattestExpiry, computeStaleSources } from '../engine/temporal';
@@ -33,30 +29,52 @@ import KnowledgeLensPanel from './KnowledgeLensPanel';
 import { append as appendAuditEvent, getAll as getAuditEvents } from '../store/audit';
 import { generateReasoningTraceForVerdict } from '../llm/reasoning-trace';
 import { findRuleDescription } from '../engine/find-rule-description';
-import { intakeReducer, nextReviewStep, contradictionKey, planCorrectionWrites, graphValueResolver } from './intake-state';
-import { saveDraft, loadDraft, loadDraftInfo, clearDraft, clearDraftIfCase, clearFormDraft } from './intake-draft';
+import { intakeReducer, contradictionKey, planCorrectionWrites, graphValueResolver } from './intake-state';
+import { saveDraft, loadDraft, loadDraftInfo, clearDraft, clearDraftIfCase, clearFormDraft, loadFormDraft, updateFormDraft } from './intake-draft';
 import type { IntakeState } from './intake-state';
 import StructuredForm from './StructuredForm';
+import ChecklistPanel from './ChecklistPanel';
+import NudgeNote, { appendExample } from './NudgeNote';
+import RatingInstructionNotice from './RatingInstructionNotice';
+import ModelStatus from './ModelStatus';
+import MakeItSmarter from './MakeItSmarter';
+import TryExample from './TryExample';
+import { CHECKLIST_ITEM_IDS, mentionedItems } from '../engine/mentioned';
+import type { MentionJurisdiction } from '../engine/mentioned';
 import type { Assumption, PlainAnswers } from './plain-copy';
+import type { ChecklistItemId, FormAnswerState, LastRead, PrefillOutcome } from '../engine/prefill-types';
+import { textFingerprint } from '../engine/form-answer-state';
+import { mergePrefill } from '../engine/form-visibility';
+import { buildCatalogue, QUESTION_STRUCTURE } from '../engine/question-structure';
+import { verifyPrefill } from '../engine/prefill-verify';
+import { modelSettingState } from '../llm/model-setting';
+import type { ModelSetting } from '../llm/model-setting';
+import { useReadingAttempt } from './useReadingAttempt';
+import { useModelSetting } from './useModelSetting';
 import {
-  extractionErrorMessage,
-  EXTRACTION_ERROR_HELP,
   engineErrorMessage,
   POLICY_PROBLEM_MESSAGE,
   questionnaireCopyForField,
   vendorNotOnListValue,
   VENDOR_UNSURE_VALUE,
   VENDOR_UNSURE_ASSUMPTION,
-  ratingInstructionWarning,
+  R18_COPY,
+  QUESTION_WORDS,
+  formReadNote,
+  placeSentence,
 } from './plain-copy';
 import { findRatingInstructions } from '../engine/rating-instructions';
 import { formCorrections } from './form-corrections';
-import GraphView from './GraphView';
+import { correctionOpening, effectiveDescription, isRebuiltFromEarlierRecord } from './correction-from-record';
+import type { CorrectionOpening } from './correction-from-record';
+import { currentVerdictAttestationFields } from './RegisterDetail';
+import { toAnswerSources } from '../engine/answer-sources';
 import StepTracker, { describeStep } from './StepTracker';
 import QuestionnaireStep from './QuestionnaireStep';
 import ContradictionReview from './ContradictionReview';
 import ConfirmationStep from './ConfirmationStep';
 import VerdictDisplay from './VerdictDisplay';
+import StatusAfterMount from './StatusAfterMount';
 // Rule 4 (cross-cutting.md §7): presentation-only. No business logic inline
 // — calls engine/store/llm functions. Real 9-state machine (intake-flow.md
 // §3) as of P4-C04 — every state through confirmation/attestation is real.
@@ -81,22 +99,23 @@ const CONFIRMATION_REFUSAL_MESSAGE: Record<ConfirmationRefusal, string> = {
   // on a later visit, with no other tab or window involved at all. Says
   // only what is known to be true.
   'already-decided': 'This case already has a result. Open it from the register to see it.',
+  // R18-D2 review pass 2: the same refusal is reached when THIS tab's correction was saved and a later step
+  // (the register update) failed, so "another tab" and "wasn't saved" could both be false. Says only what is known.
   'corrected-elsewhere':
-    "This result was corrected in another tab or window while you were working, so your correction wasn't saved. Open the case from the register to see the current result.",
+    'This case already has a newer result than the one you were correcting, so nothing more was recorded. Open the case from the register to see the current result.',
 };
 
 // CR7-21/22 and the count of corrections on the trail: planCorrectionWrites
 // (intake-state.ts, pure and unit-tested).
 
-// GT7 L-1 (P12). Rating instructions are looked for on the DESCRIPTION path
-// only — a graph a model read out of the typed description. The form path's
-// "In a sentence or two" text is never read by a model, so it gets no warning.
-// GB pass-1 C: called up to three times per render, so the (pure) result is
-// remembered for the last description seen.
+// GT7 L-1 (P12), R18-C2 (spec §27.4). Rating instructions are looked for in the DESCRIPTION alone
+// (findRatingInstructions needs no graph), on every route: the form path's description is the same text the
+// description screen warned about. Called up to three times
+// per render, so the (pure) result is remembered for the last description seen.
 let lastRatingKey: string | undefined;
 let lastRatingFound: string[] = [];
-function ratingInstructionsFor(graph: { intake_method: string }, description: string | undefined): string[] {
-  if (graph.intake_method !== 'llm' || !description) return [];
+function ratingInstructionsFor(description: string | undefined): string[] {
+  if (!description) return [];
   if (description !== lastRatingKey) {
     lastRatingFound = findRatingInstructions(description);
     lastRatingKey = description;
@@ -104,7 +123,16 @@ function ratingInstructionsFor(graph: { intake_method: string }, description: st
   return lastRatingFound;
 }
 
-export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?: number } = {}) {
+export default function IntakeFlow({
+  newPrecheckNonce = 0,
+  correctionRequest = null,
+  onCorrectionOpened,
+}: {
+  newPrecheckNonce?: number;
+  // R18-D2 (§27.10): a case the register asked to reopen on the form. Taken once; see the effect below.
+  correctionRequest?: CorrectionOpening | null;
+  onCorrectionOpened?: () => void;
+} = {}) {
   // explore-001 D-002/D-003: restore any in-flight draft so a refresh,
   // browser Back, or a trip to the Register mid-intake no longer discards
   // the description, the guided-form answers and the extracted graph.
@@ -134,11 +162,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // to, with no explanation — the same class of surprise NF-2 exists to
   // prevent. Say what happened and offer a way out.
   const [showResumed, setShowResumed] = useState(restoredDraft.current);
-  // CR7-28. True when the restored draft is NOT what was saved: a questions
-  // draft from before CR6 (description path) came back as the review screen
-  // (intake-draft.ts). Said plainly — the person was part-way through the
-  // questions and is now at the review screen again.
-  const [showMigrated, setShowMigrated] = useState(() => loadDraftInfo()?.migratedFromOldBuild === true);
+  // R18-NF-5. True when the restored draft was saved by an earlier version (or
+  // could not be used) and came back as the form with the description kept and no
+  // answers (intake-draft.ts). Computed once at load, never stored, so it shows
+  // once; cleared as soon as the person leaves the form.
+  const [showEarlierVersion, setShowEarlierVersion] = useState(
+    () => loadDraftInfo()?.earlierVersionNotice === true,
+  );
 
   // CR6-02 (Critical). One "attempt" is one run through intake, from a
   // fresh description to Start Over. Bumped by handleStartOver, by
@@ -153,6 +183,19 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // lets handleStartOver below safely release the in-flight refs instead
   // of waiting for abandoned work to finish on its own first.
   const attemptToken = useRef(0);
+
+  // R18-C2 (specs/intake-flow.md §27.5): the reading step. useReadingAttempt owns ONE attempt at a time (the
+  // synchronous in-flight guard, the 30 s budget, skip, the setting-change signals, the late-reply no-op).
+  // startReading is called from HANDLERS only (Continue on the similar-cases screen, Next on an unchanged
+  // decision, "Read my description again") - never from an effect, so StrictMode cannot make a second call.
+  const readingAttempt = useReadingAttempt();
+  const modelSnapshot = useModelSetting();
+  // Skip and Read-again write state and start a call; a state update lands too late to stop a second press,
+  // so each has a synchronous guard (the same lesson as the 2LoD actions and confirmInFlight).
+  const skipInFlight = useRef(false);
+  const readAgainInFlight = useRef(false);
+  // The outcome already turned into a PREFILL_DONE, so an effect that re-runs cannot dispatch it twice.
+  const handledOutcome = useRef<PrefillOutcome | null>(null);
 
   // Set once the classification has been adopted (declared up here because
   // canStepBack, below, reads it).
@@ -181,13 +224,33 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newPrecheckNonce]);
 
+  // R18-D2 (§27.10): open the case the register handed over, once. The caller is the register, so whatever this
+  // tab held is replaced: handleStartOver clears both drafts and every guard (the same reset "Start over" makes),
+  // then the reducer opens the form as a correction (OPEN_CORRECTION_FROM_RECORD). Nothing is written here; the
+  // only audit write of a correction is Confirm. A ref keeps StrictMode's second effect run from opening it twice.
+  const openedCorrection = useRef<CorrectionOpening | null>(null);
+  // R18-D2 review pass 1: the questions whose recorded answer the form no longer offers, left blank on a restore.
+  // The form says so in one note; it belongs to the case just opened, so Start over clears it.
+  const [restoreDropped, setRestoreDropped] = useState<string | null>(null);
+  useEffect(() => {
+    if (correctionRequest === null || openedCorrection.current === correctionRequest) return;
+    openedCorrection.current = correctionRequest;
+    handleStartOver();
+    setSubmittedDescription(correctionRequest.description);
+    const { droppedNote, ...opening } = correctionRequest;
+    dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...opening });
+    setRestoreDropped(droppedNote);
+    onCorrectionOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [correctionRequest]);
+
   function handleStartOver() {
+    setRestoreDropped(null);
     // Final review M-1: a failed-save message belongs to the case it was
     // about — never carried onto the next one.
     setDecisionError(null);
     // CR7-24: the previous screen's gate error line belongs to that screen.
     setReviewGateError(null);
-    setShowMigrated(false);
     // CR6-02 (Critical). Bumped FIRST: any async handler/effect from the
     // abandoned attempt that resumes after this point (its own await
     // having been in flight when Start Over was clicked) will see its own
@@ -207,15 +270,18 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // here without remounting this component. Found by the R16-W
     // walkthrough's second submission in one tab.
     confirmInFlight.current = false;
+    // R18-C2: Start over stops a read in progress and frees its guards.
+    readingAttempt.release();
+    skipInFlight.current = false;
+    readAgainInFlight.current = false;
     // CR6-02 (Critical). handleStartOver used to release ONLY the guard
-    // above — dupCheckInFlight/confirmNewInFlight/retryExtractionInFlight/
+    // above — dupCheckInFlight/confirmNewInFlight/
     // adoptInFlight stayed set until their OWN pending call's `finally`
     // ran, so Start Over while any of them was still in flight left the
     // IDENTICAL handler on the NEW case reading a guard that was never
     // reset and silently doing nothing. Released together here.
     dupCheckInFlight.current = false;
     confirmNewInFlight.current = false;
-    retryExtractionInFlight.current = false;
     adoptInFlight.current = false;
     setDecisionPending(false);
     formSubmitInFlight.current = false;
@@ -226,10 +292,6 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // checks…" forever.
     setDuplicateCheckDone(false);
     setDuplicateMatch(null);
-    // CR6-14 (Important): an extraction error belongs to the attempt that
-    // set it — it must not still be showing when a fresh case's own
-    // (pending) extraction has not even had a chance to succeed or fail.
-    setExtractionError(null);
     // I-4 (FX-2 review): the adopted-result screen and a failed-evaluation
     // message also belong to the abandoned case.
     setAdoptedFrom(null);
@@ -250,18 +312,16 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // FX-2 pass 2 (I-2): an adopted result is a finished case, not an open step.
     !adoptedFrom &&
     (state.step === 'duplicate_check' ||
-      state.step === 'graph_review' ||
-      state.step === 'questionnaire') &&
-    // No Back on a correction pass's ENTRY step — the reducer refuses it
-    // (see STEP_BACK), and a control that does nothing is the false-affordance
-    // defect FN-006 existed to kill. Deeper correction steps (questionnaire →
-    // graph_review) still step back normally: that stays inside the audited
-    // correction, originalVerdictId intact.
-    //
-    // F-2 (DR7-04): a re-entry after a genuine evaluation failure
-    // (afterFailedEvaluation) gets the identical treatment, for the
-    // identical reason — the reducer refuses it too (see STEP_BACK).
-    !(state.step === 'graph_review' && (state.originalVerdictId || state.afterFailedEvaluation));
+      // R18-C2 (§27.1): Back from the reading step releases the read and returns to the description.
+      state.step === 'prefill_reading' ||
+      state.step === 'questionnaire' ||
+      // R18-A (§27.1): the form of a FRESH case. A form that carries a case id,
+      // a correction or an after-failure flag has no Back (the reducer refuses it too).
+      (state.step === 'graph_extraction' &&
+        state.method === 'form' &&
+        state.useCaseId === undefined &&
+        state.originalVerdictId === undefined &&
+        state.afterFailedEvaluation !== true));
 
   function handleStepBack() {
     // Final review M-1: a failed-save message belongs to the case it was
@@ -292,7 +352,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // let Back -> Next -> "Use the earlier result" start a second adoption
     // while the first landed invisibly.
     attemptToken.current += 1;
-    retryExtractionInFlight.current = false;
+    // R18-C2: Back stops a read in progress (a late reply is then a no-op) and frees its two guards.
+    readingAttempt.release();
+    skipInFlight.current = false;
+    readAgainInFlight.current = false;
     // CR7-24: the screen being left may have shown a gate error ("N cards
     // still need checking"); it must not greet the next screen.
     setReviewGateError(null);
@@ -318,6 +381,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   const [lastConfirmed, setLastConfirmed] = useState<{
     assumptions: Assumption[];
     plainAnswers?: PlainAnswers;
+    // R18-A: the form's own answer state, handed back to the form on a correction.
+    answerState?: FormAnswerState;
+    // R18-C2: what the model last read, handed back to the form with the answers on a correction.
+    lastRead?: LastRead;
     // CR7-02: so a correction from the result can hand the frozen uncertain
     // list back to the review screen along with the assumptions.
     uncertainNodeIds?: string[];
@@ -335,7 +402,6 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     label: string;
   } | null>(null);
   const [duplicateCheckDone, setDuplicateCheckDone] = useState(false);
-  const [extractionError, setExtractionError] = useState<string | null>(null);
   // Set once the classification has been adopted — the flow ends here rather
   // than continuing to intake questions (TC-UC-2-02).
   const [evaluationError, setEvaluationError] = useState<string | null>(null);
@@ -385,14 +451,18 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // R16-W W-4: StructuredForm's own `initialAnswers` prop — present only on
   // a resubmission (CHANGE_ANSWER or the form-path STEP_BACK set it).
   const formInitialAnswers: PlainAnswers | undefined = 'plainAnswers' in state ? state.plainAnswers : undefined;
-  // F-7 (DR7-07). Was a useState, captured while on graph_review and
-  // frozen there — a refresh on confirmation lost it (the draft only ever
-  // persisted IntakeState, same bug class W-4 already fixed for
-  // plainAnswers/assumptions). Now read directly off the reducer state,
-  // which carries it forward from QUESTIONS_GENERATED onward
-  // (intake-state.ts) — the draft's existing persistence covers it for
-  // free. Naturally [] for every form-path run, since the form never sets
-  // guessedFields.
+  const formInitialAnswerState: FormAnswerState | undefined = 'answerState' in state ? state.answerState : undefined;
+  // The "Read my description again" button is on screen only on a fresh case with a valid model setting.
+  // The note above the form and the button share this one value, so the note never names a missing control.
+  const readAgainShown =
+    state.step === 'graph_extraction' &&
+    state.useCaseId === undefined &&
+    state.originalVerdictId === undefined &&
+    state.afterFailedEvaluation !== true &&
+    modelSnapshot.ready &&
+    modelSnapshot.state.kind === 'valid';
+  // F-7 (DR7-07). Read directly off the reducer state, so a refresh keeps it
+  // (the draft persists IntakeState). Empty on the one remaining route.
   const uncertainNodeIds: string[] = 'uncertainNodeIds' in state ? state.uncertainNodeIds ?? [] : [];
   // R8-SC: similar decided cases, enriched with each match's controls read
   // from its own audit trail (3 reads max — the ranked top three only).
@@ -415,7 +485,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // R16-B: StructuredForm now takes the whole PolicyFile (it reads
   // platforms/vendors/jurisdictions/approved_models itself). An invalid
   // policy is already a best-effort-only condition elsewhere in this file
-  // (handleProceedFromGraphReview throws rather than render a usable
+  // (the gates refuse with a message rather than render a usable
   // screen); this minimal stand-in just keeps the form's own render from
   // crashing on a missing object — every dynamic option list it drives
   // reads as empty, same degraded behaviour the old per-field props had.
@@ -503,11 +573,40 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     void refreshRegister();
   }, [refreshRegister]);
 
+  // R18-GI-1/-2 (specs/intake-flow.md §27.2-27.3). The checklist's rule needs
+  // the policy's jurisdiction codes (a code like "UK" counts only as a capital-
+  // letter code); an unusable policy simply has none.
+  const mentionJurisdictions = useMemo<MentionJurisdiction[]>(
+    () => (policyResult.valid ? policyResult.policy.jurisdictions.map((j) => ({ code: j.code, name: j.name })) : []),
+    [policyResult],
+  );
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  // The items the description leaves unmentioned, as sorted ids — what the first
+  // Next press lists (nudgeFor) and what the second is compared with.
+  const unmentionedNow: ChecklistItemId[] = useMemo(() => {
+    if (state.step !== 'description_entry') return [];
+    const mentioned = mentionedItems(state.description, mentionJurisdictions);
+    return CHECKLIST_ITEM_IDS.filter((id) => !mentioned.has(id)).sort();
+  }, [state, mentionJurisdictions]);
+
   function handleSubmitDescription() {
     // Final review M-1: a failed-save message belongs to the case it was
     // about — never carried onto the next one.
     setDecisionError(null);
     if (state.step !== 'description_entry') return;
+    // Blank (empty or only Unicode whitespace) cannot continue; one character can.
+    if (state.description.trim() === '') return;
+    // The nudge (§27.3): the first press lists what is unmentioned and stays; the
+    // second proceeds only if the unmentioned set is still the one listed. With
+    // everything mentioned there is nothing to list.
+    if (unmentionedNow.length > 0) {
+      const listed = state.nudgeFor;
+      const same = listed !== undefined && listed.length === unmentionedNow.length && listed.every((id, i) => id === unmentionedNow[i]);
+      if (!same) {
+        dispatch({ type: 'NUDGE_SHOWN', nudgeFor: unmentionedNow });
+        return;
+      }
+    }
     // CR6-02f: entering a new duplicate check is a new attempt — anything
     // still running for an earlier description is dropped when it lands.
     attemptToken.current += 1;
@@ -516,7 +615,117 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     setSubmittedDescription(state.description);
     setDuplicateMatch(null);
     setDuplicateCheckDone(false);
+    // R18-C2: the similar-cases screen was already passed for exactly this text (a Back from the form or
+    // the reading step): the reducer goes straight on, and this is where the read is decided - once, here,
+    // from a handler. An unchanged text that was read (or whose read failed) is not read again.
+    if (state.decidedFor !== undefined && state.decidedFor === textFingerprint(state.description)) {
+      const plan = planRead(state.description, state.lastRead);
+      if (plan.kind === 'read') {
+        dispatch({ type: 'SUBMIT_DESCRIPTION', reading: true });
+        startRead(state.description, plan.setting);
+      } else if (plan.kind === 'none') {
+        updateFormDraft({ lastRead: plan.lastRead });
+        dispatch({ type: 'SUBMIT_DESCRIPTION', lastRead: plan.lastRead });
+      } else {
+        dispatch({ type: 'SUBMIT_DESCRIPTION' });
+      }
+      return;
+    }
     dispatch({ type: 'SUBMIT_DESCRIPTION' });
+  }
+
+  // ---- R18-C2: deciding, starting and finishing a read (specs/intake-flow.md §27.5, §27.6) ----
+
+  type ReadPlan =
+    | { kind: 'unchanged' }
+    | { kind: 'read'; setting: ModelSetting }
+    | { kind: 'none'; lastRead: LastRead };
+
+  /** Whether this description needs a read. An unchanged fingerprint makes NO call, even after a submit and
+   *  a Back (the reducer carries lastRead). With no usable model nothing is read and the form says why. */
+  function planRead(description: string, lastRead: LastRead | undefined): ReadPlan {
+    if (lastRead !== undefined && lastRead.fingerprint === textFingerprint(description)) return { kind: 'unchanged' };
+    const stored = modelSettingState();
+    if (stored.kind === 'valid' && policyResult.valid) return { kind: 'read', setting: stored.setting };
+    return {
+      kind: 'none',
+      lastRead: { fingerprint: '', outcome: stored.kind === 'invalid' ? 'invalid-setting' : 'not-configured' },
+    };
+  }
+
+  /** Starts the read. Called from handlers only. `setting` was read from storage a moment ago (a snapshot). */
+  function startRead(description: string, setting: ModelSetting) {
+    if (!policyResult.valid) return;
+    const policy = policyResult.policy;
+    const catalogue = buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, policy);
+    skipInFlight.current = false;
+    handledOutcome.current = null;
+    readingAttempt.startReading({
+      description,
+      setting,
+      catalogue,
+      verify: (raw) => verifyPrefill(raw, catalogue, description, policy),
+    });
+  }
+
+  /** The read ended: merge a pre-fill into the form's answers, write them to the form draft BEFORE the form
+   *  mounts (so a stale draft can never beat a fresh read), then move on. Nothing is written to the audit
+   *  trail, ever, for a read. */
+  function finishReading(outcome: PrefillOutcome) {
+    if (state.step !== 'prefill_reading' || !policyResult.valid) return;
+    const policy = policyResult.policy;
+    const fingerprint = textFingerprint(state.description);
+    // The form draft is strictly newer than the reducer's copy (it is what the person was last doing).
+    const base: FormAnswerState = loadFormDraft()?.answerState ?? state.answerState ?? {};
+    let answerState = base;
+    let lastRead: LastRead;
+    if (outcome.kind === 'ok') {
+      const catalogue = buildCatalogue(QUESTION_STRUCTURE, QUESTION_WORDS, policy);
+      answerState = mergePrefill(base, outcome.prefill, catalogue, policy, outcome.snapshot);
+      lastRead = { fingerprint, outcome: 'ok', read: outcome.snapshot };
+    } else {
+      lastRead = { fingerprint, outcome: outcome.reason, ...(outcome.snapshot ? { read: outcome.snapshot } : {}) };
+    }
+    updateFormDraft({ answerState, lastRead });
+    skipInFlight.current = false;
+    readAgainInFlight.current = false;
+    dispatch({ type: 'PREFILL_DONE', answerState, lastRead });
+  }
+
+  useEffect(() => {
+    const outcome = readingAttempt.outcome;
+    if (outcome === null || state.step !== 'prefill_reading') return;
+    if (handledOutcome.current === outcome) return;
+    handledOutcome.current = outcome;
+    finishReading(outcome);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingAttempt.outcome, state]);
+
+  // The reducer's copy of lastRead seeds the form draft when the draft is gone (FORM_SUBMITTED clears it), BEFORE
+  // the form's own save effect runs (layout effects run first), so the draft and the reducer agree (TC-R18-GI-8-11).
+  useLayoutEffect(() => {
+    if (state.step !== 'graph_extraction' || !state.lastRead) return;
+    if (loadFormDraft() === null) updateFormDraft({ answerState: state.answerState ?? {}, lastRead: state.lastRead });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.step]);
+
+  function handleSkipReading() {
+    if (skipInFlight.current) return;
+    skipInFlight.current = true;
+    readingAttempt.skip();
+  }
+
+  /** "Read my description again": a fresh form back to the reading step, answers kept. */
+  function handleReadAgain() {
+    if (readAgainInFlight.current) return;
+    if (state.step !== 'graph_extraction') return;
+    if (state.useCaseId !== undefined || state.originalVerdictId !== undefined || state.afterFailedEvaluation === true) return;
+    const stored = modelSettingState();
+    if (stored.kind !== 'valid' || !policyResult.valid) return;
+    readAgainInFlight.current = true;
+    // The form's answers are in its draft (it saves every change); hand them to the reading step as well.
+    dispatch({ type: 'READ_AGAIN' });
+    startRead(state.description, stored.setting);
   }
 
   // explore-005 D-001 (Critical). The check used to run inside
@@ -611,8 +820,6 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // too late — the same lesson as P7-C01's seed guard and the 2LoD actions
   // (verified: src/components/RegisterDetail.tsx:76).
   const confirmNewInFlight = useRef(false);
-  // code-review-004 F17: fresh ref — must reset independently of the others.
-  const retryExtractionInFlight = useRef(false);
   // R16-W W-3/W-4 (§1): guards the form's own Continue click. Since R16-F
   // F-3 that click writes nothing (use_case_created moved to Confirm) and the
   // reducer ignores a second FORM_SUBMITTED once the step has moved on, so
@@ -620,33 +827,9 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // await is ever added back.
   const formSubmitInFlight = useRef(false);
 
-  // CR7-28 (M-1): the migration notice belongs to the review screen it
-  // explains; once the person leaves it, it must not come back on return.
   useEffect(() => {
-    if (state.step !== 'graph_review') setShowMigrated(false);
+    if (state.step !== 'graph_extraction') setShowEarlierVersion(false);
   }, [state.step]);
-
-  // CR7-01 (BC-004: a restored draft). A draft saved while the description was
-  // being read — `graph_extraction` on the LLM path — restores to "Reading your
-  // description…" with nothing running and no control on screen: the extractor
-  // is called only from handleConfirmNewUseCase and handleRetryExtraction, and
-  // a reload kills the call that was in flight. So: once, on mount, and ONLY
-  // when this state came back from a saved draft, start the extraction again
-  // through the retry handler (which has its own synchronous in-flight guard,
-  // so StrictMode's double-invoked effect still makes exactly one call, and
-  // which shows the Try again panel if the key or local model has since gone).
-  // Known and accepted: if the component is REMOUNTED while that extraction is
-  // still in flight (a trip to the Register and back), the new mount starts a
-  // second call; the first one's result is orphaned and discarded by the
-  // attempt token / unmounted state, never dispatched into the new mount.
-  // It must NOT fire on the ordinary path: there handleConfirmNewUseCase
-  // dispatches NO_DUPLICATE_FOUND and then calls extractGraph itself.
-  useEffect(() => {
-    if (!restoredDraft.current) return;
-    if (state.step !== 'graph_extraction' || state.method !== 'llm') return;
-    void handleRetryExtraction();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function handleConfirmNewUseCase() {
     if (state.step !== 'duplicate_check') return;
@@ -668,7 +851,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // CR6-02 (Critical): captured before any await — every dispatch/
     // setState below checks it is still current before firing, so Start
     // Over abandoning THIS call (e.g. while the audit write or the
-    // extraction below is still pending) never lets its late result land
+    // read below is still pending) never lets its late result land
     // on whatever case is on screen by the time it resolves.
     const myAttempt = attemptToken.current;
     try {
@@ -705,45 +888,29 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         return;
       }
     }
-    // The dismissal write is done; the extraction below is covered by the
-    // ordinary Start over/Retry handling, which must stay usable. An
+    // The dismissal write is done; the read below is covered by the
+    // ordinary Start over handling, which must stay usable. An
     // abandoned attempt leaves the lock alone — Start over already cleared
     // it, and it may now belong to the new case's own write (TC-CR6-02j).
     if (attemptToken.current !== myAttempt) return;
     setDecisionPending(false);
 
-    // The LLM intake path exists if EITHER extractor is configured — the
-    // Anthropic key or a local open model. Which one runs is decided inside
-    // extractGraph (key wins); this flag only picks the intake route.
-    const hasLlm = getApiKey() !== null || localLlmEnabled();
-    dispatch({ type: 'NO_DUPLICATE_FOUND', method: hasLlm ? 'llm' : 'form' });
-
-    if (!hasLlm) {
-      // P4-C02: structured-form fallback (UC-3a) rendered in graph_extraction.
-      return;
-    }
-
-    // CR6-14 (Important): clears any error left by an earlier, abandoned
-    // case's own extraction before this one even starts — otherwise this
-    // fresh (pending) extraction briefly reads as the PREVIOUS case's
-    // failure, which it has not had a chance to be.
-    setExtractionError(null);
-    const extraction = await extractGraph(state.description);
-    if (attemptToken.current !== myAttempt) return;
-    if (!extraction.ok) {
-      setExtractionError(extractionErrorMessage(extraction.error.kind));
-      return;
-    }
-    {
-      const parted = partitionJurisdictions(extraction.value.graph);
-      dispatch({
-        type: 'GRAPH_EXTRACTED',
-        graph: parted.graph,
-        useCaseId: crypto.randomUUID(),
-        ignoredJurisdictions: parted.ignored,
-        provenance: extraction.value.provenance,
-        guessedFields: extraction.value.guessed,
-      });
+    // R18-A/E (specs/intake-flow.md §27.1, R18-GI-10): ONE route. Passing the
+    // similar-cases screen always opens the guided form - the description is
+    // never read to build a graph, whatever key or model may be set (the
+    // similar-cases check above can still send it to Anthropic when
+    // aigate:api-key is stored).
+    // R18-C2: the description is read here, from this handler, when a model is set and the text has not
+    // been read; otherwise the form opens with the one honest sentence for why nothing was filled in.
+    const plan = planRead(state.description, state.lastRead);
+    if (plan.kind === 'read') {
+      dispatch({ type: 'NO_DUPLICATE_FOUND', method: 'form', reading: true });
+      startRead(state.description, plan.setting);
+    } else if (plan.kind === 'none') {
+      updateFormDraft({ lastRead: plan.lastRead });
+      dispatch({ type: 'NO_DUPLICATE_FOUND', method: 'form', lastRead: plan.lastRead });
+    } else {
+      dispatch({ type: 'NO_DUPLICATE_FOUND', method: 'form' });
     }
     } finally {
       // CR6-02g / TC-CR6-02j: release the guard AND the decision lock only
@@ -866,122 +1033,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     }
   }
 
-  // R5-GX-1 (ADR-IF-R5-2). The extractor is schema-bound for every
-  // classified field EXCEPT jurisdictions (free strings by design — the
-  // known set is policy-scoped, not canonical). The live model returned
-  // "Internal" as a jurisdiction on its second real run; unrecognised
-  // values are removed here, before the human sees the graph, and surfaced
-  // on the review screen so the removal is never a silent edit.
-  function partitionJurisdictions(graph: DataFlowGraph): { graph: DataFlowGraph; ignored: string[] } {
-    if (!policyResult.valid) return { graph, ignored: [] };
-    const known = new Set(policyResult.policy.jurisdictions.map((j) => j.code));
-    // Sweep-001: models sometimes emit empty-string jurisdictions. Nothing
-    // was claimed, so nothing is reported — dropped silently, unlike real
-    // unrecognised values which stay visible.
-    const claimed = graph.jurisdictions.filter((j) => j.trim() !== '');
-    const ignored = claimed.filter((j) => !known.has(j));
-    if (ignored.length === 0 && claimed.length === graph.jurisdictions.length) return { graph, ignored };
-    return { graph: { ...graph, jurisdictions: claimed.filter((j) => known.has(j)) }, ignored };
-  }
-
-  // Code review round 3, Panel C. The only exit from a failed extraction.
-  // code-review-004 F17: guarded like every sibling handler — this was the
-  // one async handler without an in-flight ref, so a fast double-click
-  // fired two concurrent extractGraph() calls racing to dispatch, each with
-  // its own fresh useCaseId; last-to-resolve silently won.
-  async function handleRetryExtraction() {
-    if (state.step !== 'graph_extraction') return;
-    if (retryExtractionInFlight.current) return;
-    retryExtractionInFlight.current = true;
-    // CR6-02 (Critical): see handleConfirmNewUseCase's identical comment.
-    const myAttempt = attemptToken.current;
-    try {
-      setExtractionError(null);
-      const extraction = await extractGraph(state.description);
-      if (attemptToken.current !== myAttempt) return;
-      if (!extraction.ok) {
-        setExtractionError(extractionErrorMessage(extraction.error.kind));
-        return;
-      }
-      const parted = partitionJurisdictions(extraction.value.graph);
-      dispatch({
-        type: 'GRAPH_EXTRACTED',
-        graph: parted.graph,
-        useCaseId: crypto.randomUUID(),
-        ignoredJurisdictions: parted.ignored,
-        provenance: extraction.value.provenance,
-        guessedFields: extraction.value.guessed,
-      });
-    } finally {
-      if (attemptToken.current === myAttempt) retryExtractionInFlight.current = false;
-    }
-  }
-
-  // R16-E §5 (D-104, DR7-30/AB-1). The extraction error's own second
-  // button: switches to the guided form without losing what was typed —
-  // `SWITCH_TO_FORM` is a pure method flip, and StructuredForm's own
-  // `initialDescription` prop already pre-fills question 2 from it.
-  function handleAnswerQuestionsInstead() {
-    setExtractionError(null);
-    dispatch({ type: 'SWITCH_TO_FORM' });
-  }
-
-  function handleCorrectNode(nodeId: string, field: string, correctedValue: unknown) {
-    if (state.step !== 'graph_review') return;
-    const graph = state.graph;
-    const allNodes = [...graph.input_nodes, ...graph.processing_nodes, ...graph.output_nodes];
-    const node = allNodes.find((n) => n.id === nodeId) as Record<string, unknown> | undefined;
-    if (!node) return;
-    const originalValue = node[field];
-
-    // §4 (DR7-11): defence in depth — validated again through the SAME
-    // single checker GraphView's own tick-all editor already calls (a
-    // refusal here should be unreachable through that editor, but this
-    // function is `onCorrect`, a prop any caller can invoke), and
-    // compared by SET CONTENT rather than reference so re-saving the
-    // identical set of ticked kinds is not recorded as a correction.
-    if (field === 'system_access_scope') {
-      const result = normaliseAccessScope(correctedValue);
-      if (!result.ok) return;
-      correctedValue = result.value;
-      if (sameAccessScopeSet(originalValue, correctedValue)) return;
-    }
-
-    const updatedGraph = {
-      ...graph,
-      version: graph.version + 1,
-      input_nodes: graph.input_nodes.map((n) => (n.id === nodeId ? { ...n, [field]: correctedValue } : n)),
-      processing_nodes: graph.processing_nodes.map((n) =>
-        n.id === nodeId ? { ...n, [field]: correctedValue } : n,
-      ),
-      output_nodes: graph.output_nodes.map((n) => (n.id === nodeId ? { ...n, [field]: correctedValue } : n)),
-    };
-
-    const correction: GraphCorrection = {
-      correction_id: crypto.randomUUID(),
-      graph_version_before: graph.version,
-      graph_version_after: updatedGraph.version,
-      node_id: nodeId,
-      field,
-      // CR7-30: an absent value is recorded as null — `undefined` is dropped
-      // by the trail's serialisation and read back as the word "undefined".
-      original_value: originalValue ?? null,
-      corrected_value: correctedValue ?? null,
-      corrected_by: getRole(),
-      corrected_at: new Date().toISOString(),
-      // R16-D2 §5 (CB-4): this is GraphView's own per-field editor.
-      correction_source: 'review',
-    };
-
-    dispatch({ type: 'CORRECTION_APPLIED', correction, updatedGraph });
-  }
-
   // F-6 (DR7-13). The policy-gate check — a reference error (e.g. a
   // covers_reviews id that doesn't resolve) is an expected-to-happen-
   // during-editing condition (R16-A1 §1.4, CF-5) and comes back as a
-  // reader-facing message. Was written out, nearly identically, in both
-  // handleProceedFromGraphReview and handleFormSubmitted; now one
-  // function, used by both.
+  // reader-facing message.
   // CR6-17 (Important). A malformed policy used to THROW here instead of
   // returning a message — an uncaught exception inside a React event
   // handler is not caught by anything (error boundaries only catch
@@ -1011,91 +1066,15 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     return undefined;
   }
 
-  function handleProceedFromGraphReview() {
-    if (state.step !== 'graph_review') return;
-    // R5-GR-2. Refuse with a message, not a silently disabled button — the
-    // reducer refuses too (QUESTIONS_GENERATED guard), this is the layer
-    // that explains. Counts, not names: the unconfirmed cards are already
-    // visually marked.
-    if (state.unconfirmedNodeIds && state.unconfirmedNodeIds.length > 0) {
-      const n = state.unconfirmedNodeIds.length;
-      setReviewGateError(
-        `${n} card${n === 1 ? '' : 's'} still need checking. We read these from your description — nothing is decided until a person has checked or corrected each one.`,
-      );
-      return;
-    }
-    // R7-JC-2: jurisdictions select which REGULATIONS evaluate — they are
-    // never left model-asserted.
-    if (state.jurisdictionsConfirmed === false) {
-      setReviewGateError(
-        'Check the countries before continuing — they decide which countries’ rules apply.',
-      );
-      return;
-    }
-    const gateError = checkPolicyGate();
-    if (gateError) {
-      setReviewGateError(gateError);
-      return;
-    }
-    // checkPolicyGate() above already returns a message when
-    // !policyResult.valid, so the early return just took it — reaching
-    // here always means policyResult.valid is true. Restated so TS
-    // narrows policyResult.policy below (it cannot see that invariant
-    // across the function-call boundary).
-    if (!policyResult.valid) return;
-    setReviewGateError(null);
-    // R6-QN-1: guessed-field questions ride with the budget-driven ones,
-    // deduplicated by id (a field can be both uncertain-budgeted and
-    // guessed; one question is enough).
-    const budgeted = generateQuestions(state.graph, policyResult.policy, []);
-    const forGuessed = questionsForGuessedFields(state.guessedFields ?? {}, state.graph);
-    const seenIds = new Set(budgeted.map((q) => q.id));
-    const questions = [...budgeted, ...forGuessed.filter((q) => !seenIds.has(q.id))];
-    dispatch({ type: 'QUESTIONS_GENERATED', questions });
-    // UC-6 requires an explicit human confirmation click even with zero
-    // questions (P4-C04) — no more silent auto-evaluation.
-    //
-    // F-6 (DR7-13): the ONE routing rule, shared with the FORM_SUBMITTED
-    // reducer case (intake-state.ts) — questions present (the dispatch
-    // above handles that) first; failing that, a contradiction stops at
-    // its own review; failing that, confirmation.
-    if (questions.length === 0) {
-      // UC-5, found by user-walking the product (2026-08-15): detection ran
-      // only inside handleAnswerSubmitted, so the guided form — which marks
-      // nothing uncertain and therefore generates zero questions — skipped
-      // the questionnaire AND the contradiction check with it. "No client
-      // data at all" in the description plus Client PII in the form reached
-      // attestation unchallenged. The check must gate the SKIP, not just the
-      // answers. Both dispatches below are processed in order: the state is
-      // `questionnaire` by the time CONTRADICTIONS_DETECTED lands, which is
-      // the step the reducer requires.
-      const contradictions = detectContradictions(
-        'description' in state ? state.description : submittedDescription,
-        [],
-        state.graph,
-      );
-      if (nextReviewStep(questions, contradictions) === 'contradiction_review') {
-        dispatch({ type: 'CONTRADICTIONS_DETECTED', contradictions });
-        return;
-      }
-      dispatch({ type: 'PROCEED_TO_CONFIRMATION' });
-    }
-  }
-
-  // R16-W W-3/W-4 (§1, D-69/D-70). The form's own Continue — replaces the
-  // old GRAPH_EXTRACTED dispatch that routed every form submission through
-  // graph_review, which is engine vocabulary a path where the person typed
-  // every value themselves has no business showing (principle 1). Mirrors
-  // handleProceedFromGraphReview's reference-check/questions/contradiction
-  // logic exactly: a form-built graph clears the identical gates a
-  // description-built one does — only the SCREEN it skips differs.
+  // R16-W W-3/W-4 (§1, D-69/D-70). The form's own Continue: the reference
+  // check, the questions and the contradiction check all happen here.
   //
   // Unlike confirmInFlight below, this guard DOES reset in `finally` on
   // every path, including success: a legitimate resubmission (Change an
   // answer, fill in again, Continue) must be able to re-enter this handler
   // a second time for the SAME mounted IntakeFlow, where confirmInFlight's
   // sibling pattern never needs to (that flow leaves confirmation for good
-  // on success; CORRECT_VERDICT is its own, explicit re-arm).
+  // on success; CORRECT_VERDICT_WITH_FORM is its own, explicit re-arm).
   // E-2 (Minor): this comment used to describe a double-click race closed
   // by reading the ref "before the first call's `await appendAuditEvent`
   // has resolved" — stale since F-3 moved that write to Confirm; this
@@ -1103,8 +1082,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // no actual async gap for two clicks to race across. The ref is kept
   // belt-and-braces, so the handler still cannot re-enter if an await is
   // ever added back here.
-  async function handleFormSubmitted(builtGraph: DataFlowGraph, assumptions: Assumption[], plainAnswers: PlainAnswers) {
-    if (state.step !== 'graph_extraction' || state.method !== 'form') return;
+  async function handleFormSubmitted(
+    builtGraph: DataFlowGraph,
+    assumptions: Assumption[],
+    answerState: FormAnswerState,
+    typedDescription: string,
+  ) {
+    if (state.step !== 'graph_extraction') return;
     if (formSubmitInFlight.current) return;
     formSubmitInFlight.current = true;
     // R16-D2 §5. A correction through the form rebuilds the graph from the
@@ -1128,7 +1112,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       }
       // checkPolicyGate() above already returns a message when
       // !policyResult.valid — restated so TS narrows policyResult.policy
-      // below (see the identical comment in handleProceedFromGraphReview).
+      // below.
       if (!policyResult.valid) return;
       setReviewGateError(null);
 
@@ -1138,7 +1122,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       // node and the memo all read it. The first screen's text is only the
       // fallback for an empty answer (question 2 is required, so this is
       // defensive).
-      const answeredDescription = typeof plainAnswers['2'] === 'string' ? plainAnswers['2'].trim() : '';
+      const answeredDescription = typedDescription.trim();
       const description = answeredDescription || state.description;
       setSubmittedDescription(description);
 
@@ -1162,7 +1146,9 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
       // one) are actually in hand; the result rides the same `corrections`
       // field every other path already threads through to
       // runConfirmAndEvaluate's existing per-correction write loop.
-      const corrections = state.originalGraph
+      // R18-E: an older case's stand-in "original" is mostly strict defaults for answers that were never kept, so
+      // nothing is diffed against it: a graph_corrected record would claim original values the case never had.
+      const corrections = state.originalGraph && !isRebuiltFromEarlierRecord(state.originalGraph)
         ? formCorrections(state.originalGraph, graph, { by: getRole(), at: new Date().toISOString(), newId: () => crypto.randomUUID() })
         : [];
       dispatch({
@@ -1170,7 +1156,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         graph,
         useCaseId,
         description,
-        plainAnswers,
+        answerState,
         assumptions,
         questions,
         contradictions,
@@ -1208,15 +1194,11 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   // R8-SC-1/-3: precedents = decided register entries ranked by the pure
   // engine helper; controls enriched from each match's own trail.
   //
-  // R16-W W-3 (§1): also computed on `confirmation` when the graph came
-  // from the guided form — that path no longer passes through
-  // `graph_review` on the way to confirmation (FORM_SUBMITTED skips it),
-  // so if a form-path submitter is ever to see similar decided cases
-  // before attesting, this is the only step left to compute them on.
+  // R16-W W-3 (§1): computed on `confirmation` for a form-built graph - the
+  // only step a submitter can see similar decided cases on before attesting.
   useEffect(() => {
-    const isGraphReview = state.step === 'graph_review';
     const isFormConfirmation = state.step === 'confirmation' && state.graph.intake_method === 'structured_form';
-    if (!isGraphReview && !isFormConfirmation) {
+    if (!isFormConfirmation) {
       setPrecedents([]);
       return;
     }
@@ -1256,12 +1238,10 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     return () => {
       cancelled = true;
     };
-    // Delta review 005 finding 1: a correction updates the graph while the
-    // step stays graph_review (or, now, confirmation) — the version in the
-    // dep re-runs the search so the precedent list always reflects the
-    // graph on screen.
+    // The version in the dep re-runs the search so the precedent list always
+    // reflects the graph on screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.step, state.step === 'graph_review' || state.step === 'confirmation' ? state.graphVersion : -1]);
+  }, [state.step, state.step === 'confirmation' ? state.graphVersion : -1]);
 
   async function handleConfirmAndEvaluate(reviewerNote?: string) {
     if (state.step !== 'confirmation') return;
@@ -1290,6 +1270,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // `assumptions` field.
     const confirmedAssumptions: Assumption[] = 'assumptions' in state && state.assumptions ? state.assumptions : [];
     const confirmedPlainAnswers: PlainAnswers | undefined = 'plainAnswers' in state ? state.plainAnswers : undefined;
+    const confirmedAnswerState: FormAnswerState | undefined = 'answerState' in state ? state.answerState : undefined;
+    const confirmedLastRead: LastRead | undefined = 'lastRead' in state ? state.lastRead : undefined;
     // CR7-02: the frozen "what the description did not say" list, kept beside
     // the assumptions so a correction from the result can hand both back.
     const confirmedUncertainNodeIds: string[] = 'uncertainNodeIds' in state && state.uncertainNodeIds ? state.uncertainNodeIds : [];
@@ -1338,6 +1320,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
             confirmedPlainAnswers,
             confirmedUncertainNodeIds,
             originalGraph,
+            confirmedAnswerState,
+            confirmedLastRead,
           );
         } catch (err) {
           // A legitimate engine/policy failure (e.g. no-track-match) must not
@@ -1346,7 +1330,7 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           setEvaluationError(err instanceof Error ? err.message : String(err));
           dispatch({ type: 'EVALUATION_FAILED' });
           // Released only on failure: a genuine engine error returns the user to
-          // graph_review and they must be able to retry. On success the flow
+          // the form and they must be able to retry. On success the flow
           // leaves the confirmation step entirely, so the guard stays set.
           confirmInFlight.current = false;
           setConfirmPending(false);
@@ -1375,6 +1359,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     confirmedPlainAnswers?: PlainAnswers,
     confirmedUncertainNodeIds: string[] = [],
     originalGraph?: DataFlowGraph,
+    confirmedAnswerState?: FormAnswerState,
+    confirmedLastRead?: LastRead,
   ) {
     // Policy checks come FIRST, before any write (R16-F review pass 1). They
     // used to run after use_case_created/graph_confirmed (or graph_corrected)
@@ -1410,6 +1396,13 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     // graph_confirmed/verdict_produced — the original verdict_produced
     // event is never modified (append-only, per-event UUIDs).
     const isCorrection = Boolean(originalVerdictId);
+
+    // R18-D2 (§27.13 Writer): where every confirmed answer came from, worked out ONCE for this confirm attempt,
+    // here, under the case lock the caller holds, and put on the one event this attempt writes for the
+    // confirmation (graph_confirmed, or verdict_corrected for a correction). There is no other writer. A retry
+    // after a failed evaluation is a new attempt: it comes through here again with the same answerState, so its
+    // own graph_confirmed carries the same sources. Pure and deterministic; nothing here touches the trail.
+    const answerSources = confirmedAnswerState ? toAnswerSources(confirmedAnswerState, typedDescription ?? '', policyResult.valid ? policyResult.policy : undefined) : undefined;
 
     // CR7-21/22. Read once, inside the case lock: which of this confirm's
     // corrections are NOT already on the trail since the last result (see
@@ -1509,17 +1502,19 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // graph_confirmed, which also carries this field — harmless and
           // intended (each confirmation record states what the description
           // said). The review/confirmation warnings show on every pass.
-          // GT7 L-1 (P12): the description path only — the form's sentence is
-          // never read by a model. Written here, on the first confirmation; a
+          // GT7 L-1 (P12), widened by R18-C2 (§27.4): written for form cases too, from the
+          // description alone (no model's reply is consulted). Written here, on the first confirmation; a
           // correction pass (the isCorrection branch above) does not re-flag,
           // by design: the first record already carries it. Spread-if-present.
-          ...(ratingInstructionsFor(graph, typedDescription).length > 0
-            ? { rating_instructions: ratingInstructionsFor(graph, typedDescription) }
+          ...(ratingInstructionsFor(typedDescription).length > 0
+            ? { rating_instructions: ratingInstructionsFor(typedDescription) }
             : {}),
           // R16-D2 §4 (D-81, DR7-16): the "Not sure" answers this
           // confirmation was based on — written only when non-empty, same
           // spread-if-present discipline as the three fields above.
           ...(confirmedAssumptions.length > 0 ? { assumptions: confirmedAssumptions } : {}),
+          // R18-D2 (§27.13): see answerSources above.
+          ...(answerSources ? { answer_sources: answerSources } : {}),
         },
       });
     }
@@ -1571,6 +1566,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
     setLastConfirmed({
       assumptions: confirmedAssumptions,
       plainAnswers: confirmedPlainAnswers,
+      answerState: confirmedAnswerState,
+      ...(confirmedLastRead ? { lastRead: confirmedLastRead } : {}),
       uncertainNodeIds: confirmedUncertainNodeIds,
     });
 
@@ -1636,7 +1633,11 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // wrote — a zero-correction resubmission writes none, and
           // eventDetail (RegisterDetail.tsx) reads this to render it as a
           // re-check rather than implying something changed.
-          corrections_count: correctionsOnTrail,
+          // R18-E: absent for an older case's correction - it has no real original to differ from, and a count of
+          // zero would read "Re-checked - no answers changed", which nobody can know.
+          ...(isRebuiltFromEarlierRecord(originalGraph)
+            ? { corrected_from_earlier_record: true }
+            : { corrections_count: correctionsOnTrail }),
           // F-4 (DR7-12, DR7-16): same spread-if-present discipline as
           // graph_confirmed below — a correction keeps what the person
           // typed, instead of dropping it the way only writing it on a
@@ -1647,6 +1648,14 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           // R16-D2 §4 (D-81): same field as graph_confirmed's, on whichever
           // event recorded THIS correction's own confirmation.
           ...(confirmedAssumptions.length > 0 ? { assumptions: confirmedAssumptions } : {}),
+          // R18-D2 (§27.13): the sources of THIS correction's own confirmation (see answerSources above), and the
+          // description only when it differs from the one now in force - the latest correction's, else the one the
+          // case was created with. A correction that puts the text back therefore writes it, so the register
+          // never keeps showing an older "as corrected" text; one that leaves it alone writes none.
+          ...(answerSources ? { answer_sources: answerSources } : {}),
+          ...(typedDescription !== undefined && typedDescription !== effectiveDescription(existingEvents)
+            ? { description: typedDescription }
+            : {}),
           // R16-D2 §4b (D-97): see the computation above.
           ...(evidenceScope ? { evidence_scope: evidenceScope } : {}),
         },
@@ -1775,20 +1784,16 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
   }
 
   function handleCorrectVerdict() {
-    if (state.step !== 'verdict' || !verdict || !lastGraph) return;
+    if (state.step !== 'verdict' || !verdict) return;
     // Re-entering the flow for a correction pass means confirmation will be
     // reached again, so the D-001 guard must be released. Missing this made
     // the correction path silently un-confirmable — caught by the P5-C01
     // test, which is why that test earns its keep.
     confirmInFlight.current = false;
-    // R16-D2 §5 (D-82, DR7-17). A form-built verdict whose confirmation
-    // answers are still in hand re-enters at the FORM itself — graph_review
-    // is engine vocabulary principle 1 bans from a path the person typed
-    // every value through themselves. Falls back to today's CORRECT_VERDICT
-    // (graph_review) when either is missing — an older verdict predating
-    // lastConfirmed, or a form-built graph last confirmed through the
-    // review screen rather than the form.
-    if (lastConfirmed?.plainAnswers && lastGraph.intake_method === 'structured_form') {
+    // R16-D2 §5 (D-82, DR7-17). The answers of the check just confirmed are
+    // still in hand: re-enter at the FORM itself, filled in, with this
+    // person's own ticks (same session).
+    if (lastGraph && lastConfirmed?.plainAnswers && lastConfirmed.answerState && lastGraph.intake_method === 'structured_form') {
       dispatch({
         type: 'CORRECT_VERDICT_WITH_FORM',
         originalGraph: lastGraph,
@@ -1798,21 +1803,36 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         // screen's typed text — submittedDescription is set from question
         // 2's final text at every form confirm (handleFormSubmitted).
         description: submittedDescription,
-        plainAnswers: lastConfirmed.plainAnswers,
+        answerState: lastConfirmed.answerState,
+        ...(lastConfirmed.lastRead ? { lastRead: lastConfirmed.lastRead } : {}),
         assumptions: lastConfirmed.assumptions,
       });
       return;
     }
-    dispatch({
-      type: 'CORRECT_VERDICT',
-      graph: lastGraph,
+    // R18-D2/E (closes the R18-A forward note): the answers are not in hand
+    // (lastConfirmed is gone, or has none), so the case reopens on the FORM from
+    // its own record, the way the register's "Correct this check" does: from
+    // `answer_sources` when the record has them (D2), otherwise from its
+    // "Not sure" assumptions with every other answer blank and marked (E, the
+    // older-case path). There is no other screen to fall back to.
+    if (!policyResult.valid) return;
+    const fields = currentVerdictAttestationFields(verdictAuditEvents);
+    const args = {
       useCaseId: verdict.use_case_id,
       originalVerdictId: verdict.id,
-      // CR7-02: what this verdict was confirmed on, so the correction pass's
-      // own confirmation still lists the "Not sure" answers.
-      assumptions: lastConfirmed?.assumptions,
-      uncertainNodeIds: lastConfirmed?.uncertainNodeIds,
-    });
+      graphVersion: verdict.graph_version,
+      description: effectiveDescription(verdictAuditEvents) || submittedDescription,
+      assumptions: fields.assumptions,
+      policy: policyResult.policy,
+    };
+    // A record whose sources cannot reopen the form (answers missing) is read as an older one.
+    const opening =
+      (fields.answer_sources !== undefined ? correctionOpening({ ...args, sources: fields.answer_sources }) : null) ??
+      correctionOpening({ ...args, sources: undefined });
+    if (!opening) return;
+    const { droppedNote, ...open } = opening;
+    dispatch({ type: 'OPEN_CORRECTION_FROM_RECORD', ...open });
+    setRestoreDropped(droppedNote);
   }
 
   // R16-E §2/§3 (D-101, D-102, DR7-28/29). Most answers still go straight
@@ -1926,10 +1946,9 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         // BC-3. system_access_scope is list-valued — a fresh array is
         // never reference-equal to the one already on the graph even
         // when it names the identical kinds (e.g. confirming the
-        // extractor's own guessed set via the tick-all control), so this
-        // field compares by CONTENT (R16-F's own `sameAccessScopeSet`,
-        // the same helper handleCorrectNode already uses) rather than
-        // the generic `!==` every other field uses.
+        // earlier answer via the tick-all control), so this
+        // field compares by CONTENT (R16-F's own `sameAccessScopeSet`)
+        // rather than the generic `!==` every other field uses.
         const changed =
           targetField === 'system_access_scope'
             ? !sameAccessScopeSet(originalValue, value)
@@ -1948,7 +1967,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
             graph_version_after: updatedGraph.version,
             node_id: question.node_id,
             field: targetField,
-            // CR7-30: see handleCorrectNode.
+            // CR7-30: an absent value is recorded as null - `undefined` is
+            // dropped by the trail's serialisation and read back as the word "undefined".
             original_value: originalValue ?? null,
             corrected_value: value ?? null,
             corrected_at: new Date().toISOString(),
@@ -2094,15 +2114,6 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         </div>
       )}
 
-      {/* CR7-28: a questions draft saved before CR6 came back as the review
-          screen. Says only what is true: what changed, and what to do. */}
-      {showMigrated && state.step === 'graph_review' && (
-        <div className="intake-flow__resumed" role="status">
-          This was saved by an earlier version of this tool. The values from your earlier answers are
-          on the cards below — please check each one.
-        </div>
-      )}
-
       <StepTracker current={state.step} onBack={canStepBack ? handleStepBack : undefined} backDisabled={decisionPending} />
 
       <div className="card" ref={stepContainerRef} tabIndex={-1}>
@@ -2117,28 +2128,58 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
         )}
 
         {state.step === 'description_entry' && (
-          <div>
-            {/* R16-W §4 (D-74): label/placeholder/button/help all replaced —
-                "Describe your AI use case" / "Read & extract →" were the
-                tool's own internal-process words ("extract"), not the
-                submitter's question. */}
-            <label htmlFor="description-input">What AI tool do you want to use, and what will it do for you?</label>
-            <textarea
-              id="description-input"
-              value={state.description}
-              onChange={(e) => dispatch({ type: 'DESCRIPTION_CHANGED', description: e.target.value })}
-              placeholder='e.g. "Use ChatGPT to turn my client meeting notes into follow-up emails, which I check before sending."'
-            />
-            <button type="button" onClick={handleSubmitDescription} disabled={!state.description.trim()}>
-              Next →
-            </button>
-            {/* design-review round 4 (Panel G — Intake: Describe, Important):
-                the button never said what happens after clicking, or that
-                nothing is final yet. */}
-            <p className="field-help">
-              You can check and change everything before anything is decided — nothing here is final
-              yet.
-            </p>
+          <div className="describe">
+            <div className="describe__input">
+              {/* R16-W §4 (D-74): label/placeholder/button/help all replaced —
+                  "Describe your AI use case" / "Read & extract →" were the
+                  tool's own internal-process words ("extract"), not the
+                  submitter's question. */}
+              <label htmlFor="description-input">What AI tool do you want to use, and what will it do for you?</label>
+              <textarea
+                id="description-input"
+                ref={descriptionRef}
+                value={state.description}
+                onChange={(e) => dispatch({ type: 'DESCRIPTION_CHANGED', description: e.target.value })}
+                placeholder='e.g. "Use ChatGPT to turn my client meeting notes into follow-up emails, which I check before sending."'
+              />
+              {/* GI-3-19: a description that dictates its own rating is warned
+                  on this screen, before anything is read or decided. */}
+              <RatingInstructionNotice description={state.description} />
+              {/* The first Next lists what is unmentioned (only the items still
+                  unmentioned now); Next is never disabled by it. */}
+              <NudgeNote
+                items={(state.nudgeFor ?? []).filter((id) => unmentionedNow.includes(id))}
+                onAddExample={(sentence) => {
+                  dispatch({ type: 'DESCRIPTION_CHANGED', description: appendExample(state.description, sentence) });
+                  descriptionRef.current?.focus();
+                }}
+              />
+              {/* R18-G (§27.12, PS-3): ten one-click examples from the single source the guide's test reads. A click
+                  fills the box with the example's exact text; the checklist beside it then shows the real ticks. */}
+              <TryExample
+                current={state.description}
+                onPick={(description) => {
+                  dispatch({ type: 'DESCRIPTION_CHANGED', description });
+                  descriptionRef.current?.focus();
+                }}
+              />
+              {/* R18-G (§27.12, PS-2): the "Optional: connect an AI helper" panel while no model is set; nothing once one is. */}
+              <MakeItSmarter />
+              {/* R18-B (§27.8): where the description will go and which model reads it,
+                  directly above Next. Shown from the stored setting only when it validates. */}
+              <ModelStatus />
+              <button type="button" onClick={handleSubmitDescription} disabled={!state.description.trim()}>
+                Next →
+              </button>
+              {/* design-review round 4 (Panel G — Intake: Describe, Important):
+                  the button never said what happens after clicking, or that
+                  nothing is final yet. */}
+              <p className="field-help">
+                You can check and change everything before anything is decided — nothing here is final
+                yet.
+              </p>
+            </div>
+            <ChecklistPanel description={state.description} jurisdictions={mentionJurisdictions} />
           </div>
         )}
 
@@ -2265,36 +2306,24 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
           </section>
         )}
 
-        {state.step === 'graph_extraction' && state.method === 'llm' && (
-          <div>
-            {/* Code review round 3, Panel C. A failed extraction left this
-                screen reading "Extracting graph…" forever: no retry, no way
-                back, and a reload restored the same stuck step. The error was
-                shown under a label still claiming work was in progress. */}
-            {extractionError ? (
-              <>
-                <p role="alert">{extractionError}</p>
-                <p className="field-help">{EXTRACTION_ERROR_HELP}</p>
-                <div className="dup-gate__actions">
-                  <button type="button" onClick={() => void handleRetryExtraction()}>
-                    Try again
-                  </button>
-                  <button type="button" onClick={handleAnswerQuestionsInstead}>
-                    Answer the questions instead
-                  </button>
-                </div>
-              </>
-            ) : (
-              /* design-review round 4 (Panel G — Intake: Graph review,
-                 Critical): "graph" was the operative word in this loading
-                 state, the screen title, and the ARIA region label — never
-                 defined, right after a screen that promised plain language. */
-              <p>Reading your description…</p>
+        {/* R18-C2 (§27.5): the model is reading the description. Says where it goes (the same sentence as the
+            description screen), and offers Skip. The step announcement above names the step; this names
+            the work. */}
+        {state.step === 'prefill_reading' && (
+          <section aria-label="Reading your description" className="prefill-reading">
+            <StatusAfterMount className="prefill-reading__heading">{R18_COPY.READING_HEADING}</StatusAfterMount>
+            {modelSnapshot.ready && modelSnapshot.state.kind === 'valid' && (
+              <p className="field-help">{placeSentence(modelSnapshot.state.setting, modelSnapshot.keyStored)}</p>
             )}
-          </div>
+            <div className="dup-gate__actions">
+              <button type="button" onClick={handleSkipReading}>
+                {R18_COPY.SKIP_LABEL}
+              </button>
+            </div>
+          </section>
         )}
 
-        {state.step === 'graph_extraction' && state.method === 'form' && (
+        {state.step === 'graph_extraction' && (
           <>
             {/* R16-D2 §5 (D-82). Orients a submitter who reached the form
                 via "Correct your answers" rather than a fresh pre-check —
@@ -2305,237 +2334,67 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
                 the result will be worked out again and both versions are kept.
               </p>
             )}
-            {/* F-2 (DR7-04): a form-path EVALUATION_FAILED now re-enters
-                HERE (not graph_review), carrying state.useCaseId so a
-                resubmission reuses the same case — the error must render
-                here too, or a form-path failure would silently drop the
-                "why" the fix exists to preserve. */}
+            {/* F-2 (DR7-04): an EVALUATION_FAILED re-enters HERE, carrying
+                state.useCaseId so a resubmission reuses the same case — the
+                error must render here too, or a failure would silently drop
+                the "why" the fix exists to preserve. */}
             {/* CR6-12 (Minor): dropped "Review your answers and try
                 again." — evaluationError is, by construction, always
                 about the firm's own rules/policy (engineErrorMessage,
                 plain-copy.ts), never the person's answers, so the old
                 suffix blamed the wrong party on every single occurrence. */}
             {evaluationError && <p role="alert">Evaluation could not complete: {evaluationError}</p>}
+            {/* R18-D2 review pass 1: a correction reopened from a record, when a recorded answer could not be put
+                back because the form no longer offers it. Only then; the questions are named. */}
+            {state.originalVerdictId !== undefined && restoreDropped !== null && (
+              <StatusAfterMount className="plain-form__read-note">{restoreDropped}</StatusAfterMount>
+            )}
             {reviewGateError && (
               <p role="alert" className="intake-flow__gate-error">
                 {reviewGateError}
               </p>
             )}
-            <StructuredForm
-              policy={policyResult.valid ? policyResult.policy : EMPTY_POLICY_FALLBACK}
-              initialDescription={state.description}
-              initialAnswers={formInitialAnswers}
-              onSubmit={(graph, assumptions, plainAnswers) => void handleFormSubmitted(graph, assumptions, plainAnswers)}
-            />
-          </>
-        )}
-
-        {state.step === 'graph_review' && (
-          <section>
-            {/* design-review round 4 (Panel G, Critical): was "Review
-                extracted graph" — system-side vocabulary (what the LLM did)
-                where the user's actual goal is "did the system understand
-                my use case." R16-E §4 (D-103, DR7-33): reworded again —
-                this screen corrects, the summary that follows confirms;
-                the two now say so in as many words. */}
-            <h2>Check what we read from your description</h2>
-            <p className="field-help">
-              Correct anything we got wrong. You&rsquo;ll see a summary to confirm before anything is
-              decided.
-            </p>
-            {/* D-001 (charter 004): the description was captured, used for
-                extraction, and never shown again — so the user was asked to
-                confirm a graph against a description they could no longer
-                see. Rendered as plain text; it is user input. */}
-            {state.description && (
-              <div className="intake-flow__submitted-description">
-                <p className="intake-flow__submitted-label">What you wrote</p>
-                <p>{state.description}</p>
-              </div>
-            )}
-            {/* GT7 L-1 (P12): a description that dictates its own rating is flagged,
-                never obeyed. A status region (not an alert — nothing is blocked) with a
-                visible "Warning:" lead-in so it is not colour alone. Display only: the
-                graph, the engine input and the verdict never see this list. */}
+            {/* R18-GI-7: when nothing was filled in for the person, exactly one plain sentence says why - the
+                one for the last read's outcome (specs §27.5), with role="status". Not shown on a form that
+                carries a case (a correction, a retry or a trip back from the questions): it is about this
+                arrival from the describe screen. A form reached before reads existed (decidedFor, no
+                lastRead) was never read: formReadNote treats it as 'not-configured' (R18-G). */}
             {(() => {
-              const found = ratingInstructionsFor(state.graph, state.description);
-              return found.length > 0 ? (
-                <p role="status" className="intake-flow__rating-warning">
-                  <strong>Warning:</strong> {ratingInstructionWarning(found)}
-                </p>
-              ) : null;
-            })()}
-            {evaluationError && (
-              <p role="alert">
-                {/* CR8-14: prefix kept (tests and the form path's wrapper read the
-                    same); the old "Check the details below and try again." suffix
-                    is gone — the sentence is usually a gap in the firm's own
-                    rules, not something in the person's details. */}
-                Something went wrong working out the result:{' '}
-                {/* No added full stop when the sentence already ends with one. */}
-                {evaluationError.endsWith('.') ? evaluationError : `${evaluationError}.`}
-              </p>
-            )}
-            {/* V1.1-C01: a real visual data-flow with a real per-field
-                correction editor — replaces the flat list whose Edit
-                button was a stub that appended " (corrected)" to labels. */}
-            {/* R9-SC-1 (ADR-IF-R9-1): the user's remaining obligations,
-                aggregated from existing state — the plan the gate error
-                used to reveal only on failure. */}
-            {(() => {
-              const nodeLabel = (id: string) =>
-                [...state.graph.input_nodes, ...state.graph.processing_nodes, ...state.graph.output_nodes].find(
-                  (n) => n.id === id,
-                )?.label ?? id;
-              const items: Array<{ key: string; text: string; target: string }> = [];
-              for (const [nodeId, fields] of Object.entries(state.guessedFields ?? {})) {
-                if (fields.length > 0)
-                  items.push({
-                    key: `g-${nodeId}`,
-                    text: `Fix ${fields.length} detail${fields.length === 1 ? '' : 's'} we couldn’t tell on “${nodeLabel(nodeId)}”`,
-                    target: `card-${nodeId}`,
-                  });
-              }
-              for (const nodeId of state.unconfirmedNodeIds ?? []) {
-                items.push({ key: `c-${nodeId}`, text: `Check “${nodeLabel(nodeId)}”`, target: `card-${nodeId}` });
-              }
-              if (state.jurisdictionsConfirmed === false) {
-                items.push({ key: 'jur', text: 'Check the countries', target: 'jurisdictions-panel' });
-              }
-              if (state.unconfirmedNodeIds === undefined && items.length === 0) return null;
+              if (state.useCaseId !== undefined || state.originalVerdictId !== undefined) return null;
+              const outcome = state.lastRead?.outcome ?? (state.decidedFor !== undefined ? 'not-configured' : undefined);
+              if (outcome === undefined || outcome === 'ok') return null;
+              const earlierKept = Object.values(formInitialAnswerState ?? {}).some(
+                (a) => a !== undefined && (a.source.kind === 'prefilled' || a.source.kind === 'changed'),
+              );
+              const sentence = formReadNote(outcome, state.lastRead?.read?.place ?? 'this-computer', state.lastRead?.read?.host ?? '', {
+                earlierKept,
+                readAgainShown,
+                settingKind: modelSnapshot.ready ? modelSnapshot.state.kind : 'unknown',
+              });
               return (
-                <div className="review-checklist" role="note">
-                  {items.length === 0 ? (
-                    <p className="review-checklist__done">
-                      All checked — continue when you&rsquo;re ready.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="review-checklist__title">
-                        {items.length} thing{items.length === 1 ? '' : 's'} to check before you continue:
-                      </p>
-                      <ul>
-                        {items.map((item) => (
-                          <li key={item.key}>
-                            <button
-                              type="button"
-                              className="review-checklist__item"
-                              onClick={() => document.getElementById(item.target)?.scrollIntoView({ block: 'center', behavior: 'smooth' })}
-                            >
-                              {item.text}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </div>
+                <StatusAfterMount className="plain-form__read-note">{sentence}</StatusAfterMount>
               );
             })()}
-            <GraphView
-              graph={state.graph}
-              editable
-              onCorrect={handleCorrectNode}
-              unconfirmedNodeIds={state.unconfirmedNodeIds}
-              onConfirmNode={(nodeId) => {
-                setReviewGateError(null);
-                dispatch({ type: 'NODE_CONFIRMED', nodeId });
-              }}
-              warnings={plausibilityWarnings(state.description, state.graph)}
-              provenance={state.provenance}
-              guessedFields={state.guessedFields}
-              ignoredJurisdictions={state.ignoredJurisdictions}
-              policy={policyResult.valid ? policyResult.policy : undefined}
-              reentry={state.reentry}
-            />
-            {/* R7-JC (ADR-IF-R7-1): jurisdictions gate at review. Sweep-001
-                found a hallucinated valid code ("US") that would silently
-                activate a pack — so the model's reading is explicit, named,
-                editable within the policy's declared set, and never accepted
-                without a human act. */}
-            {state.jurisdictionsConfirmed !== undefined && policyResult.valid && (
-              <div className="jurisdictions-panel" id="jurisdictions-panel">
-                <h3>Which countries does it involve?</h3>
-                <p className="field-help">
-                  {state.graph.jurisdictions.length > 0
-                    ? 'We read these from your description. Check them — they decide which countries’ rules apply.'
-                    : 'We couldn’t tell from your description which countries it involves. Tick the ones it does — if none of these, only your firm’s own rules apply.'}
-                </p>
-                {policyResult.policy.jurisdictions.map((j) => (
-                  <label key={j.code} className="jurisdictions-panel__option">
-                    <input
-                      type="checkbox"
-                      checked={state.graph.jurisdictions.includes(j.code)}
-                      /* FX7-1 review pass 1 (I-1): never locked. A re-entered
-                         review (Change an answer, a failed evaluation) shows
-                         this panel already checked, and the person must still
-                         be able to change a country; the edit goes through
-                         JURISDICTIONS_SET with its correction, as on a first
-                         reading. */
-                      onChange={(e) => {
-                        const next = e.target.checked
-                          ? [...state.graph.jurisdictions, j.code]
-                          : state.graph.jurisdictions.filter((c) => c !== j.code);
-                        const updatedGraph = { ...state.graph, version: state.graph.version + 1, jurisdictions: next };
-                        dispatch({
-                          type: 'JURISDICTIONS_SET',
-                          updatedGraph,
-                          correction: {
-                            correction_id: crypto.randomUUID(),
-                            graph_version_before: state.graph.version,
-                            graph_version_after: updatedGraph.version,
-                            node_id: 'graph',
-                            field: 'jurisdictions',
-                            original_value: state.graph.jurisdictions,
-                            corrected_value: next,
-                            corrected_at: new Date().toISOString(),
-                            corrected_by: getRole(),
-                            // R16-D2 §5 (CB-4): part of the same graph_review
-                            // screen as GraphView's per-field editor.
-                            correction_source: 'review',
-                          },
-                        });
-                        setReviewGateError(null);
-                      }}
-                    />{' '}
-                    {j.name}
-                  </label>
-                ))}
-                {!state.jurisdictionsConfirmed ? (
-                  <button
-                    type="button"
-                    className="jurisdictions-panel__confirm"
-                    onClick={() => {
-                      dispatch({ type: 'JURISDICTIONS_CONFIRMED' });
-                      setReviewGateError(null);
-                    }}
-                  >
-                    {state.graph.jurisdictions.length > 0 ? 'These are right' : 'None of these — continue'}
+            {/* "Read my description again" - a fresh case with a usable model only. */}
+            {readAgainShown && (
+                <p>
+                  <button type="button" onClick={handleReadAgain}>
+                    {R18_COPY.READ_AGAIN_LABEL}
                   </button>
-                ) : (
-                  <p className="graph-node__confirmed-note">Checked by you.</p>
-                )}
-              </div>
-            )}
-            {/* R9-SC-4/-5: informational content AFTER required actions,
-                collapsed to its count (expand renders the full R8 panel). */}
-            {precedents.length > 0 && (
-              <details className="similar-cases-collapse">
-                <summary>
-                  {precedents.length} similar decided case{precedents.length === 1 ? '' : 's'} — show
-                </summary>
-                <SimilarCases matches={precedents} />
-              </details>
-            )}
-            {reviewGateError && (
-              <p role="alert" className="intake-flow__gate-error">
-                {reviewGateError}
-              </p>
-            )}
-            <button type="button" onClick={handleProceedFromGraphReview}>
-              Continue
-            </button>
-          </section>
+                </p>
+              )}
+            <StructuredForm
+              policy={policyResult.valid ? policyResult.policy : EMPTY_POLICY_FALLBACK}
+              description={state.description}
+              onDescriptionChange={(description) => dispatch({ type: 'DESCRIPTION_EDITED', description })}
+              initialAnswerState={formInitialAnswerState}
+              initialAnswers={formInitialAnswers}
+              earlierVersionNotice={showEarlierVersion}
+              onSubmit={(graph, assumptions, answerState, description) =>
+                void handleFormSubmitted(graph, assumptions, answerState, description)
+              }
+            />
+          </>
         )}
 
         {state.step === 'questionnaire' && (
@@ -2592,7 +2451,8 @@ export default function IntakeFlow({ newPrecheckNonce = 0 }: { newPrecheckNonce?
               // destination zone to an explicit 3platformZone answer.
               description={state.description}
               plainAnswers={formInitialAnswers}
-              ratingInstructionsFound={ratingInstructionsFor(state.graph, state.description).length > 0}
+              answerState={formInitialAnswerState}
+              ratingInstructionsFound={ratingInstructionsFor(state.description).length > 0}
               onChangeAnswer={() => dispatch({ type: 'CHANGE_ANSWER' })}
               onConfirm={(note) => void handleConfirmAndEvaluate(note)}
               // A refusal that will repeat disables Confirm; a failed record

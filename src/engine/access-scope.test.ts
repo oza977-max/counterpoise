@@ -3,8 +3,8 @@ import { normaliseAccessScope, sameAccessScopeSet, ACCESS_SCOPE_CANONICAL_ORDER 
 
 // R16-A1 (PE-9, §1.1, D-65). normaliseAccessScope is the SINGLE
 // implementation of the system_access_scope validation + canonical-order
-// rule — every caller (the extraction zod gate, the form's Q13, GraphView's
-// correction control, the questionnaire's multi-select, coerceAnswerValue)
+// rule — every caller (the form's Q13, the questionnaire's
+// multi-select, coerceAnswerValue)
 // is expected to call this rather than re-deriving the rule.
 describe('normaliseAccessScope', () => {
   it('TC-R16-A1-01: accepts a single known value and preserves its shape (bare string, not wrapped in an array)', () => {

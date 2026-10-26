@@ -1,0 +1,105 @@
+{
+  "format": "aigate-handoff",
+  "format_version": 1,
+  "exported_at": "2026-10-22T03:49:23.386Z",
+  "app_version": "0.17.0-r18-d1-fixture",
+  "register": {
+    "nodes": [
+      {
+        "node_id": "uc-r18d1-sample-before",
+        "node_type": "use_case",
+        "label": "Older case (exported before Round 18)",
+        "created_at": "2026-10-22T09:00:00.000Z",
+        "metadata": {
+          "node_type": "use_case",
+          "submitted_by": "1LoD",
+          "lifecycle_stage": "pre_checked",
+          "current_verdict_id": null,
+          "tier": "High",
+          "track": "II"
+        }
+      }
+    ],
+    "edges": []
+  },
+  "audit_events": [
+    {
+      "use_case_id": "uc-r18d1-sample-before",
+      "actor": "1LoD",
+      "event_id": "uc-r18d1-sample-before-created",
+      "event_type": "use_case_created",
+      "occurred_at": "2026-10-22T09:00:00.000Z",
+      "payload": {
+        "type": "use_case_created",
+        "description": "It reads client names and account details to draft emails. Our UK team will use it every morning.",
+        "intake_method": "structured_form"
+      },
+      "prev_hash": null,
+      "hash": "76090448f176e71e19e6b43b4490ba2a26f3b6110bc78019618362f011d00d94"
+    },
+    {
+      "use_case_id": "uc-r18d1-sample-before",
+      "actor": "1LoD",
+      "event_id": "uc-r18d1-sample-before-confirmed",
+      "event_type": "graph_confirmed",
+      "occurred_at": "2026-10-22T09:00:01.000Z",
+      "payload": {
+        "type": "graph_confirmed",
+        "graph_id": "g-1",
+        "graph_version": 1,
+        "corrections_count": 0
+      },
+      "prev_hash": "76090448f176e71e19e6b43b4490ba2a26f3b6110bc78019618362f011d00d94",
+      "hash": "62e4be9669bbb4fd8b8b3461ec76577dcbdddd4a62b0f4aae50ff32fb3fac862"
+    },
+    {
+      "use_case_id": "uc-r18d1-sample-before",
+      "actor": "1LoD",
+      "event_id": "uc-r18d1-sample-before-verdict",
+      "event_type": "verdict_produced",
+      "occurred_at": "2026-10-22T09:00:02.000Z",
+      "payload": {
+        "type": "verdict_produced",
+        "verdict": {
+          "id": "v-uc-r18d1-sample-before",
+          "use_case_id": "uc-r18d1-sample-before",
+          "status": "approved_with_controls",
+          "tier": "High",
+          "track": "II",
+          "binding_constraint": "INV-DATA-01",
+          "binding_path": "client notes → drafting model → drafted email",
+          "controls": [],
+          "downstream_reviews": [],
+          "conditions": {
+            "hypotheses": []
+          },
+          "policy_version": "1.3",
+          "pack_versions": {},
+          "applied_overrides": [],
+          "confidence_caveats": [],
+          "provisional_reasons": [],
+          "boundary_proximity": false,
+          "margin_achieved": 0,
+          "margin_target": 0.1,
+          "single_covered_invariants": [],
+          "explanation": {
+            "tier_rationale": null,
+            "track_rationale": null,
+            "hard_lines_checked": 4,
+            "invariants_checked": 6,
+            "tripped_invariants": [],
+            "binding_reason": null,
+            "binding_regulatory_basis": null
+          },
+          "living_status": "approved",
+          "living_status_updated_at": "2026-10-22T09:00:00.000Z",
+          "attested_by": "1LoD",
+          "attested_at": "2026-10-22T09:00:00.000Z"
+        }
+      },
+      "prev_hash": "62e4be9669bbb4fd8b8b3461ec76577dcbdddd4a62b0f4aae50ff32fb3fac862",
+      "hash": "ab3d8751e89fdc2704532fe7d0a9418d08a72d933bf386ed840480bbd1f6e7d5"
+    }
+  ],
+  "seal": "a33e5cae42cf442c014da94e4a6a617afb6c50cdbd2a12fccd5c2e03a2f2b87d"
+}

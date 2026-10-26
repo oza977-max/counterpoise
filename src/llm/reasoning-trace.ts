@@ -168,7 +168,7 @@ export async function generateReasoningTrace(traceData: VerdictTraceData, apiKey
 }
 
 // Uses getApiKey() directly — convenience wrapper matching the pattern of
-// extractGraph()/confirmSemanticDuplicate() (caller doesn't need to know
+// confirmSemanticDuplicate() (caller doesn't need to know
 // about localStorage).
 export async function generateReasoningTraceForVerdict(
   verdict: Verdict,

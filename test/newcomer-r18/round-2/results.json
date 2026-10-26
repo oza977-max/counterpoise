@@ -1,0 +1,744 @@
+{
+  "totals": {
+    "didntUnderstand": 60,
+    "lessStrictAnswers": 1,
+    "prefillsTicked": 15,
+    "prefillsChanged": 1,
+    "verdictsLessStrict": 1
+  },
+  "results": [
+    {
+      "packet": "P1",
+      "exampleId": "case-1",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": true,
+          "given": "firm-built",
+          "expected": "firm-built"
+        },
+        {
+          "question": "4",
+          "correct": false,
+          "given": "language",
+          "expected": "score"
+        },
+        {
+          "question": "5",
+          "correct": false,
+          "given": [
+            "confidential"
+          ],
+          "expected": [
+            "everyday"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "read",
+          "expected": "read"
+        },
+        {
+          "question": "7",
+          "correct": true,
+          "given": "me-or-team",
+          "expected": "me-or-team"
+        },
+        {
+          "question": "8",
+          "correct": true,
+          "given": "operational",
+          "expected": "operational"
+        },
+        {
+          "question": "9",
+          "correct": true,
+          "given": "yes",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": false,
+          "given": "team",
+          "expected": "small"
+        },
+        {
+          "question": "11",
+          "correct": false,
+          "given": [
+            "elsewhere-not-sure"
+          ],
+          "expected": [
+            "UK"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": true,
+          "given": "no",
+          "expected": "no"
+        },
+        {
+          "question": "4a",
+          "correct": false,
+          "given": "unexplainable",
+          "expected": "rules"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "4",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "5",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "10",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "11",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "4a",
+          "lessStrictAlone": false
+        }
+      ],
+      "verdict": {
+        "tester": "approved_with_controls/Low/III/[CTRL-CITE-01]",
+        "expected": "approved/Low/I/[]",
+        "lessStrict": false,
+        "matches": false
+      },
+      "counts": {
+        "didntUnderstand": 12,
+        "lessStrictAnswers": 0,
+        "prefillsTicked": 2,
+        "prefillsChanged": 0
+      },
+      "unmapped": []
+    },
+    {
+      "packet": "P2",
+      "exampleId": "case-3",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "firm-built"
+        },
+        {
+          "question": "4",
+          "correct": true,
+          "given": "score",
+          "expected": "score"
+        },
+        {
+          "question": "5",
+          "correct": true,
+          "given": [
+            "people"
+          ],
+          "expected": [
+            "people"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "acts-alone",
+          "expected": "acts-alone"
+        },
+        {
+          "question": "7",
+          "correct": true,
+          "given": "clients",
+          "expected": "clients"
+        },
+        {
+          "question": "8",
+          "correct": true,
+          "given": "credit",
+          "expected": "credit"
+        },
+        {
+          "question": "9",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": true,
+          "given": "wide",
+          "expected": "wide"
+        },
+        {
+          "question": "11",
+          "correct": false,
+          "given": [
+            "elsewhere-not-sure"
+          ],
+          "expected": [
+            "UK"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "no"
+        },
+        {
+          "question": "4a",
+          "correct": false,
+          "given": "unexplainable",
+          "expected": "explainable"
+        },
+        {
+          "question": "6b",
+          "correct": true,
+          "given": "yes-no-decision",
+          "expected": "yes-no-decision"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "3",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "9",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "11",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "12",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "4a",
+          "lessStrictAlone": false
+        }
+      ],
+      "verdict": {
+        "tester": "rejected/Critical/I/[]",
+        "expected": "rejected/Critical/I/[]",
+        "lessStrict": false,
+        "matches": true
+      },
+      "counts": {
+        "didntUnderstand": 12,
+        "lessStrictAnswers": 0,
+        "prefillsTicked": 3,
+        "prefillsChanged": 0
+      },
+      "unmapped": []
+    },
+    {
+      "packet": "P3",
+      "exampleId": "case-7",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": true,
+          "given": "PLAT-CLOUD-LLM",
+          "expected": "PLAT-CLOUD-LLM"
+        },
+        {
+          "question": "4",
+          "correct": true,
+          "given": "language",
+          "expected": "language"
+        },
+        {
+          "question": "5",
+          "correct": true,
+          "given": [
+            "people"
+          ],
+          "expected": [
+            "people"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "drafts",
+          "expected": "drafts"
+        },
+        {
+          "question": "7",
+          "correct": true,
+          "given": "clients",
+          "expected": "clients"
+        },
+        {
+          "question": "8",
+          "correct": true,
+          "given": "operational",
+          "expected": "operational"
+        },
+        {
+          "question": "9",
+          "correct": true,
+          "given": "yes",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": false,
+          "given": "team",
+          "expected": "wide"
+        },
+        {
+          "question": "11",
+          "correct": false,
+          "given": [
+            "elsewhere-not-sure"
+          ],
+          "expected": [
+            "UK"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": true,
+          "given": "no",
+          "expected": "no"
+        },
+        {
+          "question": "6a",
+          "correct": false,
+          "given": "little",
+          "expected": "one-input"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "10",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "11",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "6a",
+          "lessStrictAlone": true
+        }
+      ],
+      "verdict": {
+        "tester": "approved_with_controls/High/III/[CTRL-CITE-01,CTRL-CONDUCT-01,CTRL-ENC-01,CTRL-REDTEAM-01,CTRL-SYNTHMARK-01]",
+        "expected": "approved_with_controls/High/II/[CTRL-CITE-01,CTRL-CONDUCT-01,CTRL-ENC-01,CTRL-FINGERPRINT-01,CTRL-REDTEAM-01,CTRL-SYNTHMARK-01]",
+        "lessStrict": true,
+        "matches": false
+      },
+      "counts": {
+        "didntUnderstand": 10,
+        "lessStrictAnswers": 1,
+        "prefillsTicked": 2,
+        "prefillsChanged": 1
+      },
+      "unmapped": []
+    },
+    {
+      "packet": "P4",
+      "exampleId": "case-10",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "PLAT-INTERNAL-ML"
+        },
+        {
+          "question": "4",
+          "correct": true,
+          "given": "score",
+          "expected": "score"
+        },
+        {
+          "question": "5",
+          "correct": true,
+          "given": [
+            "people"
+          ],
+          "expected": [
+            "people"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "acts-bounded",
+          "expected": "acts-bounded"
+        },
+        {
+          "question": "7",
+          "correct": true,
+          "given": "clients",
+          "expected": "clients"
+        },
+        {
+          "question": "8",
+          "correct": true,
+          "given": "credit",
+          "expected": "credit"
+        },
+        {
+          "question": "9",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": true,
+          "given": "wide",
+          "expected": "wide"
+        },
+        {
+          "question": "11",
+          "correct": true,
+          "given": [
+            "UK",
+            "EU"
+          ],
+          "expected": [
+            "UK",
+            "EU"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "no"
+        },
+        {
+          "question": "3platformZone",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "firm-systems"
+        },
+        {
+          "question": "4a",
+          "correct": false,
+          "given": "unexplainable",
+          "expected": "explainable"
+        },
+        {
+          "question": "6b",
+          "correct": true,
+          "given": "yes-no-decision",
+          "expected": "yes-no-decision"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "3",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "9",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "12",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "3platformZone",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "4a",
+          "lessStrictAlone": false
+        }
+      ],
+      "verdict": {
+        "tester": "approved_with_controls/Critical/II/[CTRL-AUTONOMY-BOUND-01,CTRL-BIAS-01,CTRL-CONDUCT-01,CTRL-DISCLOSE-01,CTRL-ENC-01,CTRL-ESCALATE-01,CTRL-INDEP-VAL-01,CTRL-LOG-01,CTRL-REVERSAL-01,CTRL-TPRM-01]",
+        "expected": "approved_with_controls/Critical/II/[CTRL-AUTONOMY-BOUND-01,CTRL-BIAS-01,CTRL-CONDUCT-01,CTRL-DISCLOSE-01,CTRL-DRIFT-01,CTRL-ESCALATE-01,CTRL-LOG-01]",
+        "lessStrict": false,
+        "matches": false
+      },
+      "counts": {
+        "didntUnderstand": 6,
+        "lessStrictAnswers": 0,
+        "prefillsTicked": 3,
+        "prefillsChanged": 0
+      },
+      "unmapped": []
+    },
+    {
+      "packet": "P5",
+      "exampleId": "case-8",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "firm-built"
+        },
+        {
+          "question": "4",
+          "correct": true,
+          "given": "score",
+          "expected": "score"
+        },
+        {
+          "question": "5",
+          "correct": true,
+          "given": [
+            "people"
+          ],
+          "expected": [
+            "people"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "suggests",
+          "expected": "suggests"
+        },
+        {
+          "question": "7",
+          "correct": true,
+          "given": "other-teams",
+          "expected": "other-teams"
+        },
+        {
+          "question": "8",
+          "correct": true,
+          "given": "hiring",
+          "expected": "hiring"
+        },
+        {
+          "question": "9",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": true,
+          "given": "wide",
+          "expected": "wide"
+        },
+        {
+          "question": "11",
+          "correct": false,
+          "given": [
+            "EU",
+            "elsewhere-not-sure"
+          ],
+          "expected": [
+            "EU"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "no"
+        },
+        {
+          "question": "4a",
+          "correct": false,
+          "given": "unexplainable",
+          "expected": "explainable"
+        },
+        {
+          "question": "6a",
+          "correct": true,
+          "given": "usually-basis",
+          "expected": "usually-basis"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "3",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "9",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "11",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "12",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "4a",
+          "lessStrictAlone": false
+        }
+      ],
+      "verdict": {
+        "tester": "approved_with_controls/Critical/II/[CTRL-BIAS-01,CTRL-ENC-01,CTRL-INDEP-VAL-01,CTRL-SAMPLE-01,CTRL-TPRM-01]",
+        "expected": "approved_with_controls/Critical/I/[CTRL-BIAS-01,CTRL-DRIFT-01,CTRL-SAMPLE-01]",
+        "lessStrict": false,
+        "matches": false
+      },
+      "counts": {
+        "didntUnderstand": 12,
+        "lessStrictAnswers": 0,
+        "prefillsTicked": 3,
+        "prefillsChanged": 0
+      },
+      "unmapped": []
+    },
+    {
+      "packet": "P6",
+      "exampleId": "case-4",
+      "perQuestion": [
+        {
+          "question": "3",
+          "correct": true,
+          "given": "firm-built",
+          "expected": "firm-built"
+        },
+        {
+          "question": "4",
+          "correct": true,
+          "given": "agentic",
+          "expected": "agentic"
+        },
+        {
+          "question": "5",
+          "correct": false,
+          "given": [
+            "confidential"
+          ],
+          "expected": [
+            "everyday"
+          ]
+        },
+        {
+          "question": "6",
+          "correct": true,
+          "given": "acts-alone",
+          "expected": "acts-alone"
+        },
+        {
+          "question": "7",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "other-teams"
+        },
+        {
+          "question": "8",
+          "correct": false,
+          "given": "other",
+          "expected": "operational"
+        },
+        {
+          "question": "9",
+          "correct": false,
+          "given": "not-sure",
+          "expected": "yes"
+        },
+        {
+          "question": "10",
+          "correct": false,
+          "given": "team",
+          "expected": "wide"
+        },
+        {
+          "question": "11",
+          "correct": false,
+          "given": [
+            "elsewhere-not-sure"
+          ],
+          "expected": [
+            "UK"
+          ]
+        },
+        {
+          "question": "12",
+          "correct": true,
+          "given": "no",
+          "expected": "no"
+        },
+        {
+          "question": "13",
+          "correct": false,
+          "given": [
+            "credentialed"
+          ],
+          "expected": [
+            "none"
+          ]
+        },
+        {
+          "question": "14",
+          "correct": true,
+          "given": "no",
+          "expected": "no"
+        },
+        {
+          "question": "6b",
+          "correct": true,
+          "given": "something-else",
+          "expected": "something-else"
+        }
+      ],
+      "wrong": [
+        {
+          "question": "5",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "7",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "8",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "9",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "10",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "11",
+          "lessStrictAlone": false
+        },
+        {
+          "question": "13",
+          "lessStrictAlone": false
+        }
+      ],
+      "verdict": {
+        "tester": "rejected/Critical/I/[]",
+        "expected": "rejected/Critical/I/[]",
+        "lessStrict": false,
+        "matches": true
+      },
+      "counts": {
+        "didntUnderstand": 8,
+        "lessStrictAnswers": 0,
+        "prefillsTicked": 2,
+        "prefillsChanged": 0
+      },
+      "unmapped": []
+    }
+  ]
+}

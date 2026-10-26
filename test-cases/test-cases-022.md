@@ -326,3 +326,18 @@ forced evaluation failure on the form path.
 ---
 
 *Developed using the Grounded Vibe Methodology*
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R16-F-64 | Superseded by R18-GI-10 (R18-A): the review screen's editor that applied a second kind of access is unreachable. The form's own two-kind tick reaching the evaluated graph is TC-R16-E-72 in IntakeFlow.r16e.test.tsx. |
+| TC-R16-F-33 | Superseded by R18-GI-10 (R18-E): the system-access tick-all editor on a card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-34 | Superseded by R18-GI-10 (R18-E): ticking one kind in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-35 | Superseded by R18-GI-10 (R18-E): ticking a second kind in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-36 | Superseded by R18-GI-10 (R18-E): the 'Nothing beyond' exclusivity in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-37 | Superseded by R18-GI-10 (R18-E): un-setting 'Nothing beyond' in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-38 | Superseded by R18-GI-10 (R18-E): refusing to untick the last kind in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-F-52 | Superseded by R18-GI-10 (R18-E): STEP_BACK being a no-op on the review screen after a failed evaluation (the form refuses Back when it carries a case id: TC-CR8-03a) belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R16-F-54 | Superseded by R18-GI-10 (R18-E): EVALUATION_FAILED returning a description-path graph to the review screen belonged to the reducer's card-review step and its actions, which are deleted. No replacement — behaviour retired. |
+| TC-R16-F-61 | Superseded by R18-GI-10 (R18-E): clicking an option's words in that editor belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |

@@ -233,3 +233,10 @@ all clean. `npm run docs:rules` regenerated (policy version line only).
 ---
 
 *Developed using the Grounded Vibe Methodology*
+
+## Superseded
+
+| ID | Reason |
+|---|---|
+| TC-R16-A1-26 | Superseded by R18-GI-10 (R18-E): a single system_access_scope value on the card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
+| TC-R16-A1-27 | Superseded by R18-GI-10 (R18-E): a list of system_access_scope values on the card belonged to `GraphView`, the card review's screen, which is deleted. No replacement — behaviour retired. |
