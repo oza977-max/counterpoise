@@ -157,6 +157,28 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     expect(screen.queryByText(/looking through earlier checks/i)).not.toBeInTheDocument();
   });
 
+  // Newcomer test round 1 (2026-10-26, owner-approved): the sentences are labelled as examples, not the person's words.
+  it('TC-R18-GI-2-02a: each listed item shows its sentence after "For example:", so it reads as an example', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, box(), WITHOUT('countries', 'replaces-something'));
+    await user.click(next());
+    expect(R18_COPY.NUDGE_EXAMPLE_LEAD).toBe('For example:');
+    for (const id of ['countries', 'replaces-something'] as const) {
+      const row = within(note()!).getByText(LABEL[id]).closest('li')!;
+      expect(row.textContent).toBe(`${LABEL[id]} For example: ${EXAMPLE[id]}`);
+    }
+  });
+
+  it('TC-R18-GI-2-02b (false state): with every item mentioned no "For example:" is on the screen, and it is never inside the box', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, box(), ALL_SENTENCES);
+    await user.click(next());
+    expect(document.querySelector('.describe__nudge-example-lead')).toBeNull();
+    expect(screen.queryByText(R18_COPY.NUDGE_EXAMPLE_LEAD)).not.toBeInTheDocument();
+  });
+
   it('TC-R18-GI-2-03: clicking an example appends it after the existing text and ticks the item', async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);

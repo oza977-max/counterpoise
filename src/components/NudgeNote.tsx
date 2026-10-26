@@ -32,6 +32,7 @@ export default function NudgeNote({
               return (
                 <li key={id}>
                   <span className="describe__nudge-label">{R18_COPY.CHECKLIST_LABELS[id]}</span>{' '}
+                  <span className="describe__nudge-example-lead">{R18_COPY.NUDGE_EXAMPLE_LEAD}</span>{' '}
                   <button
                     type="button"
                     className="describe__example"

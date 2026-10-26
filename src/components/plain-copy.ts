@@ -1360,6 +1360,8 @@ export const R18_COPY = {
   UNMENTIONED_NOTE_HELP:
     'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
   ADD_EXAMPLE_LABEL: 'Add this example',
+  // Newcomer test round 1 (2026-10-26): said before each sentence so it reads as an example, not the person's words.
+  NUDGE_EXAMPLE_LEAD: 'For example:',
   // One example sentence per item. Each one, typed on its own, ticks its own item
   // (asserted in plain-copy.r18.test.ts against the real rule).
   NUDGE_EXAMPLES: {
