@@ -1,0 +1,37 @@
+{
+  "packet": "P5",
+  "answers": {
+    "What do you want to call it?": "Recruitment screening model",
+    "In a sentence or two, what will it do for you?": "It screens job applications and shortlists candidates for interview, for roles across our European entities.",
+    "Where does the AI come from?": "Not sure yet",
+    "What kind of AI is it?": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know",
+    "What information will it see or use? Tick all that apply.": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "Not sure",
+    "How much weight does what it produces carry?": "It’s usually what a decision is based on — people tend to go with it",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Other teams in the firm",
+    "Which of these does it help decide, if any? Pick the closest.": "Who to hire or promote — including tools that only produce notes, transcripts or summaries a person later uses to decide",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Not sure",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "No",
+    "How widely will it be used?": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "Which countries does it involve? Tick all.": ["European Union", "Somewhere else, or not sure"]
+  },
+  "prefills": {
+    "Which of these does it help decide, if any? Pick the closest. (“screens job applications”)": "ticked",
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom. (“shortlists candidates for interview”)": "changed to Not sure",
+    "How widely will it be used? (“roles across our European entities”)": "ticked"
+  },
+  "didntUnderstand": [
+    {"quote": "What happens with what it produces? ... suggests, ranks or flags things, and a person decides what to do (pre-fill, backed by “shortlists candidates for interview”)", "why": "I understood the words. The quoted phrase does not show it. It does not say whether a person looks at the applications that are screened out, or whether the tool drops them on its own. Because the question says to pick the option where it has the most freedom, I changed the answer to Not sure and will ask the recruitment team."},
+    {"quote": "2 Similar checks (the step in the progress bar)", "why": "It is never explained. I don't know whether it means other people's pre-checks, past cases, or something it does with my answers. On the form screen it has a back arrow beside it, and I couldn't tell what that means."},
+    {"quote": "3 Your answers, then 4 Questions", "why": "I am answering a long list of questions on step 3, so I don't know what step 4 'Questions' adds."},
+    {"quote": "We found no words about: ... Which countries does it involve / How widely it will be used / What it can help decide (and every row on the right reading ‘no words found’)", "why": "My description said ‘job applications’, ‘roles across our European entities’ and ‘used for’. It looks as if the tool missed words I clearly wrote. The sentence ‘This only notes which topics your words touch’ is clear, but the result looks wrong to me. I can't tell if I did something wrong or if the checker is crude."},
+    {"quote": "AI helper alpha:7b: not yet tested on the example cases", "why": "I don't know which ‘example cases’ these are, or what it means for how far I can trust the suggestions. 'alpha:7b' is also an odd name for me. The first screen also mentions 'Ollama' and ‘connect an AI model under Settings’, and I don't know what Ollama is. The first screen said no model was connected, but later screens say alpha:7b is reading my description."},
+    {"quote": "Who ends up seeing or receiving what it produces, in its final form? ... Clients or customers — including people applying to us", "why": "The shortlist goes to recruiters, but the candidates are told the outcome. I couldn't tell whether job applicants count here, since they never see the shortlist itself. I picked Other teams in the firm, and I'm not confident about it."},
+    {"quote": "Which countries does it involve? ... European Union / United Kingdom / Somewhere else, or not sure", "why": "My description said ‘European entities’ and there is no ‘Europe’ option. I don't know if the UK, Switzerland or others are meant, so I ticked European Union plus ‘Somewhere else, or not sure’."},
+    {"quote": "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?", "why": "Screening of CVs by people is not in the list. I guessed No because the team ‘wants’ a model, but I don't really know."}
+  ],
+  "expectNext": "Continue stays blocked until I have filled in the required boxes (the name, the short description, the information types and the countries). It also stays blocked until I have ticked or changed every helper suggestion. After that I think it moves to step 4 'Questions', which may ask more questions based on my answers. Then I confirm my answers (step 5) and get a result (step 6). The result will say whether I can go ahead and what must be done first, using my firm's written rules. Any 'Not sure' answers get a careful assumption, and the result will show me what it assumed so I or the AI risk team can correct it.",
+  "ticksMean": "'I've checked this answer' means I have read what the AI helper suggested, compared it with the phrase it quotes from my description, and agree it is right. The tick is my own sign-off, not the AI's. An untouched suggestion doesn't count and blocks Continue. Changing a suggestion to a different option counts as checking it too. A tick shows a human looked at it, not that the answer is correct.",
+  "comment": "I took the wording from the screen. The one sticking point is the 'What happens with what it produces' suggestion. 'Shortlists candidates' doesn't tell me whether a person checks the applications that are screened out, so I changed it to 'Not sure'."
+}

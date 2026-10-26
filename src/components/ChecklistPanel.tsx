@@ -3,13 +3,13 @@ import { CHECKLIST_ITEM_IDS, mentionedItems } from '../engine/mentioned';
 import type { MentionJurisdiction } from '../engine/mentioned';
 import { R18_COPY } from './plain-copy';
 
-// R18-GI-1 (specs/intake-flow.md §27.2). The live "mentioned / not mentioned"
+// R18-GI-1 (specs/intake-flow.md §27.2). The live "words found / no words found"
 // checklist beside the description box. Presentation only: the rule is
 // mentionedItems() in the engine, which depends on the text and the policy's
 // jurisdiction list and nothing else, and runs on the whole text however long.
 //
 // Honest by construction (NF-2, CLAUDE.md "honesty is a functional requirement"):
-// it says only that a topic is or is not mentioned — never "answered" or
+// it says only whether words about a topic were found — never "answered" or
 // "understood" — and each state is a symbol AND words, so colour is never the
 // only cue. The list is a polite status region so a change is announced.
 

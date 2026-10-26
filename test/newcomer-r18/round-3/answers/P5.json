@@ -1,0 +1,84 @@
+{
+  "packet": "P5",
+  "answers": {
+    "1": "Recruitment screening model",
+    "2": "It screens job applications and shortlists candidates for interview, for roles across our European entities.",
+    "3": "Not sure yet",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "4a": "No, or I don’t know",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "Not sure",
+    "6a": "It’s usually what a decision is based on — people tend to go with it",
+    "7": "Other teams in the firm",
+    "8": "Who to hire or promote — including tools that only produce notes, transcripts or summaries a person later uses to decide",
+    "9": "Not sure",
+    "12": "No",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "European Union",
+      "Somewhere else, or not sure"
+    ]
+  },
+  "prefills": [
+    {
+      "question": "8",
+      "status": "ticked"
+    },
+    {
+      "question": "6",
+      "status": "changed",
+      "changedTo": "Not sure"
+    },
+    {
+      "question": "10",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "What happens with what it produces? ... suggests, ranks or flags things, and a person decides what to do (pre-fill, backed by “shortlists candidates for interview”)",
+      "why": "I understood the words. The quoted phrase does not show it. It does not say whether a person looks at the applications that are screened out, or whether the tool drops them on its own. Because the question says to pick the option where it has the most freedom, I changed the answer to Not sure and will ask the recruitment team."
+    },
+    {
+      "item": "2 Similar checks (the step in the progress bar)",
+      "why": "It is never explained. I don't know whether it means other people's pre-checks, past cases, or something it does with my answers. On the form screen it has a back arrow beside it, and I couldn't tell what that means."
+    },
+    {
+      "item": "3 Your answers, then 4 Questions",
+      "why": "I am answering a long list of questions on step 3, so I don't know what step 4 'Questions' adds."
+    },
+    {
+      "item": "We found no words about: ... Which countries does it involve / How widely it will be used / What it can help decide (and every row on the right reading ‘no words found’)",
+      "why": "My description said ‘job applications’, ‘roles across our European entities’ and ‘used for’. It looks as if the tool missed words I clearly wrote. The sentence ‘This only notes which topics your words touch’ is clear, but the result looks wrong to me. I can't tell if I did something wrong or if the checker is crude."
+    },
+    {
+      "item": "AI helper alpha:7b: not yet tested on the example cases",
+      "why": "I don't know which ‘example cases’ these are, or what it means for how far I can trust the suggestions. 'alpha:7b' is also an odd name for me. The first screen also mentions 'Ollama' and ‘connect an AI model under Settings’, and I don't know what Ollama is. The first screen said no model was connected, but later screens say alpha:7b is reading my description."
+    },
+    {
+      "item": "Who ends up seeing or receiving what it produces, in its final form? ... Clients or customers — including people applying to us",
+      "why": "The shortlist goes to recruiters, but the candidates are told the outcome. I couldn't tell whether job applicants count here, since they never see the shortlist itself. I picked Other teams in the firm, and I'm not confident about it."
+    },
+    {
+      "item": "Which countries does it involve? ... European Union / United Kingdom / Somewhere else, or not sure",
+      "why": "My description said ‘European entities’ and there is no ‘Europe’ option. I don't know if the UK, Switzerland or others are meant, so I ticked European Union plus ‘Somewhere else, or not sure’."
+    },
+    {
+      "item": "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?",
+      "why": "Screening of CVs by people is not in the list. I guessed No because the team ‘wants’ a model, but I don't really know."
+    }
+  ],
+  "expectNext": "Continue stays blocked until I have filled in the required boxes (the name, the short description, the information types and the countries). It also stays blocked until I have ticked or changed every helper suggestion. After that I think it moves to step 4 'Questions', which may ask more questions based on my answers. Then I confirm my answers (step 5) and get a result (step 6). The result will say whether I can go ahead and what must be done first, using my firm's written rules. Any 'Not sure' answers get a careful assumption, and the result will show me what it assumed so I or the AI risk team can correct it.",
+  "ticksMean": "'I've checked this answer' means I have read what the AI helper suggested, compared it with the phrase it quotes from my description, and agree it is right. The tick is my own sign-off, not the AI's. An untouched suggestion doesn't count and blocks Continue. Changing a suggestion to a different option counts as checking it too. A tick shows a human looked at it, not that the answer is correct.",
+  "comment": "I took the wording from the screen. The one sticking point is the 'What happens with what it produces' suggestion. 'Shortlists candidates' doesn't tell me whether a person checks the applications that are screened out, so I changed it to 'Not sure'.",
+  "normalisationNotes": [
+    "label matched to 4 (tester label is a prefix of the form text): \"What kind of AI is it?\" -> \"What kind of AI is it? If more than one fits — for example, something that turns speech i",
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 8 (exact): \"Which of these does it help decide, if any? Pick the closest. (“screens job applications”)\"",
+    "prefill label matched to 6 (exact): \"What happens with what it produces? If it does several things, pick the one where it has the most freedom. (“shortlists candidates for interview”)\"",
+    "prefill label matched to 10 (exact): \"How widely will it be used? (“roles across our European entities”)\"",
+    "didntUnderstand given as {quote, why}; quote becomes item"
+  ]
+}

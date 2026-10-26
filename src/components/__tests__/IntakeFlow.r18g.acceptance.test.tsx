@@ -42,9 +42,9 @@ describe('R18-G acceptance: the first visit on the public site', () => {
       await user.click(screen.getByRole('button', { name: /^try an example/i }));
       await user.click(screen.getByRole('button', { name: /clean approval/i }));
       expect(screen.getByLabelText(/what ai tool do you want to use/i)).toHaveValue(EXAMPLE_ONE);
-      const checklist = screen.getAllByRole('status').find((el) => /not mentioned/i.test(el.textContent ?? ''));
+      const checklist = screen.getAllByRole('status').find((el) => /no words found/i.test(el.textContent ?? ''));
       expect(checklist).toBeDefined();
-      expect(within(checklist!).getAllByText(/^mentioned$/i).length).toBeGreaterThanOrEqual(1);
+      expect(within(checklist!).getAllByText(/^words found$/i).length).toBeGreaterThanOrEqual(1);
 
       // Carry on with no model: similar checks, then the form with the spec's sentence.
       await pressNext(user);

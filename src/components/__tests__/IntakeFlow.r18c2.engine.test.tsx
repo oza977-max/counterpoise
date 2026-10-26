@@ -61,7 +61,8 @@ describe('the engine sees only confirmed form answers', () => {
     evaluateSpy.mockClear();
 
     await describeToReadForm(user, DESC);
-    expect(screen.getAllByText(/from your description/i)).toHaveLength(3);
+    // the marks' own claim, "from your description: “quote”" (the form intro may also say "from your description")
+    expect(screen.getAllByText(/from your description: “/i)).toHaveLength(3);
     expect(evaluateSpy).toHaveBeenCalledTimes(0);
 
     await answerTheRestByHand(user);

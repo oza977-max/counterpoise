@@ -1,0 +1,87 @@
+{
+  "packet": "P3",
+  "answers": {
+    "1": "Account reply drafting chatbot",
+    "2": "It drafts replies to customers' account questions using their personal details, and one of my team checks and sends every reply.",
+    "3": "Your firm's cloud AI assistant",
+    "4": "Reads, summarises, translates, writes or answers questions in words",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "creates a draft — text, an image or code — and a person checks it before it’s used",
+    "6a": "Little — it’s routine work, like an email, a picture or a first draft; nobody makes an important decision from it",
+    "7": "Clients or customers — including people applying to us",
+    "8": "None of these — it’s for day-to-day work",
+    "9": "Yes",
+    "12": "No",
+    "10": "My team, as part of normal work",
+    "11": [
+      "Somewhere else, or not sure"
+    ]
+  },
+  "prefills": [
+    {
+      "question": "4",
+      "status": "ticked"
+    },
+    {
+      "question": "6",
+      "status": "changed",
+      "changedTo": "creates a draft — text, an image or code — and a person checks it before it’s used"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "Not understood: 'Similar checks' (step 2 in the progress list). I never learned what it checks against what.",
+      "why": ""
+    },
+    {
+      "item": "Not understood: 'Questions' (step 4) versus 'Your answers' (step 3). I thought I was answering questions at step 3 already, so I can't tell what step 4 adds.",
+      "why": ""
+    },
+    {
+      "item": "Not understood: 'Someone who runs Ollama can connect an AI model under Settings' and 'Setup steps for whoever runs Ollama'. I don't know what Ollama is or who in my firm runs it.",
+      "why": ""
+    },
+    {
+      "item": "Not understood: 'alpha:7b' and 'AI helper alpha:7b: not yet tested on the example cases'. I don't know what alpha:7b is, why it matters that it is 'not yet tested', or whether I should trust its suggestions.",
+      "why": ""
+    },
+    {
+      "item": "Unclear: 'Where does the AI come from?' has overlapping options. My service is 'approved cloud LLM service'. 'An AI assistant or website run by an outside company — including company accounts your firm set up' and 'Your firm's cloud AI assistant' could both fit. I picked the second but I'm not sure it's right.",
+      "why": ""
+    },
+    {
+      "item": "Unclear: 'Which countries does it involve?' My packet didn't say where my branch is, so I picked 'Somewhere else, or not sure'. I'm not sure that is a good answer.",
+      "why": ""
+    },
+    {
+      "item": "Slightly unclear: on the first screen, 'We found no words about: Where does the AI come from' and 'Who ends up receiving what it produces' puzzled me, because I wrote 'approved cloud LLM service' and 'customer questions'. I wasn't sure what counts as 'words found'.",
+      "why": ""
+    },
+    {
+      "item": "Slightly unclear: 'What it can get into by itself' in the 'We found no words about' list. It seems to mean what systems the tool can reach, and the example helped a little, but it doesn't apply to my chatbot.",
+      "why": ""
+    },
+    {
+      "item": "Everything else I understood.",
+      "why": ""
+    }
+  ],
+  "expectNext": "On the first screen I would just press Next again, because I don't want to add anything. I think the form then lets me fix any answers I disagree with. When I press Continue I expect to reach a 'Questions' step with possibly a few more questions, then a 'Confirm' step where I check everything, and finally a 'Result' telling me whether I can go ahead with the chatbot and what has to be done first. I expect that result to come from my firm's written rules and not from the AI, and that the same answers would always give the same result.",
+  "ticksMean": "Ticking 'I've checked this answer' means I have read the AI helper's suggestion, compared it with what I actually meant, and agree it is correct. The suggestion doesn't count until I tick it or change it, and I can't press Continue until every suggestion has one or the other. So the tick is my own confirmation and not the AI's decision.",
+  "comment": "As a branch lead I would have ticked the other two suggestions but changed the middle one, because a chatbot that only drafts replies for a person to send is not the same as one that answers customers directly.",
+  "normalisationNotes": [
+    "label matched to 5 (exact (after dropping suffix)): \"What information will it see or use? Tick all that apply. (tick at least one)\" -> \"What information will it see or use? Tick all that apply.\"; suffix (tick at least one) dropped from the key (this is how the round-3 form itself shows the question, so the label is exact against the form)",
+    "label matched to 11 (exact (after dropping suffix)): \"Which countries does it involve? Tick all. (tick at least one)\" -> \"Which countries does it involve? Tick all.\"; suffix (tick at least one) dropped from the key (this is how the round-3 form itself shows the question, so the label is exact against the form)",
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 4 (prefix): \"What kind of AI is it? (Reads, summarises, translates, writes or answers questions in words)\"",
+    "prefill label matched to 6 (prefix): \"What happens with what it produces? (answers people’s questions directly, like a chat assistant)\"",
+    "prefill label matched to 7 (prefix-noq): \"Who ends up seeing or receiving what it produces? (Clients or customers — including people applying to us)\"",
+    "didntUnderstand given as plain strings; each becomes {item, why: \"\"} (the string, with its own \"Not understood:\" wording, is kept whole in item)"
+  ]
+}

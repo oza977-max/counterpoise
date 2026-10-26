@@ -445,7 +445,7 @@
             </section>
             <section id="user-journey">
                 <h2>User Journey</h2>
-                <ol><li>The submitter describes the tool in one box. Beside it, a short checklist of the form's questions ticks itself as the description <em>mentions</em> each one — it claims "mentioned", never "understood".</li><li>On Next, anything not mentioned is listed with a one-click example sentence to add. The person may add or just continue.</li><li>If a model is connected, it reads the description and pre-fills the form's answers — only where it can quote the description's own words, which the app checks really appear there. Everything else stays blank.</li><li>The form opens. Pre-filled answers are visibly marked with their quote and "is this right?"; each needs its own tick or a change. Blank answers are answered as today. The contradiction check still runs.</li><li>Confirm and evaluate, as today. The record says, per answer, whether the person typed it, confirmed a pre-fill, or changed one — with the quote.</li><li>The reviewer sees the description and the per-answer source on the register. Correcting a result returns to the same form, pre-filled with the confirmed answers.</li></ol>
+                <ol><li>The submitter describes the tool in one box. Beside it, a short checklist of the form's questions ticks itself as the description <em>mentions</em> each one — it claims "words found", never "understood".</li><li>On Next, anything not mentioned is listed with a one-click example sentence to add. The person may add or just continue.</li><li>If a model is connected, it reads the description and pre-fills the form's answers — only where it can quote the description's own words, which the app checks really appear there. Everything else stays blank.</li><li>The form opens. Pre-filled answers are visibly marked with their quote and "is this right?"; each needs its own tick or a change. Blank answers are answered as today. The contradiction check still runs.</li><li>Confirm and evaluate, as today. The record says, per answer, whether the person typed it, confirmed a pre-fill, or changed one — with the quote.</li><li>The reviewer sees the description and the per-answer source on the register. Correcting a result returns to the same form, pre-filled with the confirmed answers.</li></ol>
             </section>
             <section id="1-guided-intake-gi">
                 <h2>1. Guided intake (GI)</h2>
@@ -455,7 +455,7 @@
                             <span class="req-id">R18-GI-1</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Every pre-check starts with the description screen: one text box and, beside it, a checklist of the form's questions in the form's own short plain words. Each item ticks itself live as the description mentions it, and reads "mentioned", not "answered".</p>
+                        <p class="requirement-text">Every pre-check starts with the description screen: one text box and, beside it, a checklist of the form's questions in the form's own short plain words. Each item ticks itself live as the description mentions it, and reads "words found", not "answered".</p>
                         <div class="fit-criterion">the tick is computed from the text alone by a fixed, deterministic rule (no model, no clock) and is identical for identical text; one test per checklist item shows it ticking on a sentence that mentions it and staying unticked on one that does not; no item's label uses engine vocabulary (NF-11); the checklist is announced to assistive technology as a status region and does not rely on colour alone.</div>
                     </div>
                     <div class="requirement">
@@ -463,7 +463,7 @@
                             <span class="req-id">R18-GI-2</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">When the person presses Next with items unmentioned, the app lists them ("Your description doesn't mention: …") with a one-click example sentence for each, and lets the person continue regardless. Nothing is required at this step; the form asks every question anyway.</p>
+                        <p class="requirement-text">When the person presses Next with items unmentioned, the app lists them ("We found no words about: …") with a one-click example sentence for each, and lets the person continue regardless. Nothing is required at this step; the form asks every question anyway.</p>
                         <div class="fit-criterion">with every item mentioned no note shows; with two unmentioned the note names exactly those two; clicking an example appends its sentence to the description (and the item ticks); Next is never disabled by this rule.</div>
                     </div>
                     <div class="requirement">
@@ -543,8 +543,8 @@
                             <span class="req-id">R18-GI-12</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Pre-fill accuracy is measured, not assumed. The standing measurement is the in-app model test (R18-MS-4): the 31-case corpus run through the configured model, scored per question (right, blank, wrong) and by verdict agreement, with the result kept against the model's name, where it ran, and the date. A model with no recorded result is shown as "untested" wherever its name appears. The corpus itself lives in the project (<code>backtest/cases.json</code>) and is the test's only input — never a person's own description. <em>(Amended during domain 2: the owner chose an in-app test over a repo script.)</em></p>
-                        <div class="fit-criterion">the Settings screen and the description screen both show "untested" for a model with no recorded result and "tested N/31 on &lt;date&gt;" after one; the scoring is deterministic for a fixed set of model replies (a test feeds canned replies and gets the same table every time).</div>
+                        <p class="requirement-text">Pre-fill accuracy is measured, not assumed. The standing measurement is the in-app model test (R18-MS-4): the 31-case corpus run through the configured model, scored per question (right, blank, wrong) and by verdict agreement, with the result kept against the model's name, where it ran, and the date. A model with no recorded result is shown as "not yet tested on the example cases" wherever its name appears. The corpus itself lives in the project (<code>backtest/cases.json</code>) and is the test's only input — never a person's own description. <em>(Amended during domain 2: the owner chose an in-app test over a repo script.)</em></p>
+                        <div class="fit-criterion">the Settings screen and the description screen both show "not yet tested on the example cases" for a model with no recorded result and "tested N/31 on &lt;date&gt;" after one; the scoring is deterministic for a fixed set of model replies (a test feeds canned replies and gets the same table every time).</div>
                     </div>
                     <div class="requirement">
                         <div class="requirement-header">
@@ -559,7 +559,7 @@
                             <span class="req-id">R18-GI-13</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Wrong is worse than blank. The checklist, the nudge, the pre-fill marks and the record never claim more than the code can show: "mentioned" not "understood"; "from your description" only with a verified quote; "confirmed by you" only after the person's own tick or change.</p>
+                        <p class="requirement-text">Wrong is worse than blank. The checklist, the nudge, the pre-fill marks and the record never claim more than the code can show: "words found" not "understood"; "from your description" only with a verified quote; "confirmed by you" only after the person's own tick or change.</p>
                         <div class="fit-criterion">every rendered sentence introduced by this round is covered by a test that renders the state in which it would be false and asserts it is absent (BC-005).</div>
                     </div>
             </section>
@@ -595,8 +595,8 @@
                             <span class="req-id">R18-MS-4</span>
                             <span class="priority-chip priority-must">Must</span>
                         </div>
-                        <p class="requirement-text">Test it before you trust it. From Settings the person can run the configured model against the 31 built-in cases. The run shows progress, can be stopped early, gives each case 60 seconds, and uses exactly the path a real pre-fill uses. It reports, per form question, how often the pre-fill was right, left blank, or wrong, and how often the resulting verdict matched the known answer; the result is saved against model name, place and date and shown in Settings. A model may be saved without a test but is labelled "untested" until one is recorded (R18-GI-12). The test sends only the built-in cases, never a person's description.</p>
-                        <div class="fit-criterion">a stopped run reports the cases completed so far and says it was stopped; the per-question table and verdict count are deterministic for canned replies; the saved result survives reload; the model's label changes from "untested" to "tested N/31 on &lt;date&gt;".</div>
+                        <p class="requirement-text">Test it before you trust it. From Settings the person can run the configured model against the 31 built-in cases. The run shows progress, can be stopped early, gives each case 60 seconds, and uses exactly the path a real pre-fill uses. It reports, per form question, how often the pre-fill was right, left blank, or wrong, and how often the resulting verdict matched the known answer; the result is saved against model name, place and date and shown in Settings. A model may be saved without a test but is labelled "not yet tested on the example cases" until one is recorded (R18-GI-12). The test sends only the built-in cases, never a person's description.</p>
+                        <div class="fit-criterion">a stopped run reports the cases completed so far and says it was stopped; the per-question table and verdict count are deterministic for canned replies; the saved result survives reload; the model's label changes from "not yet tested on the example cases" to "tested N/31 on &lt;date&gt;".</div>
                     </div>
                     <div class="requirement">
                         <div class="requirement-header">
@@ -742,7 +742,7 @@
             <section id="open-questions">
                 <h2>Open Questions</h2>
                 <p><strong>OQ-1 — Scoring basis for the in-app test.</strong> The corpus records each case's correct <em>graph</em>, not its correct <em>form answers</em>. Two ways to score a pre-fill: author form answers for all 31 cases by hand (human-led, like pack authoring), or turn the pre-filled answers into a graph through the form's own mapping and compare that with the case's graph (the method the 2026-10-04 comparison used). For the tech spec; either must give a deterministic per-question table.</p>
-                <p><strong>OQ-2 — Untested models in real use.</strong> RESOLVED (owner, 2026-10-04): allowed, labelled "untested" on the description screen; nothing is blocked.</p>
+                <p><strong>OQ-2 — Untested models in real use.</strong> RESOLVED (owner, 2026-10-04): allowed, labelled "not yet tested on the example cases" on the description screen; nothing is blocked.</p>
                 <p><strong>OQ-3 — Plain-http firm addresses.</strong> RESOLVED (owner, 2026-10-04): allowed with an unencrypted-connection line (R18-MS-6).</p>
                 <p><strong>OQ-5 — The rule for "mentioned".</strong> R18-GI-1 ticks an item when the description mentions it, by a fixed rule; the rule's vocabulary is a technical-spec decision. Test cases pin concrete sentences that must tick and that must not (health report HR18-09).</p>
                 <p><strong>OQ-4 — Examples and the checklist.</strong> The eleven worked cases are written in the guide as plain descriptions; whether each one mentions all of the form's questions is not yet known. For the tech spec: measure how many examples tick all checklist items, and word the examples (guide and app together) so the demonstration of the checklist is honest.</p>
@@ -752,7 +752,7 @@
                 <table>
                     <thead><tr><th>ID</th><th>Domain</th><th>Summary</th><th>Priority</th></tr></thead>
                     <tbody>
-                        <tr><td>R18-GI-1</td><td>Guided intake</td><td>Describe-first screen with a live "mentioned" checklist of the form's questions</td><td>Must</td></tr>
+                        <tr><td>R18-GI-1</td><td>Guided intake</td><td>Describe-first screen with a live "words found" checklist of the form's questions</td><td>Must</td></tr>
                         <tr><td>R18-GI-2</td><td>Guided intake</td><td>Gentle nudge for unmentioned items, with one-click example sentences; never blocks</td><td>Must</td></tr>
                         <tr><td>R18-GI-3</td><td>Guided intake</td><td>Model pre-fills only with a verified quote and a valid option; the quote is evidence, confirmation is the control</td><td>Must</td></tr>
                         <tr><td>R18-GI-4</td><td>Guided intake</td><td>Every pre-filled answer marked with its quote and confirmed one by one; no accept-all</td><td>Must</td></tr>
@@ -764,7 +764,7 @@
                         <tr><td>R18-GI-10</td><td>Guided intake</td><td>One route: the card review is retired; old cases stay readable and are corrected through the pre-filled form</td><td>Must</td></tr>
                         <tr><td>R18-GI-11</td><td>Guided intake</td><td>Newcomer comprehension gate (NF-12) covers the new screens</td><td>Must</td></tr>
                         <tr><td>R18-GI-12</td><td>Guided intake</td><td>Pre-fill accuracy measured by the in-app test; untested models labelled as such</td><td>Must</td></tr>
-                        <tr><td>R18-GI-13</td><td>Guided intake</td><td>Never claim more than can be shown ("mentioned", "from your description", "confirmed by you")</td><td>Must</td></tr>
+                        <tr><td>R18-GI-13</td><td>Guided intake</td><td>Never claim more than can be shown ("words found", "from your description", "confirmed by you")</td><td>Must</td></tr>
                         <tr><td>R18-GI-14</td><td>Guided intake</td><td>Description length: blank cannot continue; over 8,000 characters the model is skipped, the text kept</td><td>Must</td></tr>
                         <tr><td>R18-MS-1</td><td>Model setting</td><td>Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app</td><td>Must</td></tr>
                         <tr><td>R18-MS-2</td><td>Model setting</td><td>Say every time where the description goes; the record names the model and place</td><td>Must</td></tr>
@@ -817,6 +817,7 @@
                         <tr><td>2026-10-07</td><td>Design review 008, strict third pass (<code>specs/intake-flow.md</code> §27, author's decisions, owner-ratified 2026-10-26): R18-PS-3 offers <strong>ten</strong> examples (the guide scripts ten; its eleventh section is not scripted); correcting an older case — whose graph the register never kept — restores only its description and recorded "Not sure" answers (the rest blank and marked), and a submitter-side "Correct this check" action is added to the register detail because none exists; the app does not run from <code>file://</code>, so no <code>file://</code> check or note is made; <code>verdict_corrected</code> may carry a changed description.</td></tr>
 <tr><td>2026-10-26</td><td>Owner ratified the author&rsquo;s decisions recorded on 2026-10-07 (design review 008) and in the R18 build: the GI-10 corpus-pin narrowing (10 worked examples and 9 blind cases through the form; the other 22 keep graph-level pins), the optional saved Anthropic key exception, the single PS-6 sentence for &ldquo;not running or blocked&rdquo;, and earlier drafts restored as they were.</td></tr>
                         <tr><td>2026-10-26</td><td>newcomer test round 2 (owner-approved): R18-PS-2, R18-NF-2 and the index row name the panel "Optional: connect an AI helper" (it was "Make it smarter"); the 2026-10-04 row above is a record and keeps the old name.</td></tr>
+                        <tr><td>2026-10-26</td><td>newcomer test round 2 follow-up (owner-approved): where this document quotes the exact wording that changed, it now quotes the new wording: the checklist states "words found" / "no words found" (R18-GI-1, R18-GI-13, the user journey and the index rows; they were "mentioned" / "not mentioned"), the nudge "We found no words about: …" (R18-GI-2; it was "Your description doesn't mention: …"), and the label "not yet tested on the example cases" (R18-GI-12, R18-MS-4, OQ-2; it was "untested"). The older rows above are records and keep the old wording.</td></tr>
                     </tbody>
                 </table>
                 <p><em>Developed using the Grounded Vibe Methodology</em></p>

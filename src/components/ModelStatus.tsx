@@ -1,6 +1,5 @@
-import { R18_COPY, modelLabelWords, placeSentence } from './plain-copy';
+import { R18_COPY, modelLabelLine, placeSentence } from './plain-copy';
 import { modelLabel } from '../llm/model-setting';
-import { visibleText } from '../engine/visible-text';
 import { useModelSetting } from './useModelSetting';
 
 // R18-B, deliverable 5 (specs/intake-flow.md §27.8). The status line above the Next button
@@ -34,7 +33,7 @@ export default function ModelStatus() {
           <>
             <p>{placeSentence(setting, keyStored)}</p>
             <p className="field-help">
-              {visibleText(setting.model)}: {modelLabelWords(modelLabel(setting, results))}
+              {modelLabelLine(setting.model, modelLabel(setting, results))}
             </p>
             {setting.place === 'firm-server' && isPlainHttp(setting.url) && <p>{R18_COPY.UNENCRYPTED_LINE}</p>}
           </>

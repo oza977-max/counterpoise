@@ -644,13 +644,14 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
   const seedResult = (r: ModelTestResult) =>
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results: [r] }));
 
-  it('TC-R18-GI-12-01: a model with no result is untested, with no count and no suffix', async () => {
+  it('TC-R18-GI-12-01: a model with no result is not yet tested, introduced as an AI helper, with no count and no suffix', async () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
-    expect(section.textContent).toContain('qwen3:4b: untested');
-    expect(section.textContent).not.toContain('tested on');
+    await waitFor(() => expect(section.textContent).toContain('AI helper qwen3:4b: not yet tested on the example cases'));
+    // "tested on <date>" is the label of a finished test; "not yet tested on the example cases" is not that
+    expect(section.textContent).not.toMatch(/tested on \d{4}-\d{2}-\d{2}/);
     expect(section.textContent).not.toContain('answers filled in correctly');
   });
 
@@ -660,8 +661,10 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
-    expect(section.textContent).toContain('gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong');
-    expect(section.textContent).not.toContain('untested');
+    await waitFor(() =>
+      expect(section.textContent).toContain('AI helper gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong'),
+    );
+    expect(section.textContent).not.toMatch(/untested|not yet tested/);
   });
 
   it('TC-R18-GI-12-03: the result belongs to the model it was run for, not to the next one chosen', async () => {
@@ -671,7 +674,7 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
-    expect(section.textContent).toContain('qwen3:4b: untested');
+    await waitFor(() => expect(section.textContent).toContain('AI helper qwen3:4b: not yet tested on the example cases'));
     expect(section.textContent).not.toContain('answers filled in correctly');
   });
 
@@ -681,8 +684,11 @@ describe('the label (TC-R18-GI-12-01, -02, -03, -06)', () => {
     const user = userEvent.setup({ delay: null });
     render(<SettingsPanel />);
     const section = await open(user);
-    expect(section.textContent).toContain('untested (a partial test stopped after 12 of 31 cases)');
+    await waitFor(() =>
+      expect(section.textContent).toContain('AI helper gemma4:cloud: untested (a partial test stopped after 12 of 31 cases)'),
+    );
     expect(section.textContent).not.toContain('tested on 2026-10-07');
+    expect(section.textContent).not.toContain('not yet tested');
   });
 });
 

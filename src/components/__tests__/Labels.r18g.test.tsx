@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { R18_COPY } from '../plain-copy';
@@ -56,10 +56,15 @@ describe('TC-R18-GI-12-06: the label leads with the answers on every screen, wit
     expect(R18_COPY.TEST_RESULT_DONE.replace('{matches}', '21')).toBe(VERDICT_LINE);
   });
 
-  it('an untested model\'s label does not say answers were filled in correctly (false state)', () => {
+  it('an untested model\'s label does not say answers were filled in correctly (false state)', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     render(<App />);
+    // the status region mounts empty and fills: wait for the real label before the negative check
+    await waitFor(() =>
+      expect(document.querySelector('.model-status__line')!.textContent).toContain(
+        'AI helper gemma4:cloud: not yet tested on the example cases',
+      ),
+    );
     expect(document.querySelector('.model-status__line')!.textContent).not.toContain('answers filled in correctly');
-    expect(document.querySelector('.model-status__line')!.textContent).toMatch(/untested/);
   });
 });

@@ -1,0 +1,91 @@
+{
+  "packet": "P4",
+  "answers": {
+    "1": "Credit card scoring model",
+    "2": "It gives credit card applications a score and automatically declines the ones below a cutoff.",
+    "3": "Not sure yet",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "4a": "No, or I don’t know",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "acts by itself within limits someone set, with no routine review",
+    "6b": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off",
+    "7": "Clients or customers — including people applying to us",
+    "8": "Whether to lend to someone, or on what terms",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "United Kingdom",
+      "European Union"
+    ],
+    "3platformZone": "Not sure"
+  },
+  "prefills": [
+    {
+      "question": "4",
+      "status": "ticked"
+    },
+    {
+      "question": "8",
+      "status": "ticked"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "Does your information stay on your firm’s own systems the whole time? / Your firm’s platform can run some AI itself and pass other work to an outside supplier.",
+      "why": "I never said anything about a firm platform, and I don't know which platform this is. 'Your information' could also mean the applicants' data or my own. I could only answer 'Not sure'."
+    },
+    {
+      "item": "2 Similar checks (step 2 in the progress list)",
+      "why": "Nothing explains what this step is. On my form screen it is marked with an arrow, so I can't tell whether I skipped it or it is coming later."
+    },
+    {
+      "item": "3 Your answers / 4 Questions",
+      "why": "I can't tell how 'Your answers' (the page I am on, which is full of questions) differs from 'Questions' later on."
+    },
+    {
+      "item": "Your description will be read on this computer by alpha:7b. / AI helper alpha:7b: not yet tested on the example cases",
+      "why": "I don't know what 'alpha:7b' is, or what 'not yet tested on the example cases' means for how far I can trust its suggestions."
+    },
+    {
+      "item": "What it can get into by itself (nudge and checklist topic)",
+      "why": "The wording is odd. The example, 'It has its own logins for other systems', helped a little, but I would not have known what it meant without it."
+    },
+    {
+      "item": "Answer in your own words. (form intro)",
+      "why": "Nearly every question is pick-from-a-list, and only two boxes take my own words, so this sentence is slightly misleading."
+    },
+    {
+      "item": "we’ll take the careful assumption and show you what we assumed",
+      "why": "I roughly get it (it assumes the safer or worse case), but I am not sure what the 'careful assumption' will be or where it will be shown."
+    },
+    {
+      "item": "pick the one nearest the bottom of this list (kind of AI)",
+      "why": "I followed the rule. But my tool also declines applications automatically, so I wasn't sure whether the 'AI agent that works through tasks on its own' option, which is lower down, should win. I kept the score option."
+    },
+    {
+      "item": "decides or acts by itself, and a person reviews afterwards — every case or a sample / acts by itself within limits someone set, with no routine review",
+      "why": "My description doesn't say whether anyone reviews the declines, so I guessed the second one from 'automatically declines … below a cutoff'. I am not certain it is right."
+    },
+    {
+      "item": "Something else — sends, books, updates records, deploys changes",
+      "why": "'deploys changes' is software jargon I don't know. It didn't matter, because I picked another option."
+    }
+  ],
+  "expectNext": "After I press Continue I think the tool will take me on to the 'Questions' step. It may ask a few more follow-up questions about my tool. Then there is a 'Confirm' step where I look over everything, and after that a 'Result'. The result should say whether the credit card scoring model can go ahead, and if not, what the credit team needs to do first. I expect the decision to come from the firm's written rules applied to my answers, not from the AI helper. I also expect that giving the same answers again would give the same result.",
+  "ticksMean": "'I've checked this answer' means I have read the AI helper's suggestion, compared it with what I know, and agree it is right. The tick is my sign-off. The helper only guessed from my description, and until I tick or change an answer it doesn't count and I can't continue. A tick does not make anything final. I can still change it before the decision. The ✓ marks on the earlier screen are different. They only show which topics my description touched on, not that anything is correct.",
+  "comment": "As an HR person I could do about two-thirds of this form from the description alone. I had to answer \"Not sure\" on where the AI comes from, whether a mistake can be put right, and whether it replaces something, and the \"firm's platform\" question was the one I couldn't make sense of.",
+  "normalisationNotes": [
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 4 (prefix): \"What kind of AI is it?\"",
+    "prefill label matched to 8 (prefix): \"Which of these does it help decide, if any?\"",
+    "prefill label matched to 7 (prefix-noq): \"Who ends up seeing or receiving what it produces?\"",
+    "didntUnderstand given as {quote, why}; quote becomes item"
+  ]
+}

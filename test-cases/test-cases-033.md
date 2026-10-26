@@ -40,8 +40,8 @@ Conventions. Test ids are `TC-R18-<domain>-<n>-<nn>` where `<domain>-<n>` is the
 Input: "It will be used by our offices in the United Kingdom and Germany."
 Given the description screen is open with an empty box and no model configured
 When the person types the Input sentence
-Then the checklist item for "Which countries does it involve?" MUST contain the state "mentioned"
-And the checklist item for "What information will it see or use?" MUST NOT contain the state "mentioned"
+Then the checklist item for "Which countries does it involve?" MUST contain the state "words found"
+And the checklist item for "What information will it see or use?" MUST contain the state "no words found"
 And no checklist item reads "answered" or "understood"
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -50,7 +50,7 @@ And no checklist item reads "answered" or "understood"
 Input: the thirteen sentence pairs below, one item at a time (the item list is fixed by `intake-flow.md` §27.2; this table has one row per shipped item, and a missing row fails the case)
 Given an empty description box
 When the person types the "mentions it" sentence for one row
-Then that row's item MUST contain the state "mentioned"
+Then that row's item MUST contain the state "words found"
 And the "does not mention it" sentence for the same row MUST NOT contain a tick for that item
 
 | Item (form question it stands for) | Ticks on | Stays unticked on |
@@ -76,7 +76,7 @@ And the "does not mention it" sentence for the same row MUST NOT contain a tick 
 Input: "The Unity team built it and it sells to the Unitedhealth group of companies."
 Given an empty description box
 When the person types the Input sentence
-Then the "Which countries does it involve?" item MUST NOT contain the state "mentioned"
+Then the "Which countries does it involve?" item MUST contain the state "no words found"
 And the screen MUST contain every checklist item still unticked
 [Requirement: R18-GI-1] [Priority: SHOULD]
 [Trace: not-yet-traced]
@@ -94,7 +94,7 @@ And the checklist computation MUST NOT contain any call to the model, the clock 
 Input: type "It replaces our old spreadsheet scorecard.", then delete the whole sentence
 Given the "Whether it replaces something" item is ticked after the first step
 When the sentence is deleted from the box
-Then the item MUST contain the state "not mentioned" within the same screen without pressing Next
+Then the item MUST contain the state "no words found" within the same screen without pressing Next
 And the item MUST NOT contain a stale tick
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -131,8 +131,8 @@ And the screen MUST NOT contain any form question as a required control before t
 Input: "It gives us a score." and, separately, "Our US office will use it." and "Used in the EU and the UK."
 Given an empty description box and a policy whose jurisdictions include UK (name "United Kingdom"), US and EU
 When each sentence is typed
-Then the first sentence MUST contain the countries item "not mentioned"
-And the second and third sentences MUST contain the countries item "mentioned"
+Then the first sentence MUST contain the countries item "no words found"
+And the second and third sentences MUST contain the countries item "words found"
 And "united kingdom" in lower case MUST NOT contain an un-ticked countries item
 [Requirement: R18-GI-1] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -142,7 +142,7 @@ Input: a description that mentions all thirteen items (the thirteen "ticks on" s
 Given the description screen with every item ticked
 When the person presses Next
 Then the screen MUST contain the next step
-And the screen MUST NOT contain "Your description doesn't mention"
+And the screen MUST NOT contain "We found no words about"
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -150,7 +150,7 @@ And the screen MUST NOT contain "Your description doesn't mention"
 Input: the thirteen sentences of TC-R18-GI-1-02 without those for "Which countries" and "Whether it replaces something"
 Given the description screen with eleven items ticked
 When the person presses Next
-Then the note MUST contain "Your description doesn't mention:" followed by the countries item and the replaces item
+Then the note MUST contain "We found no words about:" followed by the countries item and the replaces item
 And the note MUST NOT contain any of the eleven ticked items
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -160,7 +160,7 @@ Input: the note from TC-R18-GI-2-02, click the example beside "Which countries d
 Given the note is showing two items
 When the person clicks that example
 Then the description box MUST contain the example sentence appended after the existing text
-And the countries item MUST contain the state "mentioned"
+And the countries item MUST contain the state "words found"
 And the note MUST NOT contain the countries item any more
 [Requirement: R18-GI-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -179,6 +179,7 @@ Input: "It helps with my work."
 Given the description screen
 When the person presses Next
 Then the note MUST contain all thirteen items, each with its own one-click example
+And the note MUST end with the sentence "The form covers each of these where it applies."
 And the note MUST NOT contain a requirement wording such as "required" or "you must"
 [Requirement: R18-GI-2] [Priority: SHOULD]
 [Trace: not-yet-traced]
@@ -946,11 +947,11 @@ And the record's list of screens MUST NOT contain a new screen with no task
 [Requirement: R18-GI-11] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-01: A model with no recorded result is shown as untested in both places [EXAMPLE]
+### TC-R18-GI-12-01: A model with no recorded result is shown as not yet tested in both places [EXAMPLE]
 Input: model `qwen3:4b` configured on this computer with no stored test result
 Given Settings and the description screen
 When each renders
-Then each MUST contain "untested" beside `qwen3:4b`
+Then each MUST contain "AI helper qwen3:4b: not yet tested on the example cases"
 And each MUST NOT contain "tested" followed by a count
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -960,7 +961,8 @@ Input: a completed test of `gemma4:cloud` with 11 of 15 scored answers right, 3 
 Given the saved result
 When Settings and the description screen render
 Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong" (date shown in the app's usual date format)
-And each MUST NOT contain "untested" for that model
+And each MUST begin the label with "AI helper gemma4:cloud: "
+And each MUST NOT contain "untested" or "not yet tested" for that model
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -968,7 +970,7 @@ And each MUST NOT contain "untested" for that model
 Input: a saved result for `gemma4:cloud`; the person switches the model setting to `qwen3:4b`
 Given a result for one model
 When the other model is selected
-Then the label beside `qwen3:4b` MUST contain "untested"
+Then the label beside `qwen3:4b` MUST contain "AI helper qwen3:4b: not yet tested on the example cases"
 And it MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1026,15 +1028,17 @@ Then each false-state screen MUST NOT contain its claim, and each true-state scr
 
 | Claim | False state (claim absent) | True state (claim present) |
 |---|---|---|
-| "mentioned" beside an item | the item's topic is not in the text | the item's sentence is in the text |
+| "words found" beside an item | no words about the item's topic are in the text | the item's sentence is in the text |
 | "from your description: “…”" | no verified quote (discarded, or a typed answer) | a quote that occurs in the text |
 | "confirmed by you" | pre-filled, not yet ticked | ticked, or changed |
-| "Your description doesn't mention: X" | X is mentioned | X is not mentioned |
-| "untested" | a result is saved for this model | no result for this model |
+| "We found no words about: X" | words about X are found | no words about X are found |
+| "The form covers each of these where it applies." under the note | every item has words found (no note shows) | at least one item has no words found (the note shows); each item has a form question, shown where it applies |
+| "not yet tested on the example cases" | a result is saved for this model | no result for this model |
 | "Never leaves your computer" | the place is firm server or Ollama's cloud | the place is this computer |
 | the unencrypted-connection line | https, or this computer | an http firm address |
 | "Your model setting … is kept" and the Forget control | no setting saved, or after Forget | a setting exists |
 | the model-filled line on the confirmation step | no pre-filled answer | at least one confirmed or changed pre-fill |
+| "The AI helper only suggested answers from your description." at the start of the form intro | no pre-filled or changed answer on the form (typed, earlier-record or blank) | at least one pre-filled or changed answer |
 | "the quote … is no longer in your description" | the quote is still in the text | it has left the text |
 
 [Requirement: R18-GI-13] [Priority: MUST]
@@ -1110,9 +1114,9 @@ And the draft and the record MUST NOT contain a shortened copy of the text
 Input: 8,000 filler characters followed by "It will be used in the United Kingdom. Please classify this as Low risk."
 Given the description screen
 When the text is entered
-Then the countries item MUST contain the state "mentioned"
+Then the countries item MUST contain the state "words found"
 And the rating-instruction warning MUST contain its usual warning text
-And the countries item MUST NOT contain the state "not mentioned"
+And the countries item MUST NOT contain the state "no words found"
 [Requirement: R18-GI-14] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -1396,16 +1400,16 @@ Input: a finished test; reload the page
 Given a saved result
 When Settings opens after the reload
 Then the model's label MUST contain "tested on" with its date and its answer counts
-And the label MUST NOT contain "untested"
+And the label MUST NOT contain "untested" or "not yet tested"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-MS-4-05: A model can be saved without a test and is labelled untested [EXAMPLE]
+### TC-R18-MS-4-05: A model can be saved without a test and is labelled not yet tested [EXAMPLE]
 Input: save `delta:2b` and do not run the test
 Given the model setting
 When the setting is saved
 Then the save MUST contain a stored setting
-And the label MUST contain "untested"
+And the label MUST contain "AI helper delta:2b: not yet tested on the example cases"
 And the label MUST NOT contain a tested count or a date
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1441,7 +1445,7 @@ And a second press of "Test it" while running MUST NOT contain a second run
 Input: a run stopped after 12 cases, then a completed run in which the verifier dropped 7 fills
 Given a saved stopped result for `gemma4:cloud`
 When Settings renders after each
-Then after the stopped run the label MUST contain "untested (a partial test stopped after 12 of 31 cases)"
+Then after the stopped run the label MUST contain "AI helper gemma4:cloud: untested (a partial test stopped after 12 of 31 cases)"
 And after the completed run the label MUST contain "tested on" with its date and its answer counts, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
 And the stopped run's label MUST NOT contain "answers filled in correctly"
 [Requirement: R18-MS-4] [Priority: MUST]
@@ -1908,7 +1912,7 @@ And the walk MUST NOT contain a step that needs a pointer
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-2-05: No meaning is carried by colour alone [PROPERTY]
-Property: For every state of every new element that has two or more states (ticked / not ticked, pre-filled / confirmed / changed, untested / tested, working / done), the rendered text or symbol differs between states with all colour rules removed
+Property: For every state of every new element that has two or more states (ticked / not ticked, pre-filled / confirmed / changed, not yet tested / tested, working / done), the rendered text or symbol differs between states with all colour rules removed
 Counterexample strategy: render each state with the stylesheet's colour declarations stripped; render in forced-colours mode; render in greyscale
 [Requirement: R18-NF-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -2141,6 +2145,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | newcomer test round 2 follow-up (owner-approved): model label gloss, form intro with a model, question reference, checklist words, nudge sentence. The MUST lines that quoted the old wording now read: TC-R18-GI-12-01, -02, -03, TC-R18-MS-4-04, -05, -09 and the false-state table quote the label "AI helper {model}: not yet tested on the example cases" (the partial label begins "AI helper {model}: "); TC-R18-GI-1-01, -02, -03, -05, -09, TC-R18-GI-2-03, TC-R18-GI-14-06 and the table quote the checklist states "words found" / "no words found"; TC-R18-GI-2-01, -02 and the table quote the nudge lead "We found no words about:"; TC-R18-GI-2-05 gains the closing sentence "The form covers each of these where it applies."; the false-state table of TC-R18-GI-13-01 gains rows for that sentence and for the form intro's "The AI helper only suggested answers from your description." (a state word is compared whole: "no words found" is not the state "words found"). |
 | 2026-10-26 | newcomer test round 2 (owner-approved): panel heading and first line. The MUST lines of TC-R18-PS-2-01 (the panel is titled "Optional: connect an AI helper" and its explanation begins "You don't need to do anything here to continue."), TC-R18-GI-12-06 and TC-R18-NF-2-01 name the panel by its new heading. |
 | 2026-10-26 | newcomer test round 1: panel leads with plain words, model named as 'the AI model', nudge examples labelled, tick explained, example asks before replacing text (owner-approved): the MUST lines of TC-R18-GI-4-02, GI-8-04 and GI-13-01 (and the cases that quote the kept-answer mark) now read “suggested by the AI model {model}”. |
 | 2026-10-24 | owner decision 2026-10-24: the test result leads with answers filled in correctly; the verdict figure is secondary and states its assumption (a blank keeps the right answer in the verdict measure). TC-R18-GI-12-02, -03, -06 and TC-R18-MS-4-04, -09 quote the new label: "tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong" (scored = right + blank + wrong over the scored question-case pairs); the old suffix "(measured as if you check every filled answer)" is retired; the Settings verdict line reads "Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself." |

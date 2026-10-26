@@ -66,7 +66,7 @@ describe('TC-R18-NF-2-04: the whole route by keyboard', () => {
       expect(box).toHaveValue(DESCRIPTION);
       await tabTo(user, (el) => /^next/i.test(nameOf(el)));
       await user.keyboard('{Enter}');
-      expect(screen.getByText(/your description doesn.t mention:/i)).toBeInTheDocument();
+      expect(screen.getByText(/we found no words about:/i)).toBeInTheDocument();
       expect(document.activeElement).toBe(screen.getByRole('button', { name: /^next/i }));
       await user.keyboard('{Enter}');
 

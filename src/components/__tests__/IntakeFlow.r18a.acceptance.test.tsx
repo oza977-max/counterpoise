@@ -45,14 +45,14 @@ describe('R18-A acceptance: the no-model pre-check', () => {
       await fillText(user, screen.getByLabelText(/what ai tool do you want to use/i), DESCRIPTION);
       const checklist = screen
         .getAllByRole('status')
-        .find((el) => /not mentioned/i.test(el.textContent ?? ''));
-      expect(checklist, 'a role=status checklist that says "not mentioned"').toBeDefined();
-      expect(within(checklist!).getAllByText(/^(not )?mentioned$/i).length).toBeGreaterThanOrEqual(13);
-      expect(within(checklist!).getAllByText(/^mentioned$/i).length).toBeGreaterThanOrEqual(1);
+        .find((el) => /no words found/i.test(el.textContent ?? ''));
+      expect(checklist, 'a role=status checklist that says "no words found"').toBeDefined();
+      expect(within(checklist!).getAllByText(/^(no )?words found$/i).length).toBeGreaterThanOrEqual(13);
+      expect(within(checklist!).getAllByText(/^words found$/i).length).toBeGreaterThanOrEqual(1);
 
       // First Next with unmentioned items: the note, not the next step.
       await user.click(screen.getByRole('button', { name: /^next/i }));
-      expect(screen.getByText(/your description doesn.t mention:/i)).toBeInTheDocument();
+      expect(screen.getByText(/we found no words about:/i)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /continue →/i })).not.toBeInTheDocument();
 
       // Second Next (nothing changed) proceeds to the similar-checks screen.

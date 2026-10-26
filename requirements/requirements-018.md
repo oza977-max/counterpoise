@@ -84,7 +84,7 @@ twice, and the reviewer can see which answers were mine.
 
 1. The submitter describes the tool in one box. Beside it, a short checklist
    of the form's questions ticks itself as the description *mentions* each
-   one — it claims "mentioned", never "understood".
+   one — it claims "words found", never "understood".
 2. On Next, anything not mentioned is listed with a one-click example
    sentence to add. The person may add or just continue.
 3. If a model is connected, it reads the description and pre-fills the
@@ -110,7 +110,7 @@ engine only ever sees answers a person confirmed.
 **R18-GI-1 (Must):** Every pre-check starts with the description screen: one
 text box and, beside it, a checklist of the form's questions in the form's
 own short plain words. Each item ticks itself live as the description
-mentions it, and reads "mentioned", not "answered".
+mentions it, and reads "words found", not "answered".
 
 > Fit criterion: the tick is computed from the text alone by a fixed,
 > deterministic rule (no model, no clock) and is identical for identical
@@ -120,7 +120,7 @@ mentions it, and reads "mentioned", not "answered".
 > technology as a status region and does not rely on colour alone.
 
 **R18-GI-2 (Must):** When the person presses Next with items unmentioned,
-the app lists them ("Your description doesn't mention: …") with a one-click
+the app lists them ("We found no words about: …") with a one-click
 example sentence for each, and lets the person continue regardless. Nothing
 is required at this step; the form asks every question anyway.
 
@@ -243,13 +243,13 @@ standing measurement is the in-app model test (R18-MS-4): the 31-case corpus
 run through the configured model, scored per question (right, blank, wrong)
 and by verdict agreement, with the result kept against the model's name,
 where it ran, and the date. A model with no recorded result is shown as
-"untested" wherever its name appears. The corpus itself lives in the
+"not yet tested on the example cases" wherever its name appears. The corpus itself lives in the
 project (`backtest/cases.json`) and is the test's only input — never a
 person's own description. *(Amended during domain 2: the owner chose an
 in-app test over a repo script.)*
 
 > Fit criterion: the Settings screen and the description screen both show
-> "untested" for a model with no recorded result and "tested N/31 on
+> "not yet tested on the example cases" for a model with no recorded result and "tested N/31 on
 > <date>" after one; the scoring is deterministic for a fixed set of model
 > replies (a test feeds canned replies and gets the same table every time).
 
@@ -267,7 +267,7 @@ report HR18-03.)*
 
 **R18-GI-13 (Must):** Wrong is worse than blank. The checklist, the nudge,
 the pre-fill marks and the record never claim more than the code can show:
-"mentioned" not "understood"; "from your description" only with a verified
+"words found" not "understood"; "from your description" only with a verified
 quote; "confirmed by you" only after the person's own tick or change.
 
 > Fit criterion: every rendered sentence introduced by this round is
@@ -325,14 +325,14 @@ progress, can be stopped early, gives each case 60 seconds, and uses exactly
 the path a real pre-fill uses. It reports, per form question, how often the pre-fill was right, left
 blank, or wrong, and how often the resulting verdict matched the known
 answer; the result is saved against model name, place and date and shown in
-Settings. A model may be saved without a test but is labelled "untested"
+Settings. A model may be saved without a test but is labelled "not yet tested on the example cases"
 until one is recorded (R18-GI-12). The test sends only the built-in cases,
 never a person's description.
 
 > Fit criterion: a stopped run reports the cases completed so far and says
 > it was stopped; the per-question table and verdict count are deterministic
 > for canned replies; the saved result survives reload; the model's label
-> changes from "untested" to "tested N/31 on <date>".
+> changes from "not yet tested on the example cases" to "tested N/31 on <date>".
 
 **R18-MS-5 (Must):** Works with servers that ignore the strict answer
 format. The app gets a usable reply from models that honour the strict
@@ -549,7 +549,7 @@ own mapping and compare that with the case's graph (the method the
 deterministic per-question table.
 
 **OQ-2 — Untested models in real use.** RESOLVED (owner, 2026-10-04):
-allowed, labelled "untested" on the description screen; nothing is blocked.
+allowed, labelled "not yet tested on the example cases" on the description screen; nothing is blocked.
 
 **OQ-3 — Plain-http firm addresses.** RESOLVED (owner, 2026-10-04): allowed
 with an unencrypted-connection line (R18-MS-6).
@@ -569,7 +569,7 @@ together) so the demonstration of the checklist is honest.
 
 | ID | Domain | Summary | Priority |
 |---|---|---|---|
-| R18-GI-1 | Guided intake | Describe-first screen with a live "mentioned" checklist of the form's questions | Must |
+| R18-GI-1 | Guided intake | Describe-first screen with a live "words found" checklist of the form's questions | Must |
 | R18-GI-2 | Guided intake | Gentle nudge for unmentioned items, with one-click example sentences; never blocks | Must |
 | R18-GI-3 | Guided intake | Model pre-fills only with a verified quote and a valid option; the quote is evidence, confirmation is the control | Must |
 | R18-GI-4 | Guided intake | Every pre-filled answer marked with its quote and confirmed one by one; no accept-all | Must |
@@ -581,7 +581,7 @@ together) so the demonstration of the checklist is honest.
 | R18-GI-10 | Guided intake | One route: the card review is retired; old cases stay readable and are corrected through the pre-filled form | Must |
 | R18-GI-11 | Guided intake | Newcomer comprehension gate (NF-12) covers the new screens | Must |
 | R18-GI-12 | Guided intake | Pre-fill accuracy measured by the in-app test; untested models labelled as such | Must |
-| R18-GI-13 | Guided intake | Never claim more than can be shown ("mentioned", "from your description", "confirmed by you") | Must |
+| R18-GI-13 | Guided intake | Never claim more than can be shown ("words found", "from your description", "confirmed by you") | Must |
 | R18-GI-14 | Guided intake | Description length: blank cannot continue; over 8,000 characters the model is skipped, the text kept | Must |
 | R18-MS-1 | Model setting | Three declared places for the model: this computer, a firm server, Ollama's cloud via the local app | Must |
 | R18-MS-2 | Model setting | Say every time where the description goes; the record names the model and place | Must |
@@ -628,6 +628,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-07 | Design review 008, strict third pass (`specs/intake-flow.md` §27, author's decisions, owner-ratified 2026-10-26): R18-PS-3 offers **ten** examples (the guide scripts ten; its eleventh section is not scripted); correcting an older case — whose graph the register never kept — restores only its description and recorded "Not sure" answers (the rest blank and marked), and a submitter-side "Correct this check" action is added to the register detail because none exists; the app does not run from `file://`, so no `file://` check or note is made; `verdict_corrected` may carry a changed description. |
 | 2026-10-26 | Owner ratified the author's decisions recorded on 2026-10-07 (design review 008) and in the R18 build: the GI-10 corpus-pin narrowing (10 worked examples and 9 blind cases through the form; the other 22 keep graph-level pins), the optional saved Anthropic key exception, the single PS-6 sentence for "not running or blocked", and earlier drafts restored as they were. |
 | 2026-10-26 | newcomer test round 2 (owner-approved): R18-PS-2, R18-NF-2 and the index row name the panel "Optional: connect an AI helper" (it was "Make it smarter"); the 2026-10-04 row above is a record and keeps the old name. |
+| 2026-10-26 | newcomer test round 2 follow-up (owner-approved): where this document quotes the exact wording that changed, it now quotes the new wording: the checklist states "words found" / "no words found" (R18-GI-1, R18-GI-13, the user journey and the index rows; they were "mentioned" / "not mentioned"), the nudge "We found no words about: …" (R18-GI-2; it was "Your description doesn't mention: …"), and the label "not yet tested on the example cases" (R18-GI-12, R18-MS-4, OQ-2; it was "untested"). The older rows above are records and keep the old wording. |
 
 ---
 

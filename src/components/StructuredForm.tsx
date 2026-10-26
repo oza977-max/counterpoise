@@ -17,7 +17,7 @@ import { buildGraphFromForm } from '../engine/build-graph-from-form';
 import { updateFormDraft, loadFormDraft, probeLegacyFormDraft } from './intake-draft';
 import { toPlainAnswers } from '../engine/form-answer-state';
 import type { AnswerSource, FormAnswerState } from '../engine/prefill-types';
-import { originalPrefilled, unconfirmedIds } from '../engine/answer-sources';
+import { hasModelFilledAnswer, originalPrefilled, unconfirmedIds } from '../engine/answer-sources';
 import AnswerMark from './AnswerMark';
 import RatingInstructionNotice from './RatingInstructionNotice';
 import type { DataFlowGraph, PolicyFile } from '../engine/types';
@@ -568,7 +568,11 @@ export default function StructuredForm({
           newcomer's first screen of the form. Deleted; the approved intro
           keeps its exact words, with one new sentence added after it. */}
       <p className="plain-form__intro">{INTRO_TEXT}</p>
+      {/* Newcomer test round 2: with a model-filled answer on the form (a prefilled or changed source), the intro
+          first says what the AI helper did, so this sentence does not sit beside "Suggested by the AI model"
+          unexplained. With none, it is the sentence alone. */}
       <p className="plain-form__intro">
+        {hasModelFilledAnswer(answerState) ? `${R18_COPY.FORM_INTRO_MODEL_LEAD} ` : ''}
         No AI reads your answers or makes the decision, so the same answers always get the same
         result.
       </p>

@@ -224,7 +224,7 @@ export const PLAIN_QUESTIONS: PlainQuestion[] = [
       'What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes ' +
       'a summary of it — pick the one nearest the bottom of this list.',
     help:
-      'Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, in question 6.)',
+      "Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, under 'What happens with what it produces'.)",
     options: [
       {
         key: 'score',
@@ -508,7 +508,7 @@ export const QUESTIONNAIRE_COPY: Record<string, QuestionnaireFieldCopy> = {
     question:
       'What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.',
     help:
-      'Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, in question 6.)',
+      "Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, under 'What happens with what it produces'.)",
     shortLabel: 'what kind of AI it is',
     options: {
       statistical:
@@ -1350,15 +1350,22 @@ export const R18_COPY = {
     'agentic-reach': 'What it can get into by itself',
   } as Record<ChecklistItemId, string>,
   // The two state words, and a symbol beside each so colour is never the only cue (NF-2).
-  STATE_MENTIONED: 'mentioned',
-  STATE_NOT_MENTIONED: 'not mentioned',
+  // Newcomer test round 2 (2026-10-26, owner-approved): the checker is a fixed lookup of words, so the states say
+  // whether it found words, not whether the description "mentions" a topic (a model could then quote words the
+  // lookup did not know, and "not mentioned" read as a contradiction). The heading keeps "mentions".
+  STATE_MENTIONED: 'words found',
+  STATE_NOT_MENTIONED: 'no words found',
   SYMBOL_MENTIONED: '✓',
   SYMBOL_NOT_MENTIONED: '○',
 
   // The nudge (R18-GI-2). The straight apostrophe is the one the test cases quote.
-  UNMENTIONED_NOTE_LEAD: "Your description doesn't mention:",
+  // Newcomer test round 2 (2026-10-26, owner-approved): said in the checklist's own terms, so it reads true beside
+  // "no words found" ("Your description doesn't mention:" claimed more than the lookup knows).
+  UNMENTIONED_NOTE_LEAD: 'We found no words about:',
+  // Newcomer test round 2 (2026-10-26, owner-approved): "The questions that follow ask about each of these anyway."
+  // was false where a question is conditional. Every checklist item has a form question, shown where it applies.
   UNMENTIONED_NOTE_HELP:
-    'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
+    'Add a sentence if you like, or press Next again to carry on. The form covers each of these where it applies.',
   ADD_EXAMPLE_LABEL: 'Add this example',
   // Newcomer test round 1 (2026-10-26): said before each sentence so it reads as an example, not the person's words.
   NUDGE_EXAMPLE_LEAD: 'For example:',
@@ -1550,7 +1557,12 @@ export const R18_COPY = {
   } as Record<ModelPlace, string>,
 
   // The test label (R18-GI-12). The suffix is fixed and never dropped from a "tested" label.
-  LABEL_UNTESTED: 'untested',
+  // Newcomer test round 2 (2026-10-26, owner-approved): the line names the model as an AI helper before its label,
+  // in every state, and the bare "untested" of a model with no test at all is said in plain words. The other
+  // states keep their words. The where-it-goes sentences are the requirement's wording (R18-MS-2 quotes them)
+  // and keep "{model}" as it is.
+  LABEL_LINE_LEAD: 'AI helper {model}: ',
+  LABEL_UNTESTED: 'not yet tested on the example cases',
   LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
   // A partial result that was not stopped can only be inconsistent stored data; it never says "stopped" (R18-B carried minor).
   LABEL_PARTIAL_RAN: 'untested (a partial test ran {n} of 31 cases)',
@@ -1659,6 +1671,10 @@ export const R18_COPY = {
   MARK_NOT_CARRIED: 'not carried over from the earlier version',
   // One tick per answer. The accessible name is this plus the question.
   CONFIRM_LABEL: "I've checked this answer",
+  // Newcomer test round 2 (2026-10-26, owner-approved): said first in the form intro, only while a model-filled
+  // answer (a prefilled or changed source) is on the form, so "No AI reads your answers" never sits beside
+  // "Suggested by the AI model" unexplained.
+  FORM_INTRO_MODEL_LEAD: 'The AI helper only suggested answers from your description.',
   // Newcomer test round 1 (2026-10-26): said once above the form, only while an unticked suggestion blocks Continue.
   TICK_EXPLAINED: "Tick each suggestion you have checked. Until you tick or change it, it doesn't count and you can't continue.",
   STILL_TO_CHECK: 'Still to check:',
@@ -1769,7 +1785,7 @@ export function originsCommand(origin: string): string {
   return `${R18_COPY.PANEL_COMMAND_ORIGINS_NAME}=${origin}`;
 }
 
-/** The label words for a model: "untested", the partial note, or "tested N/31 on DATE (suffix)". */
+/** The label words for a model: "not yet tested on the example cases", the partial note, or "tested on DATE: …". */
 export function modelLabelWords(label: ModelLabel): string {
   switch (label.kind) {
     case 'untested':
@@ -1789,6 +1805,11 @@ export function modelLabelWords(label: ModelLabel): string {
         .replace('{wrong}', String(label.wrong));
     }
   }
+}
+
+/** The whole label line: "AI helper {model}: " and the words for the model's state. The name goes through visibleText. */
+export function modelLabelLine(model: string, label: ModelLabel): string {
+  return R18_COPY.LABEL_LINE_LEAD.replace('{model}', () => visibleText(model)) + modelLabelWords(label);
 }
 
 /** "Case n of 31" for the case now being read. */
