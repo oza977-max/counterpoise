@@ -990,7 +990,7 @@ Counterexample strategy: all replies blank, all wrong, a reply for only one case
 [Trace: not-yet-traced]
 
 ### TC-R18-GI-12-06: The test label states its counts, and a verdict figure states its assumption [EXAMPLE]
-Input: a saved result (11 right, 3 left blank, 1 wrong, 21 right verdicts) on 2026-10-07 for `gemma4:cloud`; render Settings, the description screen and the "Make it smarter" panel
+Input: a saved result (11 right, 3 left blank, 1 wrong, 21 right verdicts) on 2026-10-07 for `gemma4:cloud`; render Settings, the description screen and the "Optional: connect an AI helper" panel
 Given a tested model
 When each screen renders
 Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong"
@@ -1642,11 +1642,11 @@ And the screen MUST NOT contain an error or a model prompt
 [Requirement: R18-PS-1] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-PS-2-01: The "Make it smarter" panel renders with no model and collapses to a status line with one [EXAMPLE]
+### TC-R18-PS-2-01: The "Optional: connect an AI helper" panel renders with no model and collapses to a status line with one [EXAMPLE]
 Input: no model configured, then `qwen3:4b` on this computer
 Given the description screen
 When it renders in each state
-Then the first state MUST contain the panel titled "Make it smarter" with its explanation
+Then the first state MUST contain the panel titled "Optional: connect an AI helper" with its explanation, which MUST begin "You don't need to do anything here to continue."
 And the second state MUST contain a one-line status naming the model and where it runs, and the full panel MUST NOT contain itself open
 [Requirement: R18-PS-2] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1870,7 +1870,7 @@ And the run MUST NOT contain a case scored after Stop
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-2-01: Each new element has a role and a name [EXAMPLE]
-Input: the accessibility tree of the description screen, the checklist, the nudge, the "Make it smarter" panel, a pre-fill mark and Settings' model choices and test
+Input: the accessibility tree of the description screen, the checklist, the nudge, the "Optional: connect an AI helper" panel, a pre-fill mark and Settings' model choices and test
 Given each screen or panel
 When its tree is read
 Then each interactive element MUST contain a role and an accessible name
@@ -2141,6 +2141,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | newcomer test round 2 (owner-approved): panel heading and first line. The MUST lines of TC-R18-PS-2-01 (the panel is titled "Optional: connect an AI helper" and its explanation begins "You don't need to do anything here to continue."), TC-R18-GI-12-06 and TC-R18-NF-2-01 name the panel by its new heading. |
 | 2026-10-26 | newcomer test round 1: panel leads with plain words, model named as 'the AI model', nudge examples labelled, tick explained, example asks before replacing text (owner-approved): the MUST lines of TC-R18-GI-4-02, GI-8-04 and GI-13-01 (and the cases that quote the kept-answer mark) now read “suggested by the AI model {model}”. |
 | 2026-10-24 | owner decision 2026-10-24: the test result leads with answers filled in correctly; the verdict figure is secondary and states its assumption (a blank keeps the right answer in the verdict measure). TC-R18-GI-12-02, -03, -06 and TC-R18-MS-4-04, -09 quote the new label: "tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong" (scored = right + blank + wrong over the scored question-case pairs); the old suffix "(measured as if you check every filled answer)" is retired; the Settings verdict line reads "Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself." |
 | 2026-10-24 | R18-E review pass 1: TC-R18-GI-10-04 — the case name is restored from the register's label as a `record` answer needing its tick (it is not blank), and a case with no recorded assumptions has only its name restored. |

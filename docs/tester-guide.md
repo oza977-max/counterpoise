@@ -194,7 +194,7 @@ the first sentence above is not shown.
 Whenever the model is anywhere other than this computer, the app also says:
 *"This is a demonstration. Use made-up or public descriptions, not confidential details. A firm should use its own model on its own network."*
 
-To connect a model, the app's **Make it smarter** panel shows two commands:
+To connect a model, the app's **Optional: connect an AI helper** panel shows two commands:
 `ollama signin` (to use Ollama's cloud) and `OLLAMA_ORIGINS=https://oza977-max.github.io` (to let this page reach
 Ollama on your computer). Ollama's own documentation covers everything else:
 <https://docs.ollama.com/faq>. Link last checked 2026-10-24.

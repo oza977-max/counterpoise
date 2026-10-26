@@ -610,6 +610,7 @@ Phase 7-C03 additionally verifies the product starts and the primary user flow c
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-06-04 | Initial creation. Starts at P1 — no prior build phases in `build/handovers/`. |
+| 1.4 | 2026-10-26 | newcomer test round 2 (owner-approved): panel heading and first line. Section 12.1 R18-G row names the panel by its new heading. |
 | 1.3 | 2026-10-24 | R18-F review pass 1: §12 R18-F test list — the saved result and label (no suffix; the label leads with the answers). |
 | 1.2 | 2026-10-07 | Design review 008 fixes — §12 revised: `round-18` branch and merge after R18-G; R18-C split into C0 (fixture spike), C1, C2; R18-D split into D1/D2 and sequenced before E; test-case ownership table; planned-modules list updated; R18-A forces the form route. |
 | 1.1 | 2026-10-07 | Round 18 — §12 added: chunks R18-A to R18-G (project round convention, no collision with P1–P8 or earlier round chunks), dependency matrix and network, wiring matrix with demanded-by column, the planned-modules list read by `spec-parity-check.py`, integration closure. MVP-1 met: R18-A is a runnable no-model slice. |
@@ -803,7 +804,7 @@ need their own routing.
 | R18-D2 | Record write side: `toAnswerSources` once per confirm attempt; `description` on `verdict_corrected`; the submitter-side "Correct this check" register action and `OPEN_CORRECTION_FROM_RECORD` for cases with `answer_sources` | D1 | E | F |
 | R18-E | One route: retirement table executed; older cases (no `answer_sources`) corrected through `answersFromRecord` (description + recorded "Not sure" answers, the rest blank and marked) | D2 | G | F |
 | R18-F | In-app test: bundled corpus, runner, derived `QUESTION_FIELDS`, scorer, results store, label, Settings Test-it UI | B, C1 | G | D1, D2, E (separate worktree; merges sequentially) |
-| R18-G | Public site: "Make it smarter" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over `vite preview`, newcomer test, accessibility sweep, merge to `main` | B, E, F | — | — |
+| R18-G | Public site: "Optional: connect an AI helper" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over `vite preview`, newcomer test, accessibility sweep, merge to `main` | B, E, F | — | — |
 
 ### 12.2 Dependency network
 

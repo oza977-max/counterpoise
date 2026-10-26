@@ -6,7 +6,7 @@ import { DUP_CHECK_WAIT, SLOW_FLOW_MS, pressNext } from './fillText';
 import { answerExampleOne } from './r18aFlow';
 
 // R18-G acceptance test (outside-in, written first). A first-time visitor with
-// empty storage sees the "Make it smarter" panel with exactly the two commands
+// empty storage sees the "Optional: connect an AI helper" panel with exactly the two commands
 // and the dated link (TC-R18-PS-2-01, -02), presses "Try an example" which fills
 // the description and ticks the checklist (TC-R18-PS-3-01), continues with no
 // model, reads the spec's no-model sentence (specs/intake-flow.md §27.5, which
@@ -16,7 +16,7 @@ const EXAMPLE_ONE =
   "A dashboard that summarises last month's internal ticket volumes for the operations team. It reads from our own reporting database and produces a written summary. Nobody acts on it automatically.";
 
 const NOT_CONFIGURED =
-  'No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under Make it smarter.';
+  "No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under 'Optional: connect an AI helper'.";
 
 beforeEach(() => {
   localStorage.clear();
@@ -31,7 +31,7 @@ describe('R18-G acceptance: the first visit on the public site', () => {
       render(<App />);
 
       // The panel: titled, exactly two commands in code style, a link to Ollama's own docs, a dated check.
-      const panel = await screen.findByRole('region', { name: /make it smarter/i });
+      const panel = await screen.findByRole('region', { name: /optional: connect an ai helper/i });
       const commands = Array.from(panel.querySelectorAll('code')).map((c) => c.textContent);
       expect(commands).toEqual(['ollama signin', `OLLAMA_ORIGINS=${window.location.origin}`]);
       const link = within(panel).getByRole('link', { name: /ollama/i });

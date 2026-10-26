@@ -2163,7 +2163,7 @@ export default function IntakeFlow({
                   descriptionRef.current?.focus();
                 }}
               />
-              {/* R18-G (§27.12, PS-2): the "Make it smarter" panel while no model is set; nothing once one is. */}
+              {/* R18-G (§27.12, PS-2): the "Optional: connect an AI helper" panel while no model is set; nothing once one is. */}
               <MakeItSmarter />
               {/* R18-B (§27.8): where the description will go and which model reads it,
                   directly above Next. Shown from the stored setting only when it validates. */}

@@ -1405,7 +1405,7 @@ export const R18_COPY = {
   // Failure sentences (§27.5 table), keyed by PrefillFailure. {host} is filled in by the caller.
   FAILURE_SENTENCES: {
     'not-configured': same(
-      'No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under Make it smarter.',
+      "No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under 'Optional: connect an AI helper'.",
     ),
     'too-long': same(
       'Your description was too long to read automatically, so the form is blank. It is kept in full.',
@@ -1481,11 +1481,13 @@ export const R18_COPY = {
 
   NO_MODEL_SENTENCE: 'No model is connected.',
 
-  // ── Round 18-G: the "Make it smarter" panel and "Try an example" (specs/intake-flow.md §27.12) ──
+  // ── Round 18-G: the "Optional: connect an AI helper" panel and "Try an example" (specs/intake-flow.md §27.12) ──
   // The panel names exactly two commands and no model, version or price; Ollama's own pages cover the rest.
-  PANEL_HEADING: 'Make it smarter',
+  // Newcomer test round 2 (2026-10-26, owner-approved): the heading says it is optional and what it is for; the
+  // first line says nothing here has to be done (true only while no model is set, the only time the panel shows).
+  PANEL_HEADING: 'Optional: connect an AI helper',
   PANEL_EXPLANATION:
-    'Optional. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.',
+    "You don't need to do anything here to continue. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.",
   PANEL_SUMMARY: 'Setup steps for whoever runs Ollama',
   PANEL_SIGNIN_LEAD: "To use Ollama's cloud, sign in once:",
   PANEL_ORIGINS_LEAD:
@@ -1755,7 +1757,7 @@ export function placeSentence(
     .replace('{address}', () => visibleText(setting.url));
 }
 
-/** The page the "Make it smarter" panel links for everything beyond its two commands. */
+/** The page the "Optional: connect an AI helper" panel links for everything beyond its two commands. */
 export const OLLAMA_DOCS_URL = 'https://docs.ollama.com/faq';
 /** The day the link above was last opened and found to answer and to cover OLLAMA_ORIGINS. Update it with the link. */
 export const OLLAMA_DOCS_CHECKED = '2026-10-24';

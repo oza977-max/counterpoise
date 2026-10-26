@@ -390,7 +390,7 @@ up first.
 > and a full pre-check completes through the form with no model; no screen
 > before the first description is a set-up screen.
 
-**R18-PS-2 (Must):** A clearly visible "Make it smarter" panel on the
+**R18-PS-2 (Must):** A clearly visible "Optional: connect an AI helper" panel on the
 description screen explains, in plain words, that a connected model can fill
 in the form from the description, and how to connect one: Ollama on the
 visitor's own computer, or Ollama's free cloud after one `ollama signin`. It
@@ -462,7 +462,7 @@ can be stopped.
 > answer; the limit (60 seconds) is stated on the Settings screen.
 
 **R18-NF-2 (Must):** Accessibility. Every screen or panel new or changed
-this round — the description screen, checklist, nudge, "Make it smarter"
+this round — the description screen, checklist, nudge, "Optional: connect an AI helper"
 panel, pre-fill marks, Settings model choices and test — meets WCAG 2.1 AA as
 adopted in design review 007: keyboard-operable, named controls, status text
 that is announced, no meaning by colour alone, contrast checked.
@@ -592,7 +592,7 @@ together) so the demonstration of the checklist is honest.
 | R18-MS-7 | Model setting | Plain sentences for retired, unavailable, used-up, signed-out or silent models | Must |
 | R18-MS-8 | Model setting | The test cases are the public corpus, byte-identical, with no firm data | Must |
 | R18-PS-1 | Public demo site | A first-time visitor completes a pre-check at once with no model | Must |
-| R18-PS-2 | Public demo site | "Make it smarter" panel: two stable commands and a dated link to Ollama's docs | Must |
+| R18-PS-2 | Public demo site | "Optional: connect an AI helper" panel: two stable commands and a dated link to Ollama's docs | Must |
 | R18-PS-3 | Public demo site | "Try an example": the ten scripted worked cases, generated from the guide's own source | Must |
 | R18-PS-4 | Public demo site | Standing demo-only notice whenever the model is not on this computer | Must |
 | R18-PS-5 | Public demo site | No owner key, token or sign-in in the public site; no model-key field in Settings | Must |
@@ -626,6 +626,7 @@ together) so the demonstration of the checklist is honest.
 | 2026-10-07 | Design review 008 fixes (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-10 and the Assumptions line narrowed — the form-route pins cover the 11 worked examples and the 9 corpus cases with blind answer sets; the other 22 keep graph-level pins and are exercised by the in-app test. R18-PS-5 and R18-NF-3 narrowed — the optional saved Anthropic key (no screen sets it) still enables the semantic duplicate check and the verdict explanation, which send case text to Anthropic; declared in the docs and covered by the egress tests. R18-PS-6 met by one sentence (earlier row). Round-18 chunks land on a `round-18` branch and merge to `main` after R18-G. |
 | 2026-10-07 | Design review 008, strict second pass (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-GI-3 amended in its body — a verified quote has at least two words, at most 300 characters and no control, format or private-use characters (a correct one-word quote is dropped and the question stays blank); R18-GI-10, PS-5 and NF-3 bodies now carry the narrowings recorded in the previous row; the description (Question 2) is not a form answer; a stopped in-app test never makes a model "tested"; while an Anthropic key is stored the "never leaves your computer" sentence is withheld. |
 | 2026-10-07 | Design review 008, strict third pass (`specs/intake-flow.md` §27, author's decisions for the owner to ratify): R18-PS-3 offers **ten** examples (the guide scripts ten; its eleventh section is not scripted); correcting an older case — whose graph the register never kept — restores only its description and recorded "Not sure" answers (the rest blank and marked), and a submitter-side "Correct this check" action is added to the register detail because none exists; the app does not run from `file://`, so no `file://` check or note is made; `verdict_corrected` may carry a changed description. |
+| 2026-10-26 | newcomer test round 2 (owner-approved): R18-PS-2, R18-NF-2 and the index row name the panel "Optional: connect an AI helper" (it was "Make it smarter"); the 2026-10-04 row above is a record and keeps the old name. |
 
 ---
 

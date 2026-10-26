@@ -14,7 +14,7 @@ import {
 } from '../plain-copy';
 import { MODEL_SETTING_KEY, updateModelSetting, forgetModelSetting } from '../../llm/model-setting';
 
-// R18-G, the "Make it smarter" panel (specs/intake-flow.md §27.12, R18-PS-2).
+// R18-G, the "Optional: connect an AI helper" panel (specs/intake-flow.md §27.12, R18-PS-2).
 
 const LOCAL = 'http://localhost:11434';
 const FIRM = 'https://ai.example-firm.test:8443';
@@ -24,7 +24,7 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
-const panel = () => screen.queryByRole('region', { name: /make it smarter/i });
+const panel = () => screen.queryByRole('region', { name: /optional: connect an ai helper/i });
 
 describe('TC-R18-PS-2-01: the panel with no model, the one-line status with one', () => {
   it('with nothing stored it shows the titled panel with its explanation', () => {
@@ -80,7 +80,7 @@ describe('TC-R18-PS-2-01: the panel with no model, the one-line status with one'
 describe('TC-R18-PS-2-02: exactly two commands, a link and a dated check', () => {
   function text() {
     render(<MakeItSmarter />);
-    return screen.getByRole('region', { name: /make it smarter/i });
+    return screen.getByRole('region', { name: /optional: connect an ai helper/i });
   }
 
   it('has exactly two commands in code style: ollama signin and the allowed-origins setting for this page', () => {
@@ -130,7 +130,7 @@ describe('TC-R18-PS-2-02: exactly two commands, a link and a dated check', () =>
 describe('TC-R18-PS-2-03: the panel promises nothing about where text goes; the status line carries the one sentence for each place', () => {
   it('the panel holds none of the three where-it-goes promises', () => {
     render(<MakeItSmarter />);
-    const t = screen.getByRole('region', { name: /make it smarter/i }).textContent ?? '';
+    const t = screen.getByRole('region', { name: /optional: connect an ai helper/i }).textContent ?? '';
     expect(t).not.toMatch(/never leaves|will be sent|will be read|leaves your computer/i);
   });
 
@@ -150,11 +150,11 @@ describe('TC-R18-PS-2-03: the panel promises nothing about where text goes; the 
 // setup steps under a closed disclosure for whoever runs Ollama.
 describe('TC-R18-PS-2-05: the panel leads with plain words; setup steps sit under a closed disclosure', () => {
   const LEAD =
-    'Optional. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.';
+    "You don't need to do anything here to continue. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.";
 
   function open() {
     render(<MakeItSmarter />);
-    return screen.getByRole('region', { name: /make it smarter/i });
+    return screen.getByRole('region', { name: /optional: connect an ai helper/i });
   }
 
   it('the lead sentence is plain words, comes first after the heading, and sits outside the disclosure', () => {
@@ -189,6 +189,42 @@ describe('TC-R18-PS-2-05: the panel leads with plain words; setup steps sit unde
     outside.querySelector('details')!.remove();
     expect(outside.querySelectorAll('code, a')).toHaveLength(0);
     expect(outside.textContent).not.toContain('Link last checked');
+  });
+
+  it('newcomer round 2: the heading says the panel is optional and what it is for, in plain words', () => {
+    const p = open();
+    expect(R18_COPY.PANEL_HEADING).toBe('Optional: connect an AI helper');
+    expect(within(p).getByRole('heading', { name: 'Optional: connect an AI helper' })).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('Make it smarter');
+    expect(R18_COPY.PANEL_HEADING).not.toMatch(/approved|rejected/i);
+  });
+
+  it('newcomer round 2: the first line says nothing here has to be done, then the existing sentence follows', () => {
+    const p = open();
+    const first = p.querySelector('h2 + p')!.textContent!;
+    expect(first.startsWith("You don't need to do anything here to continue. ")).toBe(true);
+    expect(first.endsWith(
+      'Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.',
+    )).toBe(true);
+    // the heading now carries "Optional", so the first line does not repeat it
+    expect(first).not.toMatch(/^Optional/);
+  });
+
+  it('false state (first line): it is true only while no model is set - with no model a person can type and press Next with the panel untouched, and with a model neither the panel nor the line is on screen', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { unmount } = render(<App />);
+    expect(panel()!.textContent).toContain("You don't need to do anything here to continue.");
+    const box = screen.getByLabelText(/what ai tool do you want to use/i);
+    await user.click(box);
+    await user.paste('It reads client names and account details.');
+    expect(screen.getByRole('button', { name: /^next/i })).toBeEnabled();
+    unmount();
+    localStorage.clear();
+    updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
+    render(<App />);
+    expect(panel()).toBeNull();
+    expect(document.body.textContent).not.toContain("You don't need to do anything here to continue.");
+    expect(document.body.textContent).not.toContain('Optional: connect an AI helper');
   });
 
   it('pressing the summary opens it (a native control, so Enter and Space work too)', async () => {

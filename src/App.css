@@ -3493,7 +3493,7 @@ details input {
   color: var(--ink);
 }
 
-/* R18-G: the "Make it smarter" panel and the example list on the describe screen. */
+/* R18-G: the "Optional: connect an AI helper" panel and the example list on the describe screen. */
 .make-it-smarter {
   margin: 0.75rem 0;
   padding: 0.5rem 0.75rem;

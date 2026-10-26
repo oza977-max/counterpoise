@@ -59,7 +59,7 @@ describe('the first screen (TC-R18-GI-1-08, TC-R18-PS-1-02)', () => {
     expect(checklist()).toBeInTheDocument();
     // The pre-check's own screen: no sign-in, key or model set-up step in front of the box.
     const main = box().closest('.intake-flow')!;
-    // R18-G: the optional "Make it smarter" panel (PS-2) explains how to connect a model and so says "sign in";
+    // R18-G: the optional "Optional: connect an AI helper" panel (PS-2) explains how to connect a model and so says "sign in";
     // it is an explanation, not a step: it holds no field or button and nothing waits on it. Everything else is scanned.
     const panel = main.querySelector('.make-it-smarter');
     expect(panel).not.toBeNull();
@@ -299,7 +299,7 @@ describe('the no-model note is true in every state (BC-005, TC-R18-GI-7-01)', ()
     localStorage.setItem('aigate:local-llm-url', 'http://localhost:11434');
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    expect(await screen.findByRole('region', { name: /make it smarter/i })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /optional: connect an ai helper/i })).toBeInTheDocument();
     await fillText(user, box(), 'It reads client names and account details.');
     await user.click(next());
     await user.click(next());

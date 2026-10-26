@@ -85,6 +85,15 @@ describe('TC-R18-PS-2-04: the same two commands, to the character, in the app an
     expect(codeSpans('README.md')).not.toContain(`${origins}/`);
   });
 
+  // Newcomer test round 2 (2026-10-26, owner-approved): the panel's heading is "Optional: connect an AI helper"; every
+  // copy names the panel by the heading the app prints, and none still uses the retired name.
+  it.each(DOCS)('%s names the panel by the heading the app prints, not the retired name', (f) => {
+    const doc = read(f);
+    expect(R18_COPY.PANEL_HEADING).toBe('Optional: connect an AI helper');
+    expect(has(doc, `the app's ${R18_COPY.PANEL_HEADING} panel shows two commands`), f).toBe(true);
+    expect(plain(doc), f).not.toContain('Make it smarter');
+  });
+
   it.each(DOCS)('%s gives Ollama\'s documentation link and the date it was last checked, as the panel does', (f) => {
     const doc = read(f);
     expect(doc).toContain(OLLAMA_DOCS_URL);

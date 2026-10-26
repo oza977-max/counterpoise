@@ -63,7 +63,7 @@ describe('I1: the note never names a button that is not on screen', () => {
     localStorage.removeItem(MODEL_SETTING_KEY);
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    // R18-G: the "Make it smarter" panel exists, so the no-model note is the spec's sentence, which names it.
+    // R18-G: the "Optional: connect an AI helper" panel exists, so the no-model note is the spec's sentence, which names it.
     expect(note()!.textContent).toBe(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama);
     expect(note()!.textContent).not.toMatch(/read my description again/i);
     expect(readAgainButton()).not.toBeInTheDocument();

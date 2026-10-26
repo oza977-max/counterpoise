@@ -92,7 +92,7 @@ describe('the failure sentences (intake-flow §27.5)', () => {
   });
   it('the not-configured sentence says no model is connected and where to connect one', () => {
     expect(R18_COPY.FAILURE_SENTENCES['not-configured'].ollama).toBe(
-      'No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under Make it smarter.',
+      "No model is connected, so nothing was filled in for you. Answer the questions below — or connect one under 'Optional: connect an AI helper'.",
     );
   });
   it('too-long matches TOO_LONG_SENTENCE', () => {

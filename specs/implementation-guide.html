@@ -926,6 +926,7 @@ REGISTER TRACK
         </tr>
       </thead>
       <tbody>
+        <tr><td>1.4</td><td>2026-10-26</td><td>newcomer test round 2 (owner-approved): panel heading and first line. Section 12.1 R18-G row names the panel by its new heading.</td></tr>
         <tr><td>1.3</td><td>2026-10-24</td><td>R18-F review pass 1: &sect;12 R18-F test list &mdash; the saved result and label (no suffix; the label leads with the answers).</td></tr>
         <tr><td>1.2</td><td>2026-10-07</td><td>Design review 008 fixes &mdash; &sect;12 revised: <code>round-18</code> branch and merge after R18-G; R18-C split into C0 (fixture spike), C1, C2; R18-D split into D1/D2 and sequenced before E; test-case ownership table; planned-modules list updated; R18-A forces the form route.</td></tr>
         <tr><td>1.1</td><td>2026-10-07</td><td>Round 18 &mdash; &sect;12 added: chunks R18-A to R18-G (project round convention, no collision with P1&ndash;P8 or earlier round chunks), dependency matrix and network, wiring matrix with demanded-by column, the planned-modules list read by <code>spec-parity-check.py</code>, integration closure. MVP-1 met: R18-A is a runnable no-model slice.</td></tr>
@@ -1020,7 +1021,7 @@ P8-C06 ───────────┘</code></pre>
         <tr><td>R18-D2</td><td>Record write side: <code>toAnswerSources</code> once per confirm attempt; <code>description</code> on <code>verdict_corrected</code>; the submitter-side "Correct this check" register action and <code>OPEN_CORRECTION_FROM_RECORD</code> for cases with <code>answer_sources</code></td><td>D1</td><td>E</td><td>F</td></tr>
         <tr><td>R18-E</td><td>One route: retirement table executed; older cases (no <code>answer_sources</code>) corrected through <code>answersFromRecord</code> (description + recorded "Not sure" answers, the rest blank and marked)</td><td>D2</td><td>G</td><td>F</td></tr>
         <tr><td>R18-F</td><td>In-app test: bundled corpus, runner, derived <code>QUESTION_FIELDS</code>, scorer, results store, label, Settings Test-it UI</td><td>B, C1</td><td>G</td><td>D1, D2, E (separate worktree; merges sequentially)</td></tr>
-        <tr><td>R18-G</td><td>Public site: "Make it smarter" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over <code>vite preview</code>, newcomer test, accessibility sweep, merge to <code>main</code></td><td>B, E, F</td><td>&mdash;</td><td>&mdash;</td></tr>
+        <tr><td>R18-G</td><td>Public site: "Optional: connect an AI helper" panel, "Try an example" from one source, four-copy docs tests, dist scan in CI, CSP check over <code>vite preview</code>, newcomer test, accessibility sweep, merge to <code>main</code></td><td>B, E, F</td><td>&mdash;</td><td>&mdash;</td></tr>
       </tbody>
     </table>
     <h3 id="r18-12-12-2-dependency-network">12.2 Dependency network</h3>

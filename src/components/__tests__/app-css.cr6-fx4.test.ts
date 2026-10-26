@@ -58,7 +58,7 @@ describe('App.css — CR6-09: small text meets 4.5:1', () => {
     ['.checklist__item', '--card-bg'],
     ['.checklist__state', '--card-bg'],
     ['.describe__nudge-lead', '--paper'],
-    // R18-G: the "Make it smarter" panel and the example list
+    // R18-G: the "Optional: connect an AI helper" panel and the example list
     ['.make-it-smarter', '--paper'],
     ['.make-it-smarter__heading', '--paper'],
     ['.make-it-smarter__command', '--card-bg'],

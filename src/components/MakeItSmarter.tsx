@@ -1,7 +1,7 @@
 import { R18_COPY, OLLAMA_DOCS_CHECKED, OLLAMA_DOCS_URL, originsCommand } from './plain-copy';
 import { useModelSetting } from './useModelSetting';
 
-// R18-G (specs/intake-flow.md §27.12, R18-PS-2). The "Make it smarter" panel on the
+// R18-G (specs/intake-flow.md §27.12, R18-PS-2). The "Optional: connect an AI helper" panel on the
 // description screen. Shown when no model is set; when one is set the one-line model
 // status (ModelStatus) says where the description goes, and this renders nothing.
 // Presentation only. It names exactly two commands (`ollama signin` and the

@@ -30,7 +30,7 @@ describe('formReadNote', () => {
     expect(formReadNote('setting-changed', 'this-computer', '', { ...base, readAgainShown: false })).toBe(R18_COPY.SETTING_CHANGED_NO_BUTTON);
   });
 
-  it('TC-R18-GI-13-01r2a (R18-G false state): "Make it smarter" and "No model is connected" are named only where no model is set', () => {
+  it('TC-R18-GI-13-01r2a (R18-G false state): "Optional: connect an AI helper" and "No model is connected" are named only where no model is set', () => {
     const outcomes = [
       'not-configured', 'too-long', 'timed-out', 'skipped', 'not-read', 'setting-changed', 'invalid-setting', 'nothing-found',
       'retired', 'model-missing', 'not-included', 'allowance-used', 'signed-out', 'not-answering', 'blocked-or-unreachable', 'unusable', 'other',
@@ -43,7 +43,7 @@ describe('formReadNote', () => {
             for (const place of ['this-computer', 'firm-server', 'ollama-cloud'] as const) {
               const note = formReadNote(outcome, place, 'localhost', { earlierKept, readAgainShown, settingKind });
               const noModelSet = settingKind === 'none' || settingKind === 'no-model';
-              if (/make it smarter|no model is connected/i.test(note)) {
+              if (/optional: connect an ai helper|no model is connected/i.test(note)) {
                 named += 1;
                 expect(noModelSet, `${outcome}/${settingKind}: ${note}`).toBe(true);
                 expect(earlierKept).toBe(false);
