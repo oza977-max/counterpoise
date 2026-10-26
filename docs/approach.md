@@ -248,7 +248,7 @@ the rule — not the case — is wrong, they file a challenge from the sign-off
 page: the rule, the reasoning, their name, permanently on the audit trail.
 Challenges accumulate per rule on the **Rule challenges** screen, so the rule
 owner sees "this rule has drawn four objections from three reviewers" as
-evidence, not anecdote.
+evidence, not hearsay.
 
 Two design decisions carry the weight. A challenge is **advisory by
 construction** — it cannot change a verdict, move a case, or feed the engine;

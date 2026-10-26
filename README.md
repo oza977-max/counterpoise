@@ -6,7 +6,8 @@
 
 **Your AI risk appetite, as code. Describe an AI use case; get the decision your own rules make — in minutes, with the regulation and the person behind every step.**
 
-[**Try the live demo →**](https://oza977-max.github.io/counterpoise/) &nbsp;·&nbsp; nothing to install, no sign-up, no external requests
+[**Try the live demo →**](https://oza977-max.github.io/counterpoise/) &nbsp;·&nbsp; nothing to install, no sign-up, no external requests unless you connect a model
+&nbsp;·&nbsp; [Why I built it](https://redpillrisk.substack.com/p/i-turned-ai-risk-rules-into-code)
 &nbsp;·&nbsp; [The research behind it](https://oza977-max.github.io/counterpoise/research/after-deployment.html)
 &nbsp;·&nbsp; [The approach, for firms](docs/approach.md)
 
@@ -52,7 +53,7 @@ And a pre-check that takes minutes instead of weeks is the cheapest defence agai
 ## How it works
 
 1. **Describe the use case in your own words.** A live checklist shows which topics your description mentions.
-2. **Optionally, a model reads it and suggests answers.** Each suggestion shows the exact words it came from — *"Suggested by the AI model {model} from your description: 'client names' — is this right?"* — and needs **your own tick**. Nothing a model suggests reaches the engine until you confirm it, and the record keeps who supplied every answer. No model? You answer the short form yourself; the result is identical.
+2. **Optionally, a model reads it and suggests answers.** Each suggestion shows the exact words it came from — *"Suggested by the AI model {model} from your description: 'client names' — is this right?"* — and needs **your own tick**. Nothing a model suggests reaches the engine until you confirm it, and the record keeps who supplied every answer. No model? You answer the short form yourself; the result is identical. Before trusting a model, **Test it** in Settings runs it over 31 public example cases and shows how many answers it filled in correctly, left blank and got wrong.
 3. **The engine evaluates** the confirmed answers against your appetite and the jurisdiction packs that apply (SS1/23, EU AI Act, SR 26-2, DORA): hard lines first, then appetite rules, tier and track.
 4. **You get the verdict with its "why"** — the minimal control set, the regulatory reasoning chain quoting the source text, and the standing conditions the approval assumes.
 5. **The case goes to the second line.** Controls get owners and dates; the reviewer signs off — or challenges the *rule*, which files dissent to a rule-improvement queue without touching the verdict. Every step lands on an append-only, hash-chained audit trail.
@@ -142,7 +143,7 @@ You don't need a finished AI risk appetite to begin. The full guide is in [docs/
 
 ## Try it
 
-**Live:** <https://oza977-max.github.io/counterpoise/> → **Demo data → Load sample use cases** → open any verdict. Then try [`docs/try-these.md`](docs/try-these.md): ten worked cases (plus a section on ways to break it) that each make the engine do something different — every printed outcome pinned by a test.
+**Live:** <https://oza977-max.github.io/counterpoise/>. On the first screen, **Try an example** fills in one of ten worked cases; or go to **Demo data → Load sample use cases** and open any verdict. Then try [`docs/try-these.md`](docs/try-these.md): ten worked cases (plus a section on ways to break it) that each make the engine do something different — every printed outcome pinned by a test.
 
 **Back-test on your own copy.** Once a firm runs its own copy of the app, the fastest honest test of whether appetite-as-code works for it is to run cases it has *already decided* and look at where the tool disagrees: that disagreement is the finding. [`backtest/use-cases.md`](backtest/use-cases.md) shows the method with worked examples. On the public demo, use the samples or made-up cases; never put real company information into it.
 

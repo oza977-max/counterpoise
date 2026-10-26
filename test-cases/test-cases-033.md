@@ -2123,7 +2123,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 ### Open points (all settled by the tech spec, 2026-10-07)
 
 1. **GI-8 and GI-13** — a kept answer whose quote has left the edited description reads “confirmed by you — the quote “…” suggested by {model} is no longer in your description”; the record keeps the original quote (`intake-flow.md` §27.6; TC-R18-GI-8-04 amended).
-2. **PS-6** — a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (§27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; recorded for the owner to ratify.
+2. **PS-6** — a page cannot tell a refused connection from a blocked origin, so there is one sentence naming both causes (§27.5; TC-R18-PS-6-01..03 rewritten). The PS-6 fit criterion ("which of the two it is") is therefore met only in this merged form; owner-ratified 2026-10-26.
 3. **MS-1, Ollama's cloud with a non-loopback address** — refused; the cloud choice also needs a cloud-tagged model (§27.8; TC-R18-MS-1-08, -09 added).
 4. **MS-1, cloud tag case** — matched without regard to case (§27.8; `gemma4:Cloud` added to TC-R18-MS-1-02).
 5. **GI-1, the checklist items** — thirteen, one per form question a description can mention (§27.2); TC-R18-GI-1-02 gained a countries row and the "twelve" in the GI-1/GI-2 cases became "thirteen".
