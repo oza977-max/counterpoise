@@ -715,7 +715,10 @@ export default function RegisterDetail({ useCaseId, role, policy, onBack, onCorr
         enriched.push({ ...m, controls: verdict?.controls ?? [] });
       }
       if (!cancelled) setPrecedents(enriched);
-    })();
+    })().catch(() => {
+      // The similar-cases list is information only. If storage fails mid-lookup (or closes after the page
+      // has gone), leave the list as it was: an empty list renders nothing, so nothing false is shown.
+    });
     return () => {
       cancelled = true;
     };

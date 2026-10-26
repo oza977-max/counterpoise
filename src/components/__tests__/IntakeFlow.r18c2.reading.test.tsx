@@ -87,7 +87,7 @@ describe('a read that does not produce a pre-fill opens the blank form with one 
     render(<App />);
     await describeAndContinue(user, DESC);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('unusable', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('unusable', 'this-computer', '')));
     expect(sentenceOnForm()).toHaveAttribute('role', 'status');
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
     expect(fake.requests.length).toBeGreaterThanOrEqual(1);
@@ -99,7 +99,7 @@ describe('a read that does not produce a pre-fill opens the blank form with one 
     render(<App />);
     await describeAndContinue(user, DESC);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('not-answering', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('not-answering', 'this-computer', '')));
     expect(document.body.textContent).not.toMatch(/internal server error|stack at line|HTTP 500/i);
   }, SLOW_FLOW_MS);
 
@@ -109,7 +109,7 @@ describe('a read that does not produce a pre-fill opens the blank form with one 
     render(<App />);
     await describeAndContinue(user, DESC);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('blocked-or-unreachable', 'this-computer', 'http://localhost:11434'));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('blocked-or-unreachable', 'this-computer', 'http://localhost:11434')));
     expect(fake.requests).toHaveLength(1);
   }, SLOW_FLOW_MS);
 
@@ -119,7 +119,7 @@ describe('a read that does not produce a pre-fill opens the blank form with one 
     render(<App />);
     await describeAndContinue(user, DESC);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('nothing-found', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('nothing-found', 'this-computer', '')));
   }, SLOW_FLOW_MS);
 
   it('TC-R18-GI-7-05: a failed attempt writes nothing to the audit trail', async () => {
@@ -156,7 +156,7 @@ describe('Skip, timeout and a changed setting', () => {
     const skip = await screen.findByRole('button', { name: /skip/i });
     await user.dblClick(skip);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('skipped', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('skipped', 'this-computer', '')));
     expect(fake.requests).toHaveLength(1);
     expect(fake.requests[0]!.signal!.aborted).toBe(true);
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
@@ -173,7 +173,7 @@ describe('Skip, timeout and a changed setting', () => {
     expect(screen.getByText(R18_COPY.READING_HEADING)).toBeInTheDocument();
     await vi.advanceTimersByTimeAsync(1_500);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('timed-out', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('timed-out', 'this-computer', '')));
     expect(fake.requests[0]!.signal!.aborted).toBe(true);
   }, SLOW_FLOW_MS);
 
@@ -185,7 +185,7 @@ describe('Skip, timeout and a changed setting', () => {
     await screen.findByText(R18_COPY.READING_HEADING);
     updateModelSetting({ model: 'beta:3b' });
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('setting-changed', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('setting-changed', 'this-computer', '')));
     expect(fake.requests).toHaveLength(1);
   }, SLOW_FLOW_MS);
 
@@ -228,7 +228,7 @@ describe('reload and Back', () => {
     render(<App />);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(DESC);
-    expect(sentenceOnForm()!.textContent).toBe(failureSentence('not-read', 'this-computer', ''));
+    await waitFor(() => expect(sentenceOnForm()!.textContent).toBe(failureSentence('not-read', 'this-computer', '')));
     expect(screen.queryByText(R18_COPY.READING_HEADING)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /read my description again/i })).toBeInTheDocument();
     expect(fake.requests).toHaveLength(1);
