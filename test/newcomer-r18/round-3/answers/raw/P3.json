@@ -1,0 +1,37 @@
+{
+  "packet": "P3",
+  "answers": {
+    "What do you want to call it?": "Account reply drafting chatbot",
+    "In a sentence or two, what will it do for you?": "It drafts replies to customers' account questions using their personal details, and one of my team checks and sends every reply.",
+    "Where does the AI come from?": "Your firm's cloud AI assistant",
+    "What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.": "Reads, summarises, translates, writes or answers questions in words",
+    "What information will it see or use? Tick all that apply. (tick at least one)": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "creates a draft — text, an image or code — and a person checks it before it’s used",
+    "How much weight does what it produces carry?": "Little — it’s routine work, like an email, a picture or a first draft; nobody makes an important decision from it",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Clients or customers — including people applying to us",
+    "Which of these does it help decide, if any? Pick the closest.": "None of these — it’s for day-to-day work",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Yes",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "No",
+    "How widely will it be used?": "My team, as part of normal work",
+    "Which countries does it involve? Tick all. (tick at least one)": ["Somewhere else, or not sure"]
+  },
+  "prefills": {
+    "What kind of AI is it? (Reads, summarises, translates, writes or answers questions in words)": "ticked",
+    "What happens with what it produces? (answers people’s questions directly, like a chat assistant)": "changed to creates a draft — text, an image or code — and a person checks it before it’s used",
+    "Who ends up seeing or receiving what it produces? (Clients or customers — including people applying to us)": "ticked"
+  },
+  "didntUnderstand": [
+    "Not understood: 'Similar checks' (step 2 in the progress list). I never learned what it checks against what.",
+    "Not understood: 'Questions' (step 4) versus 'Your answers' (step 3). I thought I was answering questions at step 3 already, so I can't tell what step 4 adds.",
+    "Not understood: 'Someone who runs Ollama can connect an AI model under Settings' and 'Setup steps for whoever runs Ollama'. I don't know what Ollama is or who in my firm runs it.",
+    "Not understood: 'alpha:7b' and 'AI helper alpha:7b: not yet tested on the example cases'. I don't know what alpha:7b is, why it matters that it is 'not yet tested', or whether I should trust its suggestions.",
+    "Unclear: 'Where does the AI come from?' has overlapping options. My service is 'approved cloud LLM service'. 'An AI assistant or website run by an outside company — including company accounts your firm set up' and 'Your firm's cloud AI assistant' could both fit. I picked the second but I'm not sure it's right.",
+    "Unclear: 'Which countries does it involve?' My packet didn't say where my branch is, so I picked 'Somewhere else, or not sure'. I'm not sure that is a good answer.",
+    "Slightly unclear: on the first screen, 'We found no words about: Where does the AI come from' and 'Who ends up receiving what it produces' puzzled me, because I wrote 'approved cloud LLM service' and 'customer questions'. I wasn't sure what counts as 'words found'.",
+    "Slightly unclear: 'What it can get into by itself' in the 'We found no words about' list. It seems to mean what systems the tool can reach, and the example helped a little, but it doesn't apply to my chatbot.",
+    "Everything else I understood."
+  ],
+  "expectNext": "On the first screen I would just press Next again, because I don't want to add anything. I think the form then lets me fix any answers I disagree with. When I press Continue I expect to reach a 'Questions' step with possibly a few more questions, then a 'Confirm' step where I check everything, and finally a 'Result' telling me whether I can go ahead with the chatbot and what has to be done first. I expect that result to come from my firm's written rules and not from the AI, and that the same answers would always give the same result.",
+  "ticksMean": "Ticking 'I've checked this answer' means I have read the AI helper's suggestion, compared it with what I actually meant, and agree it is correct. The suggestion doesn't count until I tick it or change it, and I can't press Continue until every suggestion has one or the other. So the tick is my own confirmation and not the AI's decision.",
+  "comment": "As a branch lead I would have ticked the other two suggestions but changed the middle one, because a chatbot that only drafts replies for a person to send is not the same as one that answers customers directly."
+}

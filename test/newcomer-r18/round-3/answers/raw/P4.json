@@ -1,0 +1,40 @@
+{
+  "packet": "P4",
+  "answers": {
+    "What do you want to call it?": "Credit card scoring model",
+    "In a sentence or two, what will it do for you?": "It gives credit card applications a score and automatically declines the ones below a cutoff.",
+    "Where does the AI come from?": "Not sure yet",
+    "What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know",
+    "What information will it see or use? Tick all that apply.": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "acts by itself within limits someone set, with no routine review",
+    "What does it do when it acts?": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Clients or customers — including people applying to us",
+    "Which of these does it help decide, if any? Pick the closest.": "Whether to lend to someone, or on what terms",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Not sure",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "Not sure",
+    "How widely will it be used?": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "Which countries does it involve? Tick all.": ["United Kingdom", "European Union"],
+    "Does your information stay on your firm’s own systems the whole time?": "Not sure"
+  },
+  "prefills": {
+    "What kind of AI is it?": "ticked",
+    "Which of these does it help decide, if any?": "ticked",
+    "Who ends up seeing or receiving what it produces?": "ticked"
+  },
+  "didntUnderstand": [
+    {"quote": "Does your information stay on your firm’s own systems the whole time? / Your firm’s platform can run some AI itself and pass other work to an outside supplier.", "why": "I never said anything about a firm platform, and I don't know which platform this is. 'Your information' could also mean the applicants' data or my own. I could only answer 'Not sure'."},
+    {"quote": "2 Similar checks (step 2 in the progress list)", "why": "Nothing explains what this step is. On my form screen it is marked with an arrow, so I can't tell whether I skipped it or it is coming later."},
+    {"quote": "3 Your answers / 4 Questions", "why": "I can't tell how 'Your answers' (the page I am on, which is full of questions) differs from 'Questions' later on."},
+    {"quote": "Your description will be read on this computer by alpha:7b. / AI helper alpha:7b: not yet tested on the example cases", "why": "I don't know what 'alpha:7b' is, or what 'not yet tested on the example cases' means for how far I can trust its suggestions."},
+    {"quote": "What it can get into by itself (nudge and checklist topic)", "why": "The wording is odd. The example, 'It has its own logins for other systems', helped a little, but I would not have known what it meant without it."},
+    {"quote": "Answer in your own words. (form intro)", "why": "Nearly every question is pick-from-a-list, and only two boxes take my own words, so this sentence is slightly misleading."},
+    {"quote": "we’ll take the careful assumption and show you what we assumed", "why": "I roughly get it (it assumes the safer or worse case), but I am not sure what the 'careful assumption' will be or where it will be shown."},
+    {"quote": "pick the one nearest the bottom of this list (kind of AI)", "why": "I followed the rule. But my tool also declines applications automatically, so I wasn't sure whether the 'AI agent that works through tasks on its own' option, which is lower down, should win. I kept the score option."},
+    {"quote": "decides or acts by itself, and a person reviews afterwards — every case or a sample / acts by itself within limits someone set, with no routine review", "why": "My description doesn't say whether anyone reviews the declines, so I guessed the second one from 'automatically declines … below a cutoff'. I am not certain it is right."},
+    {"quote": "Something else — sends, books, updates records, deploys changes", "why": "'deploys changes' is software jargon I don't know. It didn't matter, because I picked another option."}
+  ],
+  "expectNext": "After I press Continue I think the tool will take me on to the 'Questions' step. It may ask a few more follow-up questions about my tool. Then there is a 'Confirm' step where I look over everything, and after that a 'Result'. The result should say whether the credit card scoring model can go ahead, and if not, what the credit team needs to do first. I expect the decision to come from the firm's written rules applied to my answers, not from the AI helper. I also expect that giving the same answers again would give the same result.",
+  "ticksMean": "'I've checked this answer' means I have read the AI helper's suggestion, compared it with what I know, and agree it is right. The tick is my sign-off. The helper only guessed from my description, and until I tick or change an answer it doesn't count and I can't continue. A tick does not make anything final. I can still change it before the decision. The ✓ marks on the earlier screen are different. They only show which topics my description touched on, not that anything is correct.",
+  "comment": "As an HR person I could do about two-thirds of this form from the description alone. I had to answer \"Not sure\" on where the AI comes from, whether a mistake can be put right, and whether it replaces something, and the \"firm's platform\" question was the one I couldn't make sense of."
+}

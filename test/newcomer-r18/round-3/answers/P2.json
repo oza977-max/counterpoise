@@ -1,0 +1,75 @@
+{
+  "packet": "P2",
+  "answers": {
+    "1": "Automatic personal loan decision tool",
+    "2": "It approves or declines personal loan applications by itself and sends the decision straight to the customer, with no human review.",
+    "3": "Not sure yet",
+    "4": "Not sure",
+    "4a": "No, or I don’t know",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "acts entirely by itself, with no person involved at any point",
+    "6b": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off",
+    "7": "Clients or customers — including people applying to us",
+    "8": "Whether to lend to someone, or on what terms",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "My team, as part of normal work",
+    "11": [
+      "Somewhere else, or not sure"
+    ]
+  },
+  "prefills": [
+    {
+      "question": "6",
+      "status": "ticked"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    },
+    {
+      "question": "8",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "Your description will be read on this computer by alpha:7b / Suggested by the AI model alpha:7b from your description",
+      "why": "I don't know what \"alpha:7b\" is. I guess it is the AI helper, but nothing says what it is, how much to trust it, or why I should check its answers."
+    },
+    {
+      "item": "We found no words about: … Who ends up receiving what it produces",
+      "why": "My description says the decision \"goes straight to the customer\", so it is odd that it found no words about who receives it. That made me wonder whether it understood me. I pressed Next again anyway."
+    },
+    {
+      "item": "2 Similar checks (with the ← mark beside it)",
+      "why": "This step is never explained. I don't know what it is, whether it was skipped, or why I went from Describe to Your answers."
+    },
+    {
+      "item": "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?",
+      "why": "I can't tell whether this asks about catching the mistake before the customer gets the decision, or reversing it afterwards. This tool has no review, so I couldn't answer Yes or No. I picked Not sure."
+    },
+    {
+      "item": "acts by itself within limits someone set, with no routine review / acts entirely by itself, with no person involved at any point",
+      "why": "I can't tell these two apart. Someone must have set the tool up, so is a person involved? I ticked the pre-fill without being sure it is the better of the two."
+    },
+    {
+      "item": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+      "why": "Three different ideas are in one option, and there is no \"Not sure\" on this question although I'm not sure. I chose My team."
+    }
+  ],
+  "expectNext": "After Continue, I expect to go to step 4, Questions, which may ask a few more things. Then step 5, Confirm, to check my answers. Then step 6, Result, which tells me whether we can go ahead and what needs doing first. The tool will have been checked against the firm's written rules, not decided by AI. I don't know what step 2, Similar checks, does or where it fits. I also expect to be able to change my answers before anything is decided.",
+  "ticksMean": "\"I've checked this answer\" means I have read the helper's suggested answer for that question and agree it is right. Until I tick it, or change the answer, it doesn't count and I can't continue. So the tick is my confirmation, and the answer becomes mine, not the helper's. It does not mean the tool is approved. The ✓ and ○ marks in \"What your description mentions\" are different. They only show whether my words touched a topic, not whether I answered it or whether it is right.",
+  "comment": "As a hurried relationship manager, I ticked all three pre-fills because they matched my description. I answered Not sure to the rest of the questions I couldn't answer from the packet, such as supplier, kind of AI, whether it replaces something, and whether mistakes can be put right. I also ticked \"Somewhere else, or not sure\" for countries, because the packet doesn't say where I work.",
+  "normalisationNotes": [
+    "label matched to 5 (exact (after dropping suffix)): \"What information will it see or use? Tick all that apply. (tick at least one)\" -> \"What information will it see or use? Tick all that apply.\"; suffix (tick at least one) dropped from the key (this is how the round-3 form itself shows the question, so the label is exact against the form)",
+    "label matched to 11 (exact (after dropping suffix)): \"Which countries does it involve? Tick all. (tick at least one)\" -> \"Which countries does it involve? Tick all.\"; suffix (tick at least one) dropped from the key (this is how the round-3 form itself shows the question, so the label is exact against the form)",
+    "prefills given as an object keyed by question label; converted to an array",
+    "prefill label matched to 6 (prefix): \"What happens with what it produces? (acts entirely by itself, with no person involved at any point)\"",
+    "prefill label matched to 7 (prefix): \"Who ends up seeing or receiving what it produces, in its final form? (Clients or customers — including people applying to us)\"",
+    "prefill label matched to 8 (prefix): \"Which of these does it help decide, if any? (Whether to lend to someone, or on what terms)\"",
+    "didntUnderstand given as {quote, why}; quote becomes item"
+  ]
+}
