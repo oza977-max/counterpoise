@@ -946,11 +946,11 @@ And the record's list of screens MUST NOT contain a new screen with no task
 [Requirement: R18-GI-11] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-GI-12-01: A model with no recorded result is shown as untested in both places [EXAMPLE]
+### TC-R18-GI-12-01: A model with no recorded result is shown as not yet tested in both places [EXAMPLE]
 Input: model `qwen3:4b` configured on this computer with no stored test result
 Given Settings and the description screen
 When each renders
-Then each MUST contain "untested" beside `qwen3:4b`
+Then each MUST contain "AI helper qwen3:4b: not yet tested on the example cases"
 And each MUST NOT contain "tested" followed by a count
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -960,7 +960,8 @@ Input: a completed test of `gemma4:cloud` with 11 of 15 scored answers right, 3 
 Given the saved result
 When Settings and the description screen render
 Then each MUST contain "tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong" (date shown in the app's usual date format)
-And each MUST NOT contain "untested" for that model
+And each MUST begin the label with "AI helper gemma4:cloud: "
+And each MUST NOT contain "untested" or "not yet tested" for that model
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
 
@@ -968,7 +969,7 @@ And each MUST NOT contain "untested" for that model
 Input: a saved result for `gemma4:cloud`; the person switches the model setting to `qwen3:4b`
 Given a result for one model
 When the other model is selected
-Then the label beside `qwen3:4b` MUST contain "untested"
+Then the label beside `qwen3:4b` MUST contain "AI helper qwen3:4b: not yet tested on the example cases"
 And it MUST NOT contain "answers filled in correctly"
 [Requirement: R18-GI-12] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1030,7 +1031,7 @@ Then each false-state screen MUST NOT contain its claim, and each true-state scr
 | "from your description: “…”" | no verified quote (discarded, or a typed answer) | a quote that occurs in the text |
 | "confirmed by you" | pre-filled, not yet ticked | ticked, or changed |
 | "Your description doesn't mention: X" | X is mentioned | X is not mentioned |
-| "untested" | a result is saved for this model | no result for this model |
+| "not yet tested on the example cases" | a result is saved for this model | no result for this model |
 | "Never leaves your computer" | the place is firm server or Ollama's cloud | the place is this computer |
 | the unencrypted-connection line | https, or this computer | an http firm address |
 | "Your model setting … is kept" and the Forget control | no setting saved, or after Forget | a setting exists |
@@ -1396,16 +1397,16 @@ Input: a finished test; reload the page
 Given a saved result
 When Settings opens after the reload
 Then the model's label MUST contain "tested on" with its date and its answer counts
-And the label MUST NOT contain "untested"
+And the label MUST NOT contain "untested" or "not yet tested"
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
 
-### TC-R18-MS-4-05: A model can be saved without a test and is labelled untested [EXAMPLE]
+### TC-R18-MS-4-05: A model can be saved without a test and is labelled not yet tested [EXAMPLE]
 Input: save `delta:2b` and do not run the test
 Given the model setting
 When the setting is saved
 Then the save MUST contain a stored setting
-And the label MUST contain "untested"
+And the label MUST contain "AI helper delta:2b: not yet tested on the example cases"
 And the label MUST NOT contain a tested count or a date
 [Requirement: R18-MS-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -1441,7 +1442,7 @@ And a second press of "Test it" while running MUST NOT contain a second run
 Input: a run stopped after 12 cases, then a completed run in which the verifier dropped 7 fills
 Given a saved stopped result for `gemma4:cloud`
 When Settings renders after each
-Then after the stopped run the label MUST contain "untested (a partial test stopped after 12 of 31 cases)"
+Then after the stopped run the label MUST contain "AI helper gemma4:cloud: untested (a partial test stopped after 12 of 31 cases)"
 And after the completed run the label MUST contain "tested on" with its date and its answer counts, and the result MUST contain "7 filled-in answers were dropped because they failed the checks."
 And the stopped run's label MUST NOT contain "answers filled in correctly"
 [Requirement: R18-MS-4] [Priority: MUST]
@@ -1908,7 +1909,7 @@ And the walk MUST NOT contain a step that needs a pointer
 [Trace: not-yet-traced]
 
 ### TC-R18-NF-2-05: No meaning is carried by colour alone [PROPERTY]
-Property: For every state of every new element that has two or more states (ticked / not ticked, pre-filled / confirmed / changed, untested / tested, working / done), the rendered text or symbol differs between states with all colour rules removed
+Property: For every state of every new element that has two or more states (ticked / not ticked, pre-filled / confirmed / changed, not yet tested / tested, working / done), the rendered text or symbol differs between states with all colour rules removed
 Counterexample strategy: render each state with the stylesheet's colour declarations stripped; render in forced-colours mode; render in greyscale
 [Requirement: R18-NF-2] [Priority: MUST]
 [Trace: not-yet-traced]

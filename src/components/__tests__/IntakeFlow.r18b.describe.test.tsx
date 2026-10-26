@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, within, act } from '@testing-library/react';
+import { render, screen, within, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { R18_COPY } from '../plain-copy';
@@ -279,44 +279,52 @@ describe('the label beside the model (TC-R18-GI-12-01, -02, -03, -06)', () => {
   const seed = (r: ModelTestResult) =>
     localStorage.setItem(MODEL_TEST_RESULTS_KEY, JSON.stringify({ version: 1, results: [r] }));
 
-  it('TC-R18-GI-12-01 (description screen): no result is untested and carries neither a count nor the caveat', () => {
+  // The status region mounts empty and fills after the first read of storage: every test waits for its real text
+  // first, and a negative check comes only after that.
+  it('TC-R18-GI-12-01 (description screen): no result is not yet tested, introduces the model as an AI helper and carries neither a count nor the caveat', async () => {
     updateModelSetting({ place: 'this-computer', url: LOCAL, model: 'qwen3:4b' });
     render(<App />);
-    expect(statusLine().textContent).toContain('qwen3:4b: untested');
+    await waitFor(() => expect(statusLine().textContent).toContain('AI helper qwen3:4b: not yet tested on the example cases'));
     expect(statusLine().textContent).not.toMatch(/tested \d/);
     expect(statusLine().textContent).not.toContain('answers filled in correctly');
   });
 
-  it('TC-R18-GI-12-02 / -06: a completed run reads tested on the date with the answer counts, and not untested', () => {
+  it('TC-R18-GI-12-02 / -06: a completed run reads tested on the date with the answer counts, and neither untested nor not yet tested', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seed(run());
     render(<App />);
-    expect(statusLine().textContent).toContain('gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong');
-    expect(statusLine().textContent).not.toContain('untested');
+    await waitFor(() =>
+      expect(statusLine().textContent).toContain('AI helper gemma4:cloud: tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong'),
+    );
+    expect(statusLine().textContent).not.toMatch(/untested|not yet tested/);
   });
 
-  it('TC-R18-GI-12-03 (description screen): a result for one model does not label the next', () => {
+  it('TC-R18-GI-12-03 (description screen): a result for one model does not label the next', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seed(run());
     updateModelSetting({ place: 'this-computer', model: 'qwen3:4b' });
     render(<App />);
-    expect(statusLine().textContent).toContain('qwen3:4b: untested');
+    await waitFor(() => expect(statusLine().textContent).toContain('AI helper qwen3:4b: not yet tested on the example cases'));
     expect(statusLine().textContent).not.toContain('answers filled in correctly');
   });
 
-  it('a stopped run reads as untested with the partial note (never tested)', () => {
+  it('a stopped run reads as untested with the partial note (never tested), under the AI helper introduction', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: LOCAL, model: 'gemma4:cloud' });
     seed(run({ stopped: true, casesRun: 7 }));
     render(<App />);
-    expect(statusLine().textContent).toContain('untested (a partial test stopped after 7 of 31 cases)');
+    await waitFor(() =>
+      expect(statusLine().textContent).toContain('AI helper gemma4:cloud: untested (a partial test stopped after 7 of 31 cases)'),
+    );
     expect(statusLine().textContent).not.toContain('answers filled in correctly');
+    // false state of "not yet tested": a model that has a (partial) test never says it has had none
+    expect(statusLine().textContent).not.toContain('not yet tested');
   });
 
-  it('a result for the same model name at another address does not label this one', () => {
+  it('a result for the same model name at another address does not label this one', async () => {
     updateModelSetting({ place: 'ollama-cloud', url: 'http://127.0.0.1:11434', model: 'gemma4:cloud' });
     seed(run());
     render(<App />);
-    expect(statusLine().textContent).toContain('gemma4:cloud: untested');
+    await waitFor(() => expect(statusLine().textContent).toContain('AI helper gemma4:cloud: not yet tested on the example cases'));
   });
 });
 

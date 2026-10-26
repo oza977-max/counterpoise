@@ -1550,7 +1550,12 @@ export const R18_COPY = {
   } as Record<ModelPlace, string>,
 
   // The test label (R18-GI-12). The suffix is fixed and never dropped from a "tested" label.
-  LABEL_UNTESTED: 'untested',
+  // Newcomer test round 2 (2026-10-26, owner-approved): the line names the model as an AI helper before its label,
+  // in every state, and the bare "untested" of a model with no test at all is said in plain words. The other
+  // states keep their words. The where-it-goes sentences are the requirement's wording (R18-MS-2 quotes them)
+  // and keep "{model}" as it is.
+  LABEL_LINE_LEAD: 'AI helper {model}: ',
+  LABEL_UNTESTED: 'not yet tested on the example cases',
   LABEL_PARTIAL: 'untested (a partial test stopped after {n} of 31 cases)',
   // A partial result that was not stopped can only be inconsistent stored data; it never says "stopped" (R18-B carried minor).
   LABEL_PARTIAL_RAN: 'untested (a partial test ran {n} of 31 cases)',
@@ -1769,7 +1774,7 @@ export function originsCommand(origin: string): string {
   return `${R18_COPY.PANEL_COMMAND_ORIGINS_NAME}=${origin}`;
 }
 
-/** The label words for a model: "untested", the partial note, or "tested N/31 on DATE (suffix)". */
+/** The label words for a model: "not yet tested on the example cases", the partial note, or "tested on DATE: …". */
 export function modelLabelWords(label: ModelLabel): string {
   switch (label.kind) {
     case 'untested':
@@ -1789,6 +1794,11 @@ export function modelLabelWords(label: ModelLabel): string {
         .replace('{wrong}', String(label.wrong));
     }
   }
+}
+
+/** The whole label line: "AI helper {model}: " and the words for the model's state. The name goes through visibleText. */
+export function modelLabelLine(model: string, label: ModelLabel): string {
+  return R18_COPY.LABEL_LINE_LEAD.replace('{model}', () => visibleText(model)) + modelLabelWords(label);
 }
 
 /** "Case n of 31" for the case now being read. */

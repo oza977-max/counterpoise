@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { createFakeModel } from '../../llm/test-utils';
@@ -59,8 +59,8 @@ describe('R18-F acceptance: test the model before trusting it', () => {
       const user = userEvent.setup({ delay: null });
       render(<App />);
 
-      // Before any test: untested, on the description screen.
-      expect(document.body.textContent).toContain('alpha:7b: untested');
+      // Before any test: not yet tested, on the description screen (the status region fills after mount: wait for it).
+      await waitFor(() => expect(document.body.textContent).toContain('AI helper alpha:7b: not yet tested on the example cases'));
 
       await user.click(screen.getByText(/the model that reads your description/i));
       await user.click(screen.getByRole('button', { name: /^test it$/i }));
@@ -94,10 +94,11 @@ describe('R18-F acceptance: test the model before trusting it', () => {
       // The description screen's model label now reads tested, with the date and the answer counts.
       const statuses = screen.getAllByRole('status').map((el) => el.textContent ?? '');
       expect(
-        statuses.some((t) => /alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/.test(t)),
+        statuses.some((t) => /AI helper alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/.test(t)),
         'a status line with the tested label',
       ).toBe(true);
-      expect(within(document.body).queryByText('alpha:7b: untested')).not.toBeInTheDocument();
+      // ...and only after the tested label is found: the old label is gone
+      expect(within(document.body).queryByText(/not yet tested on the example cases/)).not.toBeInTheDocument();
     },
     40000,
   );

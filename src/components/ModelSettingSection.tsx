@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { R18_COPY, modelLabelWords, placeSentence } from './plain-copy';
+import { R18_COPY, modelLabelLine, placeSentence } from './plain-copy';
 import {
   forgetModelSetting,
   listModels,
@@ -215,7 +215,7 @@ export default function ModelSettingSection() {
           {shown && <p>{placeSentence(shown, snapshot.keyStored)}</p>}
           {shown && (
             <p className="field-help">
-              {visibleText(shown.model)}: {modelLabelWords(modelLabel(shown, snapshot.results))}
+              {modelLabelLine(shown.model, modelLabel(shown, snapshot.results))}
             </p>
           )}
           {shown && shown.place === 'firm-server' && isPlainHttp(shown.url) && <p>{R18_COPY.UNENCRYPTED_LINE}</p>}

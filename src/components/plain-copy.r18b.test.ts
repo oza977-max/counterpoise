@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { R18_COPY, placeSentence, modelLabelWords, placeRecordWords } from './plain-copy';
+import { R18_COPY, placeSentence, modelLabelWords, modelLabelLine, placeRecordWords } from './plain-copy';
 import type { ValidationReason } from '../llm/model-setting';
 
 // R18-B deliverable 3: the model-setting strings (specs/intake-flow.md §27.8, §27.13).
@@ -142,7 +142,8 @@ describe('TC-R18-GI-13-02: the new strings and the functions that fill them neve
 
 describe('TC-R18-GI-12-01 / -02 / -06: the label words and their caveat', () => {
   it('untested has no suffix and no count', () => {
-    expect(modelLabelWords({ kind: 'untested' })).toBe('untested');
+    // Newcomer test round 2 (2026-10-26, owner-approved): the bare word "untested" is said in plain words.
+    expect(modelLabelWords({ kind: 'untested' })).toBe('not yet tested on the example cases');
     expect(modelLabelWords({ kind: 'untested' })).not.toMatch(/\d+\/31|\d+ of \d+ answers|measured/);
   });
   it('tested leads with the answers: right of scored, blank, wrong', () => {
@@ -154,6 +155,48 @@ describe('TC-R18-GI-12-01 / -02 / -06: the label words and their caveat', () => 
     const w = modelLabelWords({ kind: 'partial', casesRun: 12, stopped: true });
     expect(w).toBe('untested (a partial test stopped after 12 of 31 cases)');
     expect(w).not.toMatch(/answers filled in correctly/);
+  });
+});
+
+// Newcomer test round 2 (2026-10-26, owner-approved): the model is always introduced as "AI helper {model}:" before its
+// label, and the plain "not yet tested" wording is said only when there is no test of this model at all.
+describe('the label line introduces the model as an AI helper (TC-R18-GI-12-01, TC-R18-GI-13-01 newcomer round 2)', () => {
+  const kinds = [
+    { kind: 'untested' },
+    { kind: 'no-answer' },
+    { kind: 'partial', casesRun: 12, stopped: true },
+    { kind: 'partial', casesRun: 12, stopped: false },
+    { kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-07' },
+    { kind: 'tested', right: 0, blank: 0, wrong: 0, date: '2026-10-07' },
+  ] as const;
+
+  it.each(kinds)('%j: the line begins "AI helper {model}: " and then the words for that state', (label) => {
+    expect(R18_COPY.LABEL_LINE_LEAD).toBe('AI helper {model}: ');
+    expect(modelLabelLine('alpha:7b', label)).toBe(`AI helper alpha:7b: ${modelLabelWords(label)}`);
+  });
+
+  it('the untested line reads exactly "AI helper alpha:7b: not yet tested on the example cases"', () => {
+    expect(modelLabelLine('alpha:7b', { kind: 'untested' })).toBe('AI helper alpha:7b: not yet tested on the example cases');
+  });
+
+  it('false state: "not yet tested" is said for the untested state alone - a stopped, empty or finished test never says it', () => {
+    for (const label of kinds) {
+      const line = modelLabelLine('alpha:7b', label);
+      expect(/not yet tested/.test(line), line).toBe(label.kind === 'untested');
+    }
+  });
+
+  it('the other states keep their meaning word for word', () => {
+    expect(modelLabelWords({ kind: 'no-answer' })).toBe('untested (the model gave no usable answer in any case)');
+    expect(modelLabelWords({ kind: 'partial', casesRun: 12, stopped: true })).toBe('untested (a partial test stopped after 12 of 31 cases)');
+    expect(modelLabelWords({ kind: 'tested', right: 11, blank: 3, wrong: 1, date: '2026-10-07' })).toBe(
+      'tested on 2026-10-07: 11 of 15 answers filled in correctly, 3 left blank, 1 wrong',
+    );
+  });
+
+  it('the model name still goes through visibleText (a control character cannot hide in the line) and no line says approved or rejected', () => {
+    expect(modelLabelLine('al\u202Epha', { kind: 'untested' })).not.toMatch(/\u202E/);
+    for (const label of kinds) expect(modelLabelLine('alpha:7b', label)).not.toMatch(/approved|rejected/i);
   });
 });
 

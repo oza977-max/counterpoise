@@ -243,13 +243,13 @@ standing measurement is the in-app model test (R18-MS-4): the 31-case corpus
 run through the configured model, scored per question (right, blank, wrong)
 and by verdict agreement, with the result kept against the model's name,
 where it ran, and the date. A model with no recorded result is shown as
-"untested" wherever its name appears. The corpus itself lives in the
+"not yet tested on the example cases" wherever its name appears. The corpus itself lives in the
 project (`backtest/cases.json`) and is the test's only input — never a
 person's own description. *(Amended during domain 2: the owner chose an
 in-app test over a repo script.)*
 
 > Fit criterion: the Settings screen and the description screen both show
-> "untested" for a model with no recorded result and "tested N/31 on
+> "not yet tested on the example cases" for a model with no recorded result and "tested N/31 on
 > <date>" after one; the scoring is deterministic for a fixed set of model
 > replies (a test feeds canned replies and gets the same table every time).
 
@@ -325,14 +325,14 @@ progress, can be stopped early, gives each case 60 seconds, and uses exactly
 the path a real pre-fill uses. It reports, per form question, how often the pre-fill was right, left
 blank, or wrong, and how often the resulting verdict matched the known
 answer; the result is saved against model name, place and date and shown in
-Settings. A model may be saved without a test but is labelled "untested"
+Settings. A model may be saved without a test but is labelled "not yet tested on the example cases"
 until one is recorded (R18-GI-12). The test sends only the built-in cases,
 never a person's description.
 
 > Fit criterion: a stopped run reports the cases completed so far and says
 > it was stopped; the per-question table and verdict count are deterministic
 > for canned replies; the saved result survives reload; the model's label
-> changes from "untested" to "tested N/31 on <date>".
+> changes from "not yet tested on the example cases" to "tested N/31 on <date>".
 
 **R18-MS-5 (Must):** Works with servers that ignore the strict answer
 format. The app gets a usable reply from models that honour the strict
@@ -549,7 +549,7 @@ own mapping and compare that with the case's graph (the method the
 deterministic per-question table.
 
 **OQ-2 — Untested models in real use.** RESOLVED (owner, 2026-10-04):
-allowed, labelled "untested" on the description screen; nothing is blocked.
+allowed, labelled "not yet tested on the example cases" on the description screen; nothing is blocked.
 
 **OQ-3 — Plain-http firm addresses.** RESOLVED (owner, 2026-10-04): allowed
 with an unencrypted-connection line (R18-MS-6).

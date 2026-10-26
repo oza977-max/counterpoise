@@ -59,6 +59,13 @@ async function open(user: ReturnType<typeof userEvent.setup>) {
 
 const section = () => screen.getByRole('region', { name: 'Test it' });
 const statusLine = () => document.querySelector('.model-status__line')!.textContent ?? '';
+// The status region mounts empty and fills after the first read of storage (StatusAfterMount-style): every read of
+// its label waits for the text, and a negative check on it comes only after a wait for the real label.
+const statusHas = (text: string | RegExp) =>
+  vi.waitFor(() => {
+    if (typeof text === 'string') expect(statusLine()).toContain(text);
+    else expect(statusLine()).toMatch(text);
+  });
 
 describe('Test it with no saved model setting (false state of the control)', () => {
   it('says to save a setting first, offers no button, and does not state the 60-second limit', async () => {
@@ -70,11 +77,11 @@ describe('Test it with no saved model setting (false state of the control)', () 
     expect(section().textContent).not.toMatch(/Right verdict in|answers filled in correctly|public examples|Case \d+ of 31/);
   });
 
-  it('TC-R18-MS-4-05: a model saved without a test is labelled untested, with no count and no date, and shows no result', async () => {
+  it('TC-R18-MS-4-05: a model saved without a test is labelled not yet tested, with no count and no date, and shows no result', async () => {
     save('delta:2b');
     const user = userEvent.setup({ delay: null });
     await open(user);
-    expect(statusLine()).toContain('delta:2b: untested');
+    await statusHas('AI helper delta:2b: not yet tested on the example cases');
     expect(statusLine()).not.toMatch(/\d+\/31|\d{4}-\d{2}-\d{2}/);
     expect(section().textContent).not.toContain('Right verdict in');
     expect(section().textContent).not.toContain('public examples');
@@ -117,7 +124,7 @@ describe('progress, Stop and one run at a time (TC-R18-MS-4-02, -08, NF-1-05)', 
     await within(section()).findByText('Case 12 of 31');
     await user.click(within(section()).getByRole('button', { name: 'Stop' }));
     await within(section()).findByText('Stopped after 11 of 31 cases.');
-    expect(statusLine()).toContain('untested (a partial test stopped after 11 of 31 cases)');
+    await statusHas('AI helper alpha:7b: untested (a partial test stopped after 11 of 31 cases)');
     expect(statusLine()).not.toContain('answers filled in correctly');
     expect(document.body.textContent).not.toMatch(/(^|[^n])tested \d+\/31/);
   });
@@ -153,8 +160,8 @@ describe('progress, Stop and one run at a time (TC-R18-MS-4-02, -08, NF-1-05)', 
       const saved = JSON.parse(localStorage.getItem('aigate:model-test-results') ?? 'null');
       expect(saved.results[0]).toMatchObject({ model: 'alpha:7b', stopped: true, casesRun: 2 });
     });
-    // the new model is untested: the result is not carried across (TC-R18-GI-12-03)
-    expect(statusLine()).toContain('beta:3b: untested');
+    // the new model is not yet tested: the result is not carried across (TC-R18-GI-12-03)
+    await statusHas('AI helper beta:3b: not yet tested on the example cases');
     expect(section().textContent).not.toContain('Right verdict in');
   });
 });
@@ -182,8 +189,8 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
       expect(s).toContain('These 31 cases are public examples; they are not a guarantee about your own descriptions.');
       expect(s).toContain('cannot be compared with the 2026-10-04 comparison');
       expect(s).not.toMatch(/\b(safe|reliable|recommended)\b/i);
-      expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/);
-      expect(statusLine()).not.toContain('untested');
+      await statusHas(/AI helper alpha:7b: tested on \d{4}-\d{2}-\d{2}: \d+ of \d+ answers filled in correctly, \d+ left blank, \d+ wrong/);
+      expect(statusLine()).not.toMatch(/untested|not yet tested/);
     },
     40000,
   );
@@ -206,7 +213,7 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     expect(section().textContent).toContain('Cases with no usable answer from the model: 31.');
     expect(section().textContent).toContain('Right verdict in 0 of 31 cases');
     // review pass 1, fix 2: no usable answer in any case tested nothing, so the label must not say "tested"
-    expect(statusLine()).toContain('alpha:7b: untested (the model gave no usable answer in any case)');
+    await statusHas('AI helper alpha:7b: untested (the model gave no usable answer in any case)');
     expect(statusLine()).not.toMatch(/tested on|(^|[^n])tested /);
   }, 40000);
 
@@ -230,7 +237,7 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     const label = `0 of ${tot.b} answers filled in correctly, ${tot.b} left blank, 0 wrong`;
     // review pass 1, fix 2: an empty reply is no usable answer in any case, so the label says untested
     // (the second owner-decision test below covers the tested label's figures)
-    expect(statusLine()).toContain('untested (the model gave no usable answer in any case)');
+    await statusHas('AI helper alpha:7b: untested (the model gave no usable answer in any case)');
     expect(section().textContent).toContain(label);
     expect(unqualified(section().textContent!)).not.toMatch(/\d+ of 31 cases/);
     expect(statusLine()).not.toMatch(/of 31|\/31/);
@@ -257,8 +264,8 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     expect(text).toContain('Right verdict in 31 of 31 cases if you check every filled answer and answer the rest yourself.');
     expect(text).toContain(`0 of ${tot.b} answers filled in correctly, ${tot.b} left blank, 0 wrong.`);
     expect(unqualified(text)).not.toMatch(/31 of 31/);
-    expect(statusLine()).toContain(`tested on`);
-    expect(statusLine()).toContain(`0 of ${tot.b} answers filled in correctly`);
+    await statusHas(`tested on`);
+    await statusHas(`0 of ${tot.b} answers filled in correctly`);
     expect(statusLine()).not.toMatch(/31 of 31|31\/31/);
   }, 60000);
 
@@ -271,13 +278,13 @@ describe('a finished run (TC-R18-MS-4-01, -04, -07, -09, GI-12-02, -03)', () => 
     document.body.innerHTML = '';
     const again = userEvent.setup({ delay: null });
     await open(again);
-    expect(statusLine()).toMatch(/alpha:7b: tested on \d{4}-\d{2}-\d{2}: /);
+    await statusHas(/AI helper alpha:7b: tested on \d{4}-\d{2}-\d{2}: /);
     expect(section().textContent).toContain('Right verdict in 31 of 31 cases');
-    // another model on the same place: untested, no result block
+    // another model on the same place: not yet tested, no result block
     act(() => {
       updateModelSetting({ model: 'delta:2b' });
     });
-    await vi.waitFor(() => expect(statusLine()).toContain('delta:2b: untested'));
+    await vi.waitFor(() => expect(statusLine()).toContain('AI helper delta:2b: not yet tested on the example cases'));
     expect(statusLine()).not.toContain('answers filled in correctly');
     expect(section().textContent).not.toContain('Right verdict in');
     expect(section().textContent).not.toContain('public examples');
@@ -367,12 +374,12 @@ describe('review pass 1, fix 1: a firm that edited its rules (the recorded verdi
 });
 
 describe('review pass 1, fix 2: no usable answer', () => {
-  it('in every case: the label says untested and the Settings result says so too', async () => {
+  it('in every case: the label says untested (no usable answer) and the Settings result says so too', async () => {
     save();
     appendTestResult(stored({ noAnswer: 31, verdictMatches: 0, perQuestion: {} }));
     const user = userEvent.setup({ delay: null });
     await open(user);
-    expect(statusLine()).toContain('alpha:7b: untested (the model gave no usable answer in any case)');
+    await statusHas('AI helper alpha:7b: untested (the model gave no usable answer in any case)');
     expect(statusLine()).not.toMatch(/tested on/);
     expect(section().textContent).toContain('Cases with no usable answer from the model: 31.');
   });
@@ -382,16 +389,17 @@ describe('review pass 1, fix 2: no usable answer', () => {
     appendTestResult(stored({ noAnswer: 4 }));
     const user = userEvent.setup({ delay: null });
     await open(user);
-    expect(statusLine()).toContain('alpha:7b: tested on 2026-10-20');
+    await statusHas('AI helper alpha:7b: tested on 2026-10-20');
     expect(section().textContent).toContain('Cases with no usable answer from the model: 4.');
   });
 
-  it('in none: no no-answer line and no untested label', async () => {
+  it('in none: no no-answer line and no untested or not-yet-tested label', async () => {
     save();
     appendTestResult(stored({ noAnswer: 0 }));
     const user = userEvent.setup({ delay: null });
     await open(user);
-    expect(statusLine()).not.toContain('untested');
+    await statusHas('AI helper alpha:7b: tested on 2026-10-20');
+    expect(statusLine()).not.toMatch(/untested|not yet tested/);
     expect(section().textContent).not.toContain('no usable answer');
   });
 });
@@ -407,7 +415,7 @@ describe('review pass 1, fix 3: a stop before any case finishes, and an earlier 
     await user.click(within(section()).getByRole('button', { name: 'Stop' }));
     expect(await within(section()).findByText('The test was stopped before any case finished, so nothing was saved.')).toBeInTheDocument();
     expect(localStorage.getItem('aigate:model-test-results')).toBeNull();
-    expect(statusLine()).toContain('alpha:7b: untested');
+    await statusHas('AI helper alpha:7b: not yet tested on the example cases');
     expect(statusLine()).not.toContain('partial');
     expect(section().textContent).not.toContain('Latest test of this model');
   });
@@ -436,7 +444,7 @@ describe('review pass 1, fix 3: a stop before any case finishes, and an earlier 
     expect(text).toContain('A later test was stopped after 7 of 31 cases.');
     expect(text).not.toContain('Stopped after 7 of 31 cases.');
     expect(text).not.toMatch(/Right verdict in \d+ of the 7 cases that ran/);
-    expect(statusLine()).toContain('tested on 2026-10-20');
+    await statusHas('tested on 2026-10-20');
     expect(statusLine()).not.toContain('2026-10-22');
   });
 
@@ -447,7 +455,7 @@ describe('review pass 1, fix 3: a stop before any case finishes, and an earlier 
     await open(user);
     expect(section().textContent).toContain('Stopped after 7 of 31 cases.');
     expect(section().textContent).not.toContain('A later test');
-    expect(statusLine()).toContain('untested (a partial test stopped after 7 of 31 cases)');
+    await statusHas('AI helper alpha:7b: untested (a partial test stopped after 7 of 31 cases)');
   });
 
   it('false state: a stopped run older than the complete one is not mentioned', async () => {
@@ -498,7 +506,7 @@ describe('review pass 1, fixes 4 and 5: the run fails in the middle, or the resu
     await open(user);
     await user.click(within(section()).getByRole('button', { name: 'Test it' }));
     expect(await within(section()).findByText('The result could not be saved in this browser.', {}, { timeout: 20000 })).toBeInTheDocument();
-    expect(statusLine()).toContain('alpha:7b: untested');
+    await statusHas('AI helper alpha:7b: not yet tested on the example cases');
     vi.restoreAllMocks();
   }, 40000);
 });
