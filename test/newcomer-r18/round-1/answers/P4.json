@@ -1,0 +1,90 @@
+{
+  "packet": "P4",
+  "answers": {
+    "1": "Credit card scoring model",
+    "2": "It scores credit card applications from UK and German customers and automatically declines the ones below a cutoff.",
+    "3": "A product your firm is buying from a specialist supplier — e.g. a credit-scoring, fraud-detection, customer-chatbot or coding tool",
+    "4": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "acts by itself within limits someone set, with no routine review",
+    "7": "Clients or customers — including people applying to us",
+    "8": "Whether to lend to someone, or on what terms",
+    "9": "Not sure",
+    "12": "Not sure",
+    "10": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "11": [
+      "United Kingdom",
+      "European Union"
+    ],
+    "3platformZone": "Not sure",
+    "4a": "No, or I don’t know",
+    "6b": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off"
+  },
+  "prefills": [
+    {
+      "question": "4",
+      "status": "ticked"
+    },
+    {
+      "question": "8",
+      "status": "ticked"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "\"Suggested by alpha:7b\" - I don't know what alpha:7b is (a person? a program?), so I can't judge how much to trust it.",
+      "why": ""
+    },
+    {
+      "item": "\"Similar checks\" (step 2) - I don't know what this means or whether I have to do anything there.",
+      "why": ""
+    },
+    {
+      "item": "\"Make it smarter\" plus the Ollama / \"ollama signin\" / OLLAMA_ORIGINS text - technical, not meant for me, and I don't know if I must do it.",
+      "why": ""
+    },
+    {
+      "item": "\"bureau data\" - it's in my own description. I copied it but don't know what it means.",
+      "why": ""
+    },
+    {
+      "item": "\"What happens with what it produces\" option \"acts by itself within limits someone set, with no routine review\" - I guessed from the word \"automatically\"; I can't tell whether anyone reviews declines afterwards.",
+      "why": ""
+    },
+    {
+      "item": "\"Which countries does it involve\" - Germany is not listed, so I guessed European Union; not sure that's right.",
+      "why": ""
+    },
+    {
+      "item": "\"Could the people who built it show you why it gave a particular result?\" - I can't know what the builders can do; I chose \"I don't know\".",
+      "why": ""
+    },
+    {
+      "item": "\"you or your AI risk team can correct it\" - I don't know who the AI risk team is or how they get my answers.",
+      "why": ""
+    },
+    {
+      "item": "\"Does it replace something you already use\" and \"can the mistake be caught and put right\" - business questions I can't answer; I chose Not sure.",
+      "why": ""
+    }
+  ],
+  "expectNext": "After Continue I expect it to take my answers and maybe show a confirm page, then give a result: whether the tool can go ahead and what needs doing first, based on the firm's written rules. Where I said Not sure it will assume the careful option and show me what it assumed. My colleague from credit cards should then check it.",
+  "ticksMean": "\"I've checked this answer\" means I looked at what the program guessed from my description and agree it's right, not just accepted it blindly. The form lists the ones I haven't checked yet. The ticked answers I agreed with are used as my answers; \"Not sure\" means I don't know and it takes the careful assumption.",
+  "comment": "Mostly doable, but the technical wording (alpha:7b, Ollama, similar checks, bureau) and several business questions left me guessing, so I leaned on Not sure.",
+  "normalisationNotes": [
+    "label matched by prefix to 4: \"What kind of AI is it?\"",
+    "label matched by prefix to 6: \"What happens with what it produces?\"",
+    "label matched by prefix to 7: \"Who ends up seeing or receiving what it produces, in its final form?\"",
+    "label matched by prefix to 8: \"Which of these does it help decide, if any?\"",
+    "label matched by prefix to 12: \"Does it replace something you already use for the same job?\"",
+    "prefill label matched by prefix to 4: \"What kind of AI is it?\"",
+    "prefill label matched by prefix to 8: \"Which of these does it help decide, if any?\"",
+    "prefill label matched by prefix to 7: \"Who ends up seeing or receiving what it produces?\""
+  ]
+}

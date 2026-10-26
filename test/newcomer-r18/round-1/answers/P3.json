@@ -1,0 +1,95 @@
+{
+  "packet": "P3",
+  "answers": {
+    "1": "Customer account reply helper",
+    "2": "It drafts replies to customers' account questions, and a person at the branch checks and sends each one.",
+    "3": "Your firm's cloud AI assistant",
+    "4": "Reads, summarises, translates, writes or answers questions in words",
+    "5": [
+      "Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"
+    ],
+    "6": "creates a draft — text, an image or code — and a person checks it before it’s used",
+    "7": "Clients or customers — including people applying to us",
+    "8": "None of these — it’s for day-to-day work",
+    "9": "Yes",
+    "12": "Not sure",
+    "10": "My team, as part of normal work",
+    "11": [
+      "Somewhere else, or not sure"
+    ],
+    "6a": "Little — it’s routine work, like an email, a picture or a first draft; nobody makes an important decision from it"
+  },
+  "prefills": [
+    {
+      "question": "4",
+      "status": "ticked"
+    },
+    {
+      "question": "6",
+      "status": "changed",
+      "changedTo": "creates a draft — text, an image or code — and a person checks it before it’s used"
+    },
+    {
+      "question": "7",
+      "status": "ticked"
+    },
+    {
+      "question": "5",
+      "status": "ticked"
+    },
+    {
+      "question": "11",
+      "status": "changed",
+      "changedTo": "Somewhere else, or not sure"
+    }
+  ],
+  "didntUnderstand": [
+    {
+      "item": "\"Suggested by alpha:7b from your description: “Branch staff” — is this right?\" under the who-receives question. I never wrote \"Branch staff\", and my packet's version of this tick quotes “customer questions about their accounts”. The two don't match, so I can't tell what the tool actually relied on. I ticked Clients or customers anyway, because customers receive the replies.",
+      "why": ""
+    },
+    {
+      "item": "The suggestions for information (“client names”) and countries (“Our UK team”) quote words I didn't write. The explanation under each, \"It reads client names and account details\" and \"Our UK team will use it every morning\", is also not mine. I don't know where the words come from. I ticked the information one because it is correct. I did not accept the UK one, since I never said which country.",
+      "why": ""
+    },
+    {
+      "item": "\"alpha:7b\" means nothing to me.",
+      "why": ""
+    },
+    {
+      "item": "The 'What happens with what it produces' options are very close in wording. \"answers people’s questions directly, like a chat assistant\" sounds like my chatbot, but a person sends each reply, so I picked the draft option.",
+      "why": ""
+    },
+    {
+      "item": "\"Which countries does it involve?\" The hint says it's not about where the servers are. I don't know which country applies to a cloud service, so I chose \"Somewhere else, or not sure\".",
+      "why": ""
+    },
+    {
+      "item": "\"Where does the AI come from?\" I wrote \"approved cloud LLM service\" and none of the options names that exactly. I guessed \"Your firm's cloud AI assistant\".",
+      "why": ""
+    },
+    {
+      "item": "The step list is confusing. Step 2 \"Similar checks\" is shown with an arrow, and I don't know what it is.",
+      "why": ""
+    },
+    {
+      "item": "The \"What your description mentions\" panel lists \"How much weight does what it produces carry\" as a topic, but the form doesn't ask it until my other answers are in. That is odd.",
+      "why": ""
+    }
+  ],
+  "expectNext": "After Continue I expect it to check my answers against the firm's written rules. It should then give a result: go ahead, go ahead with conditions, or not allowed. It should also list what I need to do first, such as controls or a review by the AI risk team. I expect a Confirm step before the result, and that I can still go back and change things.",
+  "ticksMean": "\"I've checked this answer\" means I have read what the helper filled in and I agree with it, so I take responsibility for it. An unticked suggestion has not been confirmed by a person and shouldn't be trusted yet. I think the form won't let me go on until I've ticked or changed each one (\"Still to check\").",
+  "comment": "It was mostly clear, but the quoted evidence on the form didn't match what I wrote, which made the helper's suggestions hard to trust. I only accepted the ones that were right on their own merits.",
+  "normalisationNotes": [
+    "label matched by prefix to 4: \"What kind of AI is it?\"",
+    "label matched by prefix to 6: \"What happens with what it produces?\"",
+    "label matched by prefix to 7: \"Who ends up seeing or receiving what it produces, in its final form?\"",
+    "label matched by prefix to 8: \"Which of these does it help decide, if any?\"",
+    "label matched by prefix to 12: \"Does it replace something you already use for the same job?\"",
+    "prefill label matched by prefix to 4: \"What kind of AI is it?\"",
+    "prefill label matched by prefix to 6: \"What happens with what it produces?\"",
+    "prefill label matched by prefix to 7: \"Who ends up seeing or receiving what it produces, in its final form?\"",
+    "prefill label matched by prefix to 5: \"What information will it see or use? (shown on screen, not in my packet)\"",
+    "prefill label matched by prefix to 11: \"Which countries does it involve? (shown on screen, not in my packet)\""
+  ]
+}

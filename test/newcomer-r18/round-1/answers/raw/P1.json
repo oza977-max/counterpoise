@@ -1,0 +1,35 @@
+{
+  "packet": "P1",
+  "answers": {
+    "What do you want to call it?": "Monthly ticket volumes summary dashboard",
+    "In a sentence or two, what will it do for you?": "It summarises last month's internal ticket volumes for the operations team in a short written summary.",
+    "Where does the AI come from?": "Something a team in your firm built for this job",
+    "What kind of AI is it?": "Reads, summarises, translates, writes or answers questions in words",
+    "What information will it see or use?": ["Confidential firm information — internal data, code or documents not meant for outside the firm, whether or not they’re marked confidential"],
+    "What happens with what it produces?": "finds or summarises for people to read — nobody acts on it directly",
+    "Who ends up seeing or receiving what it produces, in its final form?": "Only me or my own team",
+    "Which of these does it help decide, if any?": "None of these — it’s for day-to-day work",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm?": "Yes",
+    "Does it replace something you already use for the same job?": "No",
+    "How widely will it be used?": "My team, as part of normal work",
+    "Which countries does it involve?": ["Somewhere else, or not sure"],
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know"
+  },
+  "prefills": {
+    "What happens with what it produces?": "ticked",
+    "Who ends up seeing or receiving what it produces?": "ticked"
+  },
+  "didntUnderstand": [
+    "Step 2 'Similar checks' in the progress bar: I have no idea what it is or what it will compare against.",
+    "'Make it smarter' and the Ollama text (ollama signin, OLLAMA_ORIGINS...): this is technical for an analyst and I can't tell whether I need to do anything. 'No model is connected' just reads as a warning.",
+    "On the form screen the suggestions don't match what I wrote. 'client names' / 'It reads client names and account details' (information), 'Branch staff' / 'Branch staff use what it writes' (who receives it) and 'Our UK team' / 'Our UK team will use it every morning' (countries) are not in my description. I would not tick these. My description says nothing about clients, branches or the UK. I'd change the information one to confidential firm information, and the who-receives one is wrong as 'branch staff' is not an option. Countries I can't say.",
+    "The packet's pre-filled 'Only me or my own team' is quoted as from 'for the operations team'. I'm not sure whether 'operations team' counts as my own team or 'Other teams in the firm'. I ticked it, but that's a guess.",
+    "'Where does the AI come from': I built a dashboard and it is not clear that it contains AI at all. 'Something a team in your firm built' was my best guess.",
+    "'Not sure' being 'always fine: we'll take the careful assumption' / 'your AI risk team': I don't know what assumption it will take, or who the AI risk team is.",
+    "'pick the one nearest the bottom of this list' for kind of AI: I followed it but it's an odd rule.",
+    "The follow-up 'Yes — it follows fixed, written-down rules, like a scorecard' vs 'Yes — they can show which factors drove each result': I don't know how my summary is produced, so I chose 'No, or I don’t know'.",
+    "'Link last checked 2026-10-24' and 'Step 3 of 6' versus the 'Describe' stage: I am not sure whether I am on step 1 or 3 when the form shows."
+  ],
+  "expectNext": "After Continue I expect the tool to check my answers against the firm's written rules and then show a Confirm step and then a Result saying whether I can go ahead and what, if anything, I must do first (for example, add controls). Because I said it is an internal summary that nobody acts on, I expect it to say fine or low concern. I don't expect AI to decide it.",
+  "ticksMean": "'I've checked this answer' means I, a person, have read what the model suggested and agree it is correct. It is my sign-off on a pre-filled guess, and I'm responsible for it. Without the tick, I assume it won't count or the form will stop me. It does not mean the answer was verified by anyone else."
+}
