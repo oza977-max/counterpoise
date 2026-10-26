@@ -1497,6 +1497,10 @@ export const R18_COPY = {
   PANEL_COMMAND_ORIGINS_NAME: 'OLLAMA_ORIGINS',
   EXAMPLES_BUTTON: 'Try an example',
   EXAMPLES_LIST_LABEL: 'Examples',
+  // Newcomer test round 1 (2026-10-26): an example never silently overwrites what the person typed.
+  EXAMPLE_REPLACE_ASK: "Replace what you've typed with this example?",
+  EXAMPLE_REPLACE: 'Replace',
+  EXAMPLE_KEEP: 'Keep mine',
   EXAMPLES_NOTE: 'Examples are short \u2014 the checklist shows what they leave out.',
   INVALID_SETTING_SENTENCE: "The model setting isn't valid. Open Settings and check it.",
   UNENCRYPTED_LINE:

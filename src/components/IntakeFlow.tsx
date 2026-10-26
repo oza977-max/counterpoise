@@ -2157,6 +2157,7 @@ export default function IntakeFlow({
               {/* R18-G (§27.12, PS-3): ten one-click examples from the single source the guide's test reads. A click
                   fills the box with the example's exact text; the checklist beside it then shows the real ticks. */}
               <TryExample
+                current={state.description}
                 onPick={(description) => {
                   dispatch({ type: 'DESCRIPTION_CHANGED', description });
                   descriptionRef.current?.focus();

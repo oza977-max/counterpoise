@@ -9,8 +9,12 @@ import { R18_COPY } from './plain-copy';
 // text to the screen, which puts it in the box (the checklist then shows the real ticks).
 // It promises nothing about what any model would fill in.
 
-export default function TryExample({ onPick }: { onPick: (description: string) => void }) {
+// Newcomer test round 1 (2026-10-26): when the box already holds text that differs from the chosen example,
+// an inline question (native buttons, not window.confirm) asks before anything is replaced. An empty box, or
+// one that already holds that very example, is filled without asking.
+export default function TryExample({ current, onPick }: { current: string; onPick: (description: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [asking, setAsking] = useState<string | null>(null);
   return (
     <div className="describe__examples">
       <button type="button" aria-expanded={open} aria-controls="describe-examples-list" onClick={() => setOpen((o) => !o)}>
@@ -26,8 +30,13 @@ export default function TryExample({ onPick }: { onPick: (description: string) =
                   type="button"
                   className="describe__example-pick"
                   onClick={() => {
-                    onPick(ex.description);
-                    setOpen(false);
+                    if (current.trim() === '' || current === ex.description) {
+                      setAsking(null);
+                      onPick(ex.description);
+                      setOpen(false);
+                    } else {
+                      setAsking(ex.description);
+                    }
                   }}
                 >
                   {ex.title}
@@ -35,6 +44,25 @@ export default function TryExample({ onPick }: { onPick: (description: string) =
               </li>
             ))}
           </ul>
+          {asking !== null && (
+            <div role="group" aria-label={R18_COPY.EXAMPLE_REPLACE_ASK} className="describe__examples-ask">
+              <p>{R18_COPY.EXAMPLE_REPLACE_ASK}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  onPick(asking);
+                  setAsking(null);
+                  setOpen(false);
+                }}
+              >
+                {R18_COPY.EXAMPLE_REPLACE}
+              </button>{' '}
+              {/* Keep mine is the safe default, so it takes the focus. */}
+              <button type="button" autoFocus onClick={() => setAsking(null)}>
+                {R18_COPY.EXAMPLE_KEEP}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
