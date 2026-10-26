@@ -1,0 +1,41 @@
+{
+  "packet": "P2",
+  "answers": {
+    "What do you want to call it?": "Personal loan auto-decision tool",
+    "In a sentence or two, what will it do for you?": "It decides personal loan applications (approve or decline) by itself and sends the answer straight to the customer.",
+    "Where does the AI come from?": "Not sure yet",
+    "What kind of AI is it?": "Gives a score, ranking, flag, category or forecast — e.g. a credit score, a fraud alert, a ranking of CVs, the likely cause of a problem",
+    "What information will it see or use? Tick all that apply.": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "acts entirely by itself, with no person involved at any point",
+    "What does it do when it acts?": "Makes a yes-or-no decision — e.g. accepts or declines an application, signs something off",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Clients or customers — including people applying to us",
+    "Which of these does it help decide, if any? Pick the closest.": "Whether to lend to someone, or on what terms",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Not sure",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "Not sure",
+    "How widely will it be used?": "Several teams, the whole business, or every case of a kind (e.g. all applications)",
+    "Which countries does it involve? Tick all.": ["Somewhere else, or not sure"],
+    "Could the people who built it show you why it gave a particular result? (named in my packet but NOT on my screen)": "No, or I don’t know"
+  },
+  "prefills": {
+    "Which of these does it help decide, if any? Pick the closest. (Whether to lend to someone, or on what terms)": "ticked",
+    "Who ends up seeing or receiving what it produces, in its final form? (Clients or customers — including people applying to us)": "ticked",
+    "What happens with what it produces? (acts entirely by itself, with no person involved at any point)": "ticked"
+  },
+  "didntUnderstand": [
+    {"quote": "Your description will be read on this computer by alpha:7b. / alpha:7b: untested / Suggested by the AI model alpha:7b", "why": "I have no idea what 'alpha:7b' is or what 'untested' means. It is a code name, not something a banker would recognise. It also seems to clash with 'The decision comes from your firm’s written rules, not from AI' and 'No AI reads your answers', because an AI plainly read my description to fill in the suggestions."},
+    {"quote": "Optional. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check. / Setup steps for whoever runs Ollama / Make it smarter", "why": "'Ollama' and 'Settings' mean nothing to me, and I don't know what 'Make it smarter' does to my description or the form. I skipped all of it."},
+    {"quote": "2 Similar checks", "why": "I don't know what this step is. Similar to what? Whose checks? It showed an arrow instead of a tick on the form, and I couldn't tell whether I skipped it or it is still to come."},
+    {"quote": "What it can get into by itself — For example: It has its own logins for other systems.", "why": "'Get into' is vague and I wasn't sure what it means. I ignored it, as I always do with notes under the box."},
+    {"quote": "What kind of AI is it? If more than one fits — … — pick the one nearest the bottom of this list.", "why": "I don't know why the bottom of the list is the right one, or whether 'Not sure' at the very bottom counts. The speech-to-text example doesn't help me with a loan tool, so I just picked the score/category option."},
+    {"quote": "(Whether it acts by itself is asked separately, in question 6.)", "why": "The questions have no visible numbers on my screen, so I can't tell which one is 'question 6'."},
+    {"quote": "Where does the AI come from? — options 'Your firm's in-house model platform' and 'Your firm's cloud AI assistant'", "why": "These are IT terms. I don't know how the tool my colleagues want was set up, so I could only answer 'Not sure yet'."},
+    {"quote": "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?", "why": "The 'to anyone' part is confusing. A wrong decline might be appealed and a wrong approval might not be reversible, so I didn't know which to answer and chose 'Not sure'."},
+    {"quote": "we’ll take the careful assumption and show you what we assumed", "why": "I only half understand 'careful assumption'. I read it as the worst case, but it doesn't say what that is."},
+    {"quote": "Which countries does it involve? … where your firm (or your part of it) is based and where the people or business it affects are", "why": "The instruction was clear, but my packet doesn't say which country I work in, so I could not tick a specific one."},
+    {"quote": "What does it do when it acts? (appears after the 'acts entirely by itself' answer)", "why": "I understood the options, but it felt like a repeat. I had already said it decides loans by itself, and it seems odd to be asked again what it does when it acts."},
+    {"quote": "Could the people who built it show you why it gave a particular result?", "why": "My packet says this question appears after my answers, but it is not on the form I can see. I gave the answer I would give if it were there."}
+  ],
+  "expectNext": "After I press Continue I expect to go to step 4, 'Questions', with a few more questions tailored to my answers, probably more about the safeguards for an automatic loan decision. Then I expect a 'Confirm' page where I can look over everything. Then step 6 should give me a result that says whether I can go ahead and what must be done first. The page says nothing is final until then, so I think I can still change my answers.",
+  "ticksMean": "'I've checked this answer' means I have read the computer's guess, taken from my own description, and I agree it is right. Until I tick it or change it, it doesn't count and I can't continue. Ticking is my sign-off, so the answer becomes mine, and the firm's rules will treat it as what I told them. It is not the AI deciding anything.",
+  "comment": "It was quick to follow, but 'alpha:7b', 'Ollama', 'Similar checks' and 'question 6' left me guessing, and I just ticked the three suggestions because they matched what I typed."
+}

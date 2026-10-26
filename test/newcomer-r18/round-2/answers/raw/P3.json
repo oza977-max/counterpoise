@@ -1,0 +1,38 @@
+{
+  "packet": "P3",
+  "answers": {
+    "What do you want to call it?": "Account question reply helper",
+    "In a sentence or two, what will it do for you?": "It drafts replies to customers' account questions for my team, and a person checks and sends each reply.",
+    "Where does the AI come from?": "Your firm's cloud AI assistant",
+    "What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.": "Reads, summarises, translates, writes or answers questions in words",
+    "What information will it see or use? Tick all that apply.": ["Information about people — clients, applicants, staff or anyone else: names, contact details, account and financial details, CVs — anything about someone who can be identified"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "creates a draft — text, an image or code — and a person checks it before it’s used",
+    "How much weight does what it produces carry?": "Little — it’s routine work, like an email, a picture or a first draft; nobody makes an important decision from it",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Clients or customers — including people applying to us",
+    "Which of these does it help decide, if any? Pick the closest.": "None of these — it’s for day-to-day work",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Yes",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "No",
+    "How widely will it be used?": "My team, as part of normal work",
+    "Which countries does it involve? Tick all.": ["Somewhere else, or not sure"]
+  },
+  "prefills": [
+    {"question": "What kind of AI is it?", "prefill": "Reads, summarises, translates, writes or answers questions in words", "response": "ticked"},
+    {"question": "What happens with what it produces?", "prefill": "answers people’s questions directly, like a chat assistant", "response": "changed to creates a draft — text, an image or code — and a person checks it before it’s used"},
+    {"question": "Who ends up seeing or receiving what it produces, in its final form?", "prefill": "Clients or customers — including people applying to us", "response": "ticked"}
+  ],
+  "didntUnderstand": [
+    {"quote": "Where does the AI come from — 'An AI assistant or website run by an outside company — including company accounts your firm set up' versus 'Your firm's cloud AI assistant'", "why": "I wrote 'our approved cloud LLM service'. That could be either option and I can't tell where the line is between them. I picked 'Your firm's cloud AI assistant' as the closest, but I'm not confident."},
+    {"quote": "Where does the AI come from — listed under 'Your description doesn't mention:'", "why": "I wrote 'our approved cloud LLM service', so I expected that to count as saying where it comes from. The screen says I left it out."},
+    {"quote": "The questions that follow ask about each of these anyway.", "why": "The list says I didn't mention 'What it can get into by itself' and 'Whether the people who built it can show why it gave a result'. My form has no question on either, so the sentence isn't true for me. I'm not sure whether something was skipped or those questions only show up later."},
+    {"quote": "(Whether it acts by itself is asked separately, in question 6.)", "why": "The questions on my form aren't numbered, so I can't find 'question 6'."},
+    {"quote": "2 Similar checks", "why": "I don't know what this step is or what it will compare my tool with. It also has a '←' next to it that I can't explain."},
+    {"quote": "Someone who runs Ollama can connect an AI model under Settings / alpha:7b: untested / Make it smarter", "why": "'Ollama', 'alpha:7b' and 'untested' are jargon to me. I don't know who runs this in my firm, and I don't know whether I can trust the suggestions from a model marked 'untested'."},
+    {"quote": "No AI reads your answers or makes the decision, so the same answers always get the same result.", "why": "The same page shows 'Suggested by the AI model alpha:7b from your description'. I worked out that the AI only reads my description and the rules make the decision. At first it read as if it contradicted itself."},
+    {"quote": "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?", "why": "My team answers these questions by hand and from memory. I'm not sure that counts as 'rules' or a 'spreadsheet calculation', so I answered No."},
+    {"quote": "Which countries does it involve? Tick all.", "why": "My description didn't say which country my branch is in. I ticked 'Somewhere else, or not sure' because I had nothing else to go on. A real branch lead would know and tick it."},
+    {"quote": "How much weight does what it produces carry?", "why": "'Weight' on its own is vague. I only understood it from the four answer options. I picked 'Little' because a person checks each reply."}
+  ],
+  "expectNext": "When I press Continue, I think it moves on to step 4 'Questions', which may ask a few follow-up questions. Then step 5 'Confirm' lets me look over everything. Then step 6 'Result' tells me whether my team can go ahead and what must be done first. Nothing is final until the Result. If any of my ticks or suggestions are missing, I expect Continue to refuse and tell me which ones are left.",
+  "ticksMean": "'I've checked this answer' means I read what the helper suggested and it matches what I meant. Until I tick it, or change the answer, it doesn't count and I can't continue. It does not mean the tool is approved. It only means that answer is mine and I stand behind it. If a suggestion is wrong, I must change it rather than tick it.",
+  "comment": "The suggestions were mostly easy to check, and I changed the middle one because a person sends each reply. Not knowing which country the branch is in, what Ollama and alpha:7b are, or where \"question 6\" is made it feel less certain."
+}

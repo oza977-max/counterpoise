@@ -1,0 +1,39 @@
+{
+  "packet": "P1",
+  "answers": {
+    "What do you want to call it?": "Monthly ticket volumes summary",
+    "In a sentence or two, what will it do for you?": "It reads last month's internal ticket volumes from our reporting database and gives the operations team a short written summary.",
+    "Where does the AI come from?": "Something a team in your firm built for this job",
+    "What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.": "Reads, summarises, translates, writes or answers questions in words",
+    "Could the people who built it show you why it gave a particular result?": "No, or I don’t know",
+    "What information will it see or use? Tick all that apply.": ["Confidential firm information — internal data, code or documents not meant for outside the firm, whether or not they’re marked confidential"],
+    "What happens with what it produces? If it does several things, pick the one where it has the most freedom.": "finds or summarises for people to read — nobody acts on it directly",
+    "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.": "Only me or my own team",
+    "Which of these does it help decide, if any? Pick the closest.": "None of these — it’s for day-to-day work",
+    "If it gets something wrong, can the mistake be caught and put right before it does lasting harm — to anyone?": "Yes",
+    "Does it replace something you already use for the same job — a model, scorecard, rules or a spreadsheet calculation?": "No",
+    "How widely will it be used?": "My team, as part of normal work",
+    "Which countries does it involve? Tick all.": ["Somewhere else, or not sure"]
+  },
+  "prefills": [
+    {"question": "What happens with what it produces? If it does several things, pick the one where it has the most freedom.", "prefill": "finds or summarises for people to read — nobody acts on it directly", "response": "ticked"},
+    {"question": "Who ends up seeing or receiving what it produces, in its final form? If more than one, pick the widest.", "prefill": "Only me or my own team", "response": "ticked"}
+  ],
+  "didntUnderstand": [
+    {"quote": "Optional. Someone who runs Ollama can connect an AI model under Settings … Setup steps for whoever runs Ollama", "why": "I have no idea what Ollama is or who 'runs' it at my firm. Also unclear whether I need to do anything before I can carry on."},
+    {"quote": "Make it smarter", "why": "Smarter how? It sounds like a button that changes my tool or my description, and nothing says what it does."},
+    {"quote": "Similar checks (step 2), and Questions (step 4) next to Your answers (step 3)", "why": "I don't know what 'similar checks' are or what they compare against. I also can't tell how step 4 'Questions' differs from step 3, which is already a page of questions."},
+    {"quote": "Your description will be read on this computer by alpha:7b. It never leaves your computer. / alpha:7b: untested", "why": "'alpha:7b' is just a code to me. I don't know whether 'untested' is a warning, or whether I should do something about it."},
+    {"quote": "Nudge list: 'What information it will see or use' and 'Who ends up receiving what it produces' marked as not mentioned", "why": "I wrote 'reads from our own reporting database' and 'for the operations team', so I thought I had covered both. The form then says its suggestion for 'who receives' comes from my words 'for the operations team'. That contradicts the nudge, which says I didn't mention it."},
+    {"quote": "(Whether it acts by itself is asked separately, in question 6.)", "why": "The questions on the form aren't numbered, so I can't find 'question 6'."},
+    {"quote": "Suggested by the AI model alpha:7b … “for the operations team” — is this right? [then my whole description sentence repeated]", "why": "The box repeats my own sentence instead of saying which answer it picked. I had to look at which option was highlighted to know what I was agreeing to."},
+    {"quote": "Something a team in your firm built for this job", "why": "I built it myself, not a team. I picked it as the closest option, but it isn't quite right."},
+    {"quote": "Could the people who built it show you why it gave a particular result? (Yes — it follows fixed, written-down rules, like a scorecard)", "why": "I am the builder, so 'could the people who built it show you' is an odd way to ask me. The scorecard example doesn't fit a written summary. I chose 'No, or I don’t know' to be safe."},
+    {"quote": "Confidential firm information — internal data … / Everyday work information — emails, policies, general documents", "why": "Ticket volumes from an internal database could fit either option. I picked the first because it says 'internal data'. I'm not sure what difference it makes, apart from 'we go by the most sensitive thing you tick'."},
+    {"quote": "Which countries does it involve? Tick all. / Does it replace something you already use…", "why": "My description doesn't say which country my firm is in or what the dashboard replaces. I ticked 'Somewhere else, or not sure' and answered 'No' without anything on screen telling me which was right."},
+    {"quote": "Still to answer: What do you want to call it; Where does the AI come from; What kind of AI is it; and 6 more questions.", "why": "The count of 9 seems lower than the boxes I can see, and an extra question appears after some answers. I'm not sure how many questions I really have left."}
+  ],
+  "expectNext": "I think Continue takes me to the next step in the bar at the top, which is 'Questions' or 'Confirm'. I expect it to show my answers back to me to look over, possibly with a few follow-up questions. Then comes 'Result', which should tell me whether my dashboard can go ahead as it is, or what needs doing first. I assume nothing is final until I confirm.",
+  "ticksMean": "Ticking 'I've checked this answer' means I have read the suggestion the program made from my description and agree it is right for my tool. It is my sign-off on that answer. Until I tick it, or change the answer, it doesn't count and I can't continue. It isn't final, because I can still change things before anything is decided.",
+  "comment": "The form was easy to fill in for a plain ticket-summary tool, but the setup words (Ollama, alpha:7b, Make it smarter, Similar checks) and the 'not mentioned' nudge, which contradicted what I had written, left me unsure what the tool was doing with my description."
+}
