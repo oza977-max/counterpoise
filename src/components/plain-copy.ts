@@ -224,7 +224,7 @@ export const PLAIN_QUESTIONS: PlainQuestion[] = [
       'What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes ' +
       'a summary of it — pick the one nearest the bottom of this list.',
     help:
-      'Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, in question 6.)',
+      "Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, under 'What happens with what it produces'.)",
     options: [
       {
         key: 'score',
@@ -508,7 +508,7 @@ export const QUESTIONNAIRE_COPY: Record<string, QuestionnaireFieldCopy> = {
     question:
       'What kind of AI is it? If more than one fits — for example, something that turns speech into text and writes a summary of it — pick the one nearest the bottom of this list.',
     help:
-      'Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, in question 6.)',
+      "Different kinds of AI go wrong in different ways. (Whether it acts by itself is asked separately, under 'What happens with what it produces'.)",
     shortLabel: 'what kind of AI it is',
     options: {
       statistical:
