@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, within, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import App from '../../App';
 import MakeItSmarter from '../MakeItSmarter';
@@ -142,5 +143,59 @@ describe('TC-R18-PS-2-03: the panel promises nothing about where text goes; the 
     render(<App />);
     expect(panel()).toBeNull();
     expect(document.querySelector('.model-status__line')!.textContent).toContain(placeSentence({ place, url, model }, false));
+  });
+});
+
+// Newcomer test round 1 (2026-10-26, owner-approved): the panel leads with plain words and keeps the
+// setup steps under a closed disclosure for whoever runs Ollama.
+describe('TC-R18-PS-2-05: the panel leads with plain words; setup steps sit under a closed disclosure', () => {
+  const LEAD =
+    'Optional. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.';
+
+  function open() {
+    render(<MakeItSmarter />);
+    return screen.getByRole('region', { name: /make it smarter/i });
+  }
+
+  it('the lead sentence is plain words, comes first after the heading, and sits outside the disclosure', () => {
+    const p = open();
+    expect(R18_COPY.PANEL_EXPLANATION).toBe(LEAD);
+    const first = p.querySelector('h2 + p')!;
+    expect(first.textContent).toBe(LEAD);
+    expect(first.closest('details')).toBeNull();
+    expect(LEAD).not.toMatch(/approved|rejected/i);
+  });
+
+  it('a native details element, collapsed by default, with the summary "Setup steps for whoever runs Ollama"', () => {
+    const p = open();
+    const d = p.querySelector('details')!;
+    expect(d).not.toBeNull();
+    expect(d.hasAttribute('open')).toBe(false);
+    expect(d.querySelector('summary')!.textContent).toBe('Setup steps for whoever runs Ollama');
+    expect(R18_COPY.PANEL_SUMMARY).toBe('Setup steps for whoever runs Ollama');
+  });
+
+  it('both commands, the documentation link and the dated check are inside the disclosure, not outside it', () => {
+    const p = open();
+    const d = p.querySelector('details')!;
+    expect(Array.from(d.querySelectorAll('code')).map((c) => c.textContent)).toEqual([
+      'ollama signin',
+      originsCommand(window.location.origin),
+    ]);
+    expect(d.querySelector(`a[href="${OLLAMA_DOCS_URL}"]`)).not.toBeNull();
+    expect(d.textContent).toContain(`Link last checked ${OLLAMA_DOCS_CHECKED}`);
+    // false state: nothing of the setup is outside the disclosure
+    const outside = p.cloneNode(true) as HTMLElement;
+    outside.querySelector('details')!.remove();
+    expect(outside.querySelectorAll('code, a')).toHaveLength(0);
+    expect(outside.textContent).not.toContain('Link last checked');
+  });
+
+  it('pressing the summary opens it (a native control, so Enter and Space work too)', async () => {
+    const user = userEvent.setup({ delay: null });
+    const p = open();
+    const d = p.querySelector('details')!;
+    await user.click(within(p).getByText('Setup steps for whoever runs Ollama'));
+    expect(d.hasAttribute('open')).toBe(true);
   });
 });

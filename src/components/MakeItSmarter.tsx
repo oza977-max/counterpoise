@@ -8,7 +8,8 @@ import { useModelSetting } from './useModelSetting';
 // allowed-origins setting for THIS page's address) and links Ollama's own documentation
 // for everything else, with the date the link was last checked. It names no model,
 // version or price. Rendered after the first read of the stored setting, so a panel is
-// never flashed at someone who already has a model.
+// never flashed at someone who already has a model. Newcomer test round 1 (2026-10-26): the panel leads with
+// one plain sentence; the commands, link and date sit under a native <details>, closed by default.
 
 export default function MakeItSmarter() {
   const { ready, state } = useModelSetting();
@@ -19,21 +20,24 @@ export default function MakeItSmarter() {
         {R18_COPY.PANEL_HEADING}
       </h2>
       <p>{R18_COPY.PANEL_EXPLANATION}</p>
-      <p>{R18_COPY.PANEL_SIGNIN_LEAD}</p>
-      <p>
-        <code className="make-it-smarter__command">{R18_COPY.PANEL_COMMAND_SIGNIN}</code>
-      </p>
-      <p>{R18_COPY.PANEL_ORIGINS_LEAD}</p>
-      <p>
-        <code className="make-it-smarter__command">{originsCommand(window.location.origin)}</code>
-      </p>
-      <p>{R18_COPY.PANEL_AFTER}</p>
-      <p>
-        <a href={OLLAMA_DOCS_URL} target="_blank" rel="noopener noreferrer">
-          {R18_COPY.PANEL_LINK_TEXT}
-        </a>{' '}
-        <span className="field-help">{R18_COPY.PANEL_LINK_CHECKED.replace('{date}', OLLAMA_DOCS_CHECKED)}</span>
-      </p>
+      <details className="make-it-smarter__setup">
+        <summary>{R18_COPY.PANEL_SUMMARY}</summary>
+        <p>{R18_COPY.PANEL_SIGNIN_LEAD}</p>
+        <p>
+          <code className="make-it-smarter__command">{R18_COPY.PANEL_COMMAND_SIGNIN}</code>
+        </p>
+        <p>{R18_COPY.PANEL_ORIGINS_LEAD}</p>
+        <p>
+          <code className="make-it-smarter__command">{originsCommand(window.location.origin)}</code>
+        </p>
+        <p>{R18_COPY.PANEL_AFTER}</p>
+        <p>
+          <a href={OLLAMA_DOCS_URL} target="_blank" rel="noopener noreferrer">
+            {R18_COPY.PANEL_LINK_TEXT}
+          </a>{' '}
+          <span className="field-help">{R18_COPY.PANEL_LINK_CHECKED.replace('{date}', OLLAMA_DOCS_CHECKED)}</span>
+        </p>
+      </details>
     </section>
   );
 }

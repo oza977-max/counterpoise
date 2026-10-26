@@ -1483,7 +1483,8 @@ export const R18_COPY = {
   // The panel names exactly two commands and no model, version or price; Ollama's own pages cover the rest.
   PANEL_HEADING: 'Make it smarter',
   PANEL_EXPLANATION:
-    "A model you connect can fill in some of the form's answers from your description and show the words it relied on. You still check and tick every answer it fills in. Without one, you answer the questions yourself.",
+    'Optional. Someone who runs Ollama can connect an AI model under Settings; it then suggests answers from your description for you to check.',
+  PANEL_SUMMARY: 'Setup steps for whoever runs Ollama',
   PANEL_SIGNIN_LEAD: "To use Ollama's cloud, sign in once:",
   PANEL_ORIGINS_LEAD:
     "To let this page reach Ollama on your computer, set its allowed origins to this page's address:",
