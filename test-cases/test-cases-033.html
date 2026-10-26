@@ -335,7 +335,7 @@
 <h3>TC-R18-GI-2-04: Next is never disabled by the nudge [EXAMPLE]</h3>
 <p>Input: description "It helps with my work." (every item unmentioned) Given the description screen When the person presses Next, then presses Next again without adding anything Then the form step MUST contain its first question And the Next control MUST NOT contain a disabled state at any point while the description is not blank [Requirement: R18-GI-2] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-2-05: A one-line description lists every item with an example for each [EXAMPLE]</h3>
-<p>Input: "It helps with my work." Given the description screen When the person presses Next Then the note MUST contain all thirteen items, each with its own one-click example And the note MUST NOT contain a requirement wording such as "required" or "you must" [Requirement: R18-GI-2] [Priority: SHOULD] [Trace: not-yet-traced]</p>
+<p>Input: "It helps with my work." Given the description screen When the person presses Next Then the note MUST contain all thirteen items, each with its own one-click example And the note MUST end with the sentence "The form covers each of these where it applies." And the note MUST NOT contain a requirement wording such as "required" or "you must" [Requirement: R18-GI-2] [Priority: SHOULD] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-3-01: A verifiable sentence pre-fills its question and no other [EXAMPLE]</h3>
 <p>Input: description "Our UK team will use it to summarise internal ticket volumes." and a fake model reply that answers the countries question "United Kingdom" quoting "Our UK team", and answers the information question "Everyday work information" quoting "internal ticket volumes" Given a model is connected and the description is read When the form opens Then the countries question MUST contain the pre-filled answer "United Kingdom" with the quote "Our UK team" And the information question MUST contain "Everyday work information" with the quote "internal ticket volumes" And every other question MUST NOT contain a pre-filled answer [Requirement: R18-GI-3] [Priority: MUST] [Trace: not-yet-traced]</p>
 <h3>TC-R18-GI-3-02: A quote that is not in the description is discarded [EXAMPLE]</h3>
@@ -523,6 +523,7 @@
 <tr><td>"from your description: &ldquo;&hellip;&rdquo;"</td><td>no verified quote (discarded, or a typed answer)</td><td>a quote that occurs in the text</td></tr>
 <tr><td>"confirmed by you"</td><td>pre-filled, not yet ticked</td><td>ticked, or changed</td></tr>
 <tr><td>"We found no words about: X"</td><td>words about X are found</td><td>no words about X are found</td></tr>
+<tr><td>"The form covers each of these where it applies." under the note</td><td>every item has words found (no note shows)</td><td>at least one item has no words found (the note shows); each item has a form question, shown where it applies</td></tr>
 <tr><td>"not yet tested on the example cases"</td><td>a result is saved for this model</td><td>no result for this model</td></tr>
 <tr><td>"Never leaves your computer"</td><td>the place is firm server or Ollama's cloud</td><td>the place is this computer</td></tr>
 <tr><td>the unencrypted-connection line</td><td>https, or this computer</td><td>an http firm address</td></tr>

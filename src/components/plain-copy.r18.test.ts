@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { R18_COPY, PLAIN_QUESTIONS } from './plain-copy';
+import { R18_COPY, PLAIN_QUESTIONS, findQuestion } from './plain-copy';
 import { mentionedItems, CHECKLIST_ITEM_IDS } from '../engine/mentioned';
-import type { PrefillFailure } from '../engine/prefill-types';
+import type { ChecklistItemId, PrefillFailure } from '../engine/prefill-types';
+import { structureFor } from '../engine/question-structure';
+import type { QuestionId } from './plain-copy';
 
 // R18-A deliverable 6: the Round 18 strings (specs/intake-flow.md §27.2-27.5).
 const JURISDICTIONS = [
@@ -128,5 +130,48 @@ describe('the earlier-version notice (R18-NF-5)', () => {
     expect(R18_COPY.EARLIER_VERSION_NOTICE).toBe(
       'This was saved by an earlier version of Counterpoise, so please check your answers.',
     );
+  });
+});
+
+// Newcomer test round 2 (2026-10-26, owner-approved). The nudge said "The questions that follow ask about each of these
+// anyway." - false where a question is conditional (three testers). It now says the form covers each of these where it
+// applies, which is true only if every checklist item has a form question and the conditional ones are shown when they
+// apply (TC-R18-GI-2-06).
+describe('TC-R18-GI-2-05n1: the nudge says the form covers each item where it applies', () => {
+  const HELP_LEAD = 'Add a sentence if you like, or press Next again to carry on.';
+  // The form question each checklist item stands for (the item's label is that question in short words).
+  const COVERED_BY: Record<ChecklistItemId, QuestionId> = {
+    'where-ai-comes-from': '3',
+    'kind-of-ai': '4',
+    'can-explain': '4a',
+    'information-used': '5',
+    'what-it-does-with-output': '6',
+    'weight-of-output': '6a',
+    'who-receives': '7',
+    'what-it-decides': '8',
+    'mistake-recoverable': '9',
+    'how-widely': '10',
+    countries: '11',
+    'replaces-something': '12',
+    'agentic-reach': '13',
+  };
+
+  it('the help line reads as written, and the old claim is gone', () => {
+    expect(R18_COPY.UNMENTIONED_NOTE_HELP).toBe(`${HELP_LEAD} The form covers each of these where it applies.`);
+    expect(R18_COPY.UNMENTIONED_NOTE_HELP).not.toMatch(/anyway|questions that follow|ask about each/i);
+    expect(R18_COPY.UNMENTIONED_NOTE_HELP).not.toMatch(/approved|rejected/i);
+  });
+
+  it('every checklist item has a question on the form (a missing one would make the sentence false)', () => {
+    expect(Object.keys(COVERED_BY).sort()).toEqual([...CHECKLIST_ITEM_IDS].sort());
+    for (const id of CHECKLIST_ITEM_IDS) {
+      expect(findQuestion(COVERED_BY[id]), `${id} -> ${COVERED_BY[id]}`).toBeDefined();
+      expect(structureFor(COVERED_BY[id]), `${id} -> ${COVERED_BY[id]}`).toBeDefined();
+    }
+  });
+
+  it('(false state of the old sentence) three items are asked only where they apply - so "ask about each of these anyway" was false', () => {
+    const conditional = CHECKLIST_ITEM_IDS.filter((id) => structureFor(COVERED_BY[id])!.shownWhen !== undefined);
+    expect(conditional.sort()).toEqual(['agentic-reach', 'can-explain', 'weight-of-output']);
   });
 });

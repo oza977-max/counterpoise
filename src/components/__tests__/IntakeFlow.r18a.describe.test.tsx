@@ -173,6 +173,26 @@ describe('the nudge (TC-R18-GI-2-01 .. -05)', () => {
     expect(screen.queryByText(/your description doesn.t mention/i)).not.toBeInTheDocument();
   });
 
+  it('TC-R18-GI-2-05n2 (newcomer round 2): the note ends with "The form covers each of these where it applies." and the old claim is nowhere', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, box(), 'It helps with my work.');
+    await user.click(next());
+    const n = note()!;
+    expect(n.textContent).toContain('Add a sentence if you like, or press Next again to carry on. The form covers each of these where it applies.');
+    expect(screen.getAllByText(/the form covers each of these where it applies/i)).toHaveLength(1);
+    expect(document.body.textContent).not.toMatch(/ask about each of these anyway/i);
+  });
+
+  it('TC-R18-GI-2-05n3 (false state): with every item found there is no note, so the sentence is not on the screen at all', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await fillText(user, box(), ALL_SENTENCES);
+    await user.click(next());
+    await screen.findByRole('button', { name: /continue →/i }, DUP_CHECK_WAIT);
+    expect(screen.queryByText(/the form covers each of these where it applies/i)).not.toBeInTheDocument();
+  });
+
   // Newcomer test round 1 (2026-10-26, owner-approved): the sentences are labelled as examples, not the person's words.
   it('TC-R18-GI-2-02a: each listed item shows its sentence after "For example:", so it reads as an example', async () => {
     const user = userEvent.setup({ delay: null });

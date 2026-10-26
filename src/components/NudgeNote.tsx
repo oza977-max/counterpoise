@@ -4,7 +4,7 @@ import type { ChecklistItemId } from '../engine/prefill-types';
 // R18-GI-2 (specs/intake-flow.md §27.3). The note the first Next press shows
 // when the description leaves items unmentioned: exactly those items, each with a
 // one-click example sentence. Wording is a nudge, never a requirement — the
-// questions that follow ask about every item either way.
+// form has a question for every item, shown where it applies.
 
 /** The example, added after the text with one space or line break between. */
 export function appendExample(text: string, sentence: string): string {

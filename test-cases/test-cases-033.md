@@ -179,6 +179,7 @@ Input: "It helps with my work."
 Given the description screen
 When the person presses Next
 Then the note MUST contain all thirteen items, each with its own one-click example
+And the note MUST end with the sentence "The form covers each of these where it applies."
 And the note MUST NOT contain a requirement wording such as "required" or "you must"
 [Requirement: R18-GI-2] [Priority: SHOULD]
 [Trace: not-yet-traced]
@@ -1031,6 +1032,7 @@ Then each false-state screen MUST NOT contain its claim, and each true-state scr
 | "from your description: “…”" | no verified quote (discarded, or a typed answer) | a quote that occurs in the text |
 | "confirmed by you" | pre-filled, not yet ticked | ticked, or changed |
 | "We found no words about: X" | words about X are found | no words about X are found |
+| "The form covers each of these where it applies." under the note | every item has words found (no note shows) | at least one item has no words found (the note shows); each item has a form question, shown where it applies |
 | "not yet tested on the example cases" | a result is saved for this model | no result for this model |
 | "Never leaves your computer" | the place is firm server or Ollama's cloud | the place is this computer |
 | the unencrypted-connection line | https, or this computer | an http firm address |

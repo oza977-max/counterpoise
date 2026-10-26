@@ -1362,8 +1362,10 @@ export const R18_COPY = {
   // Newcomer test round 2 (2026-10-26, owner-approved): said in the checklist's own terms, so it reads true beside
   // "no words found" ("Your description doesn't mention:" claimed more than the lookup knows).
   UNMENTIONED_NOTE_LEAD: 'We found no words about:',
+  // Newcomer test round 2 (2026-10-26, owner-approved): "The questions that follow ask about each of these anyway."
+  // was false where a question is conditional. Every checklist item has a form question, shown where it applies.
   UNMENTIONED_NOTE_HELP:
-    'Add a sentence if you like, or press Next again to carry on. The questions that follow ask about each of these anyway.',
+    'Add a sentence if you like, or press Next again to carry on. The form covers each of these where it applies.',
   ADD_EXAMPLE_LABEL: 'Add this example',
   // Newcomer test round 1 (2026-10-26): said before each sentence so it reads as an example, not the person's words.
   NUDGE_EXAMPLE_LEAD: 'For example:',
