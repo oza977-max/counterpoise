@@ -1636,7 +1636,9 @@ export const R18_COPY = {
   // Owner wording (2026-10-15): the mark names the model that suggested the answer. The name is the
   // model in the answer's ReadRecord, through visibleText; with none, MARK_MODEL_FALLBACK.
   MARK_SUGGESTED_BY: 'suggested by',
-  MARK_MODEL_FALLBACK: 'a model',
+  // Newcomer test round 1 (2026-10-26): a named model is "the AI model {name}"; with no name, "an AI model".
+  MARK_MODEL_NAMED: 'the AI model',
+  MARK_MODEL_FALLBACK: 'an AI model',
   MARK_FROM: 'from your description:',
   MARK_ASK: '— is this right?',
   MARK_QUOTE_LEFT_PREFIX: 'the quote',

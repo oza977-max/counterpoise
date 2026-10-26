@@ -74,18 +74,18 @@ const tickFor = (question: RegExp) => screen.getByRole('checkbox', { name: new R
 describe('marks: the quote in its sentence, only where a quote exists', () => {
   it('TC-R18-GI-3-01c: a pre-filled answer shows its quote; a typed answer and an empty question show none', () => {
     render(<Harness initial={fullState({ '5': PEOPLE, '11': UK })} />);
-    const marks = screen.getAllByText(/^Suggested by alpha:7b from your description:/);
+    const marks = screen.getAllByText(/^Suggested by the AI model alpha:7b from your description:/);
     expect(marks.map((m) => m.textContent)).toEqual([
-      'Suggested by alpha:7b from your description: “client names” — is this right?',
-      'Suggested by alpha:7b from your description: “Our UK team” — is this right?',
+      'Suggested by the AI model alpha:7b from your description: “client names” — is this right?',
+      'Suggested by the AI model alpha:7b from your description: “Our UK team” — is this right?',
     ]);
     // every other question carries no pre-filled mark
     expect(document.querySelectorAll('.answer-mark')).toHaveLength(2);
   });
 
-  it('TC-R18-GI-4-02: the mark says exactly “Suggested by alpha:7b from your description: “Our UK team” — is this right?” and not “confirmed by you” before the tick', () => {
+  it('TC-R18-GI-4-02: the mark says exactly “Suggested by the AI model alpha:7b from your description: “Our UK team” — is this right?” and not “confirmed by you” before the tick', () => {
     render(<Harness initial={fullState({ '11': UK })} />);
-    expect(screen.getByText('Suggested by alpha:7b from your description: “Our UK team” — is this right?')).toBeInTheDocument();
+    expect(screen.getByText('Suggested by the AI model alpha:7b from your description: “Our UK team” — is this right?')).toBeInTheDocument();
     expect(screen.queryByText(/confirmed by you/i)).not.toBeInTheDocument();
   });
 
@@ -110,7 +110,7 @@ describe('marks: the quote in its sentence, only where a quote exists', () => {
     );
     render(<Harness initial={fullState({ '5': two })} />);
     const quoteLines = screen
-      .getAllByText(/^(.*: )?Suggested by alpha:7b from your description:/)
+      .getAllByText(/^(.*: )?Suggested by the AI model alpha:7b from your description:/)
       .map((e) => e.textContent ?? '');
     expect(quoteLines.some((t) => t.includes('“client names”'))).toBe(true);
     expect(quoteLines.some((t) => t.includes('“account details”'))).toBe(true);
@@ -196,7 +196,7 @@ describe('confirm controls: one per answer, no accept-all', () => {
     expect(screen.getByText(/confirmed by you/i)).toBeInTheDocument();
     await user.click(tick);
     expect(screen.queryByText(/confirmed by you/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Suggested by alpha:7b from your description: “Our UK team” — is this right?')).toBeInTheDocument();
+    expect(screen.getByText('Suggested by the AI model alpha:7b from your description: “Our UK team” — is this right?')).toBeInTheDocument();
   });
 });
 
@@ -320,7 +320,7 @@ describe('the quote has left the description', () => {
     await user.clear(box);
     await user.type(box, 'It reads client names.');
     expect(
-      screen.getByText('the quote “Our UK team” suggested by alpha:7b is no longer in your description — is this right?'),
+      screen.getByText('the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description — is this right?'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
     expect(continueButton()).toBeDisabled();
@@ -337,7 +337,7 @@ describe('the quote has left the description', () => {
     const confirmed = prefilled(['UK'], [{ option: 'UK', quote: 'Our UK team' }], true);
     render(<Harness initial={fullState({ '11': confirmed })} description="We use it in London." />);
     expect(
-      screen.getByText('confirmed by you — the quote “Our UK team” suggested by alpha:7b is no longer in your description'),
+      screen.getByText('confirmed by you — the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /united kingdom/i })).toBeChecked();
@@ -354,7 +354,7 @@ describe('the quote has left the description', () => {
       }),
     );
     render(<Harness description="Edited elsewhere: nothing about teams." />);
-    expect(screen.getByText(/confirmed by you — the quote “Our UK team” suggested by alpha:7b is no longer in your description/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmed by you — the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description/)).toBeInTheDocument();
     expect(screen.queryByText(/from your description/i)).not.toBeInTheDocument();
   });
 
@@ -365,7 +365,7 @@ describe('the quote has left the description', () => {
     const box = screen.getByLabelText(/what will it do|describe/i, { selector: 'textarea' });
     await user.clear(box);
     await user.type(box, 'Only the London office.');
-    expect(screen.getByText(/the quote “Our UK team” suggested by alpha:7b is no longer in your description/)).toBeInTheDocument();
+    expect(screen.getByText(/the quote “Our UK team” suggested by the AI model alpha:7b is no longer in your description/)).toBeInTheDocument();
     expect(loadFormDraft()!.answerState).not.toHaveProperty('2');
   });
 });

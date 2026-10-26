@@ -76,15 +76,15 @@ describe('editing the description and returning (TC-R18-GI-8-01, -02, -03, -04, 
 
     // A: confirmed, original value
     expect(uk()).toBeChecked();
-    expect(screen.getByText(/confirmed by you — suggested by .+ from your description: “Our UK team”/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmed by you — suggested by the AI model .+ from your description: “Our UK team”/)).toBeInTheDocument();
     // B: the changed value and state, not the model's new reply
     expect(people()).toBeChecked();
     expect(everyday()).toBeChecked();
-    expect(screen.getByText(/changed by you — alpha:7b had read “internal ticket volumes”/)).toBeInTheDocument();
+    expect(screen.getByText(/changed by you — the AI model alpha:7b had read “internal ticket volumes”/)).toBeInTheDocument();
     // C: the new pre-fill, with its new quote
     expect(small()).toBeChecked();
     expect(wide()).not.toBeChecked();
-    expect(screen.getByText(/^Suggested by .+ from your description: “one small trial” — is this right\?$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Suggested by the AI model .+ from your description: “one small trial” — is this right\?$/)).toBeInTheDocument();
     expect(screen.queryByText(/across the whole business/)).not.toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
@@ -121,8 +121,8 @@ describe('editing the description and returning (TC-R18-GI-8-01, -02, -03, -04, 
     expect(people()).toBeChecked();
     expect(wide()).toBeChecked();
     expect(screen.getByText(/changed by you/i)).toBeInTheDocument();
-    expect(screen.getByText(/confirmed by you — suggested by .+ from your description: “Our UK team”/)).toBeInTheDocument();
-    expect(screen.getByText(/^Suggested by .+ from your description: “across the whole business” — is this right\?$/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmed by you — suggested by the AI model .+ from your description: “Our UK team”/)).toBeInTheDocument();
+    expect(screen.getByText(/^Suggested by the AI model .+ from your description: “across the whole business” — is this right\?$/)).toBeInTheDocument();
   }, SLOW_FLOW_MS);
 
   it('TC-R18-GI-8-10: Back after a pre-fill keeps it confirmed and calls the model no more', async () => {
@@ -157,7 +157,7 @@ describe('editing the description and returning (TC-R18-GI-8-01, -02, -03, -04, 
     await submitDescription(user);
     await screen.findByText(FORM_HEADING, undefined, FORM_WAIT);
     expect(uk()).toBeChecked();
-    expect(screen.getByText(/^confirmed by you — the quote “Our UK team” suggested by .+ is no longer in your description$/)).toBeInTheDocument();
+    expect(screen.getByText(/^confirmed by you — the quote “Our UK team” suggested by the AI model .+ is no longer in your description$/)).toBeInTheDocument();
     expect(screen.queryByText(/from your description: “Our UK team”/)).not.toBeInTheDocument();
     // the record keeps the original quote unchanged
     expect(loadFormDraft()!.answerState['11']!.source).toMatchObject({
@@ -201,9 +201,9 @@ describe('reload (TC-R18-GI-9-02..04)', () => {
     await screen.findByText(FORM_HEADING);
     expect(screen.getByLabelText(/in a sentence or two/i)).toHaveValue(FIRST);
     expect(uk()).toBeChecked();
-    expect(screen.getByText(/confirmed by you — suggested by .+ from your description: “Our UK team”/)).toBeInTheDocument();
-    expect(screen.getByText(/changed by you — alpha:7b had read “internal ticket volumes”/)).toBeInTheDocument();
-    expect(screen.getByText(/^Suggested by .+ from your description: “across the whole business” — is this right\?$/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmed by you — suggested by the AI model .+ from your description: “Our UK team”/)).toBeInTheDocument();
+    expect(screen.getByText(/changed by you — the AI model alpha:7b had read “internal ticket volumes”/)).toBeInTheDocument();
+    expect(screen.getByText(/^Suggested by the AI model .+ from your description: “across the whole business” — is this right\?$/)).toBeInTheDocument();
     expect(fake.requests).toHaveLength(requests);
   }, SLOW_FLOW_MS);
 

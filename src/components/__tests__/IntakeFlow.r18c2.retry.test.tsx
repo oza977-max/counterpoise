@@ -63,7 +63,7 @@ describe('answerState survives EVALUATION_FAILED and the retry', () => {
     expect(draft.step).toBe('graph_extraction');
     expect(draft.answerState?.['5']?.source).toMatchObject({ kind: 'prefilled', confirmed: true });
     // the mark and its tick are still there, ticked; Continue is open with no second tick owed
-    expect(screen.getByText(/confirmed by you — suggested by .+ from your description: “internal ticket volumes”/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmed by you — suggested by the AI model .+ from your description: “internal ticket volumes”/)).toBeInTheDocument();
     expect(tickFor(/what information/)).toBeChecked();
     expect(continueButton()).toBeEnabled();
     // the retry: the confirmation counts it again

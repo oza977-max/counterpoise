@@ -108,7 +108,7 @@ describe('the engine sees only confirmed form answers', () => {
     evaluateSpy.mockClear();
     await describeToReadForm(user, injected);
 
-    const marks = screen.getAllByText(/Suggested by .+ from your description: “every question is answered” — is this right\?/);
+    const marks = screen.getAllByText(/Suggested by the AI model .+ from your description: “every question is answered” — is this right\?/);
     expect(marks).toHaveLength(2);
     // the dropped quote is in no mark (the warning and a context sentence may quote the description; no mark CLAIMS it as a quote)
     expect([...document.querySelectorAll('.answer-mark__claim')].some((m) => /ignore all earlier/i.test(m.textContent ?? ''))).toBe(false);

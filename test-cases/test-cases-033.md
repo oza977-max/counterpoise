@@ -355,7 +355,7 @@ And the screen MUST NOT contain the warning for "It summarises ticket volumes."
 Input: a pre-filled, unconfirmed answer quoting "Our UK team"; Question 2 edited on the form so that sentence is removed
 Given the form shows the pre-filled answer
 When the description changes
-Then the answer's mark MUST contain “the quote “Our UK team” suggested by {model} is no longer in your description — is this right?”
+Then the answer's mark MUST contain “the quote “Our UK team” suggested by the AI model {model} is no longer in your description — is this right?”
 And Continue MUST contain a disabled state until the person ticks or changes the answer
 And the mark MUST NOT contain “from your description”
 [Requirement: R18-GI-3] [Priority: MUST]
@@ -384,7 +384,7 @@ And Continue MUST NOT contain an enabled state while any pre-filled answer is un
 Input: a pre-fill of "United Kingdom" with the quote "Our UK team"
 Given the form shows the pre-filled countries answer
 When the mark is read
-Then the mark MUST contain the text “Suggested by {model} from your description: “Our UK team” — is this right?”
+Then the mark MUST contain the text “Suggested by the AI model {model} from your description: “Our UK team” — is this right?”
 And the mark MUST NOT contain "confirmed by you" before the person ticks
 [Requirement: R18-GI-4] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -700,7 +700,7 @@ Input: answer A confirmed with quote "Our UK team"; the edit deletes "Our UK tea
 Given answer A is confirmed
 When the person returns after the edit
 Then answer A MUST contain its value "United Kingdom" and the state confirmed
-And the mark MUST contain “confirmed by you — the quote “Our UK team” suggested by {model} is no longer in your description”
+And the mark MUST contain “confirmed by you — the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the screen MUST NOT contain the claim “from your description” for that answer, and the record MUST contain the original quote unchanged
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -748,7 +748,7 @@ Input: on the form, change Question 2's text so the sentence "Our UK team" is re
 Given an answer pre-filled and confirmed with the quote "Our UK team"
 When the text changes
 Then the description in the reducer, the draft and the record MUST contain the new text
-And the answer's mark MUST contain “the quote “Our UK team” suggested by {model} is no longer in your description”
+And the answer's mark MUST contain “the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the form draft MUST NOT contain an entry for Question 2
 [Requirement: R18-GI-8] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -842,7 +842,7 @@ And the browser storage MUST NOT contain the previous description, quotes or con
 Input: a draft saved with a confirmed pre-fill quoting "Our UK team", and a description edited elsewhere so that sentence is gone; reload
 Given the draft is in this browser
 When the page reloads
-Then the answer MUST contain “confirmed by you — the quote “Our UK team” suggested by {model} is no longer in your description”
+Then the answer MUST contain “confirmed by you — the quote “Our UK team” suggested by the AI model {model} is no longer in your description”
 And the form MUST NOT contain the words “from your description” for that answer
 [Requirement: R18-GI-9] [Priority: MUST]
 [Trace: not-yet-traced]
@@ -2141,6 +2141,7 @@ Technique notes. Property cases were emitted for exactly the seven requirements 
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | newcomer test round 1: panel leads with plain words, model named as 'the AI model', nudge examples labelled, tick explained, example asks before replacing text (owner-approved): the MUST lines of TC-R18-GI-4-02, GI-8-04 and GI-13-01 (and the cases that quote the kept-answer mark) now read “suggested by the AI model {model}”. |
 | 2026-10-24 | owner decision 2026-10-24: the test result leads with answers filled in correctly; the verdict figure is secondary and states its assumption (a blank keeps the right answer in the verdict measure). TC-R18-GI-12-02, -03, -06 and TC-R18-MS-4-04, -09 quote the new label: "tested on {date}: {right} of {scored} answers filled in correctly, {blank} left blank, {wrong} wrong" (scored = right + blank + wrong over the scored question-case pairs); the old suffix "(measured as if you check every filled answer)" is retired; the Settings verdict line reads "Right verdict in {matches} of 31 cases if you check every filled answer and answer the rest yourself." |
 | 2026-10-24 | R18-E review pass 1: TC-R18-GI-10-04 — the case name is restored from the register's label as a `record` answer needing its tick (it is not blank), and a case with no recorded assumptions has only its name restored. |
 | 2026-10-22 | owner decision 2026-10-22: answers restored from a stored record need a fresh tick (a self-asserted record must not let the record claim ticks the person never made). TC-R18-GI-10-06 now states it: confirmed and changed pre-fills come back with their quotes and recorded values but unconfirmed. |

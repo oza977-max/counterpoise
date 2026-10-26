@@ -70,8 +70,8 @@ describe('Correct this check, after a reload', () => {
       // Owner decision 2026-10-22: the confirmed pre-fill keeps its quote but is NOT ticked; the changed answer and the
       // earlier-record answer are earlier-record answers. All three owe this person's own tick.
       expect(screen.getByRole('checkbox', { name: /^i've checked this answer.*what information/i })).not.toBeChecked();
-      expect(screen.getByText(/suggested by alpha:7b from your description: “client names”/i)).toBeInTheDocument();
-      expect(screen.queryByText(/confirmed by you — suggested by alpha:7b/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/suggested by the AI model alpha:7b from your description: “client names”/i)).toBeInTheDocument();
+      expect(screen.queryByText(/confirmed by you — suggested by the AI model alpha:7b/i)).not.toBeInTheDocument();
       expect(screen.getAllByText(/from the earlier record/i).length).toBeGreaterThan(0);
       const ticks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
       expect(ticks).toHaveLength(3);

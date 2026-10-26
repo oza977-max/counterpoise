@@ -52,7 +52,7 @@ And a pre-check that takes minutes instead of weeks is the cheapest defence agai
 ## How it works
 
 1. **Describe the use case in your own words.** A live checklist shows which topics your description mentions.
-2. **Optionally, a model reads it and suggests answers.** Each suggestion shows the exact words it came from — *"Suggested by {model} from your description: 'client names' — is this right?"* — and needs **your own tick**. Nothing a model suggests reaches the engine until you confirm it, and the record keeps who supplied every answer. No model? You answer the short form yourself; the result is identical.
+2. **Optionally, a model reads it and suggests answers.** Each suggestion shows the exact words it came from — *"Suggested by the AI model {model} from your description: 'client names' — is this right?"* — and needs **your own tick**. Nothing a model suggests reaches the engine until you confirm it, and the record keeps who supplied every answer. No model? You answer the short form yourself; the result is identical.
 3. **The engine evaluates** the confirmed answers against your appetite and the jurisdiction packs that apply (SS1/23, EU AI Act, SR 26-2, DORA): hard lines first, then appetite rules, tier and track.
 4. **You get the verdict with its "why"** — the minimal control set, the regulatory reasoning chain quoting the source text, and the standing conditions the approval assumes.
 5. **The case goes to the second line.** Controls get owners and dates; the reviewer signs off — or challenges the *rule*, which files dissent to a rule-improvement queue without touching the verdict. Every step lands on an append-only, hash-chained audit trail.

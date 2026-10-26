@@ -17,7 +17,7 @@ const mark = (source: AnswerSource, description = DESC) =>
 describe('AnswerMark, changed (M8)', () => {
   it('TC-R18-GI-13-01r1a: says which option the model had chosen, in the option\'s words', () => {
     mark(changed('everyday'));
-    expect(screen.getByText(/changed by you — alpha:7b had read “internal ticket volumes” as “Everyday work information”/)).toBeInTheDocument();
+    expect(screen.getByText(/changed by you — the AI model alpha:7b had read “internal ticket volumes” as “Everyday work information”/)).toBeInTheDocument();
   });
 
   it('TC-R18-GI-13-01r1b: a hidden direction-change character in the option text is shown as an escape, never obeyed', () => {
@@ -30,7 +30,7 @@ describe('AnswerMark, changed (M8)', () => {
   it('TC-R18-GI-13-01r1c (false state): an option with no words is not named, and the sentence has no dangling "as"', () => {
     mark(changed('unknown-key'));
     const text = document.querySelector('.answer-mark__claim')!.textContent!;
-    expect(text).toBe('changed by you — alpha:7b had read “internal ticket volumes”');
+    expect(text).toBe('changed by you — the AI model alpha:7b had read “internal ticket volumes”');
   });
 
   it('TC-R18-GI-13-01r1d: the "no longer in your description" note appears only once the quote has left the text', () => {
@@ -41,7 +41,7 @@ describe('AnswerMark, changed (M8)', () => {
   it('review pass 1 minor 8 (false state): a read with no model name says "a model", never a double space', () => {
     mark({ kind: 'changed', from: [{ option: 'everyday', quote: 'internal ticket volumes' }], read: { ...READ, model: '' } });
     const text = document.querySelector('.answer-mark__claim')!.textContent!;
-    expect(text).toBe('changed by you — a model had read “internal ticket volumes” as “Everyday work information”');
+    expect(text).toBe('changed by you — an AI model had read “internal ticket volumes” as “Everyday work information”');
     expect(text).not.toMatch(/ {2}/);
   });
 });

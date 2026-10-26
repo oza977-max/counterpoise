@@ -27,9 +27,12 @@ interface AnswerMarkProps {
   onToggleConfirm: () => void;
 }
 
-// The model that suggested the answer: the ReadRecord's model name, or "a model" when there is none.
+// The model that suggested the answer, said so a person can see it is an AI model: "the AI model {name}"
+// from the ReadRecord's model name, or "an AI model" when there is none.
 const modelName = (read: ReadRecord) =>
-  read.model.trim() === '' ? R18_COPY.MARK_MODEL_FALLBACK : visibleText(read.model);
+  read.model.trim() === ''
+    ? R18_COPY.MARK_MODEL_FALLBACK
+    : `${R18_COPY.MARK_MODEL_NAMED} ${visibleText(read.model)}`;
 
 const sentenceCase = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 

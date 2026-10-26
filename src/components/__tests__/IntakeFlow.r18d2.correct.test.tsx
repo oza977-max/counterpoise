@@ -65,7 +65,7 @@ describe('correcting in the same session', () => {
       const ticks = screen.getAllByRole('checkbox', { name: /^i've checked this answer/i });
       expect(ticks).toHaveLength(2);
       ticks.forEach((t) => expect(t).toBeChecked());
-      expect(screen.getByText(/confirmed by you — suggested by .+ from your description: “client names”/)).toBeInTheDocument();
+      expect(screen.getByText(/confirmed by you — suggested by the AI model .+ from your description: “client names”/)).toBeInTheDocument();
       expect(screen.getByRole('checkbox', { name: /information about people/i })).toBeChecked();
       expect(screen.getByRole('radio', { name: /^only me or my own team$/i })).toBeChecked();
       expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
