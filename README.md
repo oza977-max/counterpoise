@@ -180,8 +180,6 @@ npm test             # full suite
 
 A personal side project, not affiliated with or used by any employer: built by a risk practitioner on personal time from public sources and made-up examples, to find out whether the idea survives contact with realistic use cases — with the [Grounded Vibe Methodology](https://github.com/gerquinn1978/gvm).
 
-*Formerly called AIGate; renamed on 2 October 2026.*
-
 ## Licence
 
 All rights reserved — published for reading and evaluation, not for redistribution or commercial use. See [LICENSE](LICENSE).
